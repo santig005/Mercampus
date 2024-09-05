@@ -1,7 +1,7 @@
-import React from 'react'
-
-export default function login() {
+import Gallery from '../../components/login/Gallery.jsx';
+import LoginForm from '../../components/login/LoginForm.jsx';
+export default function App() {
   return (
-    <div>login</div>
-  )
+    <LoginForm />
+  );
 }
