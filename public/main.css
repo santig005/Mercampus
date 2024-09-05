@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.btn:hover {
+  /* @apply bg-opacity-100; */
+}
+
+.input {
+  @apply focus-within:outline-0;
+  @apply focus-within:shadow-md;
+  @apply focus-within:border-orange-500;
+}
