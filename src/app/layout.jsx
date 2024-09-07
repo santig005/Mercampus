@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
           {children}
           </Providers>
       <footer>
-        <p>© 2024 Mercampus. Todos los derechos reservados.</p>
+        <p>© 2024 Mercampus. Todos los derechos reservadoss.</p>
       </footer>
       </body>
     </html>
