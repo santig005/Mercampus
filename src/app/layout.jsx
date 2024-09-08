@@ -1,8 +1,5 @@
 import { Inter } from "next/font/google";
-import "../../public/main.css";
-
-import { UserProvider } from "@auth0/nextjs-auth0/client";
-import Sidebar from "@/components/sidebar/Sidebar.jsx";
+import {Providers} from './Providers';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,11 +12,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <UserProvider>
-        <body className={inter.className + "container"}>
-          <Sidebar >{children}</Sidebar>
+      <body className={inter.className}>
+        <Providers>
+          {children}
+          </Providers>
         </body>
-      </UserProvider>
     </html>
   );
 }
