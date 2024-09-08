@@ -25,6 +25,10 @@
 .btn-icon {
   @apply btn p-2 bg-[#ECF0F4] rounded-full aspect-square border-none;
 }
+
+.text-gradient {
+  @apply text-4xl font-bold bg-gradient-to-b from-[#ED3342] to-[#FABF30] bg-clip-text text-transparent;
+}
 /* 
 body::-webkit-scrollbar {
   -webkit-appearance: none;

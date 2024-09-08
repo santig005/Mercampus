@@ -1,4 +1,4 @@
-import BottomNav from '@/components/bottom-nav/BottomNav';
+import BottomNav from '@/components/header/Header';
 import React from 'react';
 
 export default function layout({ children }) {
