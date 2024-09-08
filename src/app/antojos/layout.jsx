@@ -1,9 +1,10 @@
-import React from 'react'
+import BottomNav from '@/components/header/Header';
+import React from 'react';
 
-export default function layout({children}) {
+export default function layout({ children }) {
   return (
     <>
-      {children}
+      <BottomNav>{children}</BottomNav>
     </>
-  )
+  );
 }
