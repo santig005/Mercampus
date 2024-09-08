@@ -1,7 +1,9 @@
-import React from 'react'
+import React from 'react';
 
 export default function antojos() {
   return (
-    <div>Lista de antojos aqui</div>
-  )
+    <div>
+      <button className='btn btn-neutral'>Neutral</button>
+    </div>
+  );
 }
