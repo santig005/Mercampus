@@ -12,10 +12,10 @@ export default function Home() {
 
         </li>
         <li>
-          <Link href='/'>Antojo 2</Link>
+          <Link href='/'>Antojos 2</Link>
         </li>
         <li>
-          <Link href='/'>Antojo 3</Link>
+          <Link href='/'>Antojos 3</Link>
         </li>
       </ul>
     </div>
