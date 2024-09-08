@@ -19,7 +19,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang='es' className={montserrat.className}>
-      <body>{children}</body>
+      <body className='overflow-hidden bg-primary'>{children}</body>
     </html>
   );
 }
