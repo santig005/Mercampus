@@ -11,7 +11,7 @@
 }
 
 .bg-primary {
-  @apply bg-[#FDFDFD];
+  @apply bg-[#f8f8f8];
 }
 
 .icon {
@@ -28,6 +28,26 @@
 
 .text-gradient {
   @apply text-4xl font-bold bg-gradient-to-b from-[#ED3342] to-[#FABF30] bg-clip-text text-transparent;
+}
+
+.title {
+  @apply text-xl font-bold;
+}
+
+.card-title {
+  @apply text-[16px] font-semibold;
+}
+
+.card-subtitle {
+  @apply text-[11px];
+}
+
+.card-price {
+  @apply text-[12px] font-medium;
+}
+
+.img {
+  @apply select-none pointer-events-none;
 }
 /* 
 body::-webkit-scrollbar {
