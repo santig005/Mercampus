@@ -1,7 +1,7 @@
 import React from 'react';
 import { TbMenu2 } from 'react-icons/tb';
 import { TbUserFilled } from 'react-icons/tb';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import Hambtn from './Hambtn';
 
 export default function Navbar() {

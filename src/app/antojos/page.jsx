@@ -8,20 +8,24 @@ export default function Antojos() {
   return (
     <div className='flex flex-col gap-4'>
       <div className='flex flex-col gap-4'>
-        <h2 className='title !font-normal'>
+        <h2 className='title !font-normal px-2'>
           Hola Jacobo, <span className='font-semibold'>calma tus antojos</span>
         </h2>
-        <div className='flex flex-col gap-4'>
+        <div className='px-2 sticky top-0 z-10'>
           <SearchBox />
-          <CategoryGrid />
+        </div>
+        <div className='flex flex-col gap-4'>
+          <div className=''>
+            <CategoryGrid />
+          </div>
         </div>
       </div>
       <div className='flex flex-col gap-2'>
-        <h2 className='title'>Tus favoritos</h2>
+        <h2 className='title px-2'>Tus favoritos</h2>
         {/* <ProductGrid /> */}
         <ProductGridFavorite />
       </div>
-      <div className='flex flex-col gap-2'>
+      <div className='flex flex-col gap-2 px-2'>
         <h2 className='title'>Todos</h2>
         <ProductGrid />
       </div>
