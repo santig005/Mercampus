@@ -26,7 +26,7 @@ export default function Antojos() {
         <ProductGridFavorite />
       </div>
       <div className='flex flex-col gap-2 px-2'>
-        <h2 className='title'>Todos</h2>
+        <h2 className='title sticky top-0 z-10 w-full bg-primary'>Todos</h2>
         <ProductGrid />
       </div>
     </div>
