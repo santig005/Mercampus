@@ -7,6 +7,7 @@ export default function Hambtn() {
         className='btn btn-circle swap swap-rotate bg-[#ECF0F4]'
         htmlFor='my-dibujador'
       >
+        <input type='checkbox' />
         {/* this hidden checkbox controls the state */}
 
         {/* hamburger icon */}
