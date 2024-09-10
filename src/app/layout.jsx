@@ -1,4 +1,5 @@
 import { Montserrat } from 'next/font/google';
+import { ViewTransitions } from 'next-view-transitions';
 
 import React from 'react';
 import '../../public/css/main.css';
@@ -27,8 +28,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang='es' className={montserrat.className}>
-      <body className='overflow-hidden bg-primary'>{children}</body>
-    </html>
+    <ViewTransitions>
+      <html lang='es' className={montserrat.className}>
+        <body className='overflow-hidden bg-primary'>{children}</body>
+      </html>
+    </ViewTransitions>
   );
 }
