@@ -14,6 +14,30 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    sellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    availability: {
+      type: Boolean,
+      default: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    images: [
+      {
+      type: String,
+      required: true,
+      },
+    ],
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      required: true,
+    },   
     thumbnail: {
       type: String,
       required: true,
