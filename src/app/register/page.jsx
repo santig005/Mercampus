@@ -1,5 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
+
 
 const RegistrationForm = () => {
   const[email, setEmail] = useState("");
@@ -9,13 +12,30 @@ const RegistrationForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (res.ok) {
-      router.push("/signin");
+    try {
+      const formData = new FormData(e.currentTarget);
+
+      const name = formData.get('name');
+      const email = formData.get('email');
+      const password = formData.get('password');
+
+      const response = await fetch(`/api/register`, {
+        method: 'POST',
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password
+        })
+      });
+
+      response.status === 201 && router.push('/login');
+      
+
+    } catch (err) {
+      console.error(err.message)
     }
   };
 
@@ -69,6 +89,8 @@ const RegistrationForm = () => {
         >
           Register
         </button>
+
+        <Link className="bg-blue-800 text-white p-1 rounded-md m-1 text-lg" href="/login">Login</Link>
       </form>
     </>
   );
