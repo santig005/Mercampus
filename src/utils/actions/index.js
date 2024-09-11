@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn, signOut } from "@/utils/lib/auth";
+import { signIn, signOut } from "../lib/auth";
 
 export async function doSocialLogin(formData) {
   const action = formData.get("action");
@@ -13,6 +13,7 @@ export async function doLogout() {
 
 export async function doCredentialLogin(formData) {
   try {
+    console.log("email1", formData.get("email"));
     const response = await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),

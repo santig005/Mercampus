@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import React from "react";
-import {  doCredentialLogin, doSocialLogin } from "@/app/actions"
+import {  doCredentialLogin, doSocialLogin } from "@/utils/actions"
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
