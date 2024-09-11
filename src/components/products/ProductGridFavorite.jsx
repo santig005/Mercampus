@@ -7,7 +7,7 @@ import ProductCardFavorite from '@/components/products/ProductCardFavorite';
 
 export default function ProductGridFavorite() {
   const [products, setProducts] = useState([]);
-  const [parent] = useAutoAnimate(null);
+  const [parent] = useAutoAnimate();
   const [clickedProductId, setClickedProductId] = useState(null);
   const containerRef = useRef(null);
 
