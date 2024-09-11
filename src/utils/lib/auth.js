@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credential from "next-auth/providers/credentials";
 
-import { User } from "@/app/models/userSchema";
+import { User } from "@/utils/models/userSchema";
 import bcrypt from "bcryptjs";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             const isMatch = await bcrypt.compare(
               credentials.password,
               user.password
-            )
+            );
 
             if (isMatch) {
               return user;

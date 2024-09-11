@@ -1,12 +1,11 @@
 import Image from "next/image";
-import { auth } from "@/lib/auth";
+import { auth } from "@/utils/lib/auth";
 
 import { redirect } from "next/navigation";
 import { doLogout } from "../actions";
 
 const Antojos = async () => {
   const session = await auth();
-
 
   if (!session) {
     redirect("/login");

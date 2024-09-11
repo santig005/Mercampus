@@ -1,7 +1,7 @@
 import { connectDB } from "@/utils/connectDB";
-import { createUser } from "@/utils/users";
+import { createUser } from "@/utils/createUser";
 import { NextResponse } from "next/server";
-import User from "@/app/models/userSchema";
+import User from "@/utils/models/userSchema";
 import bcrypt from "bcryptjs";
 
 export const POST = async (req) => {

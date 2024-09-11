@@ -1,10 +1,10 @@
-'use server'
+"use server";
 
-import { signIn, signOut } from "@/lib/auth";
+import { signIn, signOut } from "@/utils/lib/auth";
 
 export async function doSocialLogin(formData) {
-    const action = formData.get('action');
-    await signIn(action, { redirectTo: "/antojos" });
+  const action = formData.get("action");
+  await signIn(action, { redirectTo: "/antojos" });
 }
 
 export async function doLogout() {
@@ -18,8 +18,8 @@ export async function doCredentialLogin(formData) {
       password: formData.get("password"),
       redirect: false,
       // callbackUrl: "/home",
-    })
-    return response
+    });
+    return response;
   } catch (e) {
     return { error: e };
   }
