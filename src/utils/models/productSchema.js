@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema(
   {
@@ -38,11 +38,14 @@ const productSchema = new mongoose.Schema(
       ref: 'Category',
       required: true,
     },   
-    createdAt: {
-      type: Date,
-      default: Date.now
-  }
+    thumbnail: {
+      type: String,
+      required: true,
+    },
   },
+  {
+    timestamps: true,
+  }
 );
 
 export const Product =
