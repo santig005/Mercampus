@@ -17,6 +17,12 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+
+    phoneNumber: {
+        type: Number,
+        required: true
+    },
+
     role:{
         type:String,
         default: 'buyer'
