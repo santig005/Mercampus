@@ -1,31 +1,28 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
+const UserSchema = require('./userSchema');
 
-const Schema = mongoose.Schema;
-
-const sellerSchema = new Schema({
-    // hereda de userSchema
+const SellerSchema = new mongoose.Schema({
     businessName: {
         type: String,
-        required: true,
+        required: true
     },
-    slogan:{
-        type: String,
-        required: false,
+    slogan: {
+        type: String
     },
     description: {
-        type: String,
-        required: false,
+        type: String
     },
     image: {
-        type: String,
-        required: false,
+        type: String
     },
-    linkWhastapp: {
-        type: String,
-        required: false,
+    instagramUser: {
+        type: String
     },
-    linkInstagram: {
-        type: String,
-        required: false,
+    availability: {
+        type: Boolean,
+        default: true
     },
+    ...UserSchema.obj
 });
+
+module.exports = mongoose.model('Seller', SellerSchema);
