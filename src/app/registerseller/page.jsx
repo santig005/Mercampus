@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import Schedule from '@/components/seller/Schedule';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -31,21 +32,27 @@ const RegisterSeller = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const response = await fetch('/api/sellers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-
-    if (response.ok) {
-      router.push('/success');
-    } else {
-      console.error('Error submitting the data');
+  
+    try {
+      const response = await fetch('/api/sellers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      if (response.ok) {
+        router.push('/success');
+      } else {
+        const errorData = await response.json();
+        console.error('Error:', errorData.message);
+      }
+    } catch (error) {
+      console.error('Network Error:', error);
     }
   };
+  
 
   return (
     <div>
@@ -107,6 +114,7 @@ const RegisterSeller = () => {
             onChange={handleChange}
           />
         </div>
+        <Schedule/>
         <button type="submit">Submit</button>
       </form>
     </div>
