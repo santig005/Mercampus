@@ -22,7 +22,16 @@ const SellerSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    ...UserSchema.obj
+    phoneNumber: {
+        type: Number,
+        required: true
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    //...UserSchema.obj
 });
 
 module.exports = mongoose.model('Seller', SellerSchema);
