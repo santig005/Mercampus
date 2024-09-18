@@ -12,7 +12,7 @@ const SellerSchema = new mongoose.Schema({
     description: {
         type: String
     },
-    image: {
+    logo: {
         type: String
     },
     instagramUser: {

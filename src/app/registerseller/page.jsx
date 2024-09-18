@@ -17,9 +17,9 @@ const RegisterSeller = () => {
     businessName: '',
     instagramUser: '',
     description: '',
-    image: '',
+    logo: '',
     slogan: '',
-    availability: true,
+    phoneNumber:''
   });
 
   const handleChange = (e) => {
@@ -43,7 +43,7 @@ const RegisterSeller = () => {
       });
   
       if (response.ok) {
-        router.push('/success');
+        router.push('/antojos');
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);
@@ -52,7 +52,6 @@ const RegisterSeller = () => {
       console.error('Network Error:', error);
     }
   };
-  
 
   return (
     <div>
@@ -69,16 +68,6 @@ const RegisterSeller = () => {
           />
         </div>
         <div>
-          <label>Instagram User</label>
-          <input
-            type="text"
-            name="instagramUser"
-            value={formData.instagramUser}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
           <label>Description</label>
           <input
             type="text"
@@ -88,11 +77,11 @@ const RegisterSeller = () => {
           />
         </div>
         <div>
-          <label>Image</label>
+          <label>Logo</label>
           <input
             type="text"
-            name="image"
-            value={formData.image}
+            name="Logo"
+            value={formData.logo}
             onChange={handleChange}
           />
         </div>
@@ -106,15 +95,25 @@ const RegisterSeller = () => {
           />
         </div>
         <div>
-          <label>Availability</label>
+          <label>Instagram User</label>
           <input
-            type="checkbox"
-            name="availability"
-            checked={formData.availability}
+            type="text"
+            name="instagramUser"
+            value={formData.instagramUser}
             onChange={handleChange}
+            required
           />
         </div>
-        <Schedule/>
+        <div>
+          <label>Phone Number</label>
+          <input
+            type="text"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            required
+          />
+        </div>
         <button type="submit">Submit</button>
       </form>
     </div>
