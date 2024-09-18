@@ -1,38 +1,40 @@
-import { connectDB } from '@/utils/connectDB'; // Tu función para conectar a MongoDB
+import { connectDB } from '@/utils/connectDB'; // Your function to connect to MongoDB
 import { NextResponse } from 'next/server';
-import Seller from '@utils/models/SellerSchema'; // Asegúrate de usar la ruta correcta para el modelo
-import { getSession } from 'next-auth/react'; // Importar getSession desde next-auth/react
+import { Seller } from '@/utils/models/sellerSchema'; // Ensure you use the correct path for the model
+import { getServerSession } from 'next-auth/next'; // Import getServerSession from next-auth
 
-// Método POST para manejar el registro de vendedores
+// POST method to handle seller registration
 export async function POST(req) {
   try {
-    // Conectar a la base de datos
+    // Connect to the database
     await connectDB();
-    // Obtener la sesión actual
-    const session = await getSession({ req });
 
-    // Verificar si el usuario está logueado
+    // Get the current session
+    const session = await getServerSession({ req });
+
+    // Check if the user is logged in
     if (!session) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Obtener el ID del usuario desde la sesión
-    const userId = session.userId;
+    // Get the user ID from the session
+    const userId = session.user.id;
 
-    // Obtener los datos del cuerpo de la solicitud
+    // Get the request body
     const body = await req.json();
+    console.log('Body:', body);
 
-    // Agregar el ID del usuario al cuerpo del vendedor
+    // Add the user ID to the seller body
     body.idUser = userId;
 
-    // Crear un nuevo vendedor usando el modelo Seller
+    // Create a new seller using the Seller model
     const newSeller = new Seller(body);
     await newSeller.save();
 
-    // Devolver una respuesta exitosa
+    // Return a successful response
     return NextResponse.json({ message: 'Seller created successfully' }, { status: 201 });
   } catch (error) {
-    // Manejar errores y devolver una respuesta con el mensaje
+    // Handle errors and return a response with the message
     return NextResponse.json({ message: 'Error creating seller', error: error.message }, { status: 500 });
   }
 }
