@@ -1,25 +1,17 @@
 "use client";
 import { useState } from 'react';
-import Schedule from '@/components/seller/Schedule';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-const RegisterSeller = () => {
-  //const { data: session } = useSession();
+const AddProduct = () => {
   const router = useRouter();
 
-  /*if (!session) {
-  *  router.push('/auth/signin');
-  *  return null;
-  */
-
   const [formData, setFormData] = useState({
-    businessName: '',
-    instagramUser: '',
+    name: '',
+    category: '',
+    price: '',
     description: '',
-    logo: '',
-    slogan: '',
-    phoneNumber:'',
+    images: '',
+    thumbnail: '',
   });
 
   const handleChange = (e) => {
@@ -34,7 +26,7 @@ const RegisterSeller = () => {
     e.preventDefault();
   
     try {
-      const response = await fetch('/api/sellers', {
+      const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +35,7 @@ const RegisterSeller = () => {
       });
   
       if (response.ok) {
-        router.push('/antojos');
+        router.push('/profile'); // Redirigir a la página de perfil de vendedor
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);
@@ -55,71 +47,62 @@ const RegisterSeller = () => {
 
   return (
     <div>
-      <h1>Seller Registration Form</h1>
+      <h1>Add Product Form</h1>
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Business Name</label>
+          <label>Product Name</label>
           <input
             type="text"
-            name="businessName"
-            value={formData.businessName}
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Category</label>
+          <input
+            type="text"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Price</label>
+          <input
+            type="number"
+            name="price"
+            value={formData.price}
             onChange={handleChange}
             required
           />
         </div>
         <div>
           <label>Description</label>
-          <input
-            type="text"
+          <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label>Logo</label>
+          <label>Images (comma-separated URLs)</label>
           <input
             type="text"
-            name="logo"
-            value={formData.logo}
-            onChange={handleChange}
-          />
-        </div>
-        <div>
-          <label>Slogan</label>
-          <input
-            type="text"
-            name="slogan"
-            value={formData.slogan}
-            onChange={handleChange}
-          />
-        </div>
-        <div>
-          <label>Instagram User</label>
-          <input
-            type="text"
-            name="instagramUser"
-            value={formData.instagramUser}
+            name="images"
+            value={formData.images}
             onChange={handleChange}
             required
           />
         </div>
         <div>
-          <label>Phone Number</label>
+          <label>Thumbnail</label>
           <input
             type="text"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label>Logo</label>
-          <input
-            type="text"
-            name="logo"
-            value={formData.logo}
+            name="thumbnail"
+            value={formData.thumbnail}
             onChange={handleChange}
             required
           />
@@ -130,4 +113,4 @@ const RegisterSeller = () => {
   );
 };
 
-export default RegisterSeller;
+export default AddProduct;

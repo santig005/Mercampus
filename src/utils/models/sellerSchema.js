@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const UserSchema = require('./userSchema');
 
-const SellerSchema = new mongoose.Schema({
+const sellerSchema = new mongoose.Schema({
     businessName: {
         type: String,
         required: true
@@ -31,7 +30,6 @@ const SellerSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    //...UserSchema.obj
 });
 
-module.exports = mongoose.model('Seller', SellerSchema);
+module.exports = mongoose.model('Seller', sellerSchema);
