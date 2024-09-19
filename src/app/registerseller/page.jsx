@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 const RegisterSeller = () => {
   //const { data: session } = useSession();
-  //const router = useRouter();
+  const router = useRouter();
 
   /*if (!session) {
   *  router.push('/auth/signin');
@@ -17,7 +17,7 @@ const RegisterSeller = () => {
     businessName: '',
     instagramUser: '',
     description: '',
-    logo: '',
+    logo: 'loguito',
     slogan: '',
     phoneNumber:''
   });
@@ -80,7 +80,7 @@ const RegisterSeller = () => {
           <label>Logo</label>
           <input
             type="text"
-            name="Logo"
+            name="logo"
             value={formData.logo}
             onChange={handleChange}
           />
