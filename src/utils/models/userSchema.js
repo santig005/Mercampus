@@ -1,31 +1,31 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema } from 'mongoose';
 
-
-const userSchema = new Schema({
+const userSchema = new Schema(
+  {
     name: {
-        type: String,
-        required: true,
-        unique: false,
+      type: String,
+      required: true,
+      unique: false,
     },
     email: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
+      unique: true,
     },
-    password: {
-        type: String,
-        required: true
+    role: {
+      type: String,
+      default: 'buyer',
+      enum: ['buyer', 'seller'],
     },
-    role:{
-        type:String,
-        default: 'buyer',
-        enum: ['buyer', 'seller']
+    imageProfile: {
+      type: String,
+      default: '',
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+  },
+  {
+    timestamps: true,
+  }
+);
 
 //para no crear el modelo siempre
-export const User = mongoose.models.User ?? mongoose.model('User', userSchema)
+export const User = mongoose.models.User || mongoose.model('User', userSchema);

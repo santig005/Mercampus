@@ -1,4 +1,4 @@
-import { User } from "@/utils/models/userSchema";
+import { User } from '@/utils/models/userSchema';
 
 export async function createUser(user) {
   try {
