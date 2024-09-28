@@ -1,13 +1,11 @@
 import { connectDB } from '@/utils/connectDB';
-import { NextRequest, NextResponse } from 'next/server'; 
-import { Product } from '@/utils/models/productSchema';
-import { getServerSession } from 'next-auth/next';
-
+import { NextResponse } from 'next/server'; 
+import { Product } from '@/utils/models/productSchema';                                                                                       
 export async function GET() {
-  connectDB();
+  connectDB();  
   const products = await Product.find().sort({ createdAt: -1 }).limit();
   return NextResponse.json(products);
-}
+}                                                 
 
 export async function POST(req) {
   try {
@@ -23,7 +21,8 @@ export async function POST(req) {
     //}
 
     // Obtener el ID del usuario desde la sesión
-    const userId = session.user.id;
+    //const userId = session.user.id;
+    const userId = "66e1f4ef53beafb9e2b1f38b"; // ID de usuario de ejemplo
 
     // Obtener el cuerpo de la solicitud
     const body = await req.json();
@@ -32,6 +31,9 @@ export async function POST(req) {
     body.sellerId = userId; // Asumimos que el usuario es un vendedor y el ID se almacena
 
     // Crear un nuevo producto usando el modelo de Producto
+    console.log("vamos a impirmier");
+    console.log(body);
+    console.log("vamos a imp");
     const newProduct = new Product(body);
     await newProduct.save();
 
