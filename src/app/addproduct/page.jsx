@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchCategories } from '@/utils/fetchCategories';
@@ -14,16 +14,16 @@ const AddProduct = () => {
     thumbnail: '',
   });
 
-  const [categories, setCategories] = useState([]);  // Estado para almacenar las categorías
+  const [categories, setCategories] = useState([]);  // State for storing categories
 
   useEffect(() => {
-    // Llamar a la función fetchCategories del archivo de servicio
+    // Fetch categories when component mounts
     const loadCategories = async () => {
-      const categoriesData = await fetchCategories();  // Espera el resultado
-      setCategories(categoriesData);  // Actualiza el estado con las categorías obtenidas
+      const categoriesData = await fetchCategories();  // Await the result
+      setCategories(categoriesData);  // Update state with fetched categories
     };
 
-    loadCategories();  // Llama a la función cuando el componente se monta
+    loadCategories();  // Call the function on component mount
   }, []);
 
   const handleChange = (e) => {
@@ -37,25 +37,54 @@ const AddProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const data = new FormData();
-    data.append('name', formData.name);
-    data.append('categoryId', formData.categoryId);
-    data.append('price', formData.price);
-    data.append('description', formData.description);
-    data.append('thumbnail', formData.thumbnail);
+    // Image uploading
+    let uploadedImages = [];
+    try {
+      if (formData.images.length > 0) {
+        uploadedImages = await Promise.all(
+          formData.images.map(async (file) => {
+            const imageFormData = new FormData();
+            imageFormData.append('file', file);
+            const response = await fetch('/api/uploadimageProduct', {
+              method: 'POST',
+              body: imageFormData,  // Send the file to the API
+            });
 
-    formData.images.forEach((file) => {
-      data.append('images', file);
-    });
+            if (!response.ok) {
+              throw new Error('Error uploading image');
+            }
+            const data = await response.json();
+            return data.url;  // Assuming your API returns the URL
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('There was a problem uploading the images. Please try again.');
+      return;
+    }
+
+    // Prepare product data
+    const data = {
+      name: formData.name,
+      categoryId: formData.categoryId,
+      price: formData.price,
+      description: formData.description,
+      images: uploadedImages,  // Save uploaded image URLs
+      thumbnail: uploadedImages[0], // This can also be one of the uploaded images
+    };
 
     try {
       const response = await fetch('/api/products', {
         method: 'POST',
-        body: data,
+        headers: {
+          'Content-Type': 'application/json',  // Set content type to JSON
+        },
+        body: JSON.stringify(data),  // Convert data object to JSON string
       });
 
       if (response.ok) {
-        router.push('/sellerprofile');  // Redirigir al perfil del vendedor
+        router.push('/sellerprofile');  // Redirect to seller profile
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);
@@ -67,10 +96,10 @@ const AddProduct = () => {
 
   return (
     <div>
-      <h1>Add Product Form</h1>
-      <form onSubmit={handleSubmit} encType="multipart/form-data">
+      <h1>Agrega aquí tu producto</h1>
+      <form onSubmit={handleSubmit}>
         <div>
-          <label>Product Name</label>
+          <label>Nombre</label>
           <input
             type="text"
             name="name"
@@ -80,14 +109,14 @@ const AddProduct = () => {
           />
         </div>
         <div>
-          <label>Category</label>
+          <label>Categoría</label>
           <select
             name="categoryId"
             value={formData.categoryId}
             onChange={handleChange}
             required
           >
-            <option value="">Select a category</option>
+            <option value="">Selecciona</option>
             {categories.map((category) => (
               <option key={category._id} value={category._id}>
                 {category.name}
@@ -96,7 +125,7 @@ const AddProduct = () => {
           </select>
         </div>
         <div>
-          <label>Price $</label>
+          <label>Precio $</label>
           <input
             type="number"
             name="price"
@@ -106,7 +135,7 @@ const AddProduct = () => {
           />
         </div>
         <div>
-          <label>Description</label>
+          <label>Descripción</label>
           <textarea
             name="description"
             value={formData.description}
@@ -114,7 +143,7 @@ const AddProduct = () => {
           />
         </div>
         <div>
-          <label>Images</label>
+          <label>Imágenes</label>
           <input
             type="file"
             name="images"
@@ -125,17 +154,7 @@ const AddProduct = () => {
             required
           />
         </div>
-        <div>
-          <label>Thumbnail</label>
-          <input
-            type="text"
-            name="thumbnail"
-            value={formData.thumbnail}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <button type="submit">Submit</button>
+        <button type="submit">Subir Producto</button>
       </form>
     </div>
   );
