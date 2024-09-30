@@ -304,12 +304,12 @@ export default function SignUpForm() {
           className={`modal ${errorCode ? 'modal-open' : ''}`}
         >
           <div className='modal-box bg-[#fde6e6] p-3'>
-            <div className='flex justify-center items-center gap-3'>
+            <div className='flex justify-start items-center gap-3 w-full'>
               <div className=''>
                 <FcHighPriority className='text-red-400 text-4xl' />
               </div>
-              <div className=''>
-                <h3 className='font-bold text-lg flex items-center justify-between'>
+              <div className='w-full'>
+                <h3 className='font-bold text-lg flex justify-between'>
                   ¡Atención!
                   <form method='dialog'>
                     {/* if there is a button in form, it will close the modal */}
