@@ -10,6 +10,7 @@ import { TbChevronLeft } from 'react-icons/tb';
 import { Link } from 'next-view-transitions';
 import { FcCheckmark } from 'react-icons/fc';
 import { FcHighPriority } from 'react-icons/fc';
+import { IoClose } from 'react-icons/io5';
 
 export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -155,12 +156,15 @@ export default function SignUpForm() {
 
   // Handle the submission of the verification form
   const handleVerify = async e => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (!isLoaded) return;
-
+    if (code.length < 6) {
+      setErrorCode('Ingresa el código de verificación');
+      return;
+    }
+    // e.preventDefault();
     try {
+      setLoading(true);
+
+      if (!isLoaded) return;
       // Use the code the user provided to attempt verification
       const completeSignUp = await signUp.attemptEmailAddressVerification({
         code,
@@ -182,6 +186,7 @@ export default function SignUpForm() {
       // See https://clerk.com/docs/custom-flows/error-handling
       // for more info on error handling
       console.error('Error:', JSON.stringify(err, null, 2));
+      console.log(err);
       setErrorCode(
         passwordErrorMessages[
           JSON.stringify(err.errors[0].code, null, 2).replace(/['"]+/g, '')
@@ -206,6 +211,11 @@ export default function SignUpForm() {
     if (value && index < 5) {
       codeInputRefs.current[index + 1].focus();
     }
+
+    // Verificar si todos los campos están completos y enviar el código automáticamente
+    // if (newCode.length === 6 && !newCode.includes('')) {
+    //   handleVerify(newCode); // Llama a la función de verificación pasando el código
+    // }
   };
 
   // Manejar el pegado de texto
@@ -251,9 +261,9 @@ export default function SignUpForm() {
               <div className='flex gap-2 justify-center mt-4'>
                 {[0, 1, 2, 3, 4, 5].map(index => (
                   <input
-                    className='text-2xl size-12 p-2 rounded-lg border border-gray-300 text-center'
+                    className='text-2xl size-12 p-2 rounded-lg border border-gray-300 focus-within:outline-0 focus-within:shadow-md focus-within:border-primary text-center'
                     key={index}
-                    type='text'
+                    type='number'
                     maxLength={1}
                     onChange={e => handleInput(e, index)}
                     ref={el => (codeInputRefs.current[index] = el)}
@@ -268,7 +278,8 @@ export default function SignUpForm() {
               <button
                 type='button'
                 className='btn btn-primary mt-4 w-full'
-                onClick={handleVerify}
+                onClick={() => handleVerify(code)} // Aquí también se pasa el código
+                disabled={loading}
               >
                 {loading ? (
                   <span className='loading loading-infinity loading-lg'></span>
@@ -292,17 +303,27 @@ export default function SignUpForm() {
           id='errors'
           className={`modal ${errorCode ? 'modal-open' : ''}`}
         >
-          <div className='modal-box'>
-            <h3 className='font-bold text-lg flex items-center justify-between'>
-              ¡Atención!
-              <form method='dialog'>
-                {/* if there is a button in form, it will close the modal */}
-                <button className='btn' onClick={() => setErrorCode('')}>
-                  Entendido
-                </button>
-              </form>
-            </h3>
-            <p className='py-4'>{errorCode}</p>
+          <div className='modal-box bg-[#fde6e6] p-3'>
+            <div className='flex justify-center items-center gap-3'>
+              <div className=''>
+                <FcHighPriority className='text-red-400 text-4xl' />
+              </div>
+              <div className=''>
+                <h3 className='font-bold text-lg flex items-center justify-between'>
+                  ¡Atención!
+                  <form method='dialog'>
+                    {/* if there is a button in form, it will close the modal */}
+                    <button
+                      className='font-normal'
+                      onClick={() => setErrorCode('')}
+                    >
+                      <IoClose className='text-red-400 text-2xl' />
+                    </button>
+                  </form>
+                </h3>
+                <p className='py-2'>{errorCode}</p>
+              </div>
+            </div>
           </div>
         </dialog>
 
