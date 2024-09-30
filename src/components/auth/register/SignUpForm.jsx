@@ -351,7 +351,7 @@ export default function SignUpForm() {
                   required
                 />
                 <InputFields
-                  title='Email'
+                  title='Correo electrónico'
                   type='email'
                   placeholder='johndoe@gmail.com'
                   value={emailAddress}
@@ -413,7 +413,7 @@ export default function SignUpForm() {
                         }`}
                       >
                         {passwordSecurity.specialCharacter ? '✅' : '❌'} Al
-                        menos un carácter especial
+                        menos un carácter especial (@$!%*?&)
                       </li>
                     </ul>
                   )}
