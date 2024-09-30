@@ -35,8 +35,6 @@ export default function ProductCard({
           <p className='my-card-subtitle'>{owner}</p>
         </div>
       </div>
-
-      
     </div>
   );
 }
