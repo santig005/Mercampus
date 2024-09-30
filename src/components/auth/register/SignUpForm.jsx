@@ -8,6 +8,8 @@ import InputFields from '@/components/auth/register/InputFields';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { TbChevronLeft } from 'react-icons/tb';
 import { Link } from 'next-view-transitions';
+import { FcCheckmark } from 'react-icons/fc';
+import { FcHighPriority } from 'react-icons/fc';
 
 export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -133,12 +135,12 @@ export default function SignUpForm() {
   };
 
   const checkPasswordSecurity = password => {
-    // const passwordRegex = new RegExp(
-    //   /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/
-    // );
-
-    // return passwordRegex.test(password);
     setPassword(password);
+    if (password === confirmPassword) {
+      setIsPasswordMatch({ ...isPasswordMatch, match: true });
+    } else {
+      setIsPasswordMatch({ ...isPasswordMatch, match: false });
+    }
 
     const newSecurity = {
       length: password.length >= 8,
@@ -150,29 +152,6 @@ export default function SignUpForm() {
 
     setPasswordSecurity(newSecurity);
   };
-
-  useEffect(() => {
-    console.log(errorCode);
-  }, [errorCode]);
-
-  // Display the verification form to capture the OTP code
-  // if (verifying) {
-  //   return (
-  //     <>
-  //       <h1>Verify your email</h1>
-  //       <form onSubmit={handleVerify}>
-  //         <label id='code'>Enter your verification code</label>
-  //         <input
-  //           value={code}
-  //           id='code'
-  //           name='code'
-  //           onChange={e => setCode(e.target.value)}
-  //         />
-  //         <button type='submit'>Verify</button>
-  //       </form>
-  //     </>
-  //   );
-  // }
 
   // Handle the submission of the verification form
   const handleVerify = async e => {
@@ -376,44 +355,60 @@ export default function SignUpForm() {
                   {password.length > 0 && (
                     <ul className=''>
                       <li
-                        className={`${
+                        className={`flex items-center gap-1 ${
                           passwordSecurity.length
                             ? 'text-green-400'
                             : 'text-red-400'
                         }`}
                       >
-                        {passwordSecurity.length ? '✅' : '❌'} Al menos 8
-                        caracteres
+                        {passwordSecurity.length ? (
+                          <FcCheckmark />
+                        ) : (
+                          <FcHighPriority />
+                        )}{' '}
+                        Al menos 8 caracteres
                       </li>
                       <li
-                        className={`${
+                        className={`flex items-center gap-1 ${
                           passwordSecurity.number
                             ? 'text-green-400'
                             : 'text-red-400'
                         }`}
                       >
-                        {passwordSecurity.number ? '✅' : '❌'} Al menos un
-                        número
+                        {passwordSecurity.number ? (
+                          <FcCheckmark />
+                        ) : (
+                          <FcHighPriority />
+                        )}{' '}
+                        Al menos un número
                       </li>
                       <li
-                        className={`${
+                        className={`flex items-center gap-1 ${
                           passwordSecurity.uppercase
                             ? 'text-green-400'
                             : 'text-red-400'
                         }`}
                       >
-                        {passwordSecurity.uppercase ? '✅' : '❌'} Al menos una
-                        mayúscula
+                        {passwordSecurity.uppercase ? (
+                          <FcCheckmark />
+                        ) : (
+                          <FcHighPriority />
+                        )}{' '}
+                        Al menos una mayúscula
                       </li>
                       <li
-                        className={`${
+                        className={`flex items-center gap-1 ${
                           passwordSecurity.specialCharacter
                             ? 'text-green-400'
                             : 'text-red-400'
                         }`}
                       >
-                        {passwordSecurity.specialCharacter ? '✅' : '❌'} Al
-                        menos un carácter especial (@$!%*?&)
+                        {passwordSecurity.specialCharacter ? (
+                          <FcCheckmark />
+                        ) : (
+                          <FcHighPriority />
+                        )}{' '}
+                        Al menos un carácter especial (@$!%*?&)
                       </li>
                     </ul>
                   )}

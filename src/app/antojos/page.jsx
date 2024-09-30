@@ -1,5 +1,6 @@
 'use client';
 
+import CreateUser from '@/components/auth/CreateUser';
 import CategoryGrid from '@/components/CategoryGrid';
 import ProductGrid from '@/components/products/ProductGrid';
 import ProductGridFavorite from '@/components/products/ProductGridFavorite';
@@ -15,6 +16,7 @@ const Antojos = () => {
       <div className='flex flex-col gap-4'>
         {session ? (
           <h2 className='title !font-normal px-2'>
+            {/* <CreateUser /> */}
             Hola {session.publicUserData.firstName},{' '}
             <span className='font-semibold'>calma tus antojos</span>
             <SignOutButton redirectUrl='/auth/register' />

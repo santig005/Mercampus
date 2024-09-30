@@ -15,7 +15,7 @@ export default function InputFields({
       <p className='text'>{title}</p>
       <input
         type={type}
-        className={`bg-[#f0f5fa] w-full h-10 px-4 rounded-lg ${className} ${
+        className={`bg-[#f0f5fa] w-full h-10 px-4 rounded-lg input ${className} ${
           secureText ? 'tracking-wide' : ''
         }`}
         placeholder={placeholder}
