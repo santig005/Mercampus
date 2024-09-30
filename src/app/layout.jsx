@@ -27,7 +27,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang='es' className={montserrat.className}>
+      <html lang='es' className={`${montserrat.className} overflow-hidden`}>
         <body className='overflow-hidden bg-primary'>{children}</body>
       </html>
     </ClerkProvider>

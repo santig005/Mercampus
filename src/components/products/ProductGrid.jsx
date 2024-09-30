@@ -41,7 +41,7 @@ export default function ProductGrid() {
   return (
     <div className='' ref={containerRef}>
       <div className='flex flex-col gap-2' ref={parent}>
-        {/* {products.map(product => (
+        {products.map(product => (
           <div className='' key={product._id}>
             <ProductCard
               product={product}
@@ -50,7 +50,7 @@ export default function ProductGrid() {
             />
             <ProductModal product={product} />
           </div>
-        ))} */}
+        ))}
       </div>
 
       {/* Modal */}

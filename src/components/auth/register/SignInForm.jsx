@@ -7,6 +7,7 @@ import GoogleButton from '@/components/auth/GoogleButton';
 import { TbChevronLeft } from 'react-icons/tb';
 import { Link } from 'next-view-transitions';
 import InputFields from '@/components/auth/register/InputFields';
+import MicrosoftButton from '@/components/auth/MicrosoftButton';
 
 export default function SignInForm() {
   const router = useRouter();
@@ -175,8 +176,9 @@ export default function SignInForm() {
               </div>
             </form>
             <div className='divider'>O también puedes</div>
-            <div className='flex flex-col'>
+            <div className='flex flex-col gap-3'>
               <GoogleButton />
+              <MicrosoftButton />
             </div>
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/register' className='text-center text-primary'>

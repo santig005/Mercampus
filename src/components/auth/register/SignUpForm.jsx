@@ -11,6 +11,7 @@ import { Link } from 'next-view-transitions';
 import { FcCheckmark } from 'react-icons/fc';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
+import MicrosoftButton from '@/components/auth/MicrosoftButton';
 
 export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -476,8 +477,9 @@ export default function SignUpForm() {
               </div>
             </form>
             <div className='divider'>O también puedes</div>
-            <div className='flex flex-col'>
+            <div className='flex flex-col gap-3'>
               <GoogleButton />
+              <MicrosoftButton />
             </div>
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/login' className='text-center text-primary'>
