@@ -2,15 +2,24 @@ import mongoose, { Schema } from 'mongoose';
 
 const userSchema = new Schema(
   {
+    clerkId: {
+      type: String,
+      // required: true,
+      unique: true,
+    },
     name: {
       type: String,
       required: true,
       unique: false,
     },
+    lastName: {
+      type: String,
+      unique: false,
+    },
     email: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true,
     },
     role: {
       type: String,
@@ -27,5 +36,4 @@ const userSchema = new Schema(
   }
 );
 
-//para no crear el modelo siempre
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
