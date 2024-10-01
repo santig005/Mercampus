@@ -103,7 +103,7 @@
 }
 
 #register-bg {
-  background-image: url('/public/images/bgRegister.png');
+  background-image: url('../images/bgRegister.png');
   background-size: cover;
   background-position: center;
 }

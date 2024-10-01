@@ -37,16 +37,14 @@ const Antojos = () => {
       </div>
       <div className='flex flex-col gap-2'>
         <h2 className='title px-2'>Tus favoritos</h2>
-        {/* <ProductGrid /> */}
         <ProductGridFavorite />
+        {/* <ProductGrid /> */}
       </div>
       <div className='flex flex-col gap-2'>
         <h2 className='title sticky top-0 z-10 w-full bg-primary px-2'>
           Todos
         </h2>
-        <div className='px-2'>
-          <ProductGrid />
-        </div>
+        <div className='px-2'>{/* <ProductGrid /> */}</div>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSignUp } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import GoogleButton from '@/components/auth/GoogleButton';
+import ProvidersButton from '@/components/auth/ProvidersButton';
 import InputFields from '@/components/auth/register/InputFields';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { TbChevronLeft } from 'react-icons/tb';
@@ -476,8 +476,8 @@ export default function SignUpForm() {
               </div>
             </form>
             <div className='divider'>O también puedes</div>
-            <div className='flex flex-col'>
-              <GoogleButton />
+            <div className='flex flex-col gap-3'>
+              <ProvidersButton />
             </div>
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/login' className='text-center text-primary'>

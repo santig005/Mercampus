@@ -3,10 +3,13 @@
 import React, { useState } from 'react';
 import { useSignIn } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import GoogleButton from '@/components/auth/GoogleButton';
+import ProvidersButton from '@/components/auth/ProvidersButton';
 import { TbChevronLeft } from 'react-icons/tb';
 import { Link } from 'next-view-transitions';
 import InputFields from '@/components/auth/register/InputFields';
+import { FcHighPriority } from 'react-icons/fc';
+import { IoClose } from 'react-icons/io5';
+import ForgotPassword from '@/components/auth/ForgotPassword';
 
 export default function SignInForm() {
   const router = useRouter();
@@ -15,6 +18,7 @@ export default function SignInForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
+  const [forgotPassword, setForgotPassword] = useState(false);
 
   const passwordErrorMessages = {
     form_password_length_too_short:
@@ -40,6 +44,8 @@ export default function SignInForm() {
     session_not_found: 'La sesión no se encuentra registrada',
     session_exists:
       'Ya has iniciado sesión, si quieres cambiar de cuenta, cierra sesión primero',
+    strategy_for_user_invalid:
+      'Al parecer ya has creado una cuenta con google o microsoft, intenta iniciar sesión con el mismo proveedor',
   };
 
   // Handle the submission of the sign-in form
@@ -112,18 +118,34 @@ export default function SignInForm() {
           id='errors'
           className={`modal ${errorCode ? 'modal-open' : ''}`}
         >
-          <div className='modal-box'>
-            <h3 className='font-bold text-lg flex items-center justify-between'>
-              ¡Atención!
-              <form method='dialog'>
-                <button className='btn' onClick={() => setErrorCode('')}>
-                  Entendido
-                </button>
-              </form>
-            </h3>
-            <p className='py-4'>{errorCode}</p>
+          <div className='modal-box bg-[#fde6e6] p-3'>
+            <div className='flex justify-start items-center gap-3 w-full'>
+              <div className=''>
+                <FcHighPriority className='text-red-400 text-4xl' />
+              </div>
+              <div className='w-full'>
+                <h3 className='font-bold text-lg flex justify-between'>
+                  ¡Atención!
+                  <form method='dialog'>
+                    {/* if there is a button in form, it will close the modal */}
+                    <button
+                      className='font-normal'
+                      onClick={() => setErrorCode('')}
+                    >
+                      <IoClose className='text-red-400 text-2xl' />
+                    </button>
+                  </form>
+                </h3>
+                <p className='py-2'>{errorCode}</p>
+              </div>
+            </div>
           </div>
         </dialog>
+
+        {/* Forgot password */}
+        {forgotPassword && (
+          <ForgotPassword setForgotPassword={setForgotPassword} />
+        )}
 
         {/* content */}
         <div
@@ -159,6 +181,7 @@ export default function SignInForm() {
                   onChange={e => setPassword(e.target.value)}
                   required
                 />
+
                 <button
                   type='submit'
                   className='btn btn-primary w-full'
@@ -172,11 +195,23 @@ export default function SignInForm() {
                     'Iniciar Sesión'
                   )}
                 </button>
+                <div className='flex justify-center'>
+                  <button
+                    type='button'
+                    className='text-center text-primary'
+                    onClick={() => setForgotPassword(true)}
+                  >
+                    <span className='text-black'>
+                      ¿Has olvidado tu contraseña?
+                    </span>{' '}
+                    Recupérala
+                  </button>
+                </div>
               </div>
             </form>
-            <div className='divider'>O también puedes</div>
-            <div className='flex flex-col'>
-              <GoogleButton />
+            <div className='divider my-6'>O también puedes</div>
+            <div className='flex flex-col gap-3'>
+              <ProvidersButton />
             </div>
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/register' className='text-center text-primary'>
