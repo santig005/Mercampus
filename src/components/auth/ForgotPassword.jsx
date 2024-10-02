@@ -66,6 +66,8 @@ export default function ForgotPassword({ setForgotPassword }) {
     form_param_format_invalid: 'Ingresa un correo electrónico válido',
     verification_expired:
       'El código de verificación ha expirado, solicita uno nuevo',
+    form_conditional_param_value_disallowed:
+      'No puedes cambiar la contraseña de un correo registrado con Google o Microsoft',
   };
 
   const [isPasswordMatch, setIsPasswordMatch] = useState({
