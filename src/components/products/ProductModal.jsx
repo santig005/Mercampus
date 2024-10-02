@@ -38,8 +38,8 @@ export default function ProductModal({ product }) {
           <div className='relative h-auto w-full'>
             <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>
               <div className='flex flex-col pb-36 gap-2'>
-                <h2 className='card-title px-2'>{product.name}</h2>
-                <div className='flex items-center gap-2 px-2'>
+                <h2 className='card-title px-6'>{product.name}</h2>
+                <div className='flex items-center gap-2 px-6'>
                   <div className='rounded-full size-6 overflow-hidden'>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -53,19 +53,19 @@ export default function ProductModal({ product }) {
                     {product.owner}
                   </p>
                 </div>
-                <p className='text-[14px] text-secondary px-2'>
+                <p className='text-[14px] text-secondary px-6'>
                   Deliciosos cupcakes de oreo, redvelvet y arequipe para que
                   puedas disfrutasr como postre y calmar tu antojo.
                 </p>
                 <div className=''>
-                  <h2 className='card-title px-2'>Horario</h2>
+                  <h2 className='card-title px-6'>Horario</h2>
                   <TableSche />
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className='bg-gray-200 rounded-t-3xl p-2 fixed bottom-0 w-full h-32'>
+        <div className='bg-gray-200 rounded-t-3xl p-2 fixed bottom-0 w-full h-32 px-6'>
           <div className='flex flex-col h-full justify-center'>
             <h3 className='font-bold text-lg'>{product.price}</h3>
             <p className='py-4'>

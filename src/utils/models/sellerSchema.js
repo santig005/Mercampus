@@ -1,31 +1,35 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const Schema = mongoose.Schema;
-
-const sellerSchema = new Schema({
-    // hereda de userSchema
+const sellerSchema = new mongoose.Schema({
     businessName: {
         type: String,
-        required: true,
+        required: true
     },
-    slogan:{
-        type: String,
-        required: false,
+    slogan: {
+        type: String
     },
     description: {
-        type: String,
-        required: false,
+        type: String
     },
-    image: {
-        type: String,
-        required: false,
+    logo: {
+        type: String
     },
-    linkWhastapp: {
-        type: String,
-        required: false,
+    instagramUser: {
+        type: String
     },
-    linkInstagram: {
-        type: String,
-        required: false,
+    availability: {
+        type: Boolean,
+        default: true
+    },
+    phoneNumber: {
+        type: Number,
+        required: true
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
 });
+
+export const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema)

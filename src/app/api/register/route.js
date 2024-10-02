@@ -1,24 +1,19 @@
-import { connectDB } from "@/utils/connectDB";
-import { createUser } from "@/utils/createUser";
-import { NextResponse } from "next/server";
-import User from "@/utils/models/userSchema";
-import bcrypt from "bcryptjs";
+import { connectDB } from '@/utils/connectDB';
+import { NextResponse } from 'next/server';
+import { User } from '@/utils/models/userSchema';
 
-export const POST = async (req) => {
-  const { name, email, password } = await req.json();
+export async function POST(req) {
+  const { name, email } = await req.json();
   await connectDB();
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // await createUser({ name, email, password: hashedPassword });
-
-  const newUser = { name, email, password: hashedPassword };
+  const newUser = { name, email };
+  console.log(newUser);
 
   try {
-    await createUser(newUser);
+    await User.create(newUser);
   } catch (error) {
+    // console.error(error);
     return new NextResponse(error.message, { status: 500 });
   }
 
-  return new NextResponse("Usuario creado", { status: 201 });
-};
+  return new NextResponse('Usuario creado', { status: 201 });
+}

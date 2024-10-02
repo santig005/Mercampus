@@ -15,6 +15,5 @@ const timeSchema = new Schema({
     },
 });
 
-const Time = mongoose.model('Time', timeSchema);
-
-module.exports = Time;
+export const Time =
+  mongoose.models.Time || mongoose.model('Time', timeSchema);

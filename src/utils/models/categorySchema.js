@@ -15,6 +15,7 @@ const categorySchema = new mongoose.Schema({
     }
 });
 
-const Category = mongoose.model('Category', categorySchema);
+// Check if the model already exists in `mongoose.models`, if not, define it
+const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
 
-module.exports = Category;
+export default Category;
