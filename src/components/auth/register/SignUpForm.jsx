@@ -417,7 +417,7 @@ export default function SignUpForm() {
                         )}{' '}
                         Al menos una mayúscula
                       </li>
-                      <li
+                      {/* <li
                         className={`flex items-center gap-1 ${
                           passwordSecurity.specialCharacter
                             ? 'text-green-400'
@@ -430,7 +430,7 @@ export default function SignUpForm() {
                           <FcHighPriority />
                         )}{' '}
                         Al menos un carácter especial (@$!%*?&)
-                      </li>
+                      </li> */}
                     </ul>
                   )}
                 </div>
@@ -461,7 +461,7 @@ export default function SignUpForm() {
                   disabled={
                     !passwordSecurity.length ||
                     !passwordSecurity.number ||
-                    !passwordSecurity.specialCharacter ||
+                    // !passwordSecurity.specialCharacter ||
                     !passwordSecurity.uppercase ||
                     !isPasswordMatch.match ||
                     loading
