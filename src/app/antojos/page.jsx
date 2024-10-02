@@ -50,3 +50,4 @@ const Antojos = () => {
   );
 };
 
+export default Antojos;
