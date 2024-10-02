@@ -1,6 +1,7 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
+const UserSchema = require('./userSchema');
 
-const sellerSchema = new mongoose.Schema({
+const SellerSchema = new mongoose.Schema({
     businessName: {
         type: String,
         required: true
@@ -11,7 +12,7 @@ const sellerSchema = new mongoose.Schema({
     description: {
         type: String
     },
-    logo: {
+    image: {
         type: String
     },
     instagramUser: {
@@ -21,15 +22,7 @@ const sellerSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    phoneNumber: {
-        type: Number,
-        required: true
-    },
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
+    ...UserSchema.obj
 });
 
-export const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema)
+module.exports = mongoose.model('Seller', SellerSchema);
