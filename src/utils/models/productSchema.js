@@ -6,10 +6,6 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    category: {
-      type: String,
-      required: true,
-    },
     price: {
       type: Number,
       required: true,
@@ -27,12 +23,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    images: [
-      {
-      type: String,
-      required: true,
-      },
-    ],
+    images:{
+        type: [String], // URLs de las imágenes almacenadas en Cloudinary
+        required: true,
+    },
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
