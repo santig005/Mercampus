@@ -1,6 +1,12 @@
 import { connectDB } from '@/utils/connectDB';
+<<<<<<< HEAD
 import { NextResponse } from 'next/server'; 
 import { Product } from '@/utils/models/productSchema';                                                                                       
+=======
+import { NextResponse } from 'next/server';
+import { Product } from '@/utils/models/productSchema';
+
+>>>>>>> 2-login
 export async function GET() {
   connectDB();  
   const products = await Product.find().sort({ createdAt: -1 }).limit();

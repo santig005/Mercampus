@@ -11,7 +11,7 @@ export default function Navbar() {
         <TbMenu2 className='icon' />
       </button> */}
       <Hambtn />
-      <Link href='/login' className='btn-icon !bg-slate-700'>
+      <Link href='/auth/register' className='btn-icon !bg-slate-700'>
         <p className=''>
           <TbUserFilled className='icon text-primary' />
         </p>
