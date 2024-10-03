@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const UserSchema = require('./userSchema');
 
-const SellerSchema = new mongoose.Schema({
+const sellerSchema = new mongoose.Schema({
     businessName: {
         type: String,
         required: true
@@ -12,7 +11,7 @@ const SellerSchema = new mongoose.Schema({
     description: {
         type: String
     },
-    image: {
+    logo: {
         type: String
     },
     instagramUser: {
@@ -22,7 +21,16 @@ const SellerSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    ...UserSchema.obj
+    phoneNumber: {
+        type: Number,
+        required: true
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
 });
 
-module.exports = mongoose.model('Seller', SellerSchema);
+const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema);
+export default Seller;

@@ -45,6 +45,7 @@ const AddProduct = () => {
           formData.images.map(async (file) => {
             const imageFormData = new FormData();
             imageFormData.append('file', file);
+            imageFormData.append('folder', 'products');
             const response = await fetch('/api/uploadimageProduct', {
               method: 'POST',
               body: imageFormData,  // Send the file to the API
