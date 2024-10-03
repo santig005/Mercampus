@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const sellerSchema = new mongoose.Schema({
@@ -32,4 +33,5 @@ const sellerSchema = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('Seller', sellerSchema);
+const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema);
+export default Seller;
