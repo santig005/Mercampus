@@ -18,13 +18,10 @@ export default function layout({ children }) {
         <ul className='menu text-base-content min-h-full w-80 p-4 pt-16 bg-primary'>
           {/* Sidebar content here */}
           <li>
-            <a href="/">Antojitos</a>
-          </li>
-          <li>
             <a href="/registerseller">Quiero ser vendedor</a>
           </li>
           <li>
-            <a href="/sellers">Mira los vendedores</a>
+            <a>Sidebar Item 2</a>
           </li>
         </ul>
       </div>
