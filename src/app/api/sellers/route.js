@@ -1,30 +1,24 @@
 import { connectDB } from '@/utils/connectDB'; // Your function to connect to MongoDB
 import { NextResponse } from 'next/server';
-import Seller from '@/utils/models/sellerSchema'; // Asegúrate de usar la ruta correcta para el modelo
-import { getSession } from 'next-auth/react'; // Importar getSession desde next-auth/react
+import {Seller} from '@/utils/models/sellerSchema'; // Asegúrate de usar la ruta correcta para el modelo
+import { currentUser } from '@clerk/nextjs/server';
+import {User} from '@/utils/models/userSchema';
 
+// POST method to handle seller registration
 export async function GET(req) {
   try {
-    // Conectar a la base de datos
+    // Connect to the database
     await connectDB();
-
-    // Obtener la sesión actual (opcional, en caso de querer vincularlo a un usuario específico)
-    /*
-    const session = await getSession({ req });
-
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Obtener el ID del usuario desde la sesión
-    const userId = session.userId;
-    */
-
-    const userId = "66fd5b94db317a9c479dfc10"; // ID del usuario, puedes obtenerlo dinámicamente si usas sesiones
+    const clerkUser = await currentUser();    
+    if(clerkUser){
+    const email=clerkUser.emailAddresses[0].emailAddress
+    let tempUserId="";
+    const user = await User.findOne({ email:email });
+    const userId=user._id;
 
     // Buscar el vendedor por el ID del usuario
-    const seller = await Seller.findOne({ userId });
-
+    const seller = await Seller.findOne({ userId:userId });
+    
     // Si no se encuentra el vendedor, devolver un mensaje de error
     if (!seller) {
       return NextResponse.json({ message: 'Seller not found' }, { status: 404 });
@@ -32,47 +26,51 @@ export async function GET(req) {
 
     // Devolver los datos del vendedor en formato JSON
     return NextResponse.json({ seller }, { status: 200 });
+  }
   } catch (error) {
     // Manejar errores y devolver una respuesta con el mensaje de error
     return NextResponse.json({ message: 'Error fetching seller', error: error.message }, { status: 500 });
   }
 }
 // POST method to handle seller registration
+// POST method to handle seller registration
 export async function POST(req) {
   try {
     // Connect to the database
     await connectDB();
-    // Obtener la sesión actual
-    /*
-    Lo siguiente sirve si guardamos todos los usuarios en base de datos
-    const session = await getSession({ req });
-
-    // Get the current session
-    const session = await getServerSession({ req });
-
-    // Check if the user is logged in
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const user = await currentUser();    
+    if(user){
+    const email=user.emailAddresses[0].emailAddress
+    let tempUserId="";
+    try {
+      const usuario = await User.findOne({ email:email });
+      const userId = usuario._id;
+      tempUserId=userId;
+    } catch (error) {
+      console.log("Error al buscar el usuario:", error.message);
     }
 
-    // Obtener el ID del usuario desde la sesión
-    const userId = session.userId;
-    */
-
-    const userId = "66e1f4ef53beafb9e2b1f38b";
     // Obtener los datos del cuerpo de la solicitud
     const body = await req.json();
-    console.log('Body:', body);
-
-    // Agregar el ID del usuario al cuerpo del vendedor
-    body.userId = userId;
+    try{  
+      body.userId = tempUserId;
+      body.clerkId = user.id;
+    }catch(error){
+      console.log(error);
+    }
 
     // Create a new seller using the Seller model
-    const newSeller = new Seller(body);
-    await newSeller.save();
+    try{
+      const newSeller = new Seller(body); 
+      await newSeller.save();
+    }catch(error){
+      console.log(error);
+    }
+  
 
     // Return a successful response
     return NextResponse.json({ message: 'Seller created successfully' }, { status: 201 });
+  }
   } catch (error) {
     // Handle errors and return a response with the message
     return NextResponse.json({ message: 'Error creating seller', error: error.message }, { status: 500 });
