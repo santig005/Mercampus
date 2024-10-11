@@ -1,8 +1,28 @@
 import React from 'react';
 import { TbChevronLeft, TbHeart, TbBrandWhatsapp } from 'react-icons/tb';
 import Carousel from '@/components/Carousel';
+import TableSche from '@/components/seller/index/table/TableSche';
+import { useEffect, useState } from 'react';
+
 
 export default function SellerModal({ seller }) {
+  const [schedules, setSchedules] = useState([]); // Estado para almacenar los horarios
+  useEffect(() => {
+    // Función para obtener los horarios del vendedor desde la API
+    async function fetchSchedules() {
+      try { 
+        const response = await fetch(`/api/schedules/${seller._id}`);
+        const data = await response.json();
+        console.log(data);
+        setSchedules(data.schedules);
+      } catch (error) {
+        console.error('Error fetching schedules:', error);
+      }
+    }
+    fetchSchedules();
+  }, [seller._id]);
+
+
   return (
     <div>
       <dialog id={seller._id} className='modal modal-bottom'>
@@ -33,6 +53,10 @@ export default function SellerModal({ seller }) {
                   <p className='my-card-subtitle !text-[14px]'>{seller.description}</p>
                 </div>
                 <p className='text-[14px] text-secondary px-6'>{seller.slogan}</p>
+                <div className=''>
+                  <h2 className='card-title px-6'>Horario</h2>
+                  <TableSche schedules={schedules} />
+                </div>
                 <div className=''>
                   <h2 className='card-title px-6'>Contacto</h2>
                   <p className='text-[14px] text-secondary px-6'>{seller.phoneNumber}</p>

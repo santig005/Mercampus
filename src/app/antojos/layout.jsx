@@ -26,6 +26,9 @@ export default function layout({ children }) {
           <li>
             <a href="/sellers">Mira los vendedores</a>
           </li>
+          <li>
+            <a href="/registerseller/schedules">Agregar horarios</a>
+          </li>
         </ul>
       </div>
     </div>
