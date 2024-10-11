@@ -30,6 +30,10 @@ const userSchema = new Schema(
       type: String,
       default: '',
     },
+    clerkId: {
+      type: String,
+      required: true
+  },
   },
   {
     timestamps: true,
