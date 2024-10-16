@@ -1,5 +1,6 @@
 import React from 'react';
-import { TbChevronLeft, TbHeart, TbBrandWhatsapp } from 'react-icons/tb';
+import { TbChevronLeft, TbHeart, TbBrandWhatsapp, TbBrandInstagram } from 'react-icons/tb';
+import { FaInstagram } from 'react-icons/fa';
 import Carousel from '@/components/Carousel';
 import TableSche from '@/components/seller/index/table/TableSche';
 import { useEffect, useState } from 'react';
@@ -66,8 +67,23 @@ export default function SellerModal({ seller }) {
             </div>
           </div>
         </div>
+
+        <div className='bg-gray-200 rounded-t-3xl p-2 fixed bottom-0 w-full h-32 px-6'>
+  <div className='flex flex-col h-full justify-center'>
+    <p className='py-4'>
+      <a href={`https://www.instagram.com/_u/${seller.instagramUser}`} className='btn btn-primary w-full'>
+        Contactar por Instagram <FaInstagram className='icon' />
+      </a>
+    </p>
+  </div>
+</div>
         <div className='bg-gray-200 rounded-t-3xl p-2 fixed bottom-0 w-full h-32 px-6'>
           <div className='flex flex-col h-full justify-center'>
+          <p className='py-4'>
+      <a href={`https://www.instagram.com/_u/${seller.instagramUser}`} className='btn btn-primary w-full'>
+        Seguir en Instagram <TbBrandInstagram className='icon' />
+      </a>
+    </p>
             <p className='py-4'>
               <a href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`} className='btn btn-primary w-full'>
                 Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
