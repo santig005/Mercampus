@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'next-view-transitions';
-
+import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 export default function SellerCard({
   seller: { _id: id, businessName, slogan, description, logo, instagramUser , availability, phoneNumber, userId },
   isClicked,
@@ -33,7 +33,7 @@ export default function SellerCard({
           </div>
           <p className='my-card-subtitle'>{instagramUser }</p>
         </div>
-        <p className='card-phone'>{phoneNumber}</p>
+        <AvailabilityBadge availability={availability}></AvailabilityBadge>
       </div>
     </div>
   );
