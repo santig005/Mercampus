@@ -14,9 +14,9 @@ export default function ForgotPassword({ setForgotPassword }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
   const [successfulCreation, setSuccessfulCreation] = useState(false);
   const [secondFactor, setSecondFactor] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [verification, setVerification] = useState(false);
   const [parent] = useAutoAnimate();
@@ -66,6 +66,9 @@ export default function ForgotPassword({ setForgotPassword }) {
     form_param_format_invalid: 'Ingresa un correo electrónico válido',
     verification_expired:
       'El código de verificación ha expirado, solicita uno nuevo',
+    form_conditional_param_value_disallowed:
+      'No puedes cambiar la contraseña de un correo registrado con Google o Microsoft',
+    form_conditional_param_missing: 'Ha ocurrido un error, intenta de nuevo',
   };
 
   const [isPasswordMatch, setIsPasswordMatch] = useState({
@@ -350,7 +353,7 @@ export default function ForgotPassword({ setForgotPassword }) {
                                 )}{' '}
                                 Al menos una mayúscula
                               </li>
-                              <li
+                              {/* <li
                                 className={`flex items-center gap-1 ${
                                   passwordSecurity.specialCharacter
                                     ? 'text-green-400'
@@ -363,7 +366,7 @@ export default function ForgotPassword({ setForgotPassword }) {
                                   <FcHighPriority />
                                 )}{' '}
                                 Al menos un carácter especial (@$!%*?&)
-                              </li>
+                              </li> */}
                             </ul>
                           )}
                         </div>
@@ -420,7 +423,13 @@ export default function ForgotPassword({ setForgotPassword }) {
                           type='submit'
                           className='btn btn-primary w-full'
                           disabled={
-                            password.length === 0 || code.length < 6 || loading
+                            password.length === 0 ||
+                            code.length < 6 ||
+                            loading ||
+                            !isPasswordMatch.match ||
+                            !passwordSecurity.length ||
+                            !passwordSecurity.number ||
+                            !passwordSecurity.uppercase
                           }
                         >
                           {loading ? (

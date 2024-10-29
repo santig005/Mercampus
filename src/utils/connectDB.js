@@ -1,28 +1,18 @@
-import { connect, connection } from 'mongoose';
- 
+import { connect } from 'mongoose';
+
+const MONGODB_URI = process.env.MONGO_URI;
+
 const connected = {
   isConnected: false,
 };
- 
-export async function connectDB() {
-  if (connected.isConnected) return;
-  try {
-    const db = await connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      serverSelectionTimeoutMS: 5000, // Aumenta el tiempo de espera de la conexión
-    });
-    connected.isConnected = db.connections[0].readyState;
-    console.log(db.connection.db.databaseName);
-  } catch (error) {
-    console.error('Error al conectar con la base de datos:', error);
-    process.exit(1); // Salir del proceso si no se puede conectar con la base de datos
-  }
-}
- 
-connection.on('connected', () => {
-  console.log('Database connected');
-});
 
-connection.on('error', (err) => {
-  console.error('Database connection error:', err);
-});
+export async function connectDB() {
+  if (connected.isConnected) {
+    console.log('Already connected to the database');
+    return;
+  }
+
+  const db = await connect(MONGODB_URI);
+  connected.isConnected = db.connections[0].readyState;
+  console.log('Database connected to:', db.connection.db.databaseName);
+}
