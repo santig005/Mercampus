@@ -12,7 +12,7 @@ export async function POST(req) {
     console.log(user);
     await user.save();
   } catch (error) {
-    console.error("Error detallado al crear el usuario:", error); // Imprime el error completo en la consola
+    console.error("Error detallado al crear el usuario:", error);
 
     return new NextResponse("Error al crear el usuario: " + JSON.stringify(error), { status: 500 });
   }
