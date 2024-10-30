@@ -80,7 +80,7 @@ export default function SignUpForm() {
         }),
       });
     } catch (err) {
-      console.error(err.message);
+      console.error('Error creating user:', err.message);
     }
   };
 

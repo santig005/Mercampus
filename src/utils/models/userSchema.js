@@ -4,7 +4,7 @@ const userSchema = new Schema(
   {
     clerkId: {
       type: String,
-      // required: true,
+      required: false,
       unique: true,
     },
     name: {
@@ -30,10 +30,6 @@ const userSchema = new Schema(
       type: String,
       default: '',
     },
-    clerkId: {
-      type: String,
-      required: true
-  },
   },
   {
     timestamps: true,
