@@ -42,8 +42,9 @@ export async function POST(req) {
     if(user){
     const email=user.emailAddresses[0].emailAddress
     let tempUserId="";
+    var usuario;
     try {
-      const usuario = await User.findOne({ email:email });
+      usuario = await User.findOne({ email:email });
       const userId = usuario._id;
       tempUserId=userId;
     } catch (error) {
@@ -55,6 +56,8 @@ export async function POST(req) {
     try{  
       body.userId = tempUserId;
       body.clerkId = user.id;
+      usuario.role="seller";
+      usuario.save()
     }catch(error){
       console.log(error);
     }
@@ -63,6 +66,7 @@ export async function POST(req) {
     try{
       const newSeller = new Seller(body); 
       await newSeller.save();
+
     }catch(error){
       console.log(error);
     }
