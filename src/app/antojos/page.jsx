@@ -26,7 +26,7 @@ const Antojos = () => {
             Hola, <span className='font-semibold'>calma tus antojos</span>
           </h2>
         )}
-        <div className='px-2 sticky top-0 z-10'>
+        <div className='px-2'>
           <SearchBox />
         </div>
         <div className='flex flex-col gap-4'>
@@ -41,7 +41,7 @@ const Antojos = () => {
         {/* <ProductGrid /> */}
       </div>
       <div className='flex flex-col gap-2'>
-        <h2 className='title sticky top-0 z-10 w-full bg-primary px-2'>
+        <h2 className='title w-full bg-primary px-2'>
           Todos
         </h2>
         <div className='px-2'>
