@@ -22,18 +22,20 @@ export default async function layout({ children }) {
         <ul className='menu text-base-content min-h-full w-80 p-4 pt-16 bg-primary'>
           {/* Sidebar content here */}
           <li>
-            <Link href='/'>Antojitos</Link>
+            <Link href='/antojos/'>Antojitos</Link>
           </li>
           <li>
-            <Link href='/sellers'>Mira los vendedores</Link>
+            <Link href='/antojos/sellers'>Mira los vendedores</Link>
           </li>
           {userId && (
             <>
               <li>
-                <Link href='/registerseller'>Quiero ser vendedor</Link>
+                <Link href='/antojos/registerseller'>Quiero ser vendedor</Link>
               </li>
               <li>
-                <Link href='/registerseller/schedules'>Agregar horarios</Link>
+                <Link href='/antojos/registerseller/schedules'>
+                  Agregar horarios
+                </Link>
               </li>
             </>
           )}
