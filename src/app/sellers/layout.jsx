@@ -1,12 +1,8 @@
 import Hambtn from '@/components/header/Hambtn';
 import Layout from '@/components/layout/Layout';
-import { useSession } from '@clerk/nextjs';
-import Link from 'next/link';
 import React from 'react';
-import { auth } from '@clerk/nextjs/server';
 
-export default async function layout({ children }) {
-  const { userId } = await auth();
+export default function layout({ children }) {
   return (
     <div className='drawer z-40'>
       <input id='my-dibujador' type='checkbox' className='drawer-toggle' />
@@ -22,21 +18,17 @@ export default async function layout({ children }) {
         <ul className='menu text-base-content min-h-full w-80 p-4 pt-16 bg-primary'>
           {/* Sidebar content here */}
           <li>
-            <Link href='/'>Antojitos</Link>
+            <a href="/">Antojitos</a>
           </li>
           <li>
-            <Link href='/sellers'>Mira los vendedores</Link>
+            <a href="/registerseller">Quiero ser vendedor</a>
           </li>
-          {userId && (
-            <>
-              <li>
-                <Link href='/registerseller'>Quiero ser vendedor</Link>
-              </li>
-              <li>
-                <Link href='/registerseller/schedules'>Agregar horarios</Link>
-              </li>
-            </>
-          )}
+          <li>
+            <a href="/sellers">Mira los vendedores</a>
+          </li>
+          <li>
+            <a href="/registerseller/schedules">Agregar horarios</a>
+          </li>
         </ul>
       </div>
     </div>

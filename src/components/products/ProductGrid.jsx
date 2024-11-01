@@ -2,15 +2,18 @@
 
 import ProductCard from '@/components/products/ProductCard';
 import { getItems } from '@/utils/fetchData';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import ProductModal from '@/components/products/ProductModal';
+import { useParams, useSearchParams } from 'next/navigation';
 
 export default function ProductGrid() {
   const [products, setProducts] = useState([]);
   const [parent] = useAutoAnimate();
   const [clickedProductId, setClickedProductId] = useState(null);
   const containerRef = useRef(null);
+  const searchParams = useSearchParams();
+  const q = searchParams.get('q');
 
   const handleProductClick = id => {
     setClickedProductId(id);
@@ -30,13 +33,19 @@ export default function ProductGrid() {
     };
   }, []);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
+  const loadProducts = useCallback(async () => {
+    if (q) {
+      const response = await getItems(q);
+      setProducts(response);
+    } else {
       const response = await getItems();
       setProducts(response);
-    };
-    fetchProducts();
-  }, []);
+    }
+  }, [q]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   return (
     <div className='' ref={containerRef}>

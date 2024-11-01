@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { Link } from 'next-view-transitions';
+import AvailabilityBadge from '../availability/AvailabilityBadge';
 
 export default function ProductCardFavorite({
-  product: { _id: id, name, category, thumbnail },
+  product: { _id: id, name, category, thumbnail,availability },
   isClicked,
   onClick,
 }) {
@@ -24,6 +25,7 @@ export default function ProductCardFavorite({
         <h2 className='truncate my-card-title'>{name}</h2>
         <h4 className='my-card-subtitle text-primary/70'>{category}</h4>
       </div>
+      <AvailabilityBadge availability={availability}></AvailabilityBadge>
     </Link>
   );
 }
