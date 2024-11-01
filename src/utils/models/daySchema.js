@@ -8,6 +8,10 @@ const daySchema = new Schema({
         required: true,
         enum: ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
     },
+    day_number: {
+        type: Number,
+        required: true
+    },
 });
 
 export const Day =

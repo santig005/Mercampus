@@ -16,12 +16,13 @@ export const createOrUpdateUser = async (
         $set: {
           name: first_name,
           lastName: last_name,
-          email: email_addresses[0].email,
+          email: email_addresses[0].email_address,
           imageProfile: image_url,
         },
       },
       { new: true, upsert: true }
     );
+    // console.log(user); revisar los datos q envia
     return user;
   } catch (error) {
     console.log('Error creating user:', error);

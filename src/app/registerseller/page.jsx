@@ -4,6 +4,7 @@ import Schedule from '@/components/seller/Schedule';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
+
 const RegisterSeller = () => {
   //const { data: session } = useSession();
   const router = useRouter();
@@ -32,8 +33,38 @@ const RegisterSeller = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Image uploading
+    let uploadedImages = [];
+    try {
+      if (formData.images.length > 0) {
+        uploadedImages = await Promise.all(
+          formData.images.map(async (file) => {
+            const imageFormData = new FormData();
+            imageFormData.append('file', file);
+            imageFormData.append('folder', 'sellerlogos');
+            const response = await fetch('/api/uploadimageProduct', {
+              method: 'POST',
+              body: imageFormData,  // Send the file to the API
+            });
+
+            if (!response.ok) {
+              throw new Error('Error uploading image');
+            }
+            const data = await response.json();
+            return data.url;  // Assuming your API returns the URL
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('There was a problem uploading the images. Please try again.');
+      return;
+    }
+
+    formData.logo = uploadedImages[0];
   
     try {
+      
       const response = await fetch('/api/sellers', {
         method: 'POST',
         headers: {
@@ -43,7 +74,7 @@ const RegisterSeller = () => {
       });
   
       if (response.ok) {
-        router.push('/antojos');
+        router.push('/registerseller/schedules');
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);
@@ -73,15 +104,6 @@ const RegisterSeller = () => {
             type="text"
             name="description"
             value={formData.description}
-            onChange={handleChange}
-          />
-        </div>
-        <div>
-          <label>Logo</label>
-          <input
-            type="text"
-            name="logo"
-            value={formData.logo}
             onChange={handleChange}
           />
         </div>
@@ -117,10 +139,12 @@ const RegisterSeller = () => {
         <div>
           <label>Logo</label>
           <input
-            type="text"
-            name="logo"
-            value={formData.logo}
-            onChange={handleChange}
+            type="file"
+            name="images"
+            multiple
+            onChange={(e) =>
+              setFormData({ ...formData, images: [...e.target.files] })
+            }
             required
           />
         </div>
