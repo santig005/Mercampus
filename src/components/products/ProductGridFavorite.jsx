@@ -1,15 +1,18 @@
 'use client';
 
 import { getItems } from '@/utils/fetchData';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import ProductCardFavorite from '@/components/products/ProductCardFavorite';
+import { useSearchParams } from 'next/navigation';
 
 export default function ProductGridFavorite() {
   const [products, setProducts] = useState([]);
   const [parent] = useAutoAnimate();
   const [clickedProductId, setClickedProductId] = useState(null);
   const containerRef = useRef(null);
+  const searchParams = useSearchParams();
+  const q = searchParams.get('q');
 
   const handleProductClick = id => {
     setClickedProductId(id);
@@ -28,13 +31,19 @@ export default function ProductGridFavorite() {
     };
   }, []);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
+  const loadProducts = useCallback(async () => {
+    if (q) {
+      const response = await getItems(q);
+      setProducts(response);
+    } else {
       const response = await getItems();
       setProducts(response);
-    };
-    fetchProducts();
-  }, []);
+    }
+  }, [q]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   return (
     <div className='' ref={containerRef}>

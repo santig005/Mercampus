@@ -9,7 +9,7 @@ import { SignOutButton, useSession } from '@clerk/nextjs';
 import React from 'react';
 
 const Antojos = () => {
-  const { isLoaded, session, isSignedIn } = useSession();
+  const { session } = useSession();
   // console.log(session);
   return (
     <div className='flex flex-col gap-4'>
@@ -19,7 +19,6 @@ const Antojos = () => {
             {/* <CreateUser /> */}
             Hola {session.publicUserData.firstName},{' '}
             <span className='font-semibold'>calma tus antojos</span>
-            <SignOutButton redirectUrl='/auth/register' />
           </h2>
         ) : (
           <h2 className='title !font-normal px-2'>
@@ -41,9 +40,7 @@ const Antojos = () => {
         {/* <ProductGrid /> */}
       </div>
       <div className='flex flex-col gap-2'>
-        <h2 className='title w-full bg-primary px-2'>
-          Todos
-        </h2>
+        <h2 className='title w-full bg-primary px-2'>Todos</h2>
         <div className='px-2'>
           <ProductGrid />
         </div>

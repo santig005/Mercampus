@@ -1,7 +1,7 @@
 const URL = process.env.NEXT_PUBLIC_URL;
 
-export async function getItems() {
-  const res = await fetch(`/api/products`, {
+export async function getItems(query = '') {
+  const res = await fetch(`/api/products?q=${query}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
