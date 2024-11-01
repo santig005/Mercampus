@@ -1,0 +1,34 @@
+'use client';
+
+import { getItemById } from '@/utils/fetchData';
+import React, { useEffect, useState } from 'react';
+
+export default function HomeProduct({ id }) {
+  const [product, setProduct] = useState(null);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      const response = await getItemById(id);
+      setProduct(response);
+    };
+    fetchProduct();
+  }, []);
+  return (
+    <div>
+      {product && (
+        <div className=''>
+          <div className='size-72 w-full'>
+            <img
+              src={product.thumbnail}
+              alt={product.name}
+              className='img-full'
+              style={{ viewTransitionName: `${id}image` }}
+            />
+          </div>
+          <p style={{ viewTransitionName: `${id}title` }}>{product.name}</p>
+        </div>
+      )}
+      <p>asd</p>
+    </div>
+  );
+}

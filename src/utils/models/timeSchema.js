@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
 
@@ -13,8 +13,12 @@ const timeSchema = new Schema({
             '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'
         ]
     },
+    time_number: {
+        type: Number,
+        required: true
+    },
 });
 
-const Time = mongoose.model('Time', timeSchema);
-
-module.exports = Time;
+export const Time =
+  mongoose.models.Time || mongoose.model('Time', timeSchema);
+export default Time;

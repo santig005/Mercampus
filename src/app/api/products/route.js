@@ -1,9 +1,83 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import { Product } from '@/app/models/productSchema';
+import { currentUser } from '@clerk/nextjs/server';
+import { Product } from '@/utils/models/productSchema';
+import { User } from '@/utils/models/userSchema';
+import Seller from '@/utils/models/sellerSchema';
 
-export async function GET() {
-  connectDB();
-  const products = await Product.find().sort({ createdAt: -1 }).limit();
+export async function GET(req, res) {
+  await connectDB();
+
+  const product = new URL(req.url).searchParams.get('q') || '';
+  console.log(product);
+
+  let filter = {};
+
+  if (product) {
+    filter = {
+      name: {
+        $regex: product, // Buscar texto completo o parcial en `nombre`
+        $options: 'i', // Insensible a mayúsculas/minúsculas
+      },
+    };
+  }
+
+  const products = await Product.find(filter).sort({ createdAt: -1 }).limit();
   return NextResponse.json(products);
+}
+
+export async function POST(req) {
+  try {
+    // Conectar a la base de datos
+    await connectDB();
+    // Obtener la sesión actual
+    const clerkUser = await currentUser();
+
+    if (clerkUser) {
+      const email = clerkUser.emailAddresses[0].emailAddress;
+      let tempUserId = '';
+      try {
+        const user = await User.findOne({ email: email });
+        const userId = user._id;
+        tempUserId = userId;
+      } catch (error) {
+        console.log('Error al buscar el usuario:', error.message);
+      }
+
+      if (!tempUserId) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
+
+      const seller = await Seller.findOne({ userId: tempUserId });
+      if (!seller) {
+        return NextResponse.json(
+          { mensaje: 'El usuario no es un vendedor' },
+          { status: 403 }
+        );
+      }
+      // Obtener el cuerpo de la solicitud
+      const body = await req.json();
+
+      // Añadir el ID del usuario al objeto de producto
+      body.sellerId = seller._id; // Asumimos que el usuario es un vendedor y el ID se almacena
+
+      // Crear un nuevo producto usando el modelo de Producto
+      console.log('vamos a imprimir');
+      console.log(body);
+      const newProduct = new Product(body);
+      await newProduct.save();
+
+      // Retornar una respuesta exitosa
+      return NextResponse.json(
+        { message: 'Product created successfully' },
+        { status: 201 }
+      );
+    }
+  } catch (error) {
+    // Manejar errores y retornar una respuesta con el mensaje de error
+    return NextResponse.json(
+      { message: 'Error creating product', error: error.message },
+      { status: 500 }
+    );
+  }
 }
