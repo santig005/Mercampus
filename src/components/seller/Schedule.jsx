@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@clerk/nextjs';
-
+const URL=process.env.NEXT_PUBLIC_URL;
 const Schedule = () => {
   const router = useRouter();
   const [daysOfWeek, setDaysOfWeek] = useState([]);
@@ -89,8 +89,9 @@ const Schedule = () => {
     }
 
     console.log({ formSchedules });
+    // te
     try {
-      const response = await fetch('http://10.13.18.144:3000/api/schedules', {
+      const response = await fetch(`${URL}/api/schedules`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

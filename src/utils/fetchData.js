@@ -8,7 +8,6 @@ export async function getItems(query = '') {
     headers: {
       'Content-Type': 'application/json',
     },
-    cache: 'force-cache',
   });
   const data = await res.json();
   return data;
@@ -20,7 +19,6 @@ export async function getItemById(id) {
     headers: {
       'Content-Type': 'application/json',
     },
-    cache: 'force-cache',
   });
   const data = await res.json();
   return data;

@@ -74,7 +74,7 @@ const RegisterSeller = () => {
       });
   
       if (response.ok) {
-        router.push('/registerseller/schedules');
+        router.push('/antojos/registerseller/schedules');
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);

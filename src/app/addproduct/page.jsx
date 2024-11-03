@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchCategories } from '@/utils/fetchCategories';
+import { categories as categos } from '@/utils/fetchCategories';
 
 const AddProduct = () => {
   const router = useRouter();
@@ -12,14 +12,15 @@ const AddProduct = () => {
     description: '',
     images: [],
     thumbnail: '',
+    
   });
 
   const [categories, setCategories] = useState([]);  // State for storing categories
 
   useEffect(() => {
     // Fetch categories when component mounts
-    const loadCategories = async () => {
-      const categoriesData = await fetchCategories();  // Await the result
+    const loadCategories =  () => {
+      const categoriesData = categos;  // Await the result
       setCategories(categoriesData);  // Update state with fetched categories
     };
 
@@ -68,7 +69,7 @@ const AddProduct = () => {
     // Prepare product data
     const data = {
       name: formData.name,
-      categoryId: formData.categoryId,
+      category: formData.categoryId,
       price: formData.price,
       description: formData.description,
       images: uploadedImages,  // Save uploaded image URLs
@@ -85,7 +86,7 @@ const AddProduct = () => {
       });
 
       if (response.ok) {
-        router.push('/sellerprofile');  // Redirect to seller profile
+        router.push('/');  // Redirect to seller profile
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);
@@ -119,8 +120,8 @@ const AddProduct = () => {
           >
             <option value="">Selecciona</option>
             {categories.map((category) => (
-              <option key={category._id} value={category._id}>
-                {category.name}
+              <option key={category} value={category}>
+                {category}
               </option>
             ))}
           </select>
