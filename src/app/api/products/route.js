@@ -9,7 +9,6 @@ export async function GET(req, res) {
   await connectDB();
 
   const product = new URL(req.url).searchParams.get('q') || '';
-  console.log(product);
 
   let filter = {};
 

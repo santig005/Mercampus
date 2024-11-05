@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from '@clerk/nextjs';
+const URL=process.env.NEXT_PUBLIC_URL;
 const Schedule = () => {
   const router = useRouter();
   const [daysOfWeek, setDaysOfWeek] = useState([]);
   const [hours, setHours] = useState([]);
   const [formSchedules, setFormSchedules] = useState([
-    { day: '', startTime: '', endTime: '' }
+    { day: '', startTime: '', endTime: '' },
   ]);
   const [businessName, setBusinessName] = useState('');
+  const { session } = useSession();
+
+  console.log(session?.publicUserData.identifier);
 
   // Fetch days from API
   useEffect(() => {
@@ -43,7 +48,7 @@ const Schedule = () => {
       try {
         const response = await fetch('/api/sellers');
         const data = await response.json();
-        setBusinessName(data.seller.businessName);
+        setBusinessName(data.seller?.businessName);
       } catch (error) {
         console.error('Error fetching business name:', error);
       }
@@ -53,12 +58,15 @@ const Schedule = () => {
 
   // Add a new empty schedule
   const handleAddSchedule = () => {
-    setFormSchedules([...formSchedules, { day: '', startTime: '', endTime: '' }]);
+    setFormSchedules([
+      ...formSchedules,
+      { day: '', startTime: '', endTime: '' },
+    ]);
   };
 
   // Update specific schedule
   const handleScheduleChange = (index, field, value) => {
-    const updatedSchedules = formSchedules.map((schedule, i) => 
+    const updatedSchedules = formSchedules.map((schedule, i) =>
       i === index ? { ...schedule, [field]: value } : schedule
     );
     setFormSchedules(updatedSchedules);
@@ -72,32 +80,34 @@ const Schedule = () => {
         alert('Todos los campos deben estar llenos.');
         return;
       }
-  
+
       // Ensure the endTime is greater than startTime based on their IDs
       if (schedule.endTime <= schedule.startTime) {
         alert('El horario de fin debe ser mayor que el horario de inicio.');
         return;
       }
     }
-  
+
+    console.log({ formSchedules });
+    // te
     try {
-      const response = await fetch('/api/schedules', {
+      const response = await fetch(`${URL}/api/schedules`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(formSchedules),
       });
 
       if (response.ok) {
         router.push('/antojos');
       } else {
-        const errorData = await response.json();
-        console.error('Error:', errorData.message);
+        throw new Error('Error sending data');
       }
     } catch (error) {
       console.error('Error sending data:', error);
     }
   };
-  
 
   return (
     <div>
@@ -105,18 +115,28 @@ const Schedule = () => {
         <h1>Has registrado exitosamente el comercio {businessName}</h1>
       )}
       <h1>Un último paso...</h1>
-      <h2>En la siguiente sección puedes agregar tus horarios, luego puedes agregar, modificar o eliminar los que necesites</h2>
+      <h2>
+        En la siguiente sección puedes agregar tus horarios, luego puedes
+        agregar, modificar o eliminar los que necesites
+      </h2>
       {formSchedules.map((schedule, index) => (
-        <div key={index} style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+        <div
+          key={index}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '10px',
+          }}
+        >
           <div style={{ flex: 1, marginRight: '10px' }}>
             <label htmlFor={`day-${index}`}>Día:</label>
             <select
               id={`day-${index}`}
               value={schedule.day}
-              onChange={(e) => handleScheduleChange(index, 'day', e.target.value)}
+              onChange={e => handleScheduleChange(index, 'day', e.target.value)}
             >
-              <option value="">Selecciona un día</option>
-              {daysOfWeek.map((day) => (
+              <option value=''>Selecciona un día</option>
+              {daysOfWeek.map(day => (
                 <option key={day._id} value={day._id}>
                   {day.name}
                 </option>
@@ -128,10 +148,12 @@ const Schedule = () => {
             <select
               id={`startTime-${index}`}
               value={schedule.startTime}
-              onChange={(e) => handleScheduleChange(index, 'startTime', e.target.value)}
+              onChange={e =>
+                handleScheduleChange(index, 'startTime', e.target.value)
+              }
             >
-              <option value="">Selecciona una hora</option>
-              {hours.map((hour) => (
+              <option value=''>Selecciona una hora</option>
+              {hours.map(hour => (
                 <option key={hour._id} value={hour._id}>
                   {hour.name}
                 </option>
@@ -143,10 +165,12 @@ const Schedule = () => {
             <select
               id={`endTime-${index}`}
               value={schedule.endTime}
-              onChange={(e) => handleScheduleChange(index, 'endTime', e.target.value)}
+              onChange={e =>
+                handleScheduleChange(index, 'endTime', e.target.value)
+              }
             >
-              <option value="">Selecciona una hora</option>
-              {hours.map((hour) => (
+              <option value=''>Selecciona una hora</option>
+              {hours.map(hour => (
                 <option key={hour._id} value={hour._id}>
                   {hour.name}
                 </option>

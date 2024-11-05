@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-
+import { categories } from '../fetchCategories';
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -23,15 +23,15 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    images:{
-        type: [String], // URLs de las imágenes almacenadas en Cloudinary
-        required: true,
-    },
-    categoryId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+    images: {
+      type: [String], // URLs de las imágenes almacenadas en Cloudinary
       required: true,
-    },   
+    },
+    category: {
+      type: String,
+      required: true,
+      enum: categories, // Example categories
+    },
     thumbnail: {
       type: String,
       required: true,
