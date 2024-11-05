@@ -37,6 +37,11 @@ export default async function layout({ children }) {
                   Agregar horarios
                 </Link>
               </li>
+              <li>
+                <Link href='/antojos/addproduct/'>
+                  Agregar productos
+                </Link>
+              </li>
             </>
           )}
         </ul>
