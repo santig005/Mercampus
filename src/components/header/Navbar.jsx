@@ -16,7 +16,6 @@ export default function Navbar() {
       <Hambtn />
       {session ? (
         <>
-          <SignOutButton className='btn'>Cerrar Sesión</SignOutButton>
           <UserButton />
         </>
       ) : (
