@@ -52,8 +52,7 @@ export default function ProductModal({ product }) {
                   </p>
                 </div>
                 <p className='text-[14px] text-secondary px-6'>
-                  Deliciosos cupcakes de oreo, redvelvet y arequipe para que
-                  puedas disfrutasr como postre y calmar tu antojo.
+                  {product.description}
                 </p>
                 <div className=''>
                   <h2 className='card-title px-6'>Horario</h2>

@@ -112,8 +112,6 @@ const AddProduct = () => {
         body: JSON.stringify(data), // Convert data object to JSON string
       });
 
-      console.log('Response:', response);
-
       if (response.ok) {
         router.push('/'); // Redirect to seller profile
       } else {
@@ -165,9 +163,9 @@ const AddProduct = () => {
           id='register-bg'
           className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center`}
         >
-          <Link href='/' className='btn btn-circle absolute top-4 left-4'>
+          {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
-          </Link>
+          </Link> */}
           <h2 className='text-2xl font-semibold text-white'>
             Agrega aquí tu producto
           </h2>
@@ -176,7 +174,7 @@ const AddProduct = () => {
           </p>
         </div>
         <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
