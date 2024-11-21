@@ -16,7 +16,16 @@ export default function Navbar() {
       <Hambtn />
       {session ? (
         <>
-          <UserButton />
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox: {
+                  width: '48px',
+                  height: '48px',
+                },
+              },
+            }}
+          />
         </>
       ) : (
         <Link href='/auth/login' className='btn-icon !bg-slate-700'>

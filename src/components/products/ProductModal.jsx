@@ -30,10 +30,7 @@ export default function ProductModal({ product }) {
               className='img-full'
             />
           </div> */}
-          <Carousel
-            images={[product.thumbnail, product.thumbnail, product.thumbnail]}
-            _id={product._id}
-          />
+          <Carousel images={product.images} _id={product._id} />
 
           <div className='relative h-auto w-full'>
             <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>

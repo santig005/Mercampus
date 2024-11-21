@@ -12,28 +12,30 @@ const AddProduct = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
-    categoryId: '',
+    category: '',
     price: '',
     description: '',
     images: [],
     thumbnail: '',
   });
 
-  const [categories, setCategories] = useState([]);  // State for storing categories
+  const [categories, setCategories] = useState([]); // State for storing categories
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
+  const [price, setPrice] = useState('');
+  const [displayPrice, setDisplayPrice] = useState('');
 
   useEffect(() => {
     // Fetch categories when component mounts
     const loadCategories = async () => {
-      const categoriesData = await fetchCategories();  // Await the result
-      setCategories(categoriesData);  // Update state with fetched categories
+      const categoriesData = await fetchCategories(); // Await the result
+      setCategories(categoriesData); // Update state with fetched categories
     };
 
-    loadCategories();  // Call the function on component mount
+    loadCategories(); // Call the function on component mount
   }, []);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
@@ -41,7 +43,24 @@ const AddProduct = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handlePriceChange = e => {
+    const numericValue = e.target.value.replace(/[^0-9]/g, '');
+    let formattedValue = '';
+
+    if (numericValue !== '') {
+      formattedValue = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        useGrouping: true,
+      }).format(numericValue);
+    }
+
+    setDisplayPrice(formattedValue);
+    setPrice(numericValue);
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
 
@@ -50,20 +69,20 @@ const AddProduct = () => {
     try {
       if (formData.images.length > 0) {
         uploadedImages = await Promise.all(
-          formData.images.map(async (file) => {
+          formData.images.map(async file => {
             const imageFormData = new FormData();
             imageFormData.append('file', file);
             imageFormData.append('folder', 'products');
             const response = await fetch('/api/uploadimageProduct', {
               method: 'POST',
-              body: imageFormData,  // Send the file to the API
+              body: imageFormData, // Send the file to the API
             });
 
             if (!response.ok) {
               throw new Error('Error uploading image');
             }
             const data = await response.json();
-            return data.url;  // Assuming your API returns the URL
+            return data.url; // Assuming your API returns the URL
           })
         );
       }
@@ -77,10 +96,10 @@ const AddProduct = () => {
     // Prepare product data
     const data = {
       name: formData.name,
-      categoryId: formData.categoryId,
-      price: formData.price,
+      category: formData.category,
+      price: price,
       description: formData.description,
-      images: uploadedImages,  // Save uploaded image URLs
+      images: uploadedImages, // Save uploaded image URLs
       thumbnail: uploadedImages[0], // This can also be one of the uploaded images
     };
 
@@ -88,13 +107,15 @@ const AddProduct = () => {
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',  // Set content type to JSON
+          'Content-Type': 'application/json', // Set content type to JSON
         },
-        body: JSON.stringify(data),  // Convert data object to JSON string
+        body: JSON.stringify(data), // Convert data object to JSON string
       });
 
+      console.log('Response:', response);
+
       if (response.ok) {
-        router.push('/sellerprofile');  // Redirect to seller profile
+        router.push('/'); // Redirect to seller profile
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);
@@ -147,7 +168,9 @@ const AddProduct = () => {
           <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
           </Link>
-          <h2 className='text-2xl font-semibold text-white'>Agrega aquí tu producto</h2>
+          <h2 className='text-2xl font-semibold text-white'>
+            Agrega aquí tu producto
+          </h2>
           <p className='text-white'>
             Por favor completa la información del producto
           </p>
@@ -168,8 +191,8 @@ const AddProduct = () => {
                 <div>
                   <label>Categoría</label>
                   <select
-                    name='categoryId'
-                    value={formData.categoryId}
+                    name='category'
+                    value={formData.category}
                     onChange={handleChange}
                     required
                     className='select select-bordered w-full'
@@ -183,11 +206,11 @@ const AddProduct = () => {
                   </select>
                 </div>
                 <InputFields
-                  title='Precio $'
-                  type='number'
+                  title='Precio'
+                  type='text'
                   placeholder='Precio del producto'
-                  value={formData.price}
-                  onChange={handleChange}
+                  value={displayPrice}
+                  onChange={handlePriceChange}
                   name='price'
                   required
                 />
@@ -205,7 +228,7 @@ const AddProduct = () => {
                     type='file'
                     name='images'
                     multiple
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, images: [...e.target.files] })
                     }
                     required

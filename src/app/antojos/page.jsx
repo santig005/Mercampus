@@ -36,8 +36,7 @@ const Antojos = () => {
       </div>
       <div className='flex flex-col gap-2'>
         <h2 className='title px-2'>Tus favoritos</h2>
-        <ProductGridFavorite />
-        {/* <ProductGrid /> */}
+        {/* <ProductGridFavorite /> */}
       </div>
       <div className='flex flex-col gap-2'>
         <h2 className='title w-full bg-primary px-2'>Todos</h2>
