@@ -34,7 +34,7 @@ export default function Carousel({ images, _id: id }) {
     <div className='relative w-full h-80'>
       {/* Indicators */}
       {images.length > 1 && (
-        <div className='absolute bottom-10 left-1/2 transform -translate-x-1/2 flex gap-2 z-10'>
+        <div className='absolute bottom-14 left-1/2 transform -translate-x-1/2 flex gap-2 z-10'>
           {images.map((_, index) => (
             <button
               key={id + '-indicator-' + index}
