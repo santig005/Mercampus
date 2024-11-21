@@ -1,28 +1,41 @@
-"use client";
+'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchCategories } from '@/utils/fetchCategories';
 import { TbChevronLeft } from 'react-icons/tb';
 import { Link } from 'next-view-transitions';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 
-const RegisterSeller = () => {
+const AddProduct = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    businessName: '',
-    instagramUser: '',
+    name: '',
+    category: '',
+    price: '',
     description: '',
-    logo: '',
-    slogan: '',
-    phoneNumber: '',
     images: [],
+    thumbnail: '',
   });
 
+  const [categories, setCategories] = useState([]); // State for storing categories
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
+  const [price, setPrice] = useState('');
+  const [displayPrice, setDisplayPrice] = useState('');
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    // Fetch categories when component mounts
+    const loadCategories = async () => {
+      const categoriesData = await fetchCategories(); // Await the result
+      setCategories(categoriesData); // Update state with fetched categories
+    };
+
+    loadCategories(); // Call the function on component mount
+  }, []);
+
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
@@ -30,7 +43,24 @@ const RegisterSeller = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handlePriceChange = e => {
+    const numericValue = e.target.value.replace(/[^0-9]/g, '');
+    let formattedValue = '';
+
+    if (numericValue !== '') {
+      formattedValue = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        useGrouping: true,
+      }).format(numericValue);
+    }
+
+    setDisplayPrice(formattedValue);
+    setPrice(numericValue);
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
 
@@ -39,20 +69,20 @@ const RegisterSeller = () => {
     try {
       if (formData.images.length > 0) {
         uploadedImages = await Promise.all(
-          formData.images.map(async (file) => {
+          formData.images.map(async file => {
             const imageFormData = new FormData();
             imageFormData.append('file', file);
-            imageFormData.append('folder', 'sellerlogos');
+            imageFormData.append('folder', 'products');
             const response = await fetch('/api/uploadimageProduct', {
               method: 'POST',
-              body: imageFormData,
+              body: imageFormData, // Send the file to the API
             });
 
             if (!response.ok) {
               throw new Error('Error uploading image');
             }
             const data = await response.json();
-            return data.url;
+            return data.url; // Assuming your API returns the URL
           })
         );
       }
@@ -63,19 +93,27 @@ const RegisterSeller = () => {
       return;
     }
 
-    formData.logo = uploadedImages[0];
+    // Prepare product data
+    const data = {
+      name: formData.name,
+      category: formData.category,
+      price: price,
+      description: formData.description,
+      images: uploadedImages, // Save uploaded image URLs
+      thumbnail: uploadedImages[0], // This can also be one of the uploaded images
+    };
 
     try {
-      const response = await fetch('/api/sellers', {
+      const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json', // Set content type to JSON
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data), // Convert data object to JSON string
       });
 
       if (response.ok) {
-        router.push('/antojos/registerseller/schedules');
+        router.push('/'); // Redirect to seller profile
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);
@@ -125,66 +163,70 @@ const RegisterSeller = () => {
           id='register-bg'
           className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center`}
         >
-          <Link href='/' className='btn btn-circle absolute top-4 left-4'>
+          {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
-          </Link>
-          <h2 className='text-2xl font-semibold text-white'>Registra tu Negocio</h2>
-          <p className='text-white'>Por favor completa la información de tu negocio</p>
+          </Link> */}
+          <h2 className='text-2xl font-semibold text-white'>
+            Agrega aquí tu producto
+          </h2>
+          <p className='text-white'>
+            Por favor completa la información del producto
+          </p>
         </div>
         <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
-                  title='Nombre del Negocio'
+                  title='Nombre'
                   type='text'
-                  placeholder='Nombre del negocio'
-                  value={formData.businessName}
+                  placeholder='Nombre del producto'
+                  value={formData.name}
                   onChange={handleChange}
-                  name='businessName'
+                  name='name'
+                  required
+                />
+                <div>
+                  <label>Categoría</label>
+                  <select
+                    name='category'
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                    className='select select-bordered w-full'
+                  >
+                    <option value=''>Selecciona</option>
+                    {categories.map((category, index) => (
+                      <option key={index} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <InputFields
+                  title='Precio'
+                  type='text'
+                  placeholder='Precio del producto'
+                  value={displayPrice}
+                  onChange={handlePriceChange}
+                  name='price'
                   required
                 />
                 <InputFields
                   title='Descripción'
                   type='textarea'
-                  placeholder='Describe tu negocio'
+                  placeholder='Descripción del producto'
                   value={formData.description}
                   onChange={handleChange}
                   name='description'
                 />
-                <InputFields
-                  title='Slogan'
-                  type='text'
-                  placeholder='Slogan del negocio'
-                  value={formData.slogan}
-                  onChange={handleChange}
-                  name='slogan'
-                />
-                <InputFields
-                  title='Usuario de Instagram'
-                  type='text'
-                  placeholder='@usuario'
-                  value={formData.instagramUser}
-                  onChange={handleChange}
-                  name='instagramUser'
-                  required
-                />
-                <InputFields
-                  title='Teléfono'
-                  type='text'
-                  placeholder='Número de teléfono'
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  name='phoneNumber'
-                  required
-                />
                 <div>
-                  <label>Logo</label>
+                  <label>Imágenes</label>
                   <input
                     type='file'
                     name='images'
                     multiple
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, images: [...e.target.files] })
                     }
                     required
@@ -199,7 +241,7 @@ const RegisterSeller = () => {
                   {loading ? (
                     <span className='loading loading-infinity loading-lg'></span>
                   ) : (
-                    'Registrar Negocio'
+                    'Subir Producto'
                   )}
                 </button>
               </div>
@@ -211,4 +253,4 @@ const RegisterSeller = () => {
   );
 };
 
-export default RegisterSeller;
+export default AddProduct;

@@ -14,14 +14,24 @@ export async function GET(req, res) {
 
   if (product) {
     filter = {
-      name: {
-        $regex: product, // Buscar texto completo o parcial en `nombre`
-        $options: 'i', // Insensible a mayúsculas/minúsculas
-      },
+      $or: [
+        {
+          name: {
+            $regex: product, // Buscar texto completo o parcial en `name`
+            $options: 'i', // Insensible a mayúsculas/minúsculas
+          },
+        },
+        {
+          category: {
+            $regex: product, // Buscar texto completo o parcial en `category`
+            $options: 'i', // Insensible a mayúsculas/minúsculas
+          },
+        },
+      ],
     };
   }
 
-  const products = await Product.find(filter).sort({ createdAt: -1 }).limit();
+  const products = await Product.find(filter).sort({ createdAt: -1 });
   return NextResponse.json(products);
 }
 

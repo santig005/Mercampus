@@ -16,8 +16,16 @@ export default function Navbar() {
       <Hambtn />
       {session ? (
         <>
-          <SignOutButton className='btn'>Cerrar Sesión</SignOutButton>
-          <UserButton />
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox: {
+                  width: '48px',
+                  height: '48px',
+                },
+              },
+            }}
+          />
         </>
       ) : (
         <Link href='/auth/login' className='btn-icon !bg-slate-700'>
