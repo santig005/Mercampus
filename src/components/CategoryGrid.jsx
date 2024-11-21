@@ -2,11 +2,19 @@
 
 import React, { useState } from 'react';
 import { categoriesList } from '@/utils/categoriesList';
+import { useRouter } from 'next/navigation';
 
 export default function CategoryGrid() {
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const router = useRouter();
+
   const handleChangeCategory = category => {
     setActiveCategory(category);
+    if (category !== 'Todos') {
+      router.push(`?q=${category}`);
+    } else {
+      router.push('/antojos');
+    }
   };
   return (
     <div className='flex gap-2 overflow-x-auto whitespace-nowrap py-2 hide-scrollbar px-2'>
