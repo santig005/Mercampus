@@ -43,9 +43,9 @@ export default function CarouselModal({ images, initialIndex, id }) {
         {/* Cerrar el modal */}
         <button
           onClick={() => document.getElementById('carousel_modal').close()}
-          className='absolute top-4 right-4 text-white text-2xl z-20'
+          className='absolute top-4 right-4 text-white text-2xl z-20 bg-white rounded-full p-1'
         >
-          <MdCloseFullscreen className='text-primary' />
+          <MdCloseFullscreen className='text-black' />
         </button>
         {/* Indicadores */}
         {images.length > 1 && (
@@ -64,12 +64,12 @@ export default function CarouselModal({ images, initialIndex, id }) {
         {/* Contenedor del carrusel */}
         <div
           ref={carouselRef}
-          className='carousel w-full overflow-x-scroll snap-x snap-mandatory scroll-smooth flex'
+          className='carousel w-full overflow-x-scroll snap-x snap-mandatory scroll-smooth flex max-h-[calc(100dvh-40px)]'
         >
           {images.map((image, index) => (
             <div
               key={id + index}
-              className='carousel-item w-full h-auto max-h-dvh flex-shrink-0 snap-center'
+              className='carousel-item w-full h-auto flex-shrink-0 snap-center'
             >
               <img
                 src={image}

@@ -51,7 +51,7 @@ export default function Carousel({ images, _id: id }) {
         ref={carouselRef}
         className='carousel w-full h-full overflow-x-scroll snap-x snap-mandatory scroll-smooth relative'
       >
-        <div className='flex'>
+        <div className='flex w-full h-full'>
           {images.map((image, index) => (
             <div
               key={id + index}
