@@ -14,6 +14,7 @@ export default function ProductGrid() {
   const containerRef = useRef(null);
   const searchParams = useSearchParams();
   const q = searchParams.get('q');
+  const [loading, setLoading] = useState(false);
 
   const handleProductClick = id => {
     setClickedProductId(id);
@@ -34,6 +35,7 @@ export default function ProductGrid() {
   }, []);
 
   const loadProducts = useCallback(async () => {
+    setLoading(true);
     if (q) {
       const response = await getItems(q);
       setProducts(response);
@@ -41,6 +43,7 @@ export default function ProductGrid() {
       const response = await getItems();
       setProducts(response);
     }
+    setLoading(false);
   }, [q]);
 
   useEffect(() => {
@@ -52,6 +55,11 @@ export default function ProductGrid() {
       {showModal => (
         <div className='' ref={containerRef}>
           <div className='flex flex-col gap-2' ref={parent}>
+            {loading && (
+              <div className='flex justify-center'>
+                <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
+              </div>
+            )}
             {products.map(product => (
               <div
                 className=''

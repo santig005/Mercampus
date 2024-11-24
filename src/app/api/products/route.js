@@ -31,7 +31,11 @@ export async function GET(req, res) {
     };
   }
 
-  const products = await Product.find(filter).sort({ createdAt: -1 });
+  const products = await Product.find(filter).sort({
+    availability: -1,
+    createdAt: -1,
+  });
+
   return NextResponse.json(products);
 }
 

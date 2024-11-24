@@ -20,7 +20,7 @@ export default function ProductCard({
         <h2 className='my-card-title text-pretty'>{name}</h2>
         <h4 className='my-card-subtitle text-primary/70'>{category}</h4>
         <p className='card-price'>{priceFormat(price)}</p>
-        <div className='flex items-center gap-2'>
+        {/* <div className='flex items-center gap-2'>
           <div className='rounded-full size-6 overflow-hidden'>
             <img
               className='img-full'
@@ -29,8 +29,8 @@ export default function ProductCard({
             />
           </div>
           <p className='my-card-subtitle'>{owner}</p>
-        </div>
-        {/* <AvailabilityBadge availability={availability}></AvailabilityBadge> */}
+        </div> */}
+        <AvailabilityBadge availability={availability}></AvailabilityBadge>
       </div>
     </div>
   );
