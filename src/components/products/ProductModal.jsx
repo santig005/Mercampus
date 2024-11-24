@@ -1,12 +1,29 @@
+'use client';
 import Carousel from '@/components/Carousel';
 import TableSche from '@/components/products/table/TableSche';
 import { priceFormat } from '@/utils/utilFn';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { TbChevronLeft } from 'react-icons/tb';
 import { TbHeart } from 'react-icons/tb';
 import { TbBrandWhatsapp } from 'react-icons/tb';
+import { Link } from 'next-view-transitions';
+import { getSellers } from '@/utils/fetchSellers';
 
 export default function ProductModal({ product }) {
+  const [seller, setSeller] = useState(null);
+  useEffect(() => {
+    if (product && product.sellerId) {
+      const fetchProduct = async () => {
+        try {
+          const response = await getSellers(product.sellerId);
+          setSeller(response);
+        } catch (error) {
+          console.error('Error fetching seller:', error);
+        }
+      };
+      fetchProduct();
+    }
+  }, [product]);
   return (
     <div>
       <dialog id='product_modal' className='modal modal-bottom'>
@@ -36,21 +53,23 @@ export default function ProductModal({ product }) {
                 <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>
                   <div className='flex flex-col pb-36 gap-2'>
                     <h2 className='card-title px-6'>{product.name}</h2>
-                    <div className='flex items-center gap-2 px-6'>
+                    <Link
+                      href={`/seller/${product.sellerId}`}
+                      className='flex items-center gap-2 px-6'
+                    >
                       <div className='rounded-full size-6 overflow-hidden'>
                         <img
                           className='img-full'
-                          src={product.thumbnail}
+                          src={seller?.logo}
                           alt={
                             'Imagen del publicador del producto ' + product.name
                           }
                         />
                       </div>
-
                       <p className='my-card-subtitle !text-[14px]'>
-                        {product.owner}
+                        {seller?.businessName}
                       </p>
-                    </div>
+                    </Link>
                     <p className='text-[14px] text-secondary px-6'>
                       {product.description}
                     </p>
