@@ -37,9 +37,10 @@ export default function ProductModal({ product }) {
                       <TbChevronLeft className='icon' />
                     </button>
                   </form>
-                  <button className='btn btn-circle'>
+                  {/* Hide like button */}
+                  {/* <button className='btn btn-circle'>
                     <TbHeart className='icon' />
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
