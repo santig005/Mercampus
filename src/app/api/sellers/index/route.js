@@ -1,6 +1,6 @@
 import { connectDB } from '@/utils/connectDB'; // Your function to connect to MongoDB
 import { NextResponse } from 'next/server';
-import {Seller} from '@/utils/models/sellerSchema';
+import {Seller} from '@/utils/models/sellerschema';
 
 // POST method to handle seller registration
 export async function GET(req) {

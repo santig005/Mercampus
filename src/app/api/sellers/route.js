@@ -1,6 +1,6 @@
 import { connectDB } from '@/utils/connectDB'; // Your function to connect to MongoDB
 import { NextResponse } from 'next/server';
-import {Seller} from '@/utils/models/sellerSchema'; // Asegúrate de usar la ruta correcta para el modelo
+import {Seller} from '@/utils/models/sellerschema'; // Asegúrate de usar la ruta correcta para el modelo
 import { currentUser } from '@clerk/nextjs/server';
 import {User} from '@/utils/models/userSchema';
 

@@ -7,7 +7,7 @@ const [sellers, setSellers] =useState([]);
     useEffect(() => {
         async function fetchSellers() {
             try {
-                const response = await fetch('/api/sellers/index');
+                const response = await fetch('/api/sellers/index2');
                 const data = await response.json();
                 console.log(data.sellers);
                 setSellers(data.sellers);

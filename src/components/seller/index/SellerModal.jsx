@@ -16,10 +16,7 @@ export default function SellerModal({ seller }) {
     // Función para obtener los horarios del vendedor desde la API
     async function fetchSchedules() {
       try {
-        const response = await fetch(`/api/schedules/${seller._id}`);
-        const data = await response.json();
-        console.log(data);
-        setSchedules(data.schedules);
+        setSchedules(seller.schedules);
       } catch (error) {
         console.error('Error fetching schedules:', error);
       }

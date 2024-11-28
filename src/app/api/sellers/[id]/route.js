@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
-import { Seller } from "@/utils/models/sellerSchema";
+import { Seller } from "@/utils/models/sellerschema";
 export async function GET(req, { params }) {
     try {
         connectDB();
