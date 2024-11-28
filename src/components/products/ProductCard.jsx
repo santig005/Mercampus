@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
 import React from 'react';
-import { Link } from 'next-view-transitions';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
 

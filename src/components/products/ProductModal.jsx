@@ -6,12 +6,13 @@ import React, { useEffect, useState } from 'react';
 import { TbChevronLeft } from 'react-icons/tb';
 import { TbHeart } from 'react-icons/tb';
 import { TbBrandWhatsapp } from 'react-icons/tb';
-import { Link } from 'next-view-transitions';
 import TableSche from '@/components/seller/index/table/TableSche';
+import SellerModal from '@/components/seller/index/SellerModal';
 
-export default function ProductModal({ product }) {
+export default function ProductModal({ product, set }) {
   const [seller, setSeller] = useState({});
   const [schedules, setSchedules] = useState([]);
+  const [sellerModalId, setSellerModalId] = useState(null);
 
   useEffect(() => {
     if (product) {
@@ -26,33 +27,38 @@ export default function ProductModal({ product }) {
         {product ? (
           <>
             <div className='modal-box w-full h-dvh rounded-none bg-primary p-0 relative'>
-              <div className='absolute w-full z-10'>
-                <div className='modal-action m-0 justify-between p-2'>
-                  <form method='dialog'>
-                    <button className='btn btn-circle'>
+              <div className='sticky top-0 left-0'>
+                <div className='absolute w-full z-10'>
+                  <div className='modal-action m-0 justify-between p-2'>
+                    <button
+                      className='btn btn-circle'
+                      onClick={() => {
+                        document.getElementById('product_modal').close();
+                      }}
+                    >
                       <TbChevronLeft className='icon' />
                     </button>
-                  </form>
-                  {/* Hide like button */}
-                  {/* <button className='btn btn-circle'>
-                    <TbHeart className='icon' />
-                  </button> */}
+                  </div>
                 </div>
+                <SellerModal seller={sellerModalId} set={setSellerModalId} />
+                <Carousel
+                  key={product._id}
+                  images={product.images}
+                  _id={product._id}
+                />
               </div>
 
-              <Carousel
-                images={product.images}
-                _id={product._id}
-                key={product._id}
-              />
-
-              <div className='relative h-auto w-full'>
-                <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>
+              <div className='relative h-full w-full bg-inherit'>
+                <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
                   <div className='flex flex-col pb-36 gap-2'>
-                    <h2 className='card-title px-6'>{product.name}</h2>
-                    <Link
-                      href={`/seller/${seller._id}`}
-                      className='flex items-center gap-2 px-6'
+                    <h2 className='card-title px-6 mt-2'>{product.name}</h2>
+                    <button
+                      // href={`/seller/${seller._id}`}
+                      className='btn max-w-min flex-nowrap mx-6'
+                      onClick={() => {
+                        setSellerModalId(seller);
+                        document.getElementById('seller_modal').showModal();
+                      }}
                     >
                       <div className='rounded-full size-6 overflow-hidden'>
                         <img
@@ -63,10 +69,10 @@ export default function ProductModal({ product }) {
                           }
                         />
                       </div>
-                      <p className='my-card-subtitle !text-[14px]'>
+                      <p className='my-card-subtitle !text-[14px] text-nowrap'>
                         {seller.businessName}
                       </p>
-                    </Link>
+                    </button>
                     <p className='text-[14px] text-secondary px-6'>
                       {product.description}
                     </p>

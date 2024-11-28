@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Link } from 'next-view-transitions';
 import AvailabilityBadge from '../availability/AvailabilityBadge';
+import Link from 'next/link';
 
 export default function ProductCardFavorite({
-  product: { _id: id, name, category, thumbnail,availability },
+  product: { _id: id, name, category, thumbnail, availability },
   isClicked,
   onClick,
 }) {

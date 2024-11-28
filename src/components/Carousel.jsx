@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import CarouselModal from '@/components/CarouselModal';
@@ -56,9 +57,9 @@ export default function Carousel({ images, _id: id }) {
             <div
               key={id + index}
               className='carousel-item w-full flex-shrink-0 h-80 snap-center'
-              onClick={
-                () => document.getElementById('carousel_modal').showModal() // Abre el modal principal
-              }
+              onClick={() => {
+                document.getElementById('carousel_modal').showModal();
+              }}
             >
               <img
                 src={image}
@@ -72,10 +73,10 @@ export default function Carousel({ images, _id: id }) {
 
       {/* Modal Secundario */}
       <CarouselModal
+        key={id}
         images={images}
-        initialIndex={currentIndex} // Pasa la imagen actual al modal secundario
+        initialIndex={currentIndex}
         id={id}
-        // set={setCurrentIndex}
       />
     </div>
   );
