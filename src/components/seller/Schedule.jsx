@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@clerk/nextjs';
-const URL=process.env.NEXT_PUBLIC_URL;
+const URL = process.env.NEXT_PUBLIC_URL;
+
 const Schedule = () => {
   const router = useRouter();
   const [daysOfWeek, setDaysOfWeek] = useState([]);

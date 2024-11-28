@@ -1,18 +1,18 @@
-  import React from 'react';
+import React from 'react';
 
-  export default function TableSche({ schedules }) {
-    return (
-      <div className='overflow-x-auto hide-scrollbar'>
-        <table className='table table-zebra text-nowrap'>
-          {/* Head */}
-          <thead>
-            <tr>
-              <th>Día</th>
-              <th>Hora de Inicio</th>
-              <th>Hora Final</th>
-            </tr>
-          </thead>
-          <tbody>
+export default function TableSche({ schedules }) {
+  return (
+    <div className='overflow-x-auto hide-scrollbar'>
+      <table className='table table-zebra text-nowrap'>
+        {/* Head */}
+        <thead>
+          <tr>
+            <th>Día</th>
+            <th>Hora de Inicio</th>
+            <th>Hora Final</th>
+          </tr>
+        </thead>
+        <tbody>
           {Array.isArray(schedules) && schedules.length > 0 ? (
             schedules.map((schedule, index) => (
               <tr key={index}>
@@ -23,11 +23,13 @@
             ))
           ) : (
             <tr>
-              <td colSpan="3" className="text-center">No hay horarios disponibles</td>
+              <td colSpan='3' className='text-center'>
+                No hay horarios disponibles
+              </td>
             </tr>
           )}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
+        </tbody>
+      </table>
+    </div>
+  );
+}

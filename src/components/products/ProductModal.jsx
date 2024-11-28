@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 import Carousel from '@/components/Carousel';
 import { priceFormat } from '@/utils/utilFn';
@@ -9,23 +10,16 @@ import { Link } from 'next-view-transitions';
 import TableSche from '@/components/seller/index/table/TableSche';
 
 export default function ProductModal({ product }) {
-  const [seller, setSeller] = useState([]);
-
+  const [seller, setSeller] = useState({});
+  const [schedules, setSchedules] = useState([]);
 
   useEffect(() => {
-    console.log(product);
-    if (product && product.sellerId) {
-      const fetchProduct = async () => {
-        try {
-          setSeller(product.sellerId);
-        } catch (error) {
-          console.error('Error fetching seller:', error);
-        }
-          
-      };
-      fetchProduct();
+    if (product) {
+      setSeller(product.seller);
+      setSchedules(product.schedules);
     }
   }, [product]);
+
   return (
     <div>
       <dialog id='product_modal' className='modal modal-bottom'>
@@ -90,7 +84,11 @@ export default function ProductModal({ product }) {
                   {priceFormat(product.price)}
                 </h3>
                 <p className='py-4'>
-                  <a className='btn btn-primary w-full' target='_blank' href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}>
+                  <a
+                    className='btn btn-primary w-full'
+                    target='_blank'
+                    href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                  >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>
                 </p>

@@ -43,7 +43,6 @@ export default function ProductGrid() {
       const response = await getItems();
       setProducts(response);
     }
-    console.log("los productos ahora son", products);
     setLoading(false);
   }, [q]);
 
@@ -61,21 +60,17 @@ export default function ProductGrid() {
                 <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
               </div>
             )}
-            {products.map(product => (
-              <div
-                className=''
-                key={product._id}
-                onClick={() => showModal(product)}
-              >
-                <ProductCard
-                  product={product}
-                  // isClicked={clickedProductId === product._id}
-                />
-              </div>
-            ))}
+            {products &&
+              products.map(product => (
+                <div
+                  className=''
+                  key={product._id}
+                  onClick={() => showModal(product)}
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))}
           </div>
-
-          {/* Modal */}
         </div>
       )}
     </ProductModalHandler>
