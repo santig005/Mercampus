@@ -16,11 +16,7 @@ export default function ProductModal({ product, set }) {
 
   useEffect(() => {
     if (product) {
-      const newSeller = {
-        ...product.seller,
-        schedules: product.schedules,
-      };
-      setSeller(newSeller);
+      setSeller(product.seller);
       setSchedules(product.schedules);
     }
   }, [product]);
@@ -44,7 +40,7 @@ export default function ProductModal({ product, set }) {
                     </button>
                   </div>
                 </div>
-                <SellerModal seller={seller} set={setSellerModalId} />
+                <SellerModal seller={sellerModalId} set={setSellerModalId} />
                 <Carousel
                   key={product._id}
                   images={product.images}
@@ -60,7 +56,11 @@ export default function ProductModal({ product, set }) {
                       // href={`/seller/${seller._id}`}
                       className='btn max-w-min flex-nowrap mx-6'
                       onClick={() => {
-                        setSellerModalId(product.seller);
+                        const newSeller = {
+                          ...product.seller,
+                          schedules: product.schedules,
+                        };
+                        setSellerModalId(newSeller);
                         document.getElementById('seller_modal').showModal();
                       }}
                     >
