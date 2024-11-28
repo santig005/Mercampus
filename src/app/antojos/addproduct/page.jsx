@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchCategories } from '@/utils/fetchCategories';
-import { TbChevronLeft } from 'react-icons/tb';
-import { Link } from 'next-view-transitions';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';

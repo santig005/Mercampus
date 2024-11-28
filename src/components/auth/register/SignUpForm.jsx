@@ -7,10 +7,10 @@ import ProvidersButton from '@/components/auth/ProvidersButton';
 import InputFields from '@/components/auth/register/InputFields';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { TbChevronLeft } from 'react-icons/tb';
-import { Link } from 'next-view-transitions';
 import { FcCheckmark } from 'react-icons/fc';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
+import Link from 'next/link';
 
 export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();

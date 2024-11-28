@@ -1,11 +1,11 @@
-"use client";
+'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TbChevronLeft } from 'react-icons/tb';
-import { Link } from 'next-view-transitions';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
+import Link from 'next/link';
 
 const RegisterSeller = () => {
   const router = useRouter();
@@ -22,7 +22,7 @@ const RegisterSeller = () => {
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
@@ -30,7 +30,7 @@ const RegisterSeller = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
 
@@ -39,7 +39,7 @@ const RegisterSeller = () => {
     try {
       if (formData.images.length > 0) {
         uploadedImages = await Promise.all(
-          formData.images.map(async (file) => {
+          formData.images.map(async file => {
             const imageFormData = new FormData();
             imageFormData.append('file', file);
             imageFormData.append('folder', 'sellerlogos');
@@ -128,8 +128,12 @@ const RegisterSeller = () => {
           <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
           </Link>
-          <h2 className='text-2xl font-semibold text-white'>Registra tu Negocio</h2>
-          <p className='text-white'>Por favor completa la información de tu negocio</p>
+          <h2 className='text-2xl font-semibold text-white'>
+            Registra tu Negocio
+          </h2>
+          <p className='text-white'>
+            Por favor completa la información de tu negocio
+          </p>
         </div>
         <div className='h-full relative bg-[#393939]'>
           <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
@@ -184,7 +188,7 @@ const RegisterSeller = () => {
                     type='file'
                     name='images'
                     multiple
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, images: [...e.target.files] })
                     }
                     required

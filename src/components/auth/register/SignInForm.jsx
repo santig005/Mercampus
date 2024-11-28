@@ -5,11 +5,11 @@ import { useSignIn } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import ProvidersButton from '@/components/auth/ProvidersButton';
 import { TbChevronLeft } from 'react-icons/tb';
-import { Link } from 'next-view-transitions';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import ForgotPassword from '@/components/auth/ForgotPassword';
+import Link from 'next/link';
 
 export default function SignInForm() {
   const router = useRouter();

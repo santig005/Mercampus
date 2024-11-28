@@ -1,10 +1,9 @@
 'use client';
 
 import { TbUserFilled } from 'react-icons/tb';
-import { Link } from 'next-view-transitions';
 import Hambtn from './Hambtn';
-import { SignOutButton, UserButton, useSession } from '@clerk/nextjs';
-import { IoChatbox } from 'react-icons/io5';
+import { UserButton, useSession } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export default function Navbar() {
   const { session } = useSession();

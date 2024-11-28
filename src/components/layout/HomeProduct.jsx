@@ -22,10 +22,9 @@ export default function HomeProduct({ id }) {
               src={product.thumbnail}
               alt={product.name}
               className='img-full'
-              style={{ viewTransitionName: `${id}image` }}
             />
           </div>
-          <p style={{ viewTransitionName: `${id}title` }}>{product.name}</p>
+          <p>{product.name}</p>
         </div>
       )}
       <p>asd</p>

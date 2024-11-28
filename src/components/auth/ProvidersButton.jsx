@@ -6,64 +6,7 @@ import { useSignIn, useSignUp } from '@clerk/nextjs';
 import { FcGoogle } from 'react-icons/fc';
 import MicrosoftLogo from '@/../public/images/microsoftLogo.svg';
 
-// 'use client';
-
-// import React from 'react';
-// import { useSignIn } from '@clerk/nextjs';
-// import { FcGoogle } from 'react-icons/fc';
-// import MicrosoftLogo from '@/../public/images/microsoftLogo.svg';
-
-// export default function ProvidersButton() {
-//   const url = process.env.NEXT_PUBLIC_URL;
-//   const { isLoaded, signIn } = useSignIn();
-
-//   const signInWith = async strategy => {
-//     try {
-//       return await signIn.authenticateWithRedirect({
-//         strategy,
-//         redirectUrl: `${url}/auth/callback`,
-//         redirectUrlComplete: `${url}/`,
-//       });
-//     } catch (err) {
-//       console.error('Error during Google Sign-In:', err);
-//     }
-//   };
-
-//   const handleSignIn = async provider => {
-//     if (!isLoaded) return; // Espera hasta que Clerk esté listo
-//     try {
-//       await signInWith(provider);
-//     } catch (err) {
-//       console.error(err);
-//     }
-//   };
-
-//   return (
-//     <div className='flex flex-col gap-3'>
-//       <button
-//         type='button'
-//         onClick={() => handleSignIn('oauth_google')}
-//         className='btn w-full disabled:grayscale'
-//         disabled={!isLoaded}
-//       >
-//         <FcGoogle className='icon' />
-//         Iniciar sesión con Google
-//       </button>
-//       <button
-//         type='button'
-//         onClick={() => handleSignIn('oauth_microsoft')}
-//         className='btn w-full disabled:grayscale'
-//         disabled={!isLoaded}
-//       >
-//         <img src={MicrosoftLogo.src} alt='' className='size-6' />
-//         Iniciar sesión con Microsoft
-//       </button>
-//     </div>
-//   );
-// }
-
 export default function ProvidersButton() {
-  const url = process.env.NEXT_PUBLIC_URL;
   const { signIn } = useSignIn();
   const { signUp, setActive, isLoaded } = useSignUp();
 
@@ -78,8 +21,8 @@ export default function ProvidersButton() {
   };
 
   async function handleSignIn(strategy) {
-    if (!signIn || !signUp) return;
-    if (!isLoaded) return; // Espera hasta que Clerk esté listo
+    // if (!signIn || !signUp) return;
+    // if (!isLoaded) return; // Espera hasta que Clerk esté listo
 
     // If the user has an account in your application, but does not yet
     // have an OAuth account connected to it, you can transfer the OAuth
