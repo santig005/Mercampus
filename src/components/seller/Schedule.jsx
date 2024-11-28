@@ -11,9 +11,6 @@ const Schedule = () => {
     { day: '', startTime: '', endTime: '' },
   ]);
   const [businessName, setBusinessName] = useState('');
-  const { session } = useSession();
-
-  console.log(session?.publicUserData.identifier);
 
   // Fetch days from API
   useEffect(() => {

@@ -28,11 +28,6 @@ export async function GET(req, { params }) {
         return a.idDay.day_number - b.idDay.day_number;
       }
     });
-    // const formattedSchedules = schedules.map(schedule => ({
-    // day: schedule.idDay.name,
-    // startTime: schedule.startTime.name,
-    // endTime: schedule.endTime.name,
-    // }));
 
     schedules = schedules.map(schedule => ({
       day: schedule.idDay.name,

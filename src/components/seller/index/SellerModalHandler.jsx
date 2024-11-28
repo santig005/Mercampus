@@ -14,7 +14,7 @@ export default function SellerModalHandler({ children }) {
   return (
     <>
       {children(showModal)}
-      <SellerModal seller={selectedSeller} />
+      <SellerModal seller={selectedSeller} set={setSelectedSeller} />
     </>
   );
 }

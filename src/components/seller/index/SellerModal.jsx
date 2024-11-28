@@ -2,11 +2,9 @@
 import React from 'react';
 import {
   TbChevronLeft,
-  TbHeart,
   TbBrandWhatsapp,
   TbBrandInstagram,
 } from 'react-icons/tb';
-import { FaInstagram } from 'react-icons/fa';
 import Carousel from '@/components/Carousel';
 import TableSche from '@/components/seller/index/table/TableSche';
 import { useEffect, useState } from 'react';
