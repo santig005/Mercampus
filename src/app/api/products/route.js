@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
-import Seller from '@/utils/models/sellerSchema';
+import { Seller } from '@/utils/models/sellerschema';
+import { Schedule } from '@/utils/models/scheduleSchema';
+import { Time } from '@/utils/models/timeSchema';
+import { Day } from '@/utils/models/daySchema';
 
 export async function GET(req, res) {
   await connectDB();
@@ -31,12 +34,59 @@ export async function GET(req, res) {
     };
   }
 
-  const products = await Product.find(filter).sort({
-    availability: -1,
-    createdAt: -1,
+  
+  const products = await Product.find(filter)
+  .sort({ availability: -1, createdAt: -1 })
+  .populate({
+    path: 'sellerId',
+    model: Seller, // Relacionar con el modelo Seller
   });
+  const productsWithSellerInfo = await Promise.all(
+    products.map(async (product) => {
+      // Obtener horarios del vendedor
+      const schedules = await Schedule.find({ sellerId: product.sellerId._id })
+      .populate({
+        path: 'startTime',
+        model: Time,
+      })
+      .populate({
+        path: 'endTime',
+        model: Time,
+      })
+      .populate({
+        path: 'idDay',
+        model: Day,
+      });
+      // Ordenar los horarios
+      schedules.sort((a, b) => {
+        if (a.idDay.day_number === b.idDay.day_number) {
+          return a.startTime.time_number - b.startTime.time_number;
+        } else {
+          return a.idDay.day_number - b.idDay.day_number;
+        }
+      });
 
-  return NextResponse.json(products);
+      // Formatear los horarios
+      const formattedSchedules = schedules.map((schedule) => ({
+        day: schedule.idDay.name,
+        startTime: schedule.startTime.name,
+        endTime: schedule.endTime.name,
+      }));
+
+      // Retornar el producto con la información del vendedor y horarios
+      return {
+        ...product.toObject(), // Convertir el documento de Mongoose a un objeto plano
+        seller: {
+          ...product.sellerId, // Usar directamente los datos del vendedor poblados
+          schedules: formattedSchedules,
+        },
+      };
+    })
+  );
+  console.log("productsWithSellerInfo", productsWithSellerInfo);
+
+  // Responder con los productos, incluyendo la información del vendedor y horarios
+  return NextResponse.json({ products:productsWithSellerInfo }, { status: 200 });
 }
 
 export async function POST(req) {

@@ -9,8 +9,10 @@ export async function getItems(query = '') {
       'Content-Type': 'application/json',
     },
   });
+  console.log("obtuve pro");
   const data = await res.json();
-  return data;
+  console.log(data);
+  return data.products;
 }
 
 export async function getItemById(id) {

@@ -43,6 +43,7 @@ export default function ProductGrid() {
       const response = await getItems();
       setProducts(response);
     }
+    console.log("los productos ahora son", products);
     setLoading(false);
   }, [q]);
 

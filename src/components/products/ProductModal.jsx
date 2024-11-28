@@ -1,25 +1,27 @@
 'use client';
 import Carousel from '@/components/Carousel';
-import TableSche from '@/components/products/table/TableSche';
 import { priceFormat } from '@/utils/utilFn';
 import React, { useEffect, useState } from 'react';
 import { TbChevronLeft } from 'react-icons/tb';
 import { TbHeart } from 'react-icons/tb';
 import { TbBrandWhatsapp } from 'react-icons/tb';
 import { Link } from 'next-view-transitions';
-import { getSellers } from '@/utils/fetchSellers';
+import TableSche from '@/components/seller/index/table/TableSche';
 
 export default function ProductModal({ product }) {
-  const [seller, setSeller] = useState(null);
+  const [seller, setSeller] = useState([]);
+
+
   useEffect(() => {
+    console.log(product);
     if (product && product.sellerId) {
       const fetchProduct = async () => {
         try {
-          const response = await getSellers(product.sellerId);
-          setSeller(response);
+          setSeller(product.sellerId);
         } catch (error) {
           console.error('Error fetching seller:', error);
         }
+          
       };
       fetchProduct();
     }
@@ -55,20 +57,20 @@ export default function ProductModal({ product }) {
                   <div className='flex flex-col pb-36 gap-2'>
                     <h2 className='card-title px-6'>{product.name}</h2>
                     <Link
-                      href={`/seller/${product.sellerId}`}
+                      href={`/seller/${seller._id}`}
                       className='flex items-center gap-2 px-6'
                     >
                       <div className='rounded-full size-6 overflow-hidden'>
                         <img
                           className='img-full'
-                          src={seller?.logo}
+                          src={seller.logo}
                           alt={
                             'Imagen del publicador del producto ' + product.name
                           }
                         />
                       </div>
                       <p className='my-card-subtitle !text-[14px]'>
-                        {seller?.businessName}
+                        {seller.businessName}
                       </p>
                     </Link>
                     <p className='text-[14px] text-secondary px-6'>
@@ -76,7 +78,7 @@ export default function ProductModal({ product }) {
                     </p>
                     <div className=''>
                       <h2 className='card-title px-6'>Horario</h2>
-                      <TableSche />
+                      <TableSche schedules={schedules} />
                     </div>
                   </div>
                 </div>
@@ -88,9 +90,9 @@ export default function ProductModal({ product }) {
                   {priceFormat(product.price)}
                 </h3>
                 <p className='py-4'>
-                  <button className='btn btn-primary w-full'>
+                  <a className='btn btn-primary w-full' target='_blank' href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}>
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
-                  </button>
+                  </a>
                 </p>
               </div>
             </div>

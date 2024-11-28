@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { currentUser } from '@clerk/nextjs/server';
 import { User } from '@/utils/models/userSchema';
-import { Seller } from '@/utils/models/sellerSchema';
+import { Seller } from '@/utils/models/sellerschema';
 
 // POST method to handle seller registration
 export async function POST(req) {
