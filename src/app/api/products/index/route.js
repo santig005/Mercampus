@@ -1,48 +1,32 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
 import { Product } from '@/utils/models/productSchema';
-import { User } from '@/utils/models/userSchema';
 import { Seller } from '@/utils/models/sellerschema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { Time } from '@/utils/models/timeSchema';
 import { Day } from '@/utils/models/daySchema';
 
-export async function GET(req, res) {
-  await connectDB();
+export async function GET(req) {
+  try {
+    // Conectar a la base de datos
+    await connectDB();
 
-  const product = new URL(req.url).searchParams.get('q') || '';
+    // Filtrar productos (puedes personalizar el filtro según tus necesidades)
+    const filter = {}; // Cambia esto si necesitas filtros específicos
+    const products = await Product.find(filter)
+      .sort({ availability: -1, createdAt: -1 })
+      .populate({
+        path: 'sellerId',
+        model: Seller, // Relacionar con el modelo Seller
+      });
 
-  let filter = {};
-
-  if (product) {
-    filter = {
-      $or: [
-        {
-          name: {
-            $regex: product, // Buscar texto completo o parcial en `name`
-            $options: 'i', // Insensible a mayúsculas/minúsculas
-          },
-        },
-        {
-          category: {
-            $regex: product, // Buscar texto completo o parcial en `category`
-            $options: 'i', // Insensible a mayúsculas/minúsculas
-          },
-        },
-      ],
-    };
-  }
-
-  const products = await Product.find(filter).sort({
-    availability: -1,
-    createdAt: -1,
-  });
-
-  const productsAndSchedule = await Promise.all(
-    products.map(async product => {
-      const seller = await Seller.findById(product.sellerId);
-      let schedules = await Schedule.find({ sellerId: seller._id })
+    // Agregar horarios del vendedor a cada producto
+    
+  } catch (error) {
+      const productsWithSellerInfo = await Promise.all(
+      products.map(async (product) => {
+        // Obtener horarios del vendedor
+        const schedules = await Schedule.find({ sellerId: product.sellerId._id })
         .populate({
           path: 'startTime',
           model: Time,
@@ -55,31 +39,42 @@ export async function GET(req, res) {
           path: 'idDay',
           model: Day,
         });
-      schedules.sort((a, b) => {
-        if (a.idDay.day_number === b.idDay.day_number) {
-          return a.startTime.time_number - b.startTime.time_number;
-        } else {
-          return a.idDay.day_number - b.idDay.day_number;
-        }
-      });
 
-      schedules = schedules.map(schedule => ({
-        day: schedule.idDay.name,
-        startTime: schedule.startTime.name,
-        endTime: schedule.endTime.name,
-      }));
+        // Ordenar los horarios
+        schedules.sort((a, b) => {
+          if (a.idDay.day_number === b.idDay.day_number) {
+            return a.startTime.time_number - b.startTime.time_number;
+          } else {
+            return a.idDay.day_number - b.idDay.day_number;
+          }
+        });
 
-      return {
-        ...product.toObject(),
-        seller: seller.toObject(),
-        schedules,
-      };
-    })
-  );
+        // Formatear los horarios
+        const formattedSchedules = schedules.map((schedule) => ({
+          day: schedule.idDay.name,
+          startTime: schedule.startTime.name,
+          endTime: schedule.endTime.name,
+        }));
 
-  // Responder con los productos, incluyendo la información del vendedor y horarios
-  return NextResponse.json(productsAndSchedule);
+        // Retornar el producto con la información del vendedor y horarios
+        return {
+          ...product.toObject(), // Convertir el documento de Mongoose a un objeto plano
+          seller: {
+            ...product.sellerId.toObject(),
+            schedules: formattedSchedules,
+          },
+        };
+      })
+    );
+    console.log("productsWithSellerInfo", productsWithSellerInfo);
+
+    // Responder con los productos, incluyendo la información del vendedor y horarios
+    return NextResponse.json({ products: productsWithSellerInfo }, { status: 200 });
+    console.error('Error fetching products with seller info and schedules:', error);
+    return NextResponse.json({ message: 'Error fetching products', error: error.message }, { status: 500 });
+  }
 }
+
 
 export async function POST(req) {
   try {

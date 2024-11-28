@@ -14,6 +14,10 @@
   @apply bg-[#f8f8f8];
 }
 
+.bg-primary-orange {
+  @apply bg-[#FF7622];
+}
+
 .icon {
   @apply size-8;
 }

@@ -1,10 +1,9 @@
 'use client';
 
 import { TbUserFilled } from 'react-icons/tb';
-import { Link } from 'next-view-transitions';
 import Hambtn from './Hambtn';
-import { SignOutButton, UserButton, useSession } from '@clerk/nextjs';
-import { IoChatbox } from 'react-icons/io5';
+import { UserButton, useSession } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export default function Navbar() {
   const { session } = useSession();
@@ -16,7 +15,16 @@ export default function Navbar() {
       <Hambtn />
       {session ? (
         <>
-          <UserButton />
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox: {
+                  width: '48px',
+                  height: '48px',
+                },
+              },
+            }}
+          />
         </>
       ) : (
         <Link href='/auth/login' className='btn-icon !bg-slate-700'>
