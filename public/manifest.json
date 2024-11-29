@@ -1,0 +1,27 @@
+{
+  "theme_color": "#ff7622",
+  "background_color": "#f8f8f8",
+  "icons": [
+    {
+      "purpose": "maskable",
+      "sizes": "512x512",
+      "src": "icon512_maskable.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "512x512",
+      "src": "icon512_rounded.png",
+      "type": "image/png"
+    }
+  ],
+  "orientation": "any",
+  "display": "standalone",
+  "dir": "auto",
+  "lang": "es-CO",
+  "name": "Mercampus",
+  "short_name": "Mercampus",
+  "start_url": "https://mercampus.vercel.app/antojos",
+  "scope": "https://mercampus.vercel.app/",
+  "description": "Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos"
+}

@@ -13,9 +13,33 @@ const montserrat = Montserrat({
 });
 
 export const metadata = {
-  title: 'Mercampus',
+  title: {
+    template: '%s - Mercampus',
+    default: 'Mercampus',
+  },
   description:
-    'Calma tus antojos con Mercampus, un marketplace para universitarios donde podrás comprar y vender tus artículos.',
+    'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
+  metadataBase: new URL('https://mercampus.vercel.app/'),
+  icons: {
+    favicon: '/favicon.ico',
+  },
+  manifest: '/manifest.json',
+  openGraph: {
+    type: 'website',
+    title: 'Mercampus',
+    description:
+      'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
+    siteName: 'Mercampus',
+    url: 'https://mercampus.vercel.app/',
+    images: [
+      {
+        url: '/icon512_maskable.png',
+        width: 78,
+        height: 82,
+        alt: 'Mercampus',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }) {
