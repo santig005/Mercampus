@@ -23,10 +23,10 @@ export default function ProductModal({ product, set }) {
 
   return (
     <div>
-      <dialog id='product_modal' className='modal modal-bottom'>
+      <dialog id='product_modal' className='modal modal-top h-screen'>
         {product ? (
           <>
-            <div className='modal-box w-full h-dvh rounded-none bg-primary p-0 relative'>
+            <div className='modal-box w-full h-full rounded-none bg-primary p-0 relative'>
               <div className='sticky top-0 left-0'>
                 <div className='absolute w-full z-10'>
                   <div className='modal-action m-0 justify-between p-2'>
@@ -64,7 +64,7 @@ export default function ProductModal({ product, set }) {
                         document.getElementById('seller_modal').showModal();
                       }}
                     >
-                      <div className='rounded-full size-6 overflow-hidden'>
+                      <div className='rounded-full size-10 overflow-hidden'>
                         <img
                           className='img-full'
                           src={seller.logo}
