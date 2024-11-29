@@ -29,10 +29,10 @@ export default function SellerModal({ seller, set }) {
 
   return (
     <>
-      <dialog id={`seller_modal`} className='modal modal-bottom'>
+      <dialog id={`seller_modal`} className='modal modal-top h-screen'>
         {seller && (
           <>
-            <div className='modal-box w-full h-dvh rounded-none bg-primary p-0 relative'>
+            <div className='modal-box w-full h-full rounded-none bg-primary p-0 relative'>
               <div className='sticky top-0 left-0'>
                 <div className='absolute w-full z-10'>
                   <div className='modal-action m-0 justify-between p-2'>
@@ -58,7 +58,7 @@ export default function SellerModal({ seller, set }) {
                     <h2 className='card-title px-6 pt-2'>
                       {seller.businessName}
                     </h2>
-                    <div className='flex items-center gap-2 px-6'>
+                    {/* <div className='flex items-center gap-2 px-6'>
                       <div className='rounded-full size-6 overflow-hidden'>
                         <img
                           className='img-full'
@@ -69,12 +69,12 @@ export default function SellerModal({ seller, set }) {
                       <p className='my-card-subtitle !text-[14px]'>
                         {seller.businessName}
                       </p>
-                    </div>
-                    <p className='text-[14px] text-secondary px-6'>
-                      {seller.description}
+                    </div> */}
+                    <p className='text-[14px] text-secondary px-6 italic'>
+                      &quot;{seller.slogan}&quot;
                     </p>
-                    <p className='text-[14px] text-secondary px-6'>
-                      {seller.slogan}
+                    <p className='text-[16px] text-black px-6'>
+                      {seller.description}
                     </p>
                     <div className=''>
                       <h2 className='card-title px-6'>Horario</h2>
