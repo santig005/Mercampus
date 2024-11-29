@@ -1,5 +1,6 @@
 import { Montserrat } from 'next/font/google';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
+import { esMX } from '@clerk/localizations';
 
 import React from 'react';
 import '../../public/css/main.css';
@@ -44,7 +45,13 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      localization={esMX}
+      appearance={{
+        // baseTheme: dark,
+        variables: { colorPrimary: '#FF7622' },
+      }}
+    >
       <html lang='es' className={`${montserrat.className} overflow-hidden`}>
         <body className='overflow-hidden bg-primary'>
           <AnimationProvider>
