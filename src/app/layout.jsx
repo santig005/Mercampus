@@ -14,7 +14,7 @@ const montserrat = Montserrat({
 
 export const metadata = {
   title: {
-    template: '%s - Mercampus',
+    template: 'Mercampus',
     default: 'Mercampus',
   },
   description:
