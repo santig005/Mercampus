@@ -9,29 +9,30 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/localizations": "^3.7.0",
-    "@clerk/nextjs": "^5.6.0",
-    "@formkit/auto-animate": "^0.8.2",
-    "bcryptjs": "^2.4.3",
-    "cloudinary": "^2.5.0",
-    "mongoose": "^8.6.1",
-    "next": "14.2.8",
-    "next-auth": "^5.0.0-beta.20",
-    "next-cloudinary": "^6.13.0",
-    "react": "^18",
-    "react-dom": "^18",
-    "react-dropzone": "^14.2.3",
-    "react-icons": "^5.3.0",
-    "sharp": "^0.33.5",
-    "svix": "^1.36.0"
+    "@clerk/localizations": "3.7.0",
+    "@clerk/nextjs": "5.6.0",
+    "@formkit/auto-animate": "0.8.2",
+    "bcryptjs": "2.4.3",
+    "cloudinary": "2.5.0",
+    "mongoose": "8.6.1",
+    "next": "14.2.23",
+    "next-auth": "5.0.0-beta.20",
+    "next-cloudinary": "6.13.0",
+    "react": "18",
+    "react-dom": "18",
+    "react-dropzone": "14.2.3",
+    "react-icons": "5.3.0",
+    "sharp": "0.33.5",
+    "svix": "1.36.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.5",
-    "daisyui": "^4.12.10",
-    "eslint": "^8",
+    "@types/node": "22.10.6",
+    "@types/react": "18.3.18",
+    "daisyui": "4.12.10",
+    "eslint": "8",
     "eslint-config-next": "14.2.8",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.7.3"
+    "postcss": "8",
+    "tailwindcss": "3.4.1",
+    "typescript": "5.7.3"
   }
 }

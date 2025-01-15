@@ -5,12 +5,11 @@ export default function CreateUser() {
   const { session } = useSession();
   const [user, setUser] = useState({
     name:
-      session.publicUserData.firstName + ' ' + session.publicUserData.lastName,
-    email: session.publicUserData.identifier,
+      session?.publicUserData.firstName +
+      ' ' +
+      session?.publicUserData.lastName,
+    email: session?.publicUserData.identifier,
   });
-  // useEffect(() => {
-  //   console.log(user);
-  // }, []);
 
   const createUserDb = async () => {
     try {
@@ -25,13 +24,18 @@ export default function CreateUser() {
         }),
       });
     } catch (err) {
-      console.error(err.message);
+      if (err instanceof Error) {
+        console.error(err.message);
+      } else {
+        console.error(err);
+      }
     }
   };
 
   useEffect(() => {
     createUserDb();
   }, []);
+
   return (
     <div>
       <p>Create user</p>
