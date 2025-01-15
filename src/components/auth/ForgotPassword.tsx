@@ -266,6 +266,7 @@ export default function ForgotPassword({ setForgotPassword }) {
                           value={email}
                           onChange={e => setEmail(e.target.value)}
                           placeholder='johndoe@gmail.com'
+                          className=''
                           required
                         />
                         <p className='py-2 text-xs'>
@@ -408,7 +409,9 @@ export default function ForgotPassword({ setForgotPassword }) {
                                 type='number'
                                 maxLength={1}
                                 onChange={e => handleInput(e, index)}
-                                ref={el => (codeInputRefs.current[index] = el)}
+                                ref={el => {
+                                  codeInputRefs.current[index] = el;
+                                }}
                                 value={code[index] || ''} // Mostrar el valor actual en cada input
                                 // autoFocus={index === 0}
                                 onKeyDown={e => handleKeyDown(e, index)}
