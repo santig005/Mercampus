@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchCategories } from '@/utils/fetchCategories';
+import { Categories } from '@/utils/resources/categories';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
@@ -26,7 +26,7 @@ const AddProduct = () => {
   useEffect(() => {
     // Fetch categories when component mounts
     const loadCategories = async () => {
-      const categoriesData = await fetchCategories(); // Await the result
+      const categoriesData = await Categories(); // Await the result
       setCategories(categoriesData); // Update state with fetched categories
     };
 

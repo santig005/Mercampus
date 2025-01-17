@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { categories } from '../fetchCategories';
+import { categories } from '@utils/resources/categories';
 const productSchema = new mongoose.Schema(
   {
     name: {
