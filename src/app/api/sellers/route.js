@@ -1,38 +1,25 @@
-import { connectDB } from '@/utils/connectDB'; // Your function to connect to MongoDB
+import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import {Seller} from '@/utils/models/sellerschema'; // Asegúrate de usar la ruta correcta para el modelo
-import { currentUser } from '@clerk/nextjs/server';
-import {User} from '@/utils/models/userSchema';
+import { Seller } from '@/utils/models/sellerschema';
 
-// POST method to handle seller registration
 export async function GET(req) {
   try {
-    // Connect to the database
+    // Connnect to the database
     await connectDB();
-    const clerkUser = await currentUser();    
-    if(clerkUser){
-    const email=clerkUser.emailAddresses[0].emailAddress
-    let tempUserId="";
-    const user = await User.findOne({ email:email });
-    const userId=user._id;
 
-    // Buscar el vendedor por el ID del usuario
-    const seller = await Seller.findOne({ userId:userId });
-    
-    // Si no se encuentra el vendedor, devolver un mensaje de error
-    if (!seller) {
-      return NextResponse.json({ message: 'Seller not found' }, { status: 404 });
+    // Get all sellers
+    const sellers = await Seller.find();
+    if (!sellers || sellers.length === 0) {
+      return NextResponse.json({ message: 'Sellers not found' }, { status: 404 });
     }
 
-    // Devolver los datos del vendedor en formato JSON
-    return NextResponse.json({ seller }, { status: 200 });
-  }
+    return NextResponse.json({ sellers: sellers }, { status: 200 });
   } catch (error) {
-    // Manejar errores y devolver una respuesta con el mensaje de error
-    return NextResponse.json({ message: 'Error fetching seller', error: error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error fetching sellers', error: error.message }, { status: 500 });
   }
 }
-// POST method to handle seller registration
+
+
 // POST method to handle seller registration
 export async function POST(req) {
   try {
