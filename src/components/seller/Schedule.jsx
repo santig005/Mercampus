@@ -69,7 +69,6 @@ const Schedule = () => {
   const handlePrintSchedules = async () => {
     if (validateSchedules()) {
       setErrorBanner(null); // Clear error banner if validation passes
-      console.log(schedules);
       try {
         const response = await fetch('/api/schedules', {
           method: 'POST',

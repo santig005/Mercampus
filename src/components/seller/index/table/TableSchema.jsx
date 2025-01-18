@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function TableSche({ schedules }) {
+export default function TableSchema({ schedules }) {
   return (
     <div className='overflow-x-auto hide-scrollbar'>
       <table className='table table-zebra text-nowrap'>

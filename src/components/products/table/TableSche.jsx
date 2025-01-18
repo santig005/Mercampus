@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function TableSche() {
+export default function TableSchema() {
   return (
     <div className='overflow-x-auto hide-scrollbar'>
       <table className='table table-zebra text-nowrap'>

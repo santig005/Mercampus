@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { TbChevronLeft } from 'react-icons/tb';
 import { TbHeart } from 'react-icons/tb';
 import { TbBrandWhatsapp } from 'react-icons/tb';
-import TableSche from '@/components/seller/index/table/TableSche';
+import TableSchema from '@/components/seller/index/table/TableSchema';
 import SellerModal from '@/components/seller/index/SellerModal';
 
 export default function ProductModal({ product, set }) {
@@ -16,8 +16,6 @@ export default function ProductModal({ product, set }) {
 
   useEffect(() => {
     if (product && product.sellerId) {
-      console.log(" el producto es ", product);
-      console.log(product);
       setSeller(product.sellerId);
       setSchedules(product.schedules);
     }
@@ -58,7 +56,6 @@ export default function ProductModal({ product, set }) {
                       // href={`/seller/${seller._id}`}
                       className='btn max-w-min flex-nowrap mx-6'
                       onClick={() => {
-                        console.log(" el producto es ", product);
                         const newSeller = {
                           ...product.sellerId,
                           schedules: product.schedules,
@@ -85,7 +82,7 @@ export default function ProductModal({ product, set }) {
                     </p>
                     <div className=''>
                       <h2 className='card-title px-6'>Horario</h2>
-                      {schedules && <TableSche schedules={schedules} />}
+                      {schedules && <TableSchema schedules={schedules} />}
                     </div>
                   </div>
                 </div>

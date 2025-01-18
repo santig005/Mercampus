@@ -6,7 +6,7 @@ import {
   TbBrandInstagram,
 } from 'react-icons/tb';
 import Carousel from '@/components/Carousel';
-import TableSche from '@/components/seller/index/table/TableSche';
+import TableSchema from '@/components/seller/index/table/TableSchema';
 import { useEffect, useState } from 'react';
 
 export default function SellerModal({ seller, set }) {
@@ -58,18 +58,6 @@ export default function SellerModal({ seller, set }) {
                     <h2 className='card-title px-6 pt-2'>
                       {seller.businessName}
                     </h2>
-                    {/* <div className='flex items-center gap-2 px-6'>
-                      <div className='rounded-full size-6 overflow-hidden'>
-                        <img
-                          className='img-full'
-                          src={seller.logo}
-                          alt={`Logo del vendedor ${seller.businessName}`}
-                        />
-                      </div>
-                      <p className='my-card-subtitle !text-[14px]'>
-                        {seller.businessName}
-                      </p>
-                    </div> */}
                     <p className='text-[14px] text-secondary px-6 italic'>
                       &quot;{seller.slogan}&quot;
                     </p>
@@ -78,7 +66,7 @@ export default function SellerModal({ seller, set }) {
                     </p>
                     <div className=''>
                       <h2 className='card-title px-6'>Horario</h2>
-                      <TableSche schedules={schedules} />
+                      <TableSchema schedules={schedules} />
                     </div>
                     <div className=''>
                       <h2 className='card-title px-6'>Contacto</h2>
