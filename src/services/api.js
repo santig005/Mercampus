@@ -1,7 +1,7 @@
 'use server';
 
 // src/services/api.js
-const API_BASE_URL = process.env.NEXT_PUBLIC_URL+'api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_URL+'/api';
 
 export const fetchAPI = async (endpoint, options = {}) => {
   try {
