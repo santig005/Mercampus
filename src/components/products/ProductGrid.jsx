@@ -1,11 +1,12 @@
 'use client';
 
+import { getProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
-import { getItems } from '@/utils/fetchData';
+import ProductModalHandler from '@/components/products/ProductModalHandler';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useSearchParams } from 'next/navigation';
-import ProductModalHandler from '@/components/products/ProductModalHandler';
+
 
 export default function ProductGrid() {
   const [products, setProducts] = useState([]);
@@ -37,10 +38,10 @@ export default function ProductGrid() {
   const loadProducts = useCallback(async () => {
     setLoading(true);
     if (q) {
-      const response = await getItems(q);
+      const response = await getProducts(q);
       setProducts(response);
     } else {
-      const response = await getItems();
+      const response = await getProducts();
       setProducts(response);
     }
     setLoading(false);

@@ -1,6 +1,8 @@
+import { getSellers } from '@/services/sellerService';
 import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';
 import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
+
 
 export default function SellerGrid() {
   const [sellers, setSellers] = useState([]);
@@ -8,8 +10,7 @@ export default function SellerGrid() {
   useEffect(() => {
     async function fetchSellers() {
       try {
-        const response = await fetch('/api/sellers/index2');
-        const data = await response.json();
+        const data = await getSellers();
         setSellers(data.sellers);
       } catch (error) {
         console.error('Error fetching sellers:', error);

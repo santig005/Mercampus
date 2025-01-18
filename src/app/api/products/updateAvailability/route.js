@@ -1,8 +1,6 @@
 import { connectDB } from "@/utils/connectDB";
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { Product } from '@/utils/models/productSchema';
-import { Day } from '@/utils/models/daySchema';
-import {Time} from '@/utils/models/timeSchema';
 
 const getCurrentTimeString = () => {
     const now = new Date();

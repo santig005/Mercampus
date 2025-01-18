@@ -1,5 +1,6 @@
-import React from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import React from 'react';
+
 export default function SellerCard({
   seller: {
     _id: id,

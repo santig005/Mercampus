@@ -1,9 +1,8 @@
 'use client';
 
-import { getItems } from '@/utils/fetchData';
+import ProductCardFavorite from '@/components/products/ProductCardFavorite';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import ProductCardFavorite from '@/components/products/ProductCardFavorite';
 import { useSearchParams } from 'next/navigation';
 
 export default function ProductGridFavorite() {

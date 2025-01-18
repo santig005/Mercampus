@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { TbChevronLeft } from 'react-icons/tb';
 import { TbHeart } from 'react-icons/tb';
 import { TbBrandWhatsapp } from 'react-icons/tb';
-import TableSche from '@/components/seller/index/table/TableSche';
+import TableSchema from '@/components/seller/index/table/TableSchema';
 import SellerModal from '@/components/seller/index/SellerModal';
 
 export default function ProductModal({ product, set }) {
@@ -15,8 +15,8 @@ export default function ProductModal({ product, set }) {
   const [sellerModalId, setSellerModalId] = useState(null);
 
   useEffect(() => {
-    if (product) {
-      setSeller(product.seller);
+    if (product && product.sellerId) {
+      setSeller(product.sellerId);
       setSchedules(product.schedules);
     }
   }, [product]);
@@ -57,7 +57,7 @@ export default function ProductModal({ product, set }) {
                       className='btn max-w-min flex-nowrap mx-6'
                       onClick={() => {
                         const newSeller = {
-                          ...product.seller,
+                          ...product.sellerId,
                           schedules: product.schedules,
                         };
                         setSellerModalId(newSeller);
@@ -69,7 +69,7 @@ export default function ProductModal({ product, set }) {
                           className='img-full'
                           src={seller.logo}
                           alt={
-                            'Imagen del publicador del producto ' + product.name
+                            'Imagen del publicador del producto '
                           }
                         />
                       </div>
@@ -82,7 +82,7 @@ export default function ProductModal({ product, set }) {
                     </p>
                     <div className=''>
                       <h2 className='card-title px-6'>Horario</h2>
-                      {schedules && <TableSche schedules={schedules} />}
+                      {schedules && <TableSchema schedules={schedules} />}
                     </div>
                   </div>
                 </div>
@@ -97,7 +97,8 @@ export default function ProductModal({ product, set }) {
                   <a
                     className='btn btn-primary w-full'
                     target='_blank'
-                    href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                    href={`https://wa.me/+57${encodeURIComponent(seller?.phoneNumber || '')}?text=${encodeURIComponent(`Hola ${seller?.businessName || 'estimado vendedor'}, te vi en Mercampus. Estoy interesado en el producto ${product.name}. Podrías decirme dónde te encuentras?`)}`}
+  aria-label={`Contactar a ${seller?.businessName || 'el vendedor'} por WhatsApp`}
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>

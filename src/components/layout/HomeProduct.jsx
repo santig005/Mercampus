@@ -1,6 +1,6 @@
 'use client';
 
-import { getItemById } from '@/utils/fetchData';
+import { getProductById } from '@/services/productService';
 import React, { useEffect, useState } from 'react';
 
 export default function HomeProduct({ id }) {
@@ -8,7 +8,7 @@ export default function HomeProduct({ id }) {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      const response = await getItemById(id);
+      const response = await getProductById(id);
       setProduct(response);
     };
     fetchProduct();

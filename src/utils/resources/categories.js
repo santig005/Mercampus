@@ -7,6 +7,6 @@ export const categories = [
   'Dulces',
 ];
 
-export const fetchCategories = async () => {
+export const Categories = async () => {
   return categories;
 };

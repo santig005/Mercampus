@@ -3,27 +3,23 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 
-
 const scheduleSchema = new Schema({
     sellerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Seller',
         required: true
     },
     startTime: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Time',
+        type: String,
         required: true
     },
     endTime: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Time',
+        type: String,
         required: true
     },
-    idDay: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Day',
-        required: true
+    day: {
+        type: Number,
+        required: true,
     }
 });
 
