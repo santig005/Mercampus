@@ -16,7 +16,7 @@ export default function ProductModal({ product, set }) {
 
   useEffect(() => {
     if (product) {
-      setSeller(product.seller);
+      setSeller(product.sellerId);
       setSchedules(product.schedules);
     }
   }, [product]);
@@ -57,7 +57,7 @@ export default function ProductModal({ product, set }) {
                       className='btn max-w-min flex-nowrap mx-6'
                       onClick={() => {
                         const newSeller = {
-                          ...product.seller,
+                          ...product.sellerId,
                           schedules: product.schedules,
                         };
                         setSellerModalId(newSeller);
@@ -69,7 +69,7 @@ export default function ProductModal({ product, set }) {
                           className='img-full'
                           src={seller.logo}
                           alt={
-                            'Imagen del publicador del producto ' + product.name
+                            'Imagen del publicador del producto '
                           }
                         />
                       </div>
@@ -97,7 +97,8 @@ export default function ProductModal({ product, set }) {
                   <a
                     className='btn btn-primary w-full'
                     target='_blank'
-                    href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                    href={`https://wa.me/+57${encodeURIComponent(seller?.phoneNumber || '')}?text=${encodeURIComponent(`Hola ${seller?.businessName || 'estimado vendedor'}, te vi en Mercampus. Estoy interesado en el producto ${product.name}. Podrías decirme dónde te encuentras?`)}`}
+  aria-label={`Contactar a ${seller?.businessName || 'el vendedor'} por WhatsApp`}
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>

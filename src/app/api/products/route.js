@@ -5,8 +5,6 @@ import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 import { Seller } from '@/utils/models/sellerschema';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Time } from '@/utils/models/timeSchema';
-import { Day } from '@/utils/models/daySchema';
 
 export async function GET(req, res) {
   await connectDB();
@@ -20,14 +18,14 @@ export async function GET(req, res) {
       $or: [
         {
           name: {
-            $regex: product, // Buscar texto completo o parcial en `name`
-            $options: 'i', // Insensible a mayúsculas/minúsculas
+            $regex: product, // Search for full or partial text in `name`
+            $options: 'i', // Not sensitive to uppercase/lowercase
           },
         },
         {
           category: {
-            $regex: product, // Buscar texto completo o parcial en `category`
-            $options: 'i', // Insensible a mayúsculas/minúsculas
+            $regex: product, // Search for full or partial text in `category`
+            $options: 'i', // Not sensitive to uppercase/lowercase
           },
         },
       ],
@@ -37,48 +35,13 @@ export async function GET(req, res) {
   const products = await Product.find(filter).sort({
     availability: -1,
     createdAt: -1,
+  }).populate({
+    path: 'sellerId', // Campo relacionado a poblar
+    model: "Seller", // Modelo al que pertenece el campo
   });
 
-  const productsAndSchedule = await Promise.all(
-    products.map(async product => {
-      const seller = await Seller.findById(product.sellerId);
-      let schedules = await Schedule.find({ sellerId: seller._id })
-        .populate({
-          path: 'startTime',
-          model: Time,
-        })
-        .populate({
-          path: 'endTime',
-          model: Time,
-        })
-        .populate({
-          path: 'idDay',
-          model: Day,
-        });
-      schedules.sort((a, b) => {
-        if (a.idDay.day_number === b.idDay.day_number) {
-          return a.startTime.time_number - b.startTime.time_number;
-        } else {
-          return a.idDay.day_number - b.idDay.day_number;
-        }
-      });
-
-      schedules = schedules.map(schedule => ({
-        day: schedule.idDay.name,
-        startTime: schedule.startTime.name,
-        endTime: schedule.endTime.name,
-      }));
-
-      return {
-        ...product.toObject(),
-        seller: seller.toObject(),
-        schedules,
-      };
-    })
-  );
-
-  // Responder con los productos, incluyendo la información del vendedor y horarios
-  return NextResponse.json(productsAndSchedule);
+  // Return a JSON response with the products
+  return NextResponse.json(products);
 }
 
 export async function POST(req) {
