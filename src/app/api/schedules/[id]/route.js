@@ -1,45 +1,31 @@
 import { connectDB } from '@/utils/connectDB';
+import { daysES } from '@/utils/resources/days';
 import { NextResponse } from 'next/server';
 import { Schedule } from '@/utils/models/scheduleSchema';
 
 
-export async function GET(req, { params }) {
-  try {
-    await connectDB(); // Asegúrate de que la conexión a la base de datos se realice correctamente
-    // Encuentra los horarios del vendedor
-    let schedules = await Schedule.find({ sellerId: params.id })
-      .populate({
-        path: 'startTime',
-        model: Time,
-      })
-      .populate({
-        path: 'endTime',
-        model: Time,
-      })
-      .populate({
-        path: 'idDay',
-        model: Day,
-      });
-    schedules.sort((a, b) => {
-      if (a.idDay.day_number === b.idDay.day_number) {
-        return a.startTime.time_number - b.startTime.time_number;
-      } else {
-        return a.idDay.day_number - b.idDay.day_number;
-      }
-    });
+export async function GET(req,{params}) {
+  await connectDB();
 
-    schedules = schedules.map(schedule => ({
-      day: schedule.idDay.name,
-      startTime: schedule.startTime.name,
-      endTime: schedule.endTime.name,
+  try {
+    const schedules = await Schedule.find({ sellerId: params.id });
+    schedules.sort((a, b) => {
+      if (a.day !== b.day) return a.day - b.day;
+      return a.startTime.localeCompare(b.startTime);
+  });
+
+    const transformedDays = schedules.map((schedule) => ({
+      ...schedule.toObject(),
+      day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
     }));
 
-    return NextResponse.json({ schedules }, { status: 200 });
+
+    if (!transformedDays) {
+      return NextResponse.json({ message: 'No schedules found for this seller.' }, { status: 404 });
+    }
+
+    return NextResponse.json({schedules: transformedDays }, { status: 200 });
   } catch (error) {
-    console.error('Error en la API:', error); // Muestra más información sobre el error
-    return NextResponse.json(
-      { message: 'Error fetching schedules', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error.', error: error.message }, { status: 500 });
   }
-}
+};

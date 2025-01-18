@@ -1,17 +1,37 @@
 import "daisyui";
 import { daysOfWeekES } from "@/utils/resources/days";
-import React, { useState } from 'react';
+import { getSchedules, createSchedule } from "@/services/scheduleService";
+import React, { useState,useEffect } from 'react';
 
 
 const Schedule = () => {
   const [schedules, setSchedules] = useState([
-    { day: '', startTime: '', endTime: '' },
+    {id:null, day: '', startTime: '', endTime: '' },
   ]);
 
   const [errorBanner, setErrorBanner] = useState(null);
+  const sellerId = "67494329273a1f9b5c67f5f1"; 
+
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        const response = await getSchedules(sellerId);
+        const mappedSchedules = response.schedules.map((schedule) => ({
+          id: schedule._id, // ID único para manejo de componentes
+          day: schedule.day,
+          startTime: schedule.startTime,
+          endTime: schedule.endTime,
+        }));
+        setSchedules(mappedSchedules);
+      } catch (error) {
+        setErrorBanner("No se pudieron cargar los horarios.");
+      }
+    };
+    fetchSchedules();
+  }, [sellerId]);
 
   const handleAddSchedule = () => {
-    setSchedules([...schedules, { day: '', startTime: '', endTime: '' }]);
+    setSchedules([...schedules, { id:null,day: '', startTime: '', endTime: '' }]);
   };
 
   const handleScheduleChange = (index, field, value) => {
@@ -62,8 +82,12 @@ const Schedule = () => {
   };
 
   const payload = {
-    sellerId: "67494329273a1f9b5c67f5f1",
+    sellerId: sellerId,
     schedules: schedules,
+  };
+  const handleRemoveSchedule = (index) => {
+    const updatedSchedules = schedules.filter((_, i) => i !== index);
+    setSchedules(updatedSchedules);
   };
 
   const handlePrintSchedules = async () => {
@@ -96,23 +120,35 @@ const Schedule = () => {
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">Tus horarios</h1>
       <h2>
-        En la siguiente sección puedes agregar tus horarios, luego puedes
-        agregar, modificar o eliminar los que necesites ^_^
+        En la siguiente sección puedes agregar los horarios que necesites, modificar o eliminar los que ya tienes ^_^
       </h2>
+      <li>
+      Ten en cuenta, solo horarios entre 6:00AM y 9:00PM 🧐
+      </li>
+      <li>Hora inicial debe ser antes que la final 🧐</li>
       {errorBanner && <div className="alert alert-error mb-4">{errorBanner}</div>}
       {schedules.map((schedule, index) => (
         <div key={index} className="flex flex-col md:flex-row items-center gap-2 mb-4">
+          <div className="flex gap-2 w-full md:w-auto">
           <select
             className="select select-bordered w-full md:w-40"
-            value={schedule.day}
+            value=""
             onChange={(e) => handleScheduleChange(index, 'day', e.target.value)}
           >
-            <option value="">Selecciona un día</option>
+            <option value="">{schedule.day || ""}</option>
             {daysOfWeekES.map((day) => (
-              <option key={day.id} value={day.id}>{day.name}</option>
+              <option key={day.id} value={day.name}>
+                {day.name}
+              </option>
             ))}
           </select>
-
+          <button
+            className="btn btn-error btn-sm ml-2"
+            onClick={() => handleRemoveSchedule(index)}
+          >
+            Eliminar
+          </button>
+          </div>
           <div className="flex gap-2 w-full md:w-auto">
           <label className="text-sm font-medium text-gray-600">Hora Inicial</label>
             <input
@@ -129,6 +165,7 @@ const Schedule = () => {
               onChange={(e) => handleScheduleChange(index, 'endTime', e.target.value)}
             />
           </div>
+
         </div>
       ))}
       <div className="flex gap-4">
