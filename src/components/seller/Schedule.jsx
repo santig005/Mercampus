@@ -1,5 +1,5 @@
 import "daisyui";
-import { daysOfWeek } from "@/utils/resources/days";
+import { daysOfWeekES } from "@/utils/resources/days";
 import React, { useState } from 'react';
 
 
@@ -61,10 +61,36 @@ const Schedule = () => {
     return true;
   };
 
-  const handlePrintSchedules = () => {
+  const payload = {
+    sellerId: "67494329273a1f9b5c67f5f1",
+    schedules: schedules,
+  };
+
+  const handlePrintSchedules = async () => {
     if (validateSchedules()) {
       setErrorBanner(null); // Clear error banner if validation passes
       console.log(schedules);
+      try {
+        const response = await fetch('/api/schedules', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Horarios guardados con éxito:', data);
+        } else {
+          const errorData = await response.json();
+          console.error('Error al guardar horarios:', errorData.message);
+          setErrorBanner(errorData.message);
+        }
+      } catch (error) {
+        console.error('Error al realizar la solicitud:', error);
+        setErrorBanner('Error al conectar con el servidor.');
+      }
     }
   };
 
@@ -84,7 +110,7 @@ const Schedule = () => {
             onChange={(e) => handleScheduleChange(index, 'day', e.target.value)}
           >
             <option value="">Selecciona un día</option>
-            {daysOfWeek.map((day) => (
+            {daysOfWeekES.map((day) => (
               <option key={day.id} value={day.id}>{day.name}</option>
             ))}
           </select>
