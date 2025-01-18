@@ -40,7 +40,7 @@ export default async function layout({ children }) {
                 </li>
                 <li>
                   <SidebarBtn
-                    text='Agregar horarios'
+                    text='Mis horarios'
                     goto='/antojos/registerseller/schedules'
                   />
                 </li>
