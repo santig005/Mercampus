@@ -1,188 +1,113 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@clerk/nextjs';
-const URL = process.env.NEXT_PUBLIC_URL;
+import "daisyui";
+import { daysOfWeek } from "@/utils/resources/days";
+import React, { useState } from 'react';
+
 
 const Schedule = () => {
-  const router = useRouter();
-  const [daysOfWeek, setDaysOfWeek] = useState([]);
-  const [hours, setHours] = useState([]);
-  const [formSchedules, setFormSchedules] = useState([
+  const [schedules, setSchedules] = useState([
     { day: '', startTime: '', endTime: '' },
   ]);
-  const [businessName, setBusinessName] = useState('');
 
-  // Fetch days from API
-  useEffect(() => {
-    const fetchDays = async () => {
-      try {
-        const response = await fetch('/api/days');
-        const data = await response.json();
-        setDaysOfWeek(data);
-      } catch (error) {
-        console.error('Error fetching days:', error);
-      }
-    };
-    fetchDays();
-  }, []);
+  const [errorBanner, setErrorBanner] = useState(null);
 
-  // Fetch hours from API
-  useEffect(() => {
-    const fetchHours = async () => {
-      try {
-        const response = await fetch('/api/times');
-        const data = await response.json();
-        setHours(data);
-      } catch (error) {
-        console.error('Error fetching times:', error);
-      }
-    };
-    fetchHours();
-  }, []);
-
-  // Fetch business name from API
-  useEffect(() => {
-    const fetchBusinessName = async () => {
-      try {
-        const response = await fetch('/api/sellers');
-        const data = await response.json();
-        setBusinessName(data.seller?.businessName);
-      } catch (error) {
-        console.error('Error fetching business name:', error);
-      }
-    };
-    fetchBusinessName();
-  }, []);
-
-  // Add a new empty schedule
   const handleAddSchedule = () => {
-    setFormSchedules([
-      ...formSchedules,
-      { day: '', startTime: '', endTime: '' },
-    ]);
+    setSchedules([...schedules, { day: '', startTime: '', endTime: '' }]);
   };
 
-  // Update specific schedule
   const handleScheduleChange = (index, field, value) => {
-    const updatedSchedules = formSchedules.map((schedule, i) =>
+    const updatedSchedules = schedules.map((schedule, i) =>
       i === index ? { ...schedule, [field]: value } : schedule
     );
-    setFormSchedules(updatedSchedules);
+    setSchedules(updatedSchedules);
+    setErrorBanner(null); // Reset error banner on change
   };
 
-  // Send data to API
-  const handleSendData = async () => {
-    // Check if all schedules have values and if endTime is greater than startTime
-    for (const schedule of formSchedules) {
-      if (!schedule.day || !schedule.startTime || !schedule.endTime) {
-        alert('Todos los campos deben estar llenos.');
-        return;
+  const validateSchedules = () => {
+    for (let i = 0; i < schedules.length; i++) {
+      const schedule = schedules[i];
+      const startHour = parseInt(schedule.startTime.split(':')[0]);
+      const endHour = parseInt(schedule.endTime.split(':')[0]);
+      const startMinutes = parseInt(schedule.startTime.split(':')[1]);
+      const endMinutes = parseInt(schedule.endTime.split(':')[1]);
+
+      if (!schedule.day) {
+        setErrorBanner(`Error en el horario ${i + 1}: Selecciona un día.`);
+        return false;
       }
 
-      // Ensure the endTime is greater than startTime based on their IDs
-      if (schedule.endTime <= schedule.startTime) {
-        alert('El horario de fin debe ser mayor que el horario de inicio.');
-        return;
+      if (!schedule.startTime || !schedule.endTime) {
+        setErrorBanner(`Error en el horario ${i + 1}: Ambos campos de tiempo deben estar completos.`);
+        return false;
+      }
+
+      if (startHour < 6) {
+        setErrorBanner(`Error en el horario ${i + 1}: La hora de inicio debe ser a partir de las 6:00 AM.`);
+        return false;
+      }
+
+      if (endHour > 21 || (endHour === 21 && endMinutes > 0)) {
+        setErrorBanner(`Error en el horario ${i + 1}: La hora de fin debe ser hasta las 9:00 PM.`);
+        return false;
+      }
+
+      if (
+        endHour < startHour ||
+        (endHour === startHour && endMinutes <= startMinutes)
+      ) {
+        setErrorBanner(`Error en el horario ${i + 1}: La hora de fin debe ser posterior a la hora de inicio.`);
+        return false;
       }
     }
+    return true;
+  };
 
-    console.log({ formSchedules });
-    // te
-    try {
-      const response = await fetch(`${URL}/api/schedules`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formSchedules),
-      });
-
-      if (response.ok) {
-        router.push('/antojos');
-      } else {
-        throw new Error('Error sending data');
-      }
-    } catch (error) {
-      console.error('Error sending data:', error);
+  const handlePrintSchedules = () => {
+    if (validateSchedules()) {
+      setErrorBanner(null); // Clear error banner if validation passes
+      console.log(schedules);
     }
   };
 
   return (
-    <div>
-      {businessName && (
-        <h1>Has registrado exitosamente el comercio {businessName}</h1>
-      )}
-      <h1>Un último paso...</h1>
+    <div className="p-6">
+      <h1 className="text-xl font-bold mb-4">Tus horarios</h1>
       <h2>
         En la siguiente sección puedes agregar tus horarios, luego puedes
-        agregar, modificar o eliminar los que necesites
+        agregar, modificar o eliminar los que necesites ^_^
       </h2>
-      {formSchedules.map((schedule, index) => (
-        <div
-          key={index}
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '10px',
-          }}
-        >
-          <div style={{ flex: 1, marginRight: '10px' }}>
-            <label htmlFor={`day-${index}`}>Día:</label>
-            <select
-              id={`day-${index}`}
-              value={schedule.day}
-              onChange={e => handleScheduleChange(index, 'day', e.target.value)}
-            >
-              <option value=''>Selecciona un día</option>
-              {daysOfWeek.map(day => (
-                <option key={day._id} value={day._id}>
-                  {day.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ flex: 1, marginRight: '10px' }}>
-            <label htmlFor={`startTime-${index}`}>Hora Inicio:</label>
-            <select
-              id={`startTime-${index}`}
-              value={schedule.startTime}
-              onChange={e =>
-                handleScheduleChange(index, 'startTime', e.target.value)
-              }
-            >
-              <option value=''>Selecciona una hora</option>
-              {hours.map(hour => (
-                <option key={hour._id} value={hour._id}>
-                  {hour.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <label htmlFor={`endTime-${index}`}>Hora Final:</label>
-            <select
-              id={`endTime-${index}`}
-              value={schedule.endTime}
-              onChange={e =>
-                handleScheduleChange(index, 'endTime', e.target.value)
-              }
-            >
-              <option value=''>Selecciona una hora</option>
-              {hours.map(hour => (
-                <option key={hour._id} value={hour._id}>
-                  {hour.name}
-                </option>
-              ))}
-            </select>
-          </div>
+      {errorBanner && <div className="alert alert-error mb-4">{errorBanner}</div>}
+      {schedules.map((schedule, index) => (
+        <div key={index} className="flex items-center gap-4 mb-4">
+          <select
+            className="select select-bordered w-full max-w-xs"
+            value={schedule.day}
+            onChange={(e) => handleScheduleChange(index, 'day', e.target.value)}
+          >
+            <option value="">Selecciona un día</option>
+            {daysOfWeek.map((day) => (
+              <option key={day.id} value={day.id}>{day.name}</option>
+            ))}
+          </select>
+
+          <input
+            type="time"
+            className="input input-bordered w-full max-w-xs"
+            value={schedule.startTime}
+            onChange={(e) => handleScheduleChange(index, 'startTime', e.target.value)}
+          />
+
+          <input
+            type="time"
+            className="input input-bordered w-full max-w-xs"
+            value={schedule.endTime}
+            onChange={(e) => handleScheduleChange(index, 'endTime', e.target.value)}
+          />
         </div>
       ))}
-      <button style={{ margin: '10px' }} onClick={handleAddSchedule}>
-        Agregar otro horario
-      </button>
-      <button style={{ margin: '10px' }} onClick={handleSendData}>
-        Enviar datos
-      </button>
+      <div className="flex gap-4">
+        <button className="btn btn-primary" onClick={handleAddSchedule}>Agregar horario</button>
+        <button className="btn btn-secondary" onClick={handlePrintSchedules}>Imprimir horarios</button>
+      </div>
     </div>
   );
 };
