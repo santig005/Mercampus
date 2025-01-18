@@ -1,8 +1,7 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Time } from '@/utils/models/timeSchema';
-import { Day } from '@/utils/models/daySchema';
+
 
 export async function GET(req, { params }) {
   try {
