@@ -77,15 +77,14 @@ const Schedule = () => {
           },
           body: JSON.stringify(payload),
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Horarios guardados con éxito:', data);
-        } else {
-          const errorData = await response.json();
-          console.error('Error al guardar horarios:', errorData.message);
-          setErrorBanner(errorData.message);
-        }
+      if (response.ok) {
+        console.log('Schedules printed successfully');
+        window.location.href = '/antojos';
+      } else {
+        const errorData = await response.json();
+        console.error('Error al guardar horarios:', errorData.message);
+        setErrorBanner(errorData.message);
+      }
       } catch (error) {
         console.error('Error al realizar la solicitud:', error);
         setErrorBanner('Error al conectar con el servidor.');
@@ -131,7 +130,7 @@ const Schedule = () => {
       ))}
       <div className="flex gap-4">
         <button className="btn btn-primary" onClick={handleAddSchedule}>Agregar horario</button>
-        <button className="btn btn-secondary" onClick={handlePrintSchedules}>Imprimir horarios</button>
+        <button className="btn btn-secondary" onClick={handlePrintSchedules}>Guardar horarios</button>
       </div>
     </div>
   );
