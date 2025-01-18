@@ -5,7 +5,7 @@ import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 import { Seller } from '@/utils/models/sellerschema';
 import { Schedule } from '@/utils/models/scheduleSchema';
-
+import { daysES } from '@/utils/resources/days';
 export async function GET(req, res) {
   await connectDB();
 
@@ -40,8 +40,22 @@ export async function GET(req, res) {
     model: "Seller", // Modelo al que pertenece el campo
   });
 
-  // Return a JSON response with the products
-  return NextResponse.json(products);
+  
+  const populatedProducts = await Promise.all(
+    products.map(async (product) => {
+      const schedules = await Schedule.find({ sellerId: product.sellerId._id })
+      .sort({ day: 1, startTime: 1 });
+      return { ...product.toObject(), schedules };
+    })
+  );
+const transformedProducts = populatedProducts.map((product) => {
+  const transformedSchedules = product.schedules.map((schedule) => ({
+    ...schedule.toObject(),
+    day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
+  }));
+  return { ...product, schedules: transformedSchedules };
+});
+  return NextResponse.json(transformedProducts, { status: 200 });
 }
 
 export async function POST(req) {

@@ -15,7 +15,9 @@ export default function ProductModal({ product, set }) {
   const [sellerModalId, setSellerModalId] = useState(null);
 
   useEffect(() => {
-    if (product) {
+    if (product && product.sellerId) {
+      console.log(" el producto es ", product);
+      console.log(product);
       setSeller(product.sellerId);
       setSchedules(product.schedules);
     }
@@ -56,6 +58,7 @@ export default function ProductModal({ product, set }) {
                       // href={`/seller/${seller._id}`}
                       className='btn max-w-min flex-nowrap mx-6'
                       onClick={() => {
+                        console.log(" el producto es ", product);
                         const newSeller = {
                           ...product.sellerId,
                           schedules: product.schedules,
