@@ -47,7 +47,7 @@ export default async function layout({ children }) {
                 <li>
                   <SidebarBtn
                     text='Agregar productos'
-                    goto='/antojos/addproduct/'
+                    goto='/antojos/product/add/'
                   />
                 </li>
               </>
