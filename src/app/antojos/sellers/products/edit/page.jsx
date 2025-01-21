@@ -27,7 +27,7 @@ export default function EditProductsPage() {
   }, []);
 
   const handleProductClick = (id) => {
-    router.push(`/antojos/products/edit/${id}`);
+        router.push(`/antojos/sellers/products/edit/${id}`);
   };
   const handleAvailabilityToggle = async (id, currentAvailability) => {
     try {

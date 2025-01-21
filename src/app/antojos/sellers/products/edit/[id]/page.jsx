@@ -1,11 +1,19 @@
-"use client";
+'use client';
 import React, { useEffect, useState } from 'react';
 import { getProductById, updateProduct } from '@/services/productService';
+import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
+import ToggleSwitch from '@/components/availability/ToggleSwitch';
+import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import { categories } from '@/utils/resources/categories';
+import ImageGrid from '@/components/general/ImageGrid';
 
-export default function EditProductPage({ params }) {
-  const { id } = params;
-  const [product, setProduct] = useState(null);
+export default function EditPsroductPage({params}) {
+  const {id} = params;
+  const [product, setProduct] = useState({
+    images:[],
+  }
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
@@ -16,7 +24,7 @@ export default function EditProductPage({ params }) {
         const response = await getProductById(id);
         setProduct(response.product);
       } catch (error) {
-        setError('Error fetching product details.');
+        setError('Error al cargar los detalles del producto.');
         console.error(error);
       } finally {
         setLoading(false);
@@ -30,64 +38,116 @@ export default function EditProductPage({ params }) {
     e.preventDefault();
     try {
       await updateProduct(id, product);
-      router.push('/antojos/sellers/editproducts'); // Redirige al listado tras la edición
+      router.push('/antojos/sellers/products/edit');
     } catch (error) {
-      setError('Error updating product.');
+      setError('Error al actualizar el producto.');
       console.error(error);
     }
+  };
+  const handleImagesUpdate = (updatedImages) => {
+    setProduct({ ...product, images: updatedImages });
   };
 
   if (loading) return <p>Cargando producto...</p>;
   if (error) return <p>{error}</p>;
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Editar Producto</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="max-w-3xl mx-auto p-8 bg-gray-100 rounded-lg shadow-lg">
+      <h1 className="text-3xl font-bold text-center mb-8">Editar Producto</h1>
+      <form onSubmit={handleSubmit} className="space-y-8">
         <div>
-          <label className="block font-medium">Nombre del Producto</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
-            value={product.name}
-            onChange={(e) => setProduct({ ...product, name: e.target.value })}
-          />
+        <InputFields
+                  title='Nombre'
+                  type='text'
+                  placeholder='Nombre del producto'
+                  value={product.name}
+                  onChange={(e) => setProduct({ ...product, name: e.target.value })}
+                  name='name'
+                  required
+                />
         </div>
+
         <div>
-          <label className="block font-medium">Precio</label>
-          <input
-            type="number"
-            className="w-full p-2 border rounded"
-            value={product.price}
-            onChange={(e) => setProduct({ ...product, price: parseFloat(e.target.value) })}
-          />
+        <InputFields
+                  title='Precio'
+                  type='number'
+                  placeholder='Precio'
+                  value={product.price}
+                  onChange={(e) =>
+                    setProduct({ ...product, price: parseFloat(e.target.value) })
+                  }
+                  name='price'
+                  required
+                />
         </div>
+
         <div>
-          <label className="block font-medium">Disponibilidad</label>
+            <label className="block text-lg font-semibold mb-2">
+              Disponibilidad
+            </label>
+            <div className="flex items-center justify-between">
+            <AvailabilityBadge availability={product.availability} />
+              <div className="flex items-center justify-between mt-2">
+            <ToggleSwitch
+              isOn={product.availability}
+              onToggle={() =>
+                setProduct({ ...product, availability: !product.availability })
+              }
+            />
+            </div>
+            
+          </div>
+
+        </div>
+
+        <div>
+          <label className="block text-lg font-semibold mb-2">Categoría</label>
           <select
-            className="w-full p-2 border rounded"
-            value={product.availability}
-            onChange={(e) => setProduct({ ...product, availability: e.target.value })}
-          >
-            <option value="available">Disponible</option>
-            <option value="unavailable">No disponible</option>
-          </select>
-        </div>
-        <div>
-          <label className="block font-medium">Categoría</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={product.category}
             onChange={(e) => setProduct({ ...product, category: e.target.value })}
-          />
+            required
+          >
+            <option value="" disabled>
+              Selecciona una categoría
+            </option>
+            {categories.map((category, index) => (
+              <option key={index} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
         </div>
-        <button
-          type="submit"
-          className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-        >
-          Guardar Cambios
-        </button>
+
+
+        <div>
+        <InputFields
+                  title='Descripcion'
+                  type='text'
+                  placeholder='Descripción'
+                  value={product.description}
+                  onChange={(e) =>
+                    setProduct({ ...product, description: e.target.value })
+                  }
+                  name='description'
+                  required
+                />
+        </div>
+        <div>
+      <ImageGrid
+        initialImages={product.images}
+        onUpdateImages={handleImagesUpdate}
+      />
+    </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
+          >
+            Guardar Cambios
+          </button>
+        </div>
       </form>
     </div>
   );
