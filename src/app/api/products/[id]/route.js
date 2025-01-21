@@ -12,3 +12,16 @@ export async function GET(req, { params }) {
     return NextResponse.json({ error: error.message });
   }
 }
+
+export async function PUT(req, { params }) {
+  try {
+    connectDB();
+    const data = await req.json();
+    const product = await Product.findByIdAndUpdate(params.id, data);
+    return NextResponse.json(product);
+  } catch (error) {
+    console.log(params);
+    return NextResponse.json({ error: error.message });
+  }
+}
+
