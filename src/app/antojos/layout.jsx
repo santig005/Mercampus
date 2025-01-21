@@ -28,26 +28,38 @@ export default async function layout({ children }) {
               <SidebarBtn text='Antojitos' goto='/antojos/' />
             </li>
             <li>
-              <SidebarBtn text='Mira los vendedores' goto='/antojos/sellers' />
+              <SidebarBtn text='Mira los vendedores' goto='/antojos/sellers/list' />
             </li>
             {userId && (
               <>
                 <li>
                   <SidebarBtn
                     text='Quiero ser vendedor'
-                    goto='/antojos/registerseller'
+                    goto='/antojos/sellers/register'
+                  />
+                </li>
+                <li>
+                  <SidebarBtn
+                    text='Editar perfil de vendedor'
+                    goto='/antojos/sellers/profile/edit'
+                  />
+                </li>
+                <li>
+                  <SidebarBtn
+                    text='Editar mis productos'
+                    goto='/antojos/sellers/products/edit'
                   />
                 </li>
                 <li>
                   <SidebarBtn
                     text='Mis horarios'
-                    goto='/antojos/registerseller/schedules'
+                    goto='/antojos/sellers/schedules'
                   />
                 </li>
                 <li>
                   <SidebarBtn
                     text='Agregar productos'
-                    goto='/antojos/addproduct/'
+                    goto='/antojos/product/add/'
                   />
                 </li>
               </>
