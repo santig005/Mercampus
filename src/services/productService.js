@@ -3,6 +3,9 @@ import { fetchAPI } from './api';
 export const getProducts = async (query = '') => {
   return await fetchAPI(`/products?q=${query}`);
 };
+export const getSellerProducts = async (sellerId) => {
+  return await fetchAPI(`/products/seller/${sellerId}`);
+};
 
 export const getProductById = async (id) => {
   return await fetchAPI(`/products/${id}`);
