@@ -22,7 +22,7 @@ export default function EditPsroductPage({params}) {
     async function fetchProduct() {
       try {
         const response = await getProductById(id);
-        setProduct(response.product);
+        setProduct(response);
       } catch (error) {
         setError('Error al cargar los detalles del producto.');
         console.error(error);
