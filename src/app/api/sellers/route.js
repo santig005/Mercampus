@@ -87,18 +87,14 @@ export async function PUT(req) {
 
     const userId = "66fd5b94db317a9c479dfc10"; // ID del usuario, puedes obtenerlo dinámicamente si usas sesiones
 
-    // Obtener los datos del cuerpo de la solicitud
     const body = await req.json();
 
-    // Buscar el vendedor por el ID del usuario
     const seller = await Seller.findOne({ userId });
 
-    // Si no se encuentra el vendedor, devolver un mensaje de error
     if (!seller) {
       return NextResponse.json({ message: 'Seller not found' }, { status: 404 });
     }
 
-    // Actualizar los campos del vendedor con los datos recibidos en el cuerpo de la solicitud
     seller.businessName = body.businessName || seller.businessName;
     seller.logo = body.logo || seller.logo;
     seller.phoneNumber = body.phoneNumber || seller.phoneNumber;
@@ -106,13 +102,10 @@ export async function PUT(req) {
     seller.description = body.description || seller.description;
     seller.instagramUser = body.instagramUser || seller.instagramUser;
 
-    // Guardar los cambios en la base de datos
     await seller.save();
 
-    // Devolver una respuesta de éxito
     return NextResponse.json({ message: 'Seller updated successfully', seller }, { status: 200 });
   } catch (error) {
-    // Manejar errores y devolver una respuesta con el mensaje de error
     return NextResponse.json({ message: 'Error updating seller', error: error.message }, { status: 500 });
   }
 }

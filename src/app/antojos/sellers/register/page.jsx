@@ -1,4 +1,5 @@
 'use client';
+import { uploadImagesLogo } from '@/services/uploadImages';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TbChevronLeft } from 'react-icons/tb';
@@ -35,29 +36,12 @@ const RegisterSeller = () => {
     setLoading(true);
 
     // Image uploading
+    // upload the images if the user is logged in
+
     let uploadedImages = [];
     try {
-      if (formData.images.length > 0) {
-        uploadedImages = await Promise.all(
-          formData.images.map(async file => {
-            const imageFormData = new FormData();
-            imageFormData.append('file', file);
-            imageFormData.append('folder', 'sellerlogos');
-            const response = await fetch('/api/uploadimageProduct', {
-              method: 'POST',
-              body: imageFormData,
-            });
-
-            if (!response.ok) {
-              throw new Error('Error uploading image');
-            }
-            const data = await response.json();
-            return data.url;
-          })
-        );
-      }
+      uploadedImages = await uploadImagesLogo(formData.images);
     } catch (error) {
-      console.error('Error uploading image:', error);
       alert('There was a problem uploading the images. Please try again.');
       setLoading(false);
       return;
