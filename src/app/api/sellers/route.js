@@ -1,6 +1,8 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { Seller } from '@/utils/models/sellerschema';
+import { User } from '@/utils/models/userSchema';
+import { currentUser } from '@clerk/nextjs/server';
 
 export async function GET(req) {
   try {
@@ -25,13 +27,15 @@ export async function POST(req) {
   try {
     // Connect to the database
     await connectDB();
-    const user = await currentUser();    
+    const user = await currentUser();
     if(user){
-    const email=user.emailAddresses[0].emailAddress
+    const email = user.emailAddresses[0].emailAddress;
+    console.log("email", email);
     let tempUserId="";
     var usuario;
     try {
       usuario = await User.findOne({ email:email });
+      console.log("usuario", usuario);
       const userId = usuario._id;
       tempUserId=userId;
     } catch (error) {

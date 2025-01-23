@@ -68,7 +68,7 @@ const AddProduct = () => {
     // Usage
     let uploadedImages = [];
     try {
-      uploadedImages = await uploadImages(formData.images);
+      uploadedImages = await uploadImages(formData.images, 'products');
     } catch (error) {
       alert('There was a problem uploading the images. Please try again.');
       setLoading(false);
