@@ -5,6 +5,10 @@
 .btn {
   @apply select-none hover:bg-primary/40 hover:border-transparent focus-visible:outline-none;
 }
+.btn-danger {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+}
 
 .input {
   @apply focus-within:outline-0 focus-within:shadow-md focus-within:border-primary;
