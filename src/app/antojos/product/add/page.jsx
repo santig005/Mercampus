@@ -71,7 +71,7 @@ const AddProduct = () => {
             const imageFormData = new FormData();
             imageFormData.append('file', file);
             imageFormData.append('folder', 'products');
-            const response = await fetch('/api/uploadimageProduct', {
+            const response = await fetch('/api/images', {
               method: 'POST',
               body: imageFormData, // Send the file to the API
             });
