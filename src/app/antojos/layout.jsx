@@ -30,6 +30,12 @@ export default async function layout({ children }) {
             <li>
               <SidebarBtn text='Mira los vendedores' goto='/antojos/sellers/list' />
             </li>
+            <li>
+                  <SidebarBtn
+                    text='Ayuda ?'
+                    goto='/antojos/pqrs'
+                  />
+                </li> 
             {userId && (
               <>
                 <li>
