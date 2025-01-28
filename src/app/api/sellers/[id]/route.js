@@ -1,13 +1,27 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
 import { Seller } from "@/utils/models/sellerschema";
+import { User } from "@/utils/models/userSchema";
 export async function GET(req, { params }) {
     try {
         connectDB();
-        const seller = await Seller.findById(params.id);
-        return NextResponse.json(seller);
+        let seller;
+        console.log("me llega esto",params);
+        console.log("me llega esto",params.id);
+        if (params.id.includes('@')) {
+            const user = await User.findOne({ email: params.id });
+
+            if (!user) {
+                return NextResponse.json({ error: "User not found" }, { status: 404 });
+              }
+              seller = await Seller.findOne({ userId: user._id });
+        } else {
+            seller = await Seller.findById(params.id);
+            }
+        
+        return NextResponse.json({seller}, { status: 200 });
     } catch (error) {
         console.log(params);
-        return NextResponse.json({ error: error.message });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
