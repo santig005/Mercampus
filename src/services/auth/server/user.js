@@ -1,7 +1,6 @@
 import {connectDB} from '@/utils/connectDB';
 import { currentUser} from '@clerk/nextjs/server';
 import { User } from '@/utils/models/userSchema';
-import { users } from '@clerk/clerk-sdk-node'; 
 
 async function isUser() {
   const user = await currentUser();
