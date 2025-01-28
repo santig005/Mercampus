@@ -112,7 +112,7 @@ export default function PqrsForm() {
             rel="noopener noreferrer"
             className="btn btn-secondary"
           >
-            O hablar con soporte por Whatsapp <TbBrandWhatsapp className='icon'></TbBrandWhatsapp>
+            O hablar con soporte <TbBrandWhatsapp className='icon'></TbBrandWhatsapp>
           </a>
           <button
             type="submit"
