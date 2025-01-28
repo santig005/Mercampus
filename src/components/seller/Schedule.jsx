@@ -13,7 +13,6 @@ const Schedule = () => {
 
   const [errorBanner, setErrorBanner] = useState(null);
   const [sellerId,setSellerId]=useState(null);
-  console.log("el usuario es ",user);
   useEffect(() => {
     if (!user) {
       window.location.href = '/';
@@ -22,9 +21,7 @@ const Schedule = () => {
 
     const fetchSchedules = async () => {
       try {
-        console.log("el ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo es ",user);
         const email= user.primaryEmailAddress.emailAddress;
-        console.log("el email es ",email);
         try{
           const seller= await getSellerByEmail(email);
           setSellerId(seller._id); 
@@ -37,8 +34,6 @@ const Schedule = () => {
           return;
         }
         const response = await getSchedules(sellerId);
-        console.log("lvamos 2");
-        console.log("la respuesta es ",response);
         const mappedSchedules = response.schedules.map((schedule) => ({
           id: schedule._id, // ID único para manejo de componentes
           day: schedule.day,

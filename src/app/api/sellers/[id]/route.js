@@ -6,8 +6,6 @@ export async function GET(req, { params }) {
     try {
         connectDB();
         let seller;
-        console.log("me llega esto",params);
-        console.log("me llega esto",params.id);
         if (params.id.includes('@')) {
             const user = await User.findOne({ email: params.id });
 
