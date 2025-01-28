@@ -2,12 +2,11 @@ import mongoose, { Schema } from 'mongoose';
 
 const userSchema = new Schema(
   {
-    clerkId: {
-      type: String,
-      required: false,
-      unique: false,
-      default: '',
-    },
+    // clerkId: {
+    //   type: String,
+    //   required: false,
+    //   unique: false,
+    // },
     name: {
       type: String,
       required: true,

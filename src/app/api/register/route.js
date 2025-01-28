@@ -7,8 +7,9 @@ export async function POST(req) {
   await connectDB();
 
   try {
-    const user = new User({ name, email, clerkId: clerkId || '' });
-    console.log("user va aqui" + user);
+    const user = new User({ name, email, clerkId });
+    // console.log("clerkId:" + user.clerkId);
+
     await user.save();
   } catch (error) {
     console.error("Error detallado al crear el usuario:", error);

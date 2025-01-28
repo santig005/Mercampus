@@ -1,7 +1,14 @@
-import { fetchAPI } from './api';
+"use server";
+
+import { fetchAPI } from "./api";
+import { auth } from "@clerk/nextjs/server";
 
 export const getSellers = async () => {
-    return await fetchAPI('/sellers');
+  const { getToken } = await auth();
+  const options = {
+    Authorization: `Bearer ${getToken()}`,
+  };
+  return await fetchAPI("/sellers");
 };
 
 export const getSellerById = async (id) => {
@@ -9,8 +16,8 @@ export const getSellerById = async (id) => {
 };
 
 export const createSeller = async (seller) => {
-  return await fetchAPI('/sellers', {
-    method: 'POST',
+  return await fetchAPI("/sellers", {
+    method: "POST",
     body: JSON.stringify(seller),
   });
 };
