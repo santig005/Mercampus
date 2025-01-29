@@ -2,19 +2,37 @@ import "daisyui";
 import { daysOfWeekES } from "@/utils/resources/days";
 import { getSchedules, createSchedule } from "@/services/scheduleService";
 import React, { useState,useEffect } from 'react';
-
+import { useUser } from "@clerk/nextjs";
+import { getSellerByEmail } from "@/services/sellerService";
 
 const Schedule = () => {
+  const { user } = useUser();
   const [schedules, setSchedules] = useState([
     {id:null, day: '', startTime: '', endTime: '' },
   ]);
 
   const [errorBanner, setErrorBanner] = useState(null);
-  const sellerId = "67494329273a1f9b5c67f5f1"; 
-
+  const [sellerId,setSellerId]=useState(null);
   useEffect(() => {
+    if (!user) {
+      window.location.href = '/';
+      return;
+    }
+
     const fetchSchedules = async () => {
       try {
+        const email= user.primaryEmailAddress.emailAddress;
+        try{
+          const seller= await getSellerByEmail(email);
+          setSellerId(seller._id); 
+        }
+        catch(error){
+          console.log("error en el seller",error);
+        }
+        if(!sellerId){
+          window.location.href = '/antojos/sellers/register';
+          return;
+        }
         const response = await getSchedules(sellerId);
         const mappedSchedules = response.schedules.map((schedule) => ({
           id: schedule._id, // ID único para manejo de componentes
@@ -28,7 +46,7 @@ const Schedule = () => {
       }
     };
     fetchSchedules();
-  }, [sellerId]);
+  },[user,sellerId]);
 
   const handleAddSchedule = () => {
     setSchedules([...schedules, { id:null,day: '', startTime: '', endTime: '' }]);

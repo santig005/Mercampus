@@ -25,3 +25,16 @@ export async function PUT(req, { params }) {
   }
 }
 
+export async function DELETE(req, { params }) {
+  await connectDB();
+  try {
+    const { id } = params;
+    const deletedProduct = await Product.findByIdAndDelete(id);
+    if (!deletedProduct) {
+      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+    }
+    return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ message: 'Error deleting product', error: error.message }, { status: 500 });
+  }
+};

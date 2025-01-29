@@ -31,12 +31,23 @@ export default function EditProductsPage() {
   };
   const handleAvailabilityToggle = async (id, currentAvailability) => {
     try {
-      const updatedProduct = await updateProduct(id, { availability: !currentAvailability });
       setProducts((prevProducts) =>
         prevProducts.map((product) =>
-          product._id === id ? { ...product, availability: updatedProduct.availability } : product
+          product._id === id ? { ...product, availability: !product.availability } : product
         )
       );
+      const updatedProduct = await updateProduct(id, { availability: !currentAvailability });
+      //if the request is not successful, correct the availability
+      if (!updatedProduct) {
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product._id === id ? { ...product, availability: currentAvailability } : product
+          )
+          );
+      }
+      
+      
+      
     } catch (error) {
       console.error('Error updating availability:', error);
     }

@@ -68,7 +68,25 @@ const AddProduct = () => {
     // Usage
     let uploadedImages = [];
     try {
-      uploadedImages = await uploadImages(formData.images, 'products');
+      if (formData.images.length > 0) {
+        uploadedImages = await Promise.all(
+          formData.images.map(async file => {
+            const imageFormData = new FormData();
+            imageFormData.append('file', file);
+            imageFormData.append('folder', 'products');
+            const response = await fetch('/api/images', {
+              method: 'POST',
+              body: imageFormData, // Send the file to the API
+            });
+
+            if (!response.ok) {
+              throw new Error('Error uploading image');
+            }
+            const data = await response.json();
+            return data.url; // Assuming your API returns the URL
+          })
+        );
+      }
     } catch (error) {
       alert('There was a problem uploading the images. Please try again.');
       setLoading(false);
