@@ -66,6 +66,10 @@
   @apply text-primary bg-primary/25 border-primary;
 }
 
+.btn-nav-active {
+  @apply text-primary bg-primary/15 border-primary;
+}
+
 .hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
