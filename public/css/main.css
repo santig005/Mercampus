@@ -66,6 +66,18 @@
   @apply text-primary bg-primary/25 border-primary;
 }
 
+.btn-nav-active {
+  @apply text-primary bg-primary/15 border-primary;
+}
+
+@media (hover: hover) {
+  .menu li > *:not(ul, .menu-title, details, .btn):active,
+  .menu li > *:not(ul, .menu-title, details, .btn).active,
+  .menu li > details > summary:active {
+    @apply active:bg-[#e2e3e5] text-inherit;
+  }
+}
+
 .hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
