@@ -71,7 +71,7 @@ export default async function layout({ children }) {
             </li> */}
             <li className='menu p-0'>
               <details open>
-                <summary className='hover:cursor-pointer p-2 pe-4'>
+                <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
                   <MdEmojiPeople className='size-5' />
                   Vendedores
                 </summary>
@@ -110,7 +110,7 @@ export default async function layout({ children }) {
             {userId && (
               <li className='menu p-0'>
                 <details open>
-                  <summary className='hover:cursor-pointer p-2 pe-4'>
+                  <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
                     <BsBuildingFillGear className='size-5' />
                     Gestionar
                   </summary>
