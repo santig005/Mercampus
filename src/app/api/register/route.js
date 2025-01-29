@@ -3,12 +3,11 @@ import { NextResponse } from 'next/server';
 import { User } from '@/utils/models/userSchema';
 
 export async function POST(req) {
-  const { name, email, clerkId } = await req.json();
+  const { name, email } = await req.json();
   await connectDB();
 
   try {
-    const user = new User({ name, email, clerkId });
-    // console.log("clerkId:" + user.clerkId);
+    const user = new User({ name, email });
 
     await user.save();
   } catch (error) {
