@@ -10,9 +10,15 @@ export const getSellerById = async (id) => {
 
 export const getSellerByEmail= async (email) => {
   const response= await fetchAPI(`/sellers/${email}`);
-  // if the response has a 404 error, return false
   if(response.error || response.message){
     return false;
   }
-  return response?.seller | false;
+  return response?.seller || false;
+}
+
+export const updateSeller = async (id, data) => {
+  return await fetchAPI(`/sellers/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
 }

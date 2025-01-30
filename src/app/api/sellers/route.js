@@ -1,6 +1,6 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import { Seller } from '@/utils/models/sellerSchema';
+import { Seller } from '@/utils/models/sellerschema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { User } from '@/utils/models/userSchema';
 import { currentUser } from '@clerk/nextjs/server';
@@ -91,44 +91,53 @@ export async function POST(req) {
   }
 }
 
+// PUT method to update a seller
 export async function PUT(req) {
   try {
-    // Conectar a la base de datos
+    // Connect to the database
     await connectDB();
 
-    // Obtener la sesión actual (opcional, en caso de querer vincularlo a un usuario específico)
-    /*
-    const session = await getSession({ req });
+    // Get the seller ID from the request query
+    const { id } = req.query;
 
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    // Get the updated data from the request body
+    const updatedData = await req.json();
 
-    // Obtener el ID del usuario desde la sesión
-    const userId = session.userId;
-    */
+    // Find the seller by ID and update it with the new data
+    const updatedSeller = await Seller.findByIdAndUpdate(id, updatedData, { new: true });
 
-    const userId = "66fd5b94db317a9c479dfc10"; // ID del usuario, puedes obtenerlo dinámicamente si usas sesiones
-
-    const body = await req.json();
-
-    const seller = await Seller.findOne({ userId });
-
-    if (!seller) {
+    if (!updatedSeller) {
       return NextResponse.json({ message: 'Seller not found' }, { status: 404 });
     }
 
-    seller.businessName = body.businessName || seller.businessName;
-    seller.logo = body.logo || seller.logo;
-    seller.phoneNumber = body.phoneNumber || seller.phoneNumber;
-    seller.slogan = body.slogan || seller.slogan;
-    seller.description = body.description || seller.description;
-    seller.instagramUser = body.instagramUser || seller.instagramUser;
-
-    await seller.save();
-
-    return NextResponse.json({ message: 'Seller updated successfully', seller }, { status: 200 });
+    // Return a successful response with the updated seller
+    return NextResponse.json({ message: 'Seller updated successfully', seller: updatedSeller }, { status: 200 });
   } catch (error) {
+    // Handle errors and return a response with the message
     return NextResponse.json({ message: 'Error updating seller', error: error.message }, { status: 500 });
+  }
+}
+
+// DELETE method to delete a seller
+export async function DELETE(req) {
+  try {
+    // Connect to the database
+    await connectDB();
+
+    // Get the seller ID from the request query
+    const { id } = req.query;
+
+    // Find the seller by ID and delete it
+    const deletedSeller = await Seller.findByIdAndDelete(id);
+
+    if (!deletedSeller) {
+      return NextResponse.json({ message: 'Seller not found' }, { status: 404 });
+    }
+
+    // Return a successful response
+    return NextResponse.json({ message: 'Seller deleted successfully' }, { status: 200 });
+  } catch (error) {
+    // Handle errors and return a response with the message
+    return NextResponse.json({ message: 'Error deleting seller', error: error.message }, { status: 500 });
   }
 }
