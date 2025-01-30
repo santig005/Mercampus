@@ -37,10 +37,10 @@ const Schedule = () => {
   }, [user]);
 
   useEffect(() => {
-    /* if (!isLoading && !sellerId) {
+    if (!isLoading && !sellerId) {
       window.location.href = '/antojos/sellers/register';
       return;
-    } */
+    }
 
     if (sellerId) {
       const fetchSchedules = async () => {

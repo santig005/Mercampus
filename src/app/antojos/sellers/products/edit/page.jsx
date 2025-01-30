@@ -43,10 +43,10 @@ export default function EditProductsPage() {
   }, [user]);
   
     useEffect(() => {
-      /* if (!isLoading && !sellerId) {
+      if (!isLoading && !sellerId) {
         window.location.href = '/antojos/sellers/register';
         return;
-      } */
+      } 
   
       if (sellerId) {
         async function fetchSellerProducts() {
