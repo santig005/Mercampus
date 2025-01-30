@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function SidebarBtn({ text, goto = '' }) {
+export default function SidebarBtn({
+  text,
+  goto = '',
+  iconActive,
+  iconInactive,
+}) {
   const pathname = usePathname();
 
   const handleSidebarClose = () => {
@@ -15,21 +20,21 @@ export default function SidebarBtn({ text, goto = '' }) {
     <>
       {pathname === goto ? (
         <a
-          className={`btn-nav flex !justify-start btn-nav-active`}
+          className={'btn-nav flex !justify-start btn-nav-active ps-2'}
           // href={goto === '/scripts/clientes' ? lastActiveURL : goto}
         >
-          {text}
+          {pathname === goto ? iconActive : iconInactive} {text}
         </a>
       ) : (
         <Link
           onClick={() => handleSidebarClose()}
-          className={`btn-nav flex !justify-start ${
+          className={`btn-nav flex !justify-start ps-2 ${
             pathname === goto && 'btn-nav-active'
           }`}
           // href={goto === '/scripts/clientes' ? lastActiveURL : goto}
           href={goto}
         >
-          {text}
+          {pathname === goto ? iconActive : iconInactive} {text}
         </Link>
       )}
     </>

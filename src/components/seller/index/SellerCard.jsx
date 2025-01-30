@@ -29,12 +29,11 @@ export default function SellerCard({
         <img className='img-full' src={logo} alt={'Logo de ' + businessName} />
       </div>
       <div className='flex flex-col justify-between'>
-        <h2 className='my-card-title text-pretty'>{businessName}</h2>
-        <h4 className='my-card-subtitle text-primary/70'>{slogan}</h4>
-        <p className='card-description'>{description}</p>
-        <div className='flex items-center gap-2'>
+        <h2 className='my-card-title text-pretty m-0 p-0'>{businessName}</h2>
+        <p className='card-description text-sm'>{description}</p>
+        <h4 className='my-card-subtitle text-primary/70 m-0 p-0'>{slogan}</h4>
+        {/* <div className='flex items-center gap-2'>
           <div className='rounded-full size-6 overflow-hidden'>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               className='img-full'
               src={logo}
@@ -42,7 +41,7 @@ export default function SellerCard({
             />
           </div>
           <p className='my-card-subtitle'>{instagramUser}</p>
-        </div>
+        </div> */}
         <AvailabilityBadge availability={availability}></AvailabilityBadge>
       </div>
     </div>

@@ -14,6 +14,8 @@
     "@formkit/auto-animate": "^0.8.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.0",
+    "imagekit": "^6.0.0",
+    "imagekitio-next": "^1.0.1",
     "mongoose": "^8.6.1",
     "next": "14.2.8",
     "next-auth": "^5.0.0-beta.20",

@@ -7,7 +7,6 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useSearchParams } from 'next/navigation';
 
-
 export default function ProductGrid() {
   const [products, setProducts] = useState([]);
   const [parent] = useAutoAnimate();
@@ -56,12 +55,11 @@ export default function ProductGrid() {
       {showModal => (
         <div className='' ref={containerRef}>
           <div className='flex flex-col gap-2' ref={parent}>
-            {loading && (
+            {loading ? (
               <div className='flex justify-center'>
                 <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
               </div>
-            )}
-            {products &&
+            ) : products.length > 0 ? (
               products.map(product => (
                 <div
                   className=''
@@ -70,7 +68,12 @@ export default function ProductGrid() {
                 >
                   <ProductCard product={product} />
                 </div>
-              ))}
+              ))
+            ) : (
+              <div className='w-full flex justify-center my-4'>
+                <p>No se encontraron productos</p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 'use client';
+import { uploadImages } from '@/services/uploadImages';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Categories } from '@/utils/resources/categories';
@@ -63,6 +64,8 @@ const AddProduct = () => {
     setLoading(true);
 
     // Image uploading
+
+    // Usage
     let uploadedImages = [];
     try {
       if (formData.images.length > 0) {
@@ -71,7 +74,7 @@ const AddProduct = () => {
             const imageFormData = new FormData();
             imageFormData.append('file', file);
             imageFormData.append('folder', 'products');
-            const response = await fetch('/api/uploadimageProduct', {
+            const response = await fetch('/api/images', {
               method: 'POST',
               body: imageFormData, // Send the file to the API
             });
@@ -85,7 +88,6 @@ const AddProduct = () => {
         );
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
       alert('There was a problem uploading the images. Please try again.');
       setLoading(false);
       return;

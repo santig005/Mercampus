@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { getProductById, updateProduct } from '@/services/productService';
+import { deleteProduct,getProductById, updateProduct } from '@/services/productService';
 import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
@@ -47,6 +47,16 @@ export default function EditPsroductPage({params}) {
   const handleImagesUpdate = (updatedImages) => {
     setProduct({ ...product, images: updatedImages });
   };
+  const handleDeleteProduct = async () => {
+    try {
+      await deleteProduct(id);
+      router.push('/antojos/sellers/products/edit');
+    } catch (error) {
+      setError('Error al eliminar el producto.');
+      console.error(error);
+    }
+    };
+
 
   if (loading) return <p>Cargando producto...</p>;
   if (error) return <p>{error}</p>;
@@ -139,14 +149,21 @@ export default function EditPsroductPage({params}) {
         onUpdateImages={handleImagesUpdate}
       />
     </div>
-
         <div className="flex justify-end">
+        <button
+          type="button"
+          className="btn btn-danger mr-4"
+          onClick={handleDeleteProduct}
+          >
+          Eliminar Producto
+          </button>
           <button
             type="submit"
-            className="bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-300"
+            className="btn btn-primary"
           >
             Guardar Cambios
-          </button>
+        </button>
+        
         </div>
       </form>
     </div>

@@ -8,7 +8,7 @@ export default function EditProfile() {
     phoneNumber: '',
     slogan: '',
     description: '',
-    instagramUser: ''
+    instagramUser: '',
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -35,19 +35,19 @@ export default function EditProfile() {
     fetchProfile();
   }, []);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
     setProfile({
       ...profile,
-      [name]: value
+      [name]: value,
     });
   };
 
-  const handleLogoChange = (e) => {
+  const handleLogoChange = e => {
     setLogoFile(e.target.files[0]); // Asignar la imagen seleccionada
   };
 
-  const uploadLogoToCloudinary = async (file) => {
+  const uploadLogoToCloudinary = async file => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', 'logos');
@@ -66,9 +66,9 @@ export default function EditProfile() {
     return data.url; // Obtener la URL de la imagen subida
   };
 
-  const deleteOldLogoFromCloudinary = async (logoUrl) => {
+  const deleteOldLogoFromCloudinary = async logoUrl => {
     const publicId = logoUrl.split('/').pop().split('.')[0]; // Extraer el public_id de la URL del logo
-  
+
     const res = await fetch(`/api/uploadimageProduct`, {
       method: 'DELETE',
       headers: {
@@ -76,13 +76,13 @@ export default function EditProfile() {
       },
       body: JSON.stringify({ publicId }),
     });
-  
+
     if (!res.ok) {
       throw new Error('Error al eliminar el logo anterior de Cloudinary');
     }
-  };  
+  };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
@@ -134,74 +134,78 @@ export default function EditProfile() {
 
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="logo">Logo</label>
-          {profile.logo && <img src={profile.logo} alt="Logo actual" width={100} />}
+          <label htmlFor='logo'>Logo</label>
+          {profile?.logo && (
+            <img src={profile.logo} alt='Logo actual' width={100} />
+          )}
         </div>
         <div>
-          <label htmlFor="newLogo">Subir nuevo Logo:</label>
+          <label htmlFor='newLogo'>Subir nuevo Logo:</label>
           <input
-            type="file"
-            id="newLogo"
-            name="newLogo"
+            type='file'
+            id='newLogo'
+            name='newLogo'
             onChange={handleLogoChange} // Capturar el archivo seleccionado
           />
         </div>
         <div>
-          <label htmlFor="businessName">Nombre del negocio:</label>
+          <label htmlFor='businessName'>Nombre del negocio:</label>
           <input
-            type="text"
-            id="businessName"
-            name="businessName"
-            value={profile.businessName}
+            type='text'
+            id='businessName'
+            name='businessName'
+            value={profile?.businessName}
             onChange={handleInputChange}
           />
         </div>
         <div>
-          <label htmlFor="phoneNumber">Número de teléfono:</label>
+          <label htmlFor='phoneNumber'>Número de teléfono:</label>
           <input
-            type="text"
-            id="phoneNumber"
-            name="phoneNumber"
-            value={profile.phoneNumber}
+            type='text'
+            id='phoneNumber'
+            name='phoneNumber'
+            value={profile?.phoneNumber}
             onChange={handleInputChange}
           />
         </div>
         <div>
-          <label htmlFor="slogan">Slogan:</label>
+          <label htmlFor='slogan'>Slogan:</label>
           <input
-            type="text"
-            id="slogan"
-            name="slogan"
-            value={profile.slogan}
+            type='text'
+            id='slogan'
+            name='slogan'
+            value={profile?.slogan}
             onChange={handleInputChange}
           />
         </div>
         <div>
-          <label htmlFor="description">Descripción:</label>
+          <label htmlFor='description'>Descripción:</label>
           <textarea
-            id="description"
-            name="description"
-            value={profile.description}
+            id='description'
+            name='description'
+            value={profile?.description}
             onChange={handleInputChange}
           ></textarea>
         </div>
         <div>
-          <label htmlFor="instagramUser">Usuario de Instagram:</label>
+          <label htmlFor='instagramUser'>Usuario de Instagram:</label>
           <input
-            type="text"
-            id="instagramUser"
-            name="instagramUser"
-            value={profile.instagramUser}
+            type='text'
+            id='instagramUser'
+            name='instagramUser'
+            value={profile?.instagramUser}
             onChange={handleInputChange}
           />
         </div>
 
-        <button type="submit" disabled={loading}>
+        <button type='submit' disabled={loading}>
           {loading ? 'Guardando...' : 'Guardar Cambios'}
         </button>
       </form>
 
-      {success && <p style={{ color: 'green' }}>Perfil actualizado con éxito!</p>}
+      {success && (
+        <p style={{ color: 'green' }}>Perfil actualizado con éxito!</p>
+      )}
     </div>
   );
 }

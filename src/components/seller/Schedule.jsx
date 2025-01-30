@@ -2,7 +2,8 @@ import "daisyui";
 import { daysOfWeekES } from "@/utils/resources/days";
 import { getSchedules, createSchedule } from "@/services/scheduleService";
 import React, { useState,useEffect } from 'react';
-
+import { useUser } from "@clerk/nextjs";
+import { getSellerByEmail } from "@/services/sellerService";
 
 const Schedule = () => {
   const [schedules, setSchedules] = useState([
@@ -10,25 +11,57 @@ const Schedule = () => {
   ]);
 
   const [errorBanner, setErrorBanner] = useState(null);
-  const sellerId = "67494329273a1f9b5c67f5f1"; 
+  const { user } = useUser();
+  const [sellerId,setSellerId]=useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSchedules = async () => {
+    if (!user) {
+      window.location.href = '/';
+      return;
+    }
+
+    const fetchSeller = async () => {
       try {
-        const response = await getSchedules(sellerId);
-        const mappedSchedules = response.schedules.map((schedule) => ({
-          id: schedule._id, // ID único para manejo de componentes
-          day: schedule.day,
-          startTime: schedule.startTime,
-          endTime: schedule.endTime,
-        }));
-        setSchedules(mappedSchedules);
+        const email = user.primaryEmailAddress.emailAddress;
+        const seller = await getSellerByEmail(email);
+        setSellerId(seller._id);
       } catch (error) {
-        setErrorBanner("No se pudieron cargar los horarios.");
+        console.log("error en el seller", error);
+        setSellerId(null);
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchSchedules();
-  }, [sellerId]);
+
+    fetchSeller();
+  }, [user]);
+
+  useEffect(() => {
+    if (!isLoading && !sellerId) {
+      window.location.href = '/antojos/sellers/register';
+      return;
+    }
+
+    if (sellerId) {
+      const fetchSchedules = async () => {
+        try {
+          const response = await getSchedules(sellerId);
+          const mappedSchedules = response.schedules.map((schedule) => ({
+            id: schedule._id, // ID único para manejo de componentes
+            day: schedule.day,
+            startTime: schedule.startTime,
+            endTime: schedule.endTime,
+          }));
+          setSchedules(mappedSchedules);
+        } catch (error) {
+          setErrorBanner("No se pudieron cargar los horarios.");
+        }
+      };
+
+      fetchSchedules();
+    }
+  }, [sellerId, isLoading]);  
 
   const handleAddSchedule = () => {
     setSchedules([...schedules, { id:null,day: '', startTime: '', endTime: '' }]);
