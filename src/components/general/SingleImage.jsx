@@ -42,7 +42,7 @@ export default function SingleImageUploader({ initialImage, onUpdateImage }) {
 
   return (
     <div className="flex flex-col items-center">
-      <h3 className="text-lg font-semibold mb-4">Imagen del Producto</h3>
+      <h3 className="text-lg font-semibold mb-4">Imagen de Perfil</h3>
       <div className="w-40 h-40 border rounded-md overflow-hidden relative flex items-center justify-center">
         {image ? (
           <>

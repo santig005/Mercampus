@@ -2,27 +2,11 @@ import { connectDB } from '@/utils/connectDB';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { Seller } from '@/utils/models/sellerSchema';
 import { NextResponse } from 'next/server';
-import { allowed_ips } from '@/utils/resources/allowedIPs';
 
 export async function PATCH(req) {
   await connectDB();
 
   try {
-
-    let clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || req.ip;
-    clientIp = clientIp.replace('::ffff:', ''); // Normalize IPv6-mapped IPv4
-    const ipList = await allowed_ips();
-
-    console.log('Allowed IPs:', ipList);
-    console.log('Client IP:', clientIp);
-
-    if (!ipList.includes(clientIp)) {
-      return NextResponse.json(
-        { message: 'Forbidden: Unauthorized IP' },
-        { status: 403 }
-      );
-    }
-
     const sellers = await Seller.find();
     if (!sellers.length) {
       return NextResponse.json(
