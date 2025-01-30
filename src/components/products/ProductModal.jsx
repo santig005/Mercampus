@@ -52,6 +52,9 @@ export default function ProductModal({ product, set }) {
                 <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
                   <div className='flex flex-col pb-36 gap-2'>
                     <h2 className='card-title px-6 mt-2'>{product.name}</h2>
+                    <p className='text-[14px] text-secondary px-6'>
+                      {product.description}
+                    </p>
                     <button
                       // href={`/seller/${seller._id}`}
                       className='btn max-w-min flex-nowrap mx-6'
@@ -77,9 +80,6 @@ export default function ProductModal({ product, set }) {
                         {seller.businessName}
                       </p>
                     </button>
-                    <p className='text-[14px] text-secondary px-6'>
-                      {product.description}
-                    </p>
                     <div className=''>
                       <h2 className='card-title px-6'>Horario</h2>
                       {schedules && <TableSchema schedules={schedules} />}

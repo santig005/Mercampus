@@ -6,6 +6,8 @@ import { Categories } from '@/utils/resources/categories';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
+import { useUser } from '@clerk/nextjs';
+import { getSellerByEmail } from '@/services/sellerService';
 
 const AddProduct = () => {
   const router = useRouter();
@@ -24,15 +26,45 @@ const AddProduct = () => {
   const [price, setPrice] = useState('');
   const [displayPrice, setDisplayPrice] = useState('');
 
+  const { user } = useUser();
+  const [sellerId,setSellerId]=useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    // Fetch categories when component mounts
+    if (!user) {
+      window.location.href = '/';
+      return;
+    }
+
+    const fetchSeller = async () => {
+      try {
+        const email = user.primaryEmailAddress.emailAddress;
+        const seller = await getSellerByEmail(email);
+        setSellerId(seller._id);
+      } catch (error) {
+        console.log("error en el seller", error);
+        setSellerId(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSeller();
+  }, [user]);
+
+  useEffect(() => {
+    if (!isLoading && !sellerId) {
+      window.location.href = '/antojos/sellers/register';
+      return;
+    }
     const loadCategories = async () => {
       const categoriesData = await Categories(); // Await the result
       setCategories(categoriesData); // Update state with fetched categories
     };
 
     loadCategories(); // Call the function on component mount
-  }, []);
+  }, [sellerId, isLoading]); 
+
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;

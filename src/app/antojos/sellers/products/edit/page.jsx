@@ -4,7 +4,9 @@ import { getSellerProducts,updateProduct } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
 import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
+import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { getSellerByEmail } from "@/services/sellerService";
+import { updateSeller } from "@/services/sellerService";
 import { useUser } from "@clerk/nextjs";
 
 
@@ -14,6 +16,7 @@ export default function EditProductsPage() {
 
   const { user } = useUser();
   const [sellerId,setSellerId]=useState(null);
+  const [sellerAvailability, setSellerAvailability] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +30,7 @@ export default function EditProductsPage() {
         const email = user.primaryEmailAddress.emailAddress;
         const seller = await getSellerByEmail(email);
         setSellerId(seller._id);
+        setSellerAvailability(seller.availability);
       } catch (error) {
         console.log("error en el seller", error);
         setSellerId(null);
@@ -80,18 +84,30 @@ export default function EditProductsPage() {
           );
       }
       
-      
-      
     } catch (error) {
       console.error('Error updating availability:', error);
     }
   };
+  const handleSellerAvailability = async () => {
+    try {
+      setSellerAvailability(!sellerAvailability);
+      const updatedSeller = await updateSeller(sellerId, { availability: !sellerAvailability });
+      //if the request is not successful, correct the availability
+      if (!updatedSeller) {
+        setSellerAvailability(!sellerAvailability);
+      }
+    }
+    catch (error) {
+      console.error('Error updating seller availability:', error);
+    }
+  };
+
+
 
   if (isLoading) return <p>Cargando productos...</p>;
 
   return (
     <div className="p-4">
-      
 
         <div className="flex justify-end mb-4">
         <h1 className="text-2xl font-bold mb-4">Editar tus Productos</h1>
@@ -105,7 +121,21 @@ export default function EditProductsPage() {
      
      
       <h2>Edita la disponibilidad de tus productos, o da click en uno en especifico para editar mas detalles</h2>
+      <div
+          className="flex justify-between items-center gap-4 p-2 bg-white rounded shadow-md"
+        >
+          <div>
+            <h3>Mi disponibilidad</h3>
+            <AvailabilityBadge availability={sellerAvailability} />
+          </div>
+          <ToggleSwitch
+            isOn={sellerAvailability}
+            onToggle={() => handleSellerAvailability()}
+          />
+        </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+
         {products?.map((product) => (
           <div
           key={product._id}
@@ -120,6 +150,7 @@ export default function EditProductsPage() {
           />
         </div>
         ))}
+
       </div>
     </div>
   );
