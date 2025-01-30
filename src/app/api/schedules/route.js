@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { currentUser } from '@clerk/nextjs/server';
 import { User } from '@/utils/models/userSchema';
-import { Seller } from '@/utils/models/sellerschema';
+import { Seller } from '@/utils/models/sellerSchema';
 
 
 export async function GET(req) {

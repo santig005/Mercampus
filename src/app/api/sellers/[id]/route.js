@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
-import { Seller } from "@/utils/models/sellerschema";
+import { Seller } from "@/utils/models/sellerSchema";
 import { User } from "@/utils/models/userSchema";
 export async function GET(req, { params }) {
     try {
@@ -17,7 +17,7 @@ export async function GET(req, { params }) {
             seller = await Seller.findById(params.id);
             }
         
-        return NextResponse.json({seller}, { status: 200 });
+        return NextResponse.json({seller:seller}, { status: 200 });
     } catch (error) {
         console.log(params);
         return NextResponse.json({ error: error.message }, { status: 500 });
