@@ -46,7 +46,7 @@ export default function EditProductsPage() {
       if (!isLoading && !sellerId) {
         window.location.href = '/antojos/sellers/register';
         return;
-      }
+      } 
   
       if (sellerId) {
         async function fetchSellerProducts() {

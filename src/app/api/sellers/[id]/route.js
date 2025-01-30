@@ -17,7 +17,6 @@ export async function GET(req, { params }) {
         {
             seller = await Seller.findById(params.id);
             }
-            console.log("el seller encontrado en seller es ",seller);
             
         
         return NextResponse.json({seller}, { status: 200 });
