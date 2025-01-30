@@ -27,7 +27,6 @@ const Schedule = () => {
         const seller = await getSellerByEmail(email);
         setSellerId(seller._id);
       } catch (error) {
-        console.log("error en el seller", error);
         setSellerId(null);
       } finally {
         setIsLoading(false);
