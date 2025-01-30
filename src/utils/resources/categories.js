@@ -4,8 +4,9 @@ export const categories = [
   'Frituras',
   'Galletas',
   'Helados',
+  'Panadería',
   'Repostería',
-  'Snacks',
+  'Snacks', 
 ];
 
 export const Categories = async () => {
