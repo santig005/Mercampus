@@ -1,10 +1,11 @@
 export const categories = [
-  'Panadería',
-  'Galletas',
-  'Repostería',
+  'Dulces',
   'Frutas',
   'Frituras',
-  'Dulces',
+  'Galletas',
+  'Helados',
+  'Repostería',
+  'Snacks',
 ];
 
 export const Categories = async () => {

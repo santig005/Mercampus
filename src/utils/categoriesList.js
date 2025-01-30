@@ -4,6 +4,9 @@ import GalletaRender from '/public/images/category/galleta.png';
 import DulceRender from '/public/images/category/dulce.png';
 import Empanada from '/public/images/category/empanada.png';
 import Papas from '/public/images/category/papas.png';
+import Helados from '/public/images/category/helados.png';
+import Snacks from '/public/images/category/snacks.webp';
+
 
 export const categoriesList = [
   {
@@ -33,5 +36,13 @@ export const categoriesList = [
   {
     name: 'Dulces',
     icon: DulceRender.src,
+  },
+  {
+    name: 'Helados',
+    icon: Helados.src,
+  },
+  {
+    name: 'Snacks',
+    icon: Snacks.src,
   },
 ];
