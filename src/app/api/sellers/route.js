@@ -1,8 +1,10 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import { Seller } from '@/utils/models/sellerschema';
+import { Seller } from '@/utils/models/sellerSchema';
+import { Schedule } from '@/utils/models/scheduleSchema';
 import { User } from '@/utils/models/userSchema';
 import { currentUser } from '@clerk/nextjs/server';
+import { daysES } from '@/utils/resources/days';
 
 export async function GET(req) {
   try {
@@ -14,8 +16,25 @@ export async function GET(req) {
     if (!sellers || sellers.length === 0) {
       return NextResponse.json({ message: 'Sellers not found' }, { status: 404 });
     }
+    const populatedSellers = await Promise.all(
+      sellers.map(async seller => {
+      const schedules = await Schedule.find({ sellerId: seller._id });
+      schedules.sort((a, b) => {
+        if (a.day !== b.day) return a.day - b.day;
+        return a.startTime.localeCompare(b.startTime);
+      });
+      return { ...seller.toObject(), schedules };
+      })
+    );
 
-    return NextResponse.json({ sellers: sellers }, { status: 200 });
+    const transformedSellers = populatedSellers.map(seller => {
+      const transformedSchedules = seller.schedules.map(schedule => ({
+      ...schedule.toObject(),
+      day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
+      }));
+      return { ...seller, schedules: transformedSchedules };
+    });
+    return NextResponse.json({sellers:transformedSellers} , { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: 'Error fetching sellers', error: error.message }, { status: 500 });
   }
