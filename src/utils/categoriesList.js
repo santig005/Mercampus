@@ -45,4 +45,8 @@ export const categoriesList = [
     name: 'Snacks',
     icon: Snacks.src,
   },
+  {
+    name: 'Otros',
+    icon: '',
+  }
 ];
