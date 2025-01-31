@@ -7,11 +7,12 @@ import InputFields from "@/components/auth/register/InputFields";
 import { FcHighPriority } from "react-icons/fc";
 import { IoClose } from "react-icons/io5";
 import Link from "next/link";
+import ImageGrid from "@/components/general/ImageGrid";
 // import { useUser } from '@clerk/nextjs'
 
 const RegisterSeller = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [sellerData, setSellerData] = useState({
     businessName: "",
     instagramUser: "",
     description: "",
@@ -28,26 +29,30 @@ const RegisterSeller = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setSellerData({
+      ...sellerData,
       [name]: type === "checkbox" ? checked : value,
     });
+  };
+  const handleImagesUpdate = (updatedImages) => {
+    setSellerData({ ...sellerData, images: updatedImages });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    let uploadedImages = [];
+    /* let uploadedImages = [];
     try {
-      uploadedImages = await uploadImages(formData.images, "sellerlogos");
+      console.log("vamos a intentarlo");
+      uploadedImages = await uploadImages(sellerData.images, "sellerlogos");
     } catch (error) {
       alert("There was a problem uploading the images. Please try again.");
       setLoading(false);
       return;
-    }
+    } */
 
-    formData.logo = uploadedImages[0];
+    sellerData.logo = sellerData.images[0];
 
     try {
       const response = await fetch("/api/sellers", {
@@ -55,7 +60,7 @@ const RegisterSeller = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(sellerData),
       });
 
       if (response.ok) {
@@ -127,7 +132,7 @@ const RegisterSeller = () => {
                   title="Nombre del Negocio"
                   type="text"
                   placeholder="Nombre del negocio"
-                  value={formData.businessName}
+                  value={sellerData.businessName}
                   onChange={handleChange}
                   name="businessName"
                   required
@@ -136,7 +141,7 @@ const RegisterSeller = () => {
                   title="Descripción"
                   type="textarea"
                   placeholder="Describe tu negocio"
-                  value={formData.description}
+                  value={sellerData.description}
                   onChange={handleChange}
                   name="description"
                 />
@@ -144,15 +149,15 @@ const RegisterSeller = () => {
                   title="Slogan"
                   type="text"
                   placeholder="Slogan del negocio"
-                  value={formData.slogan}
+                  value={sellerData.slogan}
                   onChange={handleChange}
                   name="slogan"
                 />
                 <InputFields
                   title="Usuario de Instagram"
                   type="text"
-                  placeholder="@usuario"
-                  value={formData.instagramUser}
+                  placeholder="usuario"
+                  value={sellerData.instagramUser}
                   onChange={handleChange}
                   name="instagramUser"
                   required
@@ -161,24 +166,30 @@ const RegisterSeller = () => {
                   title="Teléfono"
                   type="text"
                   placeholder="Número de teléfono"
-                  value={formData.phoneNumber}
+                  value={sellerData.phoneNumber}
                   onChange={handleChange}
                   name="phoneNumber"
                   required
                 />
-                <div>
+                {/* <div>
                   <label>Logo</label>
                   <input
                     type="file"
                     name="images"
                     multiple
                     onChange={(e) =>
-                      setFormData({ ...formData, images: [...e.target.files] })
+                      setSellerData({ ...sellerData, images: [...e.target.files] })
                     }
                     required
                     className="file-input file-input-bordered w-full"
                   />
-                </div>
+                </div> */}
+                <ImageGrid initialImages={sellerData.images}
+                onUpdateImages={handleImagesUpdate}
+                nameFolder='sellerlogos'
+                title='Logo del Negocio o Foto del vendedor'
+                maxImages={1}
+                 />
                 <button
                   type="submit"
                   className="btn btn-primary w-full"
