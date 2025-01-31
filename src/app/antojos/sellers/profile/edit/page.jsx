@@ -10,6 +10,8 @@ import SingleImage from '@/components/general/SingleImage';
  
 export default function EditSellerPage() {
   const {user}= useUser();
+  const [sellerId,setSellerId]=useState(null);
+  const [sellerAvailability, setSellerAvailability] = useState(false);
   const [seller, setSeller] = useState({
     businessName: '',
     slogan: '',
@@ -34,6 +36,8 @@ export default function EditSellerPage() {
       try {
         const email=user.primaryEmailAddress.emailAddress;
         const response = await getSellerByEmail(email);
+        setSellerId(response._id);
+        setSellerAvailability(response.availability);
         if (response) {
           setSeller(response);
         } else {
@@ -68,6 +72,20 @@ export default function EditSellerPage() {
       console.error(error);
     }
   };
+
+  const handleSellerAvailability = async () => {
+      try {
+        setSellerAvailability(!sellerAvailability);
+        const updatedSeller = await updateSeller(sellerId, { availability: !sellerAvailability });
+        //if the request is not successful, correct the availability
+        if (!updatedSeller) {
+          setSellerAvailability(!sellerAvailability);
+        }
+      }
+      catch (error) {
+        console.error('Error updating seller availability:', error);
+      }
+    };
  
   if (loading) return <p>Cargando perfil...</p>;
   if (error) return <p>{error}</p>;
@@ -77,19 +95,17 @@ export default function EditSellerPage() {
       <h1 className="text-3xl font-bold text-center mb-8">Editar Perfil</h1>
       <form onSubmit={handleSubmit} className="space-y-8">
 
-      <div>
-          <label className="block text-lg font-semibold mb-2">Disponibilidad</label>
-          <div className="flex items-center justify-between">
-            <AvailabilityBadge availability={seller.availability} />
-            <div className="flex items-center justify-between mt-2">
-              <ToggleSwitch
-                isOn={seller.availability}
-                onToggle={() =>
-                  setSeller({ ...seller, availability: !seller.availability })
-                }
-              />
-            </div>
+      <div
+          className="flex justify-between items-center gap-4 p-2 bg-white rounded shadow-md"
+        >
+          <div>
+            <h3>Mi disponibilidad</h3>
+            <AvailabilityBadge availability={sellerAvailability} />
           </div>
+          <ToggleSwitch
+            isOn={sellerAvailability}
+            onToggle={() => handleSellerAvailability()}
+          />
         </div>
 
         <InputFields
