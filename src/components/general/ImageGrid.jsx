@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 
-export default function ImageGrid({ initialImages, onUpdateImages }) {
+export default function ImageGrid({ initialImages, onUpdateImages,nameFolder,title,maxImages }) {
   const [images, setImages] = useState(initialImages || []);
   const [loading, setLoading] = useState(false);
 
   const handleAddImage = async (event) => {
+
+    if (maxImages && images.length >= maxImages) {
+      return;
+    }
     const file = event.target.files[0];
     if (!file) return;
 
     setLoading(true);
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('folder', 'products');
+    formData.append('folder', nameFolder);
 
     try {
-      const response = await fetch('/api/uploadimageProduct', {
+      const response = await fetch('/api/images', {
         method: 'POST',
         body: formData,
       });
@@ -45,7 +49,7 @@ export default function ImageGrid({ initialImages, onUpdateImages }) {
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Imágenes del Producto</h3>
+      <h3 className="text-lg font-semibold mb-4">{title}</h3>
       <div className="grid grid-cols-3 gap-4">
         {images.map((image, index) => (
           <div
@@ -68,7 +72,7 @@ export default function ImageGrid({ initialImages, onUpdateImages }) {
         ))}
 
         {/* Botón para agregar imagen */}
-        <div className="w-full h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md">
+        {images.length<maxImages&& (<div className="w-full h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md">
           {loading ? (
             <p className="text-sm text-gray-500">Subiendo...</p>
           ) : (
@@ -82,7 +86,9 @@ export default function ImageGrid({ initialImages, onUpdateImages }) {
               />
             </label>
           )}
-        </div>
+        </div>)
+    }
+        
       </div>
     </div>
   );

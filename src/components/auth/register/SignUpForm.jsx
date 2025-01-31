@@ -475,10 +475,10 @@ export default function SignUpForm() {
                 </button>
               </div>
             </form>
-            <div className='divider'>O también puedes</div>
+            {/* <div className='divider'>O también puedes</div>
             <div className='flex flex-col gap-3'>
               <ProvidersButton />
-            </div>
+            </div> */}
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/login' className='text-center text-primary'>
                 <span className='text-black'>¿Ya tienes una cuenta?</span>{' '}

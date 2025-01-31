@@ -201,7 +201,7 @@ const Schedule = () => {
         </div>
       ))}
       <div className="flex gap-4">
-        <button className="btn btn-primary" onClick={handleAddSchedule}>Agregar horario</button>
+        <button className="btn btn-primary" onClick={handleAddSchedule}> + Agregar horario</button>
         <button className="btn btn-secondary" onClick={handlePrintSchedules}>Guardar horarios</button>
       </div>
     </div>

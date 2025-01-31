@@ -1,211 +1,163 @@
 'use client';
-import { useState, useEffect } from 'react';
-
-export default function EditProfile() {
-  const [profile, setProfile] = useState({
-    logo: '',
+import React, { useEffect, useState } from 'react';
+import { getSellerByEmail, updateSeller} from '@/services/sellerService';
+import InputFields from '@/components/auth/register/InputFields';
+import { useRouter } from 'next/navigation';
+import ToggleSwitch from '@/components/availability/ToggleSwitch';
+import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import { useUser } from '@clerk/nextjs';
+import SingleImage from '@/components/general/SingleImage';
+ 
+export default function EditSellerPage() {
+  const {user}= useUser();
+  console.log("el usuario es ",user);
+  const [seller, setSeller] = useState({
     businessName: '',
-    phoneNumber: '',
     slogan: '',
     description: '',
+    logo: '',
     instagramUser: '',
+    availability: '',
+    phoneNumber: '',
+    userId: ''
   });
-
-  const [logoFile, setLogoFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+ 
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Cargar los datos del perfil cuando el componente se monte
+  const router = useRouter();
+ 
   useEffect(() => {
-    const fetchProfile = async () => {
+    if(!user){
+      window.location.href='/';
+      return;
+    }
+    const fetchSeller=async() =>{
       try {
-        const res = await fetch('/api/sellers');
-        if (!res.ok) {
-          throw new Error('Error al cargar los datos del perfil');
+        console.log("vamos a buscar el vendedor");
+        const email=user.primaryEmailAddress.emailAddress;
+        console.log("el email es ",email);
+        const response = await getSellerByEmail(email);
+        console.log("la respuesta es ",response);
+        if (response) {
+          setSeller(response);
+        } else {
+          setError('No se encontró el vendedor.');
         }
-        const data = await res.json();
-        setProfile(data.seller);
-      } catch (err) {
-        console.error(err);
-        setError('No se pudieron cargar los datos del perfil.');
+      } catch (error) {
+        setError('Error al cargar los datos del vendedor.');
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
-
-    fetchProfile();
-  }, []);
-
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setProfile({
-      ...profile,
-      [name]: value,
-    });
-  };
-
-  const handleLogoChange = e => {
-    setLogoFile(e.target.files[0]); // Asignar la imagen seleccionada
-  };
-
-  const uploadLogoToCloudinary = async file => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', 'logos');
-
-    // Utilizamos la API que ya tienes configurada
-    const response = await fetch('/api/uploadimageProduct', {
-      method: 'POST',
-      body: formData, // Enviar el archivo al endpoint de subida
-    });
-
-    if (!response.ok) {
-      throw new Error('Error al subir la imagen');
-    }
-
-    const data = await response.json();
-    return data.url; // Obtener la URL de la imagen subida
-  };
-
-  const deleteOldLogoFromCloudinary = async logoUrl => {
-    const publicId = logoUrl.split('/').pop().split('.')[0]; // Extraer el public_id de la URL del logo
-
-    const res = await fetch(`/api/uploadimageProduct`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ publicId }),
-    });
-
-    if (!res.ok) {
-      throw new Error('Error al eliminar el logo anterior de Cloudinary');
-    }
-  };
-
-  const handleSubmit = async e => {
+ 
+    fetchSeller();
+  }, [user]);
+  useEffect(() => {
+ 
+    const fetchSeller = async () => {
+      console.log("vamos a print el vendedor");
+      console.log("de el vendedor", seller);
+    };
+ 
+    fetchSeller();
+  }, [seller]);
+ 
+ 
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setSuccess(false);
-    setError(null);
-
     try {
-      let newLogoUrl = profile.logo;
-
-      // Si se seleccionó un nuevo logo, subirlo a Cloudinary
-      if (logoFile) {
-        // Eliminar el logo anterior de Cloudinary si existe
-        if (profile.logo) {
-          await deleteOldLogoFromCloudinary(profile.logo);
-        }
-        newLogoUrl = await uploadLogoToCloudinary(logoFile); // Subir nuevo logo usando tu API
-      }
-
-      const updatedProfile = {
-        ...profile,
-        logo: newLogoUrl, // Actualizar con el nuevo logo (o el mismo si no se cambió)
-      };
-
-      const res = await fetch('/api/sellers', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedProfile),
-      });
-
-      if (res.ok) {
-        setSuccess(true);
-      } else {
-        setError('Error al actualizar el perfil');
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      setError('Hubo un problema con la actualización del perfil.');
-    } finally {
-      setLoading(false);
+      await updateSeller(seller._id, seller);
+      router.push('/antojos/sellers/profile');
+    } catch (error) {
+      setError('Error al actualizar el perfil del vendedor.');
+      console.error(error);
     }
   };
-
+ 
+  if (loading) return <p>Cargando perfil...</p>;
+  if (error) return <p>{error}</p>;
+ 
   return (
-    <div>
-      <h1>Editar Perfil</h1>
-
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
+    <div className="max-w-3xl mx-auto p-8 bg-gray-100 rounded-lg shadow-lg">
+      <h1 className="text-3xl font-bold text-center mb-8">Editar Perfil del Vendedor</h1>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <InputFields
+          title="Nombre del Negocio"
+          type="text"
+          placeholder="Nombre del Negocio"
+          value={seller.businessName || ''}
+          onChange={(e) => setSeller({ ...seller, businessName: e.target.value })}
+          name="businessName"
+          required
+        />
+ 
+        <InputFields
+          title="Eslogan"
+          type="text"
+          placeholder="Eslogan del negocio"
+          value={seller.slogan || ''}
+          onChange={(e) => setSeller({ ...seller, slogan: e.target.value })}
+          name="slogan"
+        />
+ 
+        <InputFields
+          title="Descripción"
+          type="text"
+          placeholder="Descripción del negocio"
+          value={seller.description || ''}
+          onChange={(e) => setSeller({ ...seller, description: e.target.value })}
+          name="description"
+        />
+ 
+        <SingleImage
+          initialImage={seller.logo}
+          onUpdateImage={(newImage) => setSeller({ ...seller, logo: newImage })}
+        />
+ 
+        <InputFields
+          title="Usuario de Instagram"
+          type="text"
+          placeholder="@usuario_instagram"
+          value={seller.instagramUser || ''}
+          onChange={(e) => setSeller({ ...seller, instagramUser: e.target.value })}
+          name="instagramUser"
+        />
+ 
+        <InputFields
+          title="Número de Teléfono"
+          type="number"
+          placeholder="Número de contacto"
+          value={seller.phoneNumber || ''}
+          onChange={(e) => setSeller({ ...seller, phoneNumber: e.target.value })}
+          name="phoneNumber"
+          required
+        />
+ 
         <div>
-          <label htmlFor='logo'>Logo</label>
-          {profile?.logo && (
-            <img src={profile.logo} alt='Logo actual' width={100} />
-          )}
+          <label className="block text-lg font-semibold mb-2">Disponibilidad</label>
+          <div className="flex items-center justify-between">
+            <AvailabilityBadge availability={seller.availability} />
+            <div className="flex items-center justify-between mt-2">
+              <ToggleSwitch
+                isOn={seller.availability}
+                onToggle={() =>
+                  setSeller({ ...seller, availability: !seller.availability })
+                }
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <label htmlFor='newLogo'>Subir nuevo Logo:</label>
-          <input
-            type='file'
-            id='newLogo'
-            name='newLogo'
-            onChange={handleLogoChange} // Capturar el archivo seleccionado
-          />
+ 
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="btn btn-primary"
+          >
+            Guardar Cambios
+          </button>
         </div>
-        <div>
-          <label htmlFor='businessName'>Nombre del negocio:</label>
-          <input
-            type='text'
-            id='businessName'
-            name='businessName'
-            value={profile?.businessName}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div>
-          <label htmlFor='phoneNumber'>Número de teléfono:</label>
-          <input
-            type='text'
-            id='phoneNumber'
-            name='phoneNumber'
-            value={profile?.phoneNumber}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div>
-          <label htmlFor='slogan'>Slogan:</label>
-          <input
-            type='text'
-            id='slogan'
-            name='slogan'
-            value={profile?.slogan}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div>
-          <label htmlFor='description'>Descripción:</label>
-          <textarea
-            id='description'
-            name='description'
-            value={profile?.description}
-            onChange={handleInputChange}
-          ></textarea>
-        </div>
-        <div>
-          <label htmlFor='instagramUser'>Usuario de Instagram:</label>
-          <input
-            type='text'
-            id='instagramUser'
-            name='instagramUser'
-            value={profile?.instagramUser}
-            onChange={handleInputChange}
-          />
-        </div>
-
-        <button type='submit' disabled={loading}>
-          {loading ? 'Guardando...' : 'Guardar Cambios'}
-        </button>
       </form>
-
-      {success && (
-        <p style={{ color: 'green' }}>Perfil actualizado con éxito!</p>
-      )}
     </div>
   );
 }
