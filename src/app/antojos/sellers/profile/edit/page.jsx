@@ -95,7 +95,7 @@ export default function EditSellerPage() {
  
   return (
     <div className="max-w-3xl mx-auto p-8 bg-gray-100 rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold text-center mb-8">Editar Perfil</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">Edita tu Perfil</h1>
       <form onSubmit={handleSubmit} className="space-y-8">
 
       <div
@@ -162,8 +162,8 @@ export default function EditSellerPage() {
         <ImageGrid
           initialImages={seller.logo ? [seller.logo] : []}
           onUpdateImages={handleImagesUpdate}
-          nameFolder="seller-logos"
-          title="Logo del Negocio"
+          nameFolder="sellerlogos"
+          title="Logo de tu Negocio o foto de ti"
           maxImages={1}
         />
  
