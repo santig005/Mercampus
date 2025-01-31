@@ -59,7 +59,7 @@
 }
 
 .img-full {
-  @apply img object-cover w-full h-full;
+  @apply img object-cover w-full h-full object-center;
 }
 
 .category-active {

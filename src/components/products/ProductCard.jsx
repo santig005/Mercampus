@@ -17,7 +17,7 @@ export default function ProductCard({
         <img className='img-full' src={thumbnail} alt={'Imagen de ' + name} />
       </div>
       <div className='flex flex-col justify-between'>
-        <h2 className='my-card-title text-pretty'>{name}</h2>
+        <h2 className='my-card-title truncate w-60 block'>{name}</h2>
         <h4 className='my-card-subtitle text-primary/70'>{category}</h4>
         <p className='card-price'>{priceFormat(price)}</p>
         {/* <div className='flex items-center gap-2'>

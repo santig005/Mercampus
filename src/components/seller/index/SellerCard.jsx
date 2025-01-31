@@ -24,14 +24,18 @@ export default function SellerCard({
       }`}
       onClick={onClick}
     >
-      <div className='size-24 w-32 rounded-md overflow-hidden'>
+      <div className='size-24 rounded-md overflow-hidden aspect-square'>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className='img-full' src={logo} alt={'Logo de ' + businessName} />
       </div>
       <div className='flex flex-col justify-between'>
-        <h2 className='my-card-title text-pretty m-0 p-0'>{businessName}</h2>
-        <p className='card-description text-sm'>{description}</p>
-        <h4 className='my-card-subtitle text-primary/70 m-0 p-0'>{slogan}</h4>
+        <h2 className='my-card-title text-pretty m-0 p-0 truncate w-60'>
+          {businessName}
+        </h2>
+        <p className='card-description text-sm truncate w-60'>{description}</p>
+        <h4 className='my-card-subtitle text-primary/70 m-0 p-0 truncate w-60'>
+          {slogan}
+        </h4>
         {/* <div className='flex items-center gap-2'>
           <div className='rounded-full size-6 overflow-hidden'>
             <img
