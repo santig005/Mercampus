@@ -27,7 +27,7 @@ const AddProduct = () => {
   const [displayPrice, setDisplayPrice] = useState('');
 
   const { user } = useUser();
-  const [sellerId,setSellerId]=useState(null);
+  const [sellerId, setSellerId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const AddProduct = () => {
         const seller = await getSellerByEmail(email);
         setSellerId(seller._id);
       } catch (error) {
-        console.log("error en el seller", error);
+        console.log('error en el seller', error);
         setSellerId(null);
       } finally {
         setIsLoading(false);
@@ -63,11 +63,18 @@ const AddProduct = () => {
     };
 
     loadCategories(); // Call the function on component mount
-  }, [sellerId, isLoading]); 
-
+  }, [sellerId, isLoading]);
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
+
+    if (type === 'textarea') {
+      requestAnimationFrame(() => {
+        e.target.style.height = 'auto';
+        e.target.style.height = `${e.target.scrollHeight}px`;
+      });
+    }
+
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value,

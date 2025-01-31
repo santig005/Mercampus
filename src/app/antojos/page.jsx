@@ -15,8 +15,11 @@ const Antojos = () => {
       <div className='flex flex-col gap-4'>
         {session ? (
           <h2 className='title !font-normal px-2'>
-            Hola {session.publicUserData.firstName},{' '}
-            <span className='font-semibold'>calma tus antojos</span>
+            Hola{' '}
+            <span className='text-primary font-bold'>
+              {session.publicUserData.firstName}
+            </span>
+            , <span className='font-semibold'>calma tus antojos</span>
           </h2>
         ) : (
           <h2 className='title !font-normal px-2'>
