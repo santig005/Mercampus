@@ -8,6 +8,7 @@ import {
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import { useEffect, useState } from 'react';
+import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 
 export default function SellerModal({ seller, set }) {
   const [schedules, setSchedules] = useState([]); // Estado para almacenar los horarios
@@ -52,23 +53,33 @@ export default function SellerModal({ seller, set }) {
                 <Carousel key={seller._id} images={images} _id={seller._id} />
               </div>
 
-              <div className='relative h-dvh w-full bg-inherit'>
+              <div className='relative h-auto w-full bg-inherit'>
                 <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
-                  <div className='flex flex-col pb-36 gap-2'>
-                    <h2 className='card-title px-6 pt-2'>
-                      {seller.businessName}
-                    </h2>
-                    <p className='text-[14px] text-secondary px-6 italic'>
-                      &quot;{seller.slogan}&quot;
-                    </p>
+                  <div className='flex flex-col pb-32 gap-2'>
+                    <div className='px-6 pt-2 mb-1'>
+                      <div className='flex flex-col gap-1'>
+                        <h2 className='card-title '>{seller.businessName}</h2>{' '}
+                        {/* <span className='text-4xl mx-2'>•</span> */}
+                        <AvailabilityBadge availability={seller.availability} />
+                      </div>
+                    </div>
+                    {seller.slogan && (
+                      <p className='text-[14px] px-6 italic text-secondary'>
+                        &quot;
+                        <span className='text-primary bg-primary/10 p-1 rounded-md mx-1 leading-8'>
+                          {seller.slogan}
+                        </span>
+                        &quot;
+                      </p>
+                    )}
                     <p className='text-[16px] text-black px-6'>
                       {seller.description}
                     </p>
                     <div className=''>
-                      <h2 className='card-title px-6'>Horario</h2>
+                      <h2 className='card-title px-6 mt-4'>Horario</h2>
                       <TableSchema schedules={schedules} />
                     </div>
-                    <div className=''>
+                    {/* <div className=''>
                       <h2 className='card-title px-6'>Contacto</h2>
                       <p className='text-[14px] text-secondary px-6'>
                         {seller.phoneNumber}
@@ -76,7 +87,7 @@ export default function SellerModal({ seller, set }) {
                       <p className='text-[14px] text-secondary px-6'>
                         {seller.instagramUser}
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
@@ -86,7 +97,7 @@ export default function SellerModal({ seller, set }) {
                 <div className='join w-full'>
                   <a
                     href={`https://www.instagram.com/_u/${seller.instagramUser}`}
-                    className='btn btn-primary join-item w-1/2'
+                    className='btn btn-primary border-none join-item w-1/2'
                     target='_blank'
                     referrerPolicy='no-referrer'
                   >

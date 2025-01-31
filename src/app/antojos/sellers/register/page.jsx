@@ -1,64 +1,62 @@
-"use client";
-import { uploadImages } from "@/services/uploadImages";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { TbChevronLeft } from "react-icons/tb";
-import InputFields from "@/components/auth/register/InputFields";
-import { FcHighPriority } from "react-icons/fc";
-import { IoClose } from "react-icons/io5";
-import Link from "next/link";
-import ImageGrid from "@/components/general/ImageGrid";
+'use client';
+import { uploadImages } from '@/services/uploadImages';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { TbChevronLeft } from 'react-icons/tb';
+import InputFields from '@/components/auth/register/InputFields';
+import { FcHighPriority } from 'react-icons/fc';
+import { IoClose } from 'react-icons/io5';
+import Link from 'next/link';
+import ImageGrid from '@/components/general/ImageGrid';
 // import { useUser } from '@clerk/nextjs'
 
 const RegisterSeller = () => {
   const router = useRouter();
   const [sellerData, setSellerData] = useState({
-    businessName: "",
-    instagramUser: "",
-    description: "",
-    logo: "",
-    slogan: "",
-    phoneNumber: "",
+    businessName: '',
+    instagramUser: '',
+    description: '',
+    logo: '',
+    slogan: '',
+    phoneNumber: '',
     images: [],
   });
 
   // const { user } = useUser()
 
   const [loading, setLoading] = useState(false);
-  const [errorCode, setErrorCode] = useState("");
+  const [errorCode, setErrorCode] = useState('');
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
+
+    if (type === 'textarea') {
+      requestAnimationFrame(() => {
+        e.target.style.height = 'auto';
+        e.target.style.height = `${e.target.scrollHeight}px`;
+      });
+    }
+
     setSellerData({
       ...sellerData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
-  const handleImagesUpdate = (updatedImages) => {
+  const handleImagesUpdate = updatedImages => {
     setSellerData({ ...sellerData, images: updatedImages });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
-
-    /* let uploadedImages = [];
-    try {
-      console.log("vamos a intentarlo");
-      uploadedImages = await uploadImages(sellerData.images, "sellerlogos");
-    } catch (error) {
-      alert("There was a problem uploading the images. Please try again.");
-      setLoading(false);
-      return;
-    } */
 
     sellerData.logo = sellerData.images[0];
 
     try {
-      const response = await fetch("/api/sellers", {
-        method: "POST",
+      const response = await fetch('/api/sellers', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(sellerData),
       });
@@ -67,43 +65,43 @@ const RegisterSeller = () => {
         router.push('/antojos/sellers/schedules');
       } else {
         const errorData = await response.json();
-        console.error("Error:", errorData.message);
+        console.error('Error:', errorData.message);
         setErrorCode(errorData.message);
       }
     } catch (error) {
-      console.error("Network Error:", error);
-      setErrorCode("Network Error. Please try again.");
+      console.error('Network Error:', error);
+      setErrorCode('Network Error. Please try again.');
     }
     setLoading(false);
   };
 
   return (
     <>
-      <div className="flex flex-col h-dvh">
+      <div className='flex flex-col h-dvh overflow-hidden'>
         {/* Errors modal */}
         <dialog
-          id="errors"
-          className={`modal ${errorCode ? "modal-open" : ""}`}
+          id='errors'
+          className={`modal ${errorCode ? 'modal-open' : ''}`}
         >
-          <div className="modal-box bg-[#fde6e6] p-3">
-            <div className="flex justify-start items-center gap-3 w-full">
-              <div className="">
-                <FcHighPriority className="text-red-400 text-4xl" />
+          <div className='modal-box bg-[#fde6e6] p-3'>
+            <div className='flex justify-start items-center gap-3 w-full'>
+              <div className=''>
+                <FcHighPriority className='text-red-400 text-4xl' />
               </div>
-              <div className="w-full">
-                <h3 className="font-bold text-lg flex justify-between">
+              <div className='w-full'>
+                <h3 className='font-bold text-lg flex justify-between'>
                   ¡Atención!
-                  <form method="dialog">
+                  <form method='dialog'>
                     {/* if there is a button in form, it will close the modal */}
                     <button
-                      className="font-normal"
-                      onClick={() => setErrorCode("")}
+                      className='font-normal'
+                      onClick={() => setErrorCode('')}
                     >
-                      <IoClose className="text-red-400 text-2xl" />
+                      <IoClose className='text-red-400 text-2xl' />
                     </button>
                   </form>
                 </h3>
-                <p className="py-2">{errorCode}</p>
+                <p className='py-2'>{errorCode}</p>
               </div>
             </div>
           </div>
@@ -111,64 +109,64 @@ const RegisterSeller = () => {
 
         {/* content */}
         <div
-          id="register-bg"
-          className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center`}
+          id='register-bg'
+          className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center overflow-hidden`}
         >
-          <Link href="/" className="btn btn-circle absolute top-4 left-4">
-            <TbChevronLeft className="icon" />
+          <Link href='/' className='btn btn-circle absolute top-4 left-4'>
+            <TbChevronLeft className='icon' />
           </Link>
-          <h2 className="text-2xl font-semibold text-white">
+          <h2 className='text-2xl font-semibold text-white'>
             Registra tu Negocio
           </h2>
-          <p className="text-white">
+          <p className='text-white'>
             Por favor completa la información de tu negocio
           </p>
         </div>
-        <div className="h-full relative bg-[#393939]">
-          <div className="bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16">
+        <div className='h-full relative bg-[#393939]'>
+          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
             <form onSubmit={handleSubmit}>
-              <div className="flex flex-col gap-7">
+              <div className='flex flex-col gap-7'>
                 <InputFields
-                  title="Nombre del Negocio"
-                  type="text"
-                  placeholder="Nombre del negocio"
+                  title='Nombre del Negocio'
+                  type='text'
+                  placeholder='Nombre del negocio'
                   value={sellerData.businessName}
                   onChange={handleChange}
-                  name="businessName"
+                  name='businessName'
                   required
                 />
                 <InputFields
-                  title="Descripción"
-                  type="textarea"
-                  placeholder="Describe tu negocio"
+                  title='Descripción'
+                  type='textarea'
+                  placeholder='Describe tu negocio'
                   value={sellerData.description}
                   onChange={handleChange}
-                  name="description"
+                  name='description'
                 />
                 <InputFields
-                  title="Slogan"
-                  type="text"
-                  placeholder="Slogan del negocio"
+                  title='Slogan'
+                  type='text'
+                  placeholder='Slogan del negocio'
                   value={sellerData.slogan}
                   onChange={handleChange}
-                  name="slogan"
+                  name='slogan'
                 />
                 <InputFields
-                  title="Usuario de Instagram"
-                  type="text"
-                  placeholder="usuario"
+                  title='Usuario de Instagram'
+                  type='text'
+                  placeholder='usuario'
                   value={sellerData.instagramUser}
                   onChange={handleChange}
-                  name="instagramUser"
+                  name='instagramUser'
                   required
                 />
                 <InputFields
-                  title="Teléfono"
-                  type="text"
-                  placeholder="Número de teléfono"
+                  title='Teléfono'
+                  type='text'
+                  placeholder='Número de teléfono'
                   value={sellerData.phoneNumber}
                   onChange={handleChange}
-                  name="phoneNumber"
+                  name='phoneNumber'
                   required
                 />
                 {/* <div>
@@ -184,21 +182,22 @@ const RegisterSeller = () => {
                     className="file-input file-input-bordered w-full"
                   />
                 </div> */}
-                <ImageGrid initialImages={sellerData.images}
-                onUpdateImages={handleImagesUpdate}
-                nameFolder='sellerlogos'
-                title='Logo del Negocio o Foto del vendedor'
-                maxImages={1}
-                 />
+                <ImageGrid
+                  initialImages={sellerData.images}
+                  onUpdateImages={handleImagesUpdate}
+                  nameFolder='sellerlogos'
+                  title='Logo del Negocio o Foto del vendedor'
+                  maxImages={1}
+                />
                 <button
-                  type="submit"
-                  className="btn btn-primary w-full"
+                  type='submit'
+                  className='btn btn-primary w-full'
                   disabled={loading}
                 >
                   {loading ? (
-                    <span className="loading loading-infinity loading-lg"></span>
+                    <span className='loading loading-infinity loading-lg'></span>
                   ) : (
-                    "Registrar Negocio"
+                    'Registrar Negocio'
                   )}
                 </button>
               </div>

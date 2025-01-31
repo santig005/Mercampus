@@ -3,7 +3,7 @@ import React from 'react';
 export default function TableSchema({ schedules }) {
   return (
     <div className='overflow-x-auto hide-scrollbar'>
-      <table className='table table-zebra text-nowrap'>
+      <table className='table table-zebra text-nowrap bg-primary'>
         {/* Head */}
         <thead>
           <tr>
@@ -12,7 +12,7 @@ export default function TableSchema({ schedules }) {
             <th>Hora Final</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className='!bg-primary/10'>
           {Array.isArray(schedules) && schedules.length > 0 ? (
             schedules.map((schedule, index) => (
               <tr key={index}>
