@@ -10,7 +10,6 @@ import SingleImage from '@/components/general/SingleImage';
  
 export default function EditSellerPage() {
   const {user}= useUser();
-  console.log("el usuario es ",user);
   const [seller, setSeller] = useState({
     businessName: '',
     slogan: '',
@@ -33,11 +32,8 @@ export default function EditSellerPage() {
     }
     const fetchSeller=async() =>{
       try {
-        console.log("vamos a buscar el vendedor");
         const email=user.primaryEmailAddress.emailAddress;
-        console.log("el email es ",email);
         const response = await getSellerByEmail(email);
-        console.log("la respuesta es ",response);
         if (response) {
           setSeller(response);
         } else {
@@ -56,8 +52,6 @@ export default function EditSellerPage() {
   useEffect(() => {
  
     const fetchSeller = async () => {
-      console.log("vamos a print el vendedor");
-      console.log("de el vendedor", seller);
     };
  
     fetchSeller();
@@ -68,7 +62,7 @@ export default function EditSellerPage() {
     e.preventDefault();
     try {
       await updateSeller(seller._id, seller);
-      router.push('/antojos/sellers/profile');
+      router.push('/');
     } catch (error) {
       setError('Error al actualizar el perfil del vendedor.');
       console.error(error);
@@ -80,8 +74,24 @@ export default function EditSellerPage() {
  
   return (
     <div className="max-w-3xl mx-auto p-8 bg-gray-100 rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold text-center mb-8">Editar Perfil del Vendedor</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">Editar Perfil</h1>
       <form onSubmit={handleSubmit} className="space-y-8">
+
+      <div>
+          <label className="block text-lg font-semibold mb-2">Disponibilidad</label>
+          <div className="flex items-center justify-between">
+            <AvailabilityBadge availability={seller.availability} />
+            <div className="flex items-center justify-between mt-2">
+              <ToggleSwitch
+                isOn={seller.availability}
+                onToggle={() =>
+                  setSeller({ ...seller, availability: !seller.availability })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
         <InputFields
           title="Nombre del Negocio"
           type="text"
@@ -110,11 +120,6 @@ export default function EditSellerPage() {
           name="description"
         />
  
-        <SingleImage
-          initialImage={seller.logo}
-          onUpdateImage={(newImage) => setSeller({ ...seller, logo: newImage })}
-        />
- 
         <InputFields
           title="Usuario de Instagram"
           type="text"
@@ -133,21 +138,11 @@ export default function EditSellerPage() {
           name="phoneNumber"
           required
         />
- 
-        <div>
-          <label className="block text-lg font-semibold mb-2">Disponibilidad</label>
-          <div className="flex items-center justify-between">
-            <AvailabilityBadge availability={seller.availability} />
-            <div className="flex items-center justify-between mt-2">
-              <ToggleSwitch
-                isOn={seller.availability}
-                onToggle={() =>
-                  setSeller({ ...seller, availability: !seller.availability })
-                }
-              />
-            </div>
-          </div>
-        </div>
+
+        <SingleImage
+          initialImage={seller.logo}
+          onUpdateImage={(newImage) => setSeller({ ...seller, logo: newImage })}
+        />
  
         <div className="flex justify-end">
           <button
