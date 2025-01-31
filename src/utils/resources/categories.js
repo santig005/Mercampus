@@ -7,6 +7,7 @@ export const categories = [
   'Panadería',
   'Repostería',
   'Snacks', 
+  'Otros'
 ];
 
 export const Categories = async () => {
