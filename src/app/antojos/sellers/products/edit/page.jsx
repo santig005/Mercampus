@@ -121,37 +121,38 @@ export default function EditProductsPage() {
      
      
       <h2>Edita la disponibilidad de tus productos, o da click en uno en especifico para editar mas detalles</h2>
-      <div
-          className="flex justify-between items-center gap-4 p-2 bg-white rounded shadow-md"
-        >
-          <div>
-            <h3>Mi disponibilidad</h3>
-            <AvailabilityBadge availability={sellerAvailability} />
-          </div>
-          <ToggleSwitch
-            isOn={sellerAvailability}
-            onToggle={() => handleSellerAvailability()}
-          />
-        </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        
+        <div>
+    <div className="flex justify-between items-center p-4 bg-white rounded shadow-md">
+      <div>
+        <h3 className="text-lg font-semibold">Mi disponibilidad</h3>
+        <AvailabilityBadge availability={sellerAvailability} />
+      </div>
+      <ToggleSwitch
+        isOn={sellerAvailability}
+        onToggle={handleSellerAvailability}
+      />
+    </div>
 
-        {products?.map((product) => (
-          <div
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+      {products?.map((product) => (
+        <div
           key={product._id}
-          className="flex justify-between items-center gap-4 p-2 bg-white rounded shadow-md"
+          className="p-4 bg-white rounded shadow-md flex flex-col justify-between"
         >
           <div onClick={() => handleProductClick(product._id)}>
             <ProductCard product={product} isClicked={false} />
           </div>
-          <ToggleSwitch
-            isOn={product.availability}
-            onToggle={() => handleAvailabilityToggle(product._id, product.availability)}
-          />
+          <div className="mt-2 flex justify-end">
+            <ToggleSwitch
+              isOn={product.availability}
+              onToggle={() => handleAvailabilityToggle(product._id, product.availability)}
+            />
+          </div>
         </div>
-        ))}
+      ))}
+    </div>
+  </div>
 
-      </div>
     </div>
   );
 }

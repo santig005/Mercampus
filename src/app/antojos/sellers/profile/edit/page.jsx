@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { useUser } from '@clerk/nextjs';
-import SingleImage from '@/components/general/SingleImage';
+import ImageGrid from '@/components/general/ImageGrid';
  
 export default function EditSellerPage() {
   const {user}= useUser();
@@ -71,6 +71,9 @@ export default function EditSellerPage() {
       setError('Error al actualizar el perfil del vendedor.');
       console.error(error);
     }
+  };
+  const handleImagesUpdate = updatedImages => {
+    setSeller({ ...seller, logo: updatedImages[0] });
   };
 
   const handleSellerAvailability = async () => {
@@ -154,10 +157,14 @@ export default function EditSellerPage() {
           name="phoneNumber"
           required
         />
+        
 
-        <SingleImage
-          initialImage={seller.logo}
-          onUpdateImage={(newImage) => setSeller({ ...seller, logo: newImage })}
+        <ImageGrid
+          initialImages={seller.logo ? [seller.logo] : []}
+          onUpdateImages={handleImagesUpdate}
+          nameFolder="seller-logos"
+          title="Logo del Negocio"
+          maxImages={1}
         />
  
         <div className="flex justify-end">
