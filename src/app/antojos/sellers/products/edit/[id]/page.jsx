@@ -147,6 +147,9 @@ export default function EditPsroductPage({params}) {
       <ImageGrid
         initialImages={product.images}
         onUpdateImages={handleImagesUpdate}
+        nameFolder='products'
+        title='Imágenes del Producto'
+        maxImages={5}
       />
     </div>
         <div className="flex justify-end">

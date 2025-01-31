@@ -209,10 +209,10 @@ export default function SignInForm() {
                 </div>
               </div>
             </form>
-            <div className='divider my-6'>O también puedes</div>
+            {/* <div className='divider my-6'>O también puedes</div>
             <div className='flex flex-col gap-3'>
               <ProvidersButton />
-            </div>
+            </div> */}
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/register' className='text-center text-primary'>
                 <span className='text-black'>¿No tienes una cuenta?</span> Crea
