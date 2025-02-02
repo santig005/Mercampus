@@ -6,6 +6,8 @@ import React from 'react';
 import { auth } from '@clerk/nextjs/server';
 import { SignOutButton } from '@clerk/nextjs';
 import SidebarBtn from '@/components/header/SidebarBtn';
+import Analytics from '@/utils/analytics';
+
 import {
   MdFastfood,
   MdOutlineFastfood,
@@ -42,7 +44,10 @@ export default async function layout({ children }) {
     <div className='drawer z-40'>
       <input id='my-dibujador' type='checkbox' className='drawer-toggle' />
       <div className='drawer-content'>
-        <Layout>{children}</Layout>
+        <Layout> 
+          <Analytics />
+          {children}
+          </Layout>
       </div>
       <div className='drawer-side'>
         <label
