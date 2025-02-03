@@ -12,6 +12,7 @@
     "@clerk/localizations": "^3.7.0",
     "@clerk/nextjs": "^5.6.0",
     "@formkit/auto-animate": "^0.8.2",
+    "@next/third-parties": "^15.1.6",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.0",
     "imagekit": "^6.0.0",
