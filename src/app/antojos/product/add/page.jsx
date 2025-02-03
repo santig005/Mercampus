@@ -8,6 +8,7 @@ import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import { useUser } from '@clerk/nextjs';
 import { getSellerByEmail } from '@/services/sellerService';
+import ImageGrid from '@/components/general/ImageGrid';
 
 const AddProduct = () => {
   const router = useRouter();
@@ -17,7 +18,6 @@ const AddProduct = () => {
     price: '',
     description: '',
     images: [],
-    thumbnail: '',
   });
 
   const [categories, setCategories] = useState([]); // State for storing categories
@@ -102,44 +102,13 @@ const AddProduct = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Image uploading
-
-    // Usage
-    let uploadedImages = [];
-    try {
-      if (formData.images.length > 0) {
-        uploadedImages = await Promise.all(
-          formData.images.map(async file => {
-            const imageFormData = new FormData();
-            imageFormData.append('file', file);
-            imageFormData.append('folder', 'products');
-            const response = await fetch('/api/images', {
-              method: 'POST',
-              body: imageFormData, // Send the file to the API
-            });
-
-            if (!response.ok) {
-              throw new Error('Error uploading image');
-            }
-            const data = await response.json();
-            return data.url; // Assuming your API returns the URL
-          })
-        );
-      }
-    } catch (error) {
-      alert('There was a problem uploading the images. Please try again.');
-      setLoading(false);
-      return;
-    }
-
     // Prepare product data
     const data = {
       name: formData.name,
       category: formData.category,
       price: price,
       description: formData.description,
-      images: uploadedImages, // Save uploaded image URLs
-      thumbnail: uploadedImages[0], // This can also be one of the uploaded images
+      images: formData.images, // Save uploaded image URLs
     };
 
     try {
@@ -163,6 +132,10 @@ const AddProduct = () => {
       setErrorCode('Network Error. Please try again.');
     }
     setLoading(false);
+  };
+
+  const handleImagesUpdate = (updatedImages) => {
+    setFormData({ ...formData, images: updatedImages });
   };
 
   return (
@@ -260,17 +233,13 @@ const AddProduct = () => {
                   name='description'
                 />
                 <div>
-                  <label>Imágenes</label>
-                  <input
-                    type='file'
-                    name='images'
-                    multiple
-                    onChange={e =>
-                      setFormData({ ...formData, images: [...e.target.files] })
-                    }
-                    required
-                    className='file-input file-input-bordered w-full'
-                  />
+                <ImageGrid
+                  initialImages={formData.images}
+                  onUpdateImages={handleImagesUpdate}
+                  nameFolder='products'
+                  title='Imágenes del Producto'
+                  maxImages={5}
+                />
                 </div>
                 <button
                   type='submit'

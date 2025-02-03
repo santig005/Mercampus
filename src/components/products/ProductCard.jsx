@@ -4,7 +4,7 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
 
 export default function ProductCard({
-  product: { _id: id, name, availability, category, price, thumbnail, owner },
+  product: { _id: id, name, availability, category, price, images, owner },
   isClicked,
 }) {
   return (
@@ -14,7 +14,7 @@ export default function ProductCard({
       }`}
     >
       <div className='size-24 w-32 rounded-md overflow-hidden'>
-        <img className='img-full' src={thumbnail} alt={'Imagen de ' + name} />
+        <img className='img-full' src={images[0]} alt={'Imagen de ' + name} />
       </div>
       <div className='flex flex-col justify-between'>
         <h2 className='my-card-title truncate w-60 block'>{name}</h2>
