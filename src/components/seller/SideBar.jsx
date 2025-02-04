@@ -89,12 +89,21 @@ const SideBar = ({ userId }) => {
                         />
                       </li>)
                       }
+                      {seller && !seller?.approved &&(<li>
+                        <SidebarBtn
+                          text='Solicitud en proceso'
+                          goto='/antojos/sellers/approving'
+                          iconActive={<BsPersonFillAdd className='size-5' />}
+                          iconInactive={<BsPersonAdd className='size-5' />}
+                        />
+                      </li>)
+                      }
                     </>
                   )}
                 </ul>
               </details>
             </li>
-            {userId && seller && (
+            {userId && seller?.approved && (
               <li className='menu p-0'>
                 <details open>
                   <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>

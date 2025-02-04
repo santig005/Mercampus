@@ -41,10 +41,12 @@ export async function GET(req, res) {
     .populate({
       path: 'sellerId', // Campo relacionado a poblar
       model: 'Seller', // Modelo al que pertenece el campo
+      match: {approved: true}, // Filtro para poblar
     });
+  const approvedProducts = products.filter(product => product.sellerId !== null);
 
   const populatedProducts = await Promise.all(
-    products.map(async product => {
+    approvedProducts.map(async product => {
       const schedules = await Schedule.find({ sellerId: product.sellerId._id });
       schedules.sort((a, b) => {
         if (a.day !== b.day) return a.day - b.day;
