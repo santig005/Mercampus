@@ -7,7 +7,7 @@ import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import { useUser } from '@clerk/nextjs';
-import { getSellerByEmail } from '@/services/sellerService';
+import { useSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select'
 
@@ -27,49 +27,47 @@ const AddProduct = () => {
   const [price, setPrice] = useState('');
   const [displayPrice, setDisplayPrice] = useState('');
 
-  const { user } = useUser();
-  const [sellerId, setSellerId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+    const { seller, loading: sellerLoading } = useSeller();
+    const { user } = useUser();
+  
+    useEffect(() => {
+           if (!user) {
+             window.location.href = '/';
+           }
+         }, [user]);
+       
+    useEffect(() => {
+      if (!sellerLoading) {
+        if (seller==false) {
+          window.location.href = '/antojos/sellers/register';
+        }
+      }
+    }, [seller, sellerLoading]);
 
   const categoryOptions = categories.map(category => ({
     value: category,
     label: category
   }));
 
-  useEffect(() => {
-    if (!user) {
-      window.location.href = '/';
-      return;
-    }
 
-    const fetchSeller = async () => {
-      try {
-        const email = user.primaryEmailAddress.emailAddress;
-        const seller = await getSellerByEmail(email);
-        setSellerId(seller._id);
-      } catch (error) {
-        console.log('error en el seller', error);
-        setSellerId(null);
-      } finally {
-        setIsLoading(false);
+  
+    // Once the seller context is done loading, check if we have a valid seller
+    useEffect(() => {
+      if (!sellerLoading) {
+        if (seller==false) {
+          window.location.href = '/antojos/sellers/register';
+        } else {
+          const loadCategories = async () => {
+            const categoriesData = await Categories(); // Await the result
+            setCategories(categoriesData); // Update state with fetched categories
+          };
+          loadCategories();
+        }
       }
-    };
+    }, [seller, sellerLoading]);
+  
+    if (sellerLoading ) return <div>Cargando...</div>;
 
-    fetchSeller();
-  }, [user]);
-
-  useEffect(() => {
-    if (!isLoading && !sellerId) {
-      window.location.href = '/antojos/sellers/register';
-      return;
-    }
-    const loadCategories = async () => {
-      const categoriesData = await Categories(); // Await the result
-      setCategories(categoriesData); // Update state with fetched categories
-    };
-
-    loadCategories(); // Call the function on component mount
-  }, [sellerId, isLoading]);
 
   const handleCategoryChange = selectedOptions => {
     const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
@@ -151,6 +149,7 @@ const AddProduct = () => {
 
   return (
     <>
+    
       <div className='flex flex-col h-dvh'>
         {/* Errors modal */}
         <dialog
