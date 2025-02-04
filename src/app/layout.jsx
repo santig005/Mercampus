@@ -1,4 +1,5 @@
 import { Montserrat } from 'next/font/google';
+import { SellerProvider } from '@/context/SellerContext';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
 import { esMX } from '@clerk/localizations';
 
@@ -52,6 +53,7 @@ export default function RootLayout({ children }) {
         variables: { colorPrimary: '#FF7622' },
       }}
     >
+      <SellerProvider>
       <html lang='es' className={`${montserrat.className} overflow-hidden`}>
         <body className='overflow-hidden bg-primary'>
           <AnimationProvider>
@@ -66,6 +68,8 @@ export default function RootLayout({ children }) {
           </AnimationProvider>
         </body>
       </html>
+      </SellerProvider>
     </ClerkProvider>
+    
   );
 }
