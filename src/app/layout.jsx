@@ -53,9 +53,10 @@ export default function RootLayout({ children }) {
         variables: { colorPrimary: '#FF7622' },
       }}
     >
-      <SellerProvider>
+      
       <html lang='es' className={`${montserrat.className} overflow-hidden`}>
         <body className='overflow-hidden bg-primary'>
+        <SellerProvider>
           <AnimationProvider>
             <ClerkLoading>
               <div className='fixed top-0 left-0 z-50 w-full h-full bg-primary flex items-center justify-center'>
@@ -66,9 +67,9 @@ export default function RootLayout({ children }) {
             </ClerkLoading>
             <ClerkLoaded>{children}</ClerkLoaded>
           </AnimationProvider>
+          </SellerProvider>
         </body>
       </html>
-      </SellerProvider>
     </ClerkProvider>
     
   );

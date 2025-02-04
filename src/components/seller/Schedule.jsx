@@ -28,7 +28,7 @@ const Schedule = () => {
   // Once the seller context is done loading, check if we have a valid seller
   useEffect(() => {
     if (!sellerLoading) {
-      if (seller===false) {
+      if (seller==false) {
         router.push('/antojos/sellers/register'); 
       } else {
         const fetchSchedules = async () => {
