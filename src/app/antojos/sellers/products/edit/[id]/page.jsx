@@ -7,6 +7,7 @@ import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { categories } from '@/utils/resources/categories';
 import ImageGrid from '@/components/general/ImageGrid';
+import Select from 'react-select';
 
 export default function EditPsroductPage({params}) {
   const {id} = params;
@@ -17,6 +18,11 @@ export default function EditPsroductPage({params}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+
+  const categoryOptions = categories.map(category => ({
+    value: category,
+    label: category
+  }));
 
   useEffect(() => {
     async function fetchProduct() {
@@ -44,6 +50,12 @@ export default function EditPsroductPage({params}) {
       console.error(error);
     }
   };
+
+  const handleCategoryChange = selectedOptions => {
+    const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
+    setProduct(prev => ({ ...prev, category: selectedValues }));
+  };
+
   const handleImagesUpdate = (updatedImages) => {
     setProduct({ ...product, images: updatedImages });
   };
@@ -112,21 +124,15 @@ export default function EditPsroductPage({params}) {
 
         <div>
           <label className="block text-lg font-semibold mb-2">Categoría</label>
-          <select
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={product.category}
-            onChange={(e) => setProduct({ ...product, category: e.target.value })}
-            required
-          >
-            <option value="" disabled>
-              Selecciona una categoría
-            </option>
-            {categories.map((category, index) => (
-              <option key={index} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+          <Select
+            isMulti
+            name="category"
+            options={categoryOptions}
+            value={categoryOptions.filter(option => product.category?.includes(option.value))}
+            onChange={handleCategoryChange}
+            className="basic-multi-select w-full"
+            classNamePrefix="select"
+          />
         </div>
 
 

@@ -7,6 +7,7 @@ export const categories = [
   'Panadería',
   'Repostería',
   'Snacks', 
+  'Comida rápida',
   'Otros'
 ];
 
