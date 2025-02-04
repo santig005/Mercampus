@@ -9,12 +9,13 @@ import { IoClose } from 'react-icons/io5';
 import { useUser } from '@clerk/nextjs';
 import { getSellerByEmail } from '@/services/sellerService';
 import ImageGrid from '@/components/general/ImageGrid';
+import Select from 'react-select'
 
 const AddProduct = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    category: [],
     price: '',
     description: '',
     images: [],
@@ -29,6 +30,11 @@ const AddProduct = () => {
   const { user } = useUser();
   const [sellerId, setSellerId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const categoryOptions = categories.map(category => ({
+    value: category,
+    label: category
+  }));
 
   useEffect(() => {
     if (!user) {
@@ -64,6 +70,11 @@ const AddProduct = () => {
 
     loadCategories(); // Call the function on component mount
   }, [sellerId, isLoading]);
+
+  const handleCategoryChange = selectedOptions => {
+    const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
+    handleChange({ target: { name: 'category', value: selectedValues } });
+  };
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
@@ -200,20 +211,15 @@ const AddProduct = () => {
                 />
                 <div>
                   <label>Categoría</label>
-                  <select
-                    name='category'
-                    value={formData.category}
-                    onChange={handleChange}
-                    required
-                    className='select select-bordered w-full'
-                  >
-                    <option value=''>Selecciona</option>
-                    {categories.map((category, index) => (
-                      <option key={index} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    isMulti
+                    name="category"
+                    options={categoryOptions}
+                    value={categoryOptions.filter(option => formData.category?.includes(option.value))}
+                    onChange={handleCategoryChange}
+                    className="basic-multi-select w-full"
+                    classNamePrefix="Selecciona"
+                  />
                 </div>
                 <InputFields
                   title='Precio'
