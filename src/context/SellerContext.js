@@ -2,11 +2,13 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { getSellerByEmail } from '@/services/sellerService';
+import { getUserByEmail } from '@/services/userService';
 const SellerContext = createContext(null);
 
 export const SellerProvider = ({ children }) => {
   const { user } = useUser();
   const [seller, setSeller] = useState(null);
+  const [dbUser, setDbUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +25,8 @@ export const SellerProvider = ({ children }) => {
         if (email) {
           const sellerData = await getSellerByEmail(email);
           setSeller(sellerData);
+          const userData = await getUserByEmail(email);
+          setDbUser(userData);
         }
         //console.log("el seller en back es ",seller);
       } catch (error) {
@@ -37,7 +41,7 @@ export const SellerProvider = ({ children }) => {
   }, [user]); // Only refetch when `user` changes
 
   return (
-    <SellerContext.Provider value={{ seller, loading }}>
+    <SellerContext.Provider value={{ seller, loading, dbUser }}>
       {children}
     </SellerContext.Provider>
   );
