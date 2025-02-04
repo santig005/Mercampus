@@ -6,6 +6,7 @@ import Empanada from '/public/images/category/empanada.png';
 import Papas from '/public/images/category/papas.png';
 import Helados from '/public/images/category/helados.png';
 import Snacks from '/public/images/category/snacks.webp';
+import HamburguesaRender from '/public/images/category/hamburguesa.webp';
 
 
 export const categoriesList = [
@@ -44,6 +45,10 @@ export const categoriesList = [
   {
     name: 'Snacks',
     icon: Snacks.src,
+  },
+  {
+    name: 'Comida rápida',
+    icon: HamburguesaRender.src,
   },
   {
     name: 'Otros',
