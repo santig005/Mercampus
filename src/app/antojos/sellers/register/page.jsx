@@ -1,5 +1,4 @@
 'use client';
-import { uploadImages } from '@/services/uploadImages';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TbChevronLeft } from 'react-icons/tb';
@@ -8,7 +7,8 @@ import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import Link from 'next/link';
 import ImageGrid from '@/components/general/ImageGrid';
-// import { useUser } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs'
+import { useSeller } from '@/context/SellerContext';
 
 const RegisterSeller = () => {
   const router = useRouter();
@@ -21,11 +21,28 @@ const RegisterSeller = () => {
     phoneNumber: '',
     images: [],
   });
-
-  // const { user } = useUser()
-
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
+  const {seller, loading: sellerLoading } = useSeller();
+
+  const { user } = useUser();
+
+  // Redirect if there is no logged in user
+  useEffect(() => {
+    if (!user) {
+      window.location.href = '/';
+    }
+  }, [user]);
+
+  useEffect(() => {
+         if (!sellerLoading) {
+           if (seller) {
+             window.location.href = '/antojos/sellers/schedules';
+           }  
+         }
+       }, [seller, sellerLoading]);
+
+  
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;

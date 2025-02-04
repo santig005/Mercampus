@@ -3,64 +3,57 @@ import { daysOfWeekES } from "@/utils/resources/days";
 import { getSchedules, createSchedule } from "@/services/scheduleService";
 import React, { useState,useEffect } from 'react';
 import { useUser } from "@clerk/nextjs";
-import { getSellerByEmail } from "@/services/sellerService";
+import {useSeller} from "@/context/SellerContext";
+import { useRouter } from 'next/navigation';
 
 const Schedule = () => {
+  const router = useRouter();
   const [schedules, setSchedules] = useState([
-    {id:null, day: '', startTime: '', endTime: '' },
+    { id: null, day: '', startTime: '', endTime: '' },
   ]);
-
   const [errorBanner, setErrorBanner] = useState(null);
-  const { user } = useUser();
-  const [sellerId,setSellerId]=useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(true);
 
+  // Get seller data and loading state from the context
+  const { seller, loading: sellerLoading } = useSeller();
+  const { user } = useUser();
+
+  // Redirect if there is no logged in user
   useEffect(() => {
     if (!user) {
-      window.location.href = '/';
-      return;
+      router.push('/');
     }
+  }, [user,router]);
 
-    const fetchSeller = async () => {
-      try {
-        const email = user.primaryEmailAddress.emailAddress;
-        const seller = await getSellerByEmail(email);
-        setSellerId(seller._id);
-      } catch (error) {
-        setSellerId(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSeller();
-  }, [user]);
-
+  // Once the seller context is done loading, check if we have a valid seller
   useEffect(() => {
-    if (!isLoading && !sellerId) {
-      window.location.href = '/antojos/sellers/register';
-      return;
+    if (!sellerLoading) {
+      if (seller===false) {
+        router.push('/antojos/sellers/register'); 
+      } else {
+        const fetchSchedules = async () => {
+          if(!seller) return;
+          try {
+            const response = await getSchedules(seller._id);
+            const mappedSchedules = response.schedules.map((schedule) => ({
+              id: schedule._id,
+              day: schedule.day,
+              startTime: schedule.startTime,
+              endTime: schedule.endTime,
+            }));
+            setSchedules(mappedSchedules);
+          } catch (error) {
+            console.error('Error fetching schedules:', error);
+          } finally {
+            setIsLoadingSchedules(false);
+          }
+        };
+        fetchSchedules();
+      }
     }
+  }, [seller, sellerLoading]);
 
-    if (sellerId) {
-      const fetchSchedules = async () => {
-        try {
-          const response = await getSchedules(sellerId);
-          const mappedSchedules = response.schedules.map((schedule) => ({
-            id: schedule._id, // ID único para manejo de componentes
-            day: schedule.day,
-            startTime: schedule.startTime,
-            endTime: schedule.endTime,
-          }));
-          setSchedules(mappedSchedules);
-        } catch (error) {
-          setErrorBanner("No se pudieron cargar los horarios.");
-        }
-      };
-
-      fetchSchedules();
-    }
-  }, [sellerId, isLoading]);  
+  if (sellerLoading || isLoadingSchedules) return <div>Cargando...</div>;
 
   const handleAddSchedule = () => {
     setSchedules([...schedules, { id:null,day: '', startTime: '', endTime: '' }]);
@@ -113,16 +106,17 @@ const Schedule = () => {
     return true;
   };
 
-  const payload = {
-    sellerId: sellerId,
-    schedules: schedules,
-  };
+  
   const handleRemoveSchedule = (index) => {
     const updatedSchedules = schedules.filter((_, i) => i !== index);
     setSchedules(updatedSchedules);
   };
 
   const handlePrintSchedules = async () => {
+    const payload = {
+      sellerId: seller._id,
+      schedules: schedules,
+    };
     if (validateSchedules()) {
       setErrorBanner(null); // Clear error banner if validation passes
       try {
@@ -135,7 +129,7 @@ const Schedule = () => {
         });
       if (response.ok) {
         console.log('Schedules printed successfully');
-        window.location.href = '/antojos';
+        router.push('/antojos');
       } else {
         const errorData = await response.json();
         console.error('Error al guardar horarios:', errorData.message);
