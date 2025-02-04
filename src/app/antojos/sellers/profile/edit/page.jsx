@@ -35,9 +35,6 @@ export default function EditSellerPage() {
          }
        }
      }, [dataSeller, sellerLoading]);
-     useEffect(() => {
-      console.log("El estado seller se actualizó:", seller);
-    }, [seller]);
  
  
   const handleSubmit = async (e) => {
