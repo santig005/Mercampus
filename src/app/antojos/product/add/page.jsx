@@ -38,7 +38,7 @@ const AddProduct = () => {
        
     useEffect(() => {
       if (!sellerLoading) {
-        if (dataSeller==false) {
+        if (seller==false) {
           window.location.href = '/antojos/sellers/register';
         }
       }
