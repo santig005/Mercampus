@@ -8,16 +8,17 @@ import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import { useUser } from '@clerk/nextjs';
 import { useSeller } from '@/context/SellerContext';
+import ImageGrid from '@/components/general/ImageGrid';
+import Select from 'react-select'
 
 const AddProduct = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    category: [],
     price: '',
     description: '',
     images: [],
-    thumbnail: '',
   });
 
   const [categories, setCategories] = useState([]); // State for storing categories
@@ -29,12 +30,26 @@ const AddProduct = () => {
     const { seller, loading: sellerLoading } = useSeller();
     const { user } = useUser();
   
-    // Redirect if there is no logged in user
     useEffect(() => {
-      if (!user) {
-        window.location.href = '/';
+           if (!user) {
+             window.location.href = '/';
+           }
+         }, [user]);
+       
+    useEffect(() => {
+      if (!sellerLoading) {
+        if (dataSeller==false) {
+          window.location.href = '/antojos/sellers/register';
+        }
       }
-    }, [user]);
+    }, [seller, sellerLoading]);
+
+  const categoryOptions = categories.map(category => ({
+    value: category,
+    label: category
+  }));
+
+
   
     // Once the seller context is done loading, check if we have a valid seller
     useEffect(() => {
@@ -53,6 +68,11 @@ const AddProduct = () => {
   
     if (sellerLoading ) return <div>Cargando...</div>;
 
+
+  const handleCategoryChange = selectedOptions => {
+    const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
+    handleChange({ target: { name: 'category', value: selectedValues } });
+  };
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
@@ -91,44 +111,13 @@ const AddProduct = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Image uploading
-
-    // Usage
-    let uploadedImages = [];
-    try {
-      if (formData.images.length > 0) {
-        uploadedImages = await Promise.all(
-          formData.images.map(async file => {
-            const imageFormData = new FormData();
-            imageFormData.append('file', file);
-            imageFormData.append('folder', 'products');
-            const response = await fetch('/api/images', {
-              method: 'POST',
-              body: imageFormData, // Send the file to the API
-            });
-
-            if (!response.ok) {
-              throw new Error('Error uploading image');
-            }
-            const data = await response.json();
-            return data.url; // Assuming your API returns the URL
-          })
-        );
-      }
-    } catch (error) {
-      alert('There was a problem uploading the images. Please try again.');
-      setLoading(false);
-      return;
-    }
-
     // Prepare product data
     const data = {
       name: formData.name,
       category: formData.category,
       price: price,
       description: formData.description,
-      images: uploadedImages, // Save uploaded image URLs
-      thumbnail: uploadedImages[0], // This can also be one of the uploaded images
+      images: formData.images, // Save uploaded image URLs
     };
 
     try {
@@ -152,6 +141,10 @@ const AddProduct = () => {
       setErrorCode('Network Error. Please try again.');
     }
     setLoading(false);
+  };
+
+  const handleImagesUpdate = (updatedImages) => {
+    setFormData({ ...formData, images: updatedImages });
   };
 
   return (
@@ -217,20 +210,15 @@ const AddProduct = () => {
                 />
                 <div>
                   <label>Categoría</label>
-                  <select
-                    name='category'
-                    value={formData.category}
-                    onChange={handleChange}
-                    required
-                    className='select select-bordered w-full'
-                  >
-                    <option value=''>Selecciona</option>
-                    {categories.map((category, index) => (
-                      <option key={index} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    isMulti
+                    name="category"
+                    options={categoryOptions}
+                    value={categoryOptions.filter(option => formData.category?.includes(option.value))}
+                    onChange={handleCategoryChange}
+                    className="basic-multi-select w-full"
+                    classNamePrefix="Selecciona"
+                  />
                 </div>
                 <InputFields
                   title='Precio'
@@ -250,17 +238,13 @@ const AddProduct = () => {
                   name='description'
                 />
                 <div>
-                  <label>Imágenes</label>
-                  <input
-                    type='file'
-                    name='images'
-                    multiple
-                    onChange={e =>
-                      setFormData({ ...formData, images: [...e.target.files] })
-                    }
-                    required
-                    className='file-input file-input-bordered w-full'
-                  />
+                <ImageGrid
+                  initialImages={formData.images}
+                  onUpdateImages={handleImagesUpdate}
+                  nameFolder='products'
+                  title='Imágenes del Producto'
+                  maxImages={5}
+                />
                 </div>
                 <button
                   type='submit'

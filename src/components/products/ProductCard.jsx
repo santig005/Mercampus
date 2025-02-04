@@ -4,7 +4,7 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
 
 export default function ProductCard({
-  product: { _id: id, name, availability, category, price, thumbnail, owner },
+  product: { _id: id, name, availability, category, price, images, owner },
   isClicked,
 }) {
   return (
@@ -14,11 +14,17 @@ export default function ProductCard({
       }`}
     >
       <div className='size-24 w-32 rounded-md overflow-hidden'>
-        <img className='img-full' src={thumbnail} alt={'Imagen de ' + name} />
+        <img className='img-full' src={images[0]} alt={'Imagen de ' + name} />
       </div>
       <div className='flex flex-col justify-between'>
         <h2 className='my-card-title truncate w-60 block'>{name}</h2>
-        <h4 className='my-card-subtitle text-primary/70'>{category}</h4>
+        <div className='my-card-subtitle truncate w-60 block text-primary/90'>
+          {category.map((cat, index) => (
+            <span key={index} className='text-[11px] mr-1 px-1 py-[2px] rounded-md bg-[#ff950b]/15'>
+              {cat}
+            </span>
+          ))}
+        </div>
         <p className='card-price'>{priceFormat(price)}</p>
         {/* <div className='flex items-center gap-2'>
           <div className='rounded-full size-6 overflow-hidden'>
