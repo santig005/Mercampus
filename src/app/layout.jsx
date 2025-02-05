@@ -2,6 +2,7 @@ import { Montserrat } from 'next/font/google';
 import { SellerProvider } from '@/context/SellerContext';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
 import { esMX } from '@clerk/localizations';
+import Analytics from '@/utils/analytics';
 
 import React from 'react';
 import '../../public/css/main.css';
@@ -69,6 +70,7 @@ export default function RootLayout({ children }) {
           </AnimationProvider>
           </SellerProvider>
         </body>
+        <Analytics />
       </html>
     </ClerkProvider>
     
