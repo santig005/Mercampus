@@ -34,9 +34,16 @@ const RegisterSeller = () => {
     }
   }, [user]);
 
+  // Redirect if seller is not approved
+  useEffect(() => {
+    if (!sellerLoading && seller && !seller.approved) {
+      router.push('/antojos/sellers/approving'); // Redirige a la página de estado de aprobación
+    }
+  }, [seller, sellerLoading, router]);
+
   useEffect(() => {
          if (!sellerLoading) {
-           if (seller) {
+           if (seller && seller.approved) {
              window.location.href = '/antojos/sellers/schedules';
            }  
          }
@@ -79,7 +86,7 @@ const RegisterSeller = () => {
       });
 
       if (response.ok) {
-        router.push('/antojos/sellers/schedules');
+        router.push('/antojos/sellers/approving');
       } else {
         const errorData = await response.json();
         console.error('Error:', errorData.message);

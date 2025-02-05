@@ -32,6 +32,10 @@ const productSchema = new mongoose.Schema(
       required: true,
       enum: categories, // Example categories
     },
+    stock:{
+      type: Boolean,
+      default: true,
+    }
   },
   {
     timestamps: true,

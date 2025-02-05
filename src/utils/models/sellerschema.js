@@ -30,6 +30,10 @@ const sellerSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    approved: {
+        type: Boolean,
+        default: false
+    },
 });
 
 export const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema);
