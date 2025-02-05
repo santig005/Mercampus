@@ -1,7 +1,6 @@
 import Layout from '@/components/layout/Layout';
 import React from 'react';
 import { auth } from '@clerk/nextjs/server';
-import Analytics from '@/utils/analytics';
 import SideBar from '@/components/seller/SideBar';
 
 
@@ -12,7 +11,6 @@ export default async function layout({ children }) {
       <input id='my-dibujador' type='checkbox' className='drawer-toggle' />
       <div className='drawer-content'>
         <Layout> 
-          <Analytics />
           {children}
           </Layout>
       </div>
