@@ -1,11 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { TbChevronLeft } from 'react-icons/tb';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
-import Link from 'next/link';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useUser } from '@clerk/nextjs'
 import { useSeller } from '@/context/SellerContext';
@@ -136,9 +134,9 @@ const RegisterSeller = () => {
           id='register-bg'
           className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center overflow-hidden`}
         >
-          <Link href='/' className='btn btn-circle absolute top-4 left-4'>
+          {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
-          </Link>
+          </Link> */}
           <h2 className='text-2xl font-semibold text-white'>
             Registra tu Negocio
           </h2>

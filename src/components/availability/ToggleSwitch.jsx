@@ -16,7 +16,7 @@ export default function ToggleSwitch({ isOn, onToggle }) {
       >
         <div
           className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-            isOn ? 'translate-x-5' : 'translate-x-0'
+            isOn ? 'translate-x-4' : 'translate-x-0'
           }`}
         ></div>
       </div>
