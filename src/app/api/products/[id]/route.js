@@ -2,6 +2,7 @@ import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
+import { daysES } from '@/utils/resources/days';
 
 export async function GET(req, { params }) {
   await connectDB();
@@ -19,11 +20,17 @@ export async function GET(req, { params }) {
         { status: 404 }
       );
     }
-    const schedules = await Schedule.find({ sellerId: product.sellerId._id });
+    console.log("el producto es:");
+    console.log(product);
+    var schedules = await Schedule.find({ sellerId: product.sellerId._id });
+    console.log("los horarios son:");
+    console.log(schedules);
     schedules.sort((a, b) => {
       if (a.day !== b.day) return a.day - b.day;
       return a.startTime.localeCompare(b.startTime);
     });
+    console.log("los horarios ordenados son:");
+    console.log(schedules);
 
     // Transformar los días a nombres
     const transformedSchedules = schedules.map(schedule => ({
@@ -32,8 +39,12 @@ export async function GET(req, { params }) {
     }));
     console.log('los horarios transformados son:');
     console.log(transformedSchedules);
+    //schedules={schedules:transformedSchedules};
 
-    return NextResponse.json({ ...product.toObject() }, { status: 200 });
+
+
+    return NextResponse.json({ ...product.toObject(), schedules}, { status: 200 });
+
   } catch (error) {
     return NextResponse.json(
       { message: 'Error getting product', error: error.message },

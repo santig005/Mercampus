@@ -25,6 +25,8 @@ const Producto = () => {
         .then(data => {
           setProduct(data);
         });
+        console.log("ahora el producto es:");
+        console.log(product);
     }
   }, []);
 
