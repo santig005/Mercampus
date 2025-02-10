@@ -33,16 +33,14 @@ export async function GET(req, res) {
     };
   }
 
-  const products = await Product.find(filter)
-    .sort({
-      availability: -1,
-      createdAt: -1,
-    })
+  let products = await Product.find(filter)
     .populate({
       path: 'sellerId', // Campo relacionado a poblar
       model: 'Seller', // Modelo al que pertenece el campo
       match: {approved: true}, // Filtro para poblar
     });
+    products = products.sort(() => Math.random() - 0.5); 
+    products.sort((a, b) => b.availability - a.availability);
   const approvedProducts = products.filter(product => product.sellerId !== null);
 
   const populatedProducts = await Promise.all(
