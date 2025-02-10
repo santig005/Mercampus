@@ -34,6 +34,10 @@ const sellerSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    university:{
+        type: String,
+        default: 'Universidad Eafit'
+    }
 });
 
 export const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema);
