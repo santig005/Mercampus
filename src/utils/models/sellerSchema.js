@@ -12,7 +12,8 @@ const sellerSchema = new mongoose.Schema({
         type: String
     },
     logo: {
-        type: String
+        type: String,
+        default: 'https://ik.imagekit.io/iebk3hngu/sellerlogos/default-pfp.png?updatedAt=1739221374401'
     },
     instagramUser: {
         type: String
