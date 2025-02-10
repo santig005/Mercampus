@@ -2,11 +2,13 @@
 import React from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
+import SellerBadge from '../seller/SellerBadge';
 
 export default function ProductCard({
   product: { _id: id, name, availability, category, price, images, owner },
   isClicked,
 }) {
+
   return (
     <div
       className={`bg-white drop-shadow-md flex gap-2 p-2 rounded-md transition-transform duration-300 cursor-pointer ${
@@ -26,17 +28,18 @@ export default function ProductCard({
           ))}
         </div>
         <p className='card-price'>{priceFormat(price)}</p>
-        {/* <div className='flex items-center gap-2'>
-          <div className='rounded-full size-6 overflow-hidden'>
+        <div className='flex items-center gap-2'>
+          {/* <div className='rounded-full size-6 overflow-hidden'>
             <img
               className='img-full'
-              src={thumbnail}
+              src={owner?.logo}
               alt={'Imagen del publicador del producto ' + name}
             />
-          </div>
+          </div> */}
           <p className='my-card-subtitle'>{owner}</p>
-        </div> */}
+        </div>
         <AvailabilityBadge availability={availability}></AvailabilityBadge>
+        {/* <SellerBadge seller={owner}></SellerBadge> */}
       </div>
     </div>
   );
