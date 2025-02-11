@@ -12,7 +12,8 @@ const sellerSchema = new mongoose.Schema({
         type: String
     },
     logo: {
-        type: String
+        type: String,
+        default: 'https://ik.imagekit.io/iebk3hngu/sellerlogos/whisk1.png?updatedAt=1739224183820'
     },
     instagramUser: {
         type: String
@@ -34,6 +35,10 @@ const sellerSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    university:{
+        type: String,
+        default: 'Universidad Eafit'
+    }
 });
 
 export const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema);
