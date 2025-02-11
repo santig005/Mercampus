@@ -1,5 +1,5 @@
 import {getUser} from '@/services/auth/server/user';
-import {Seller} from '@/utils/models/sellerschema';
+import {Seller} from '@/utils/models/sellerSchema2';
 
 export async function isSeller() {
   const user=await getSeller();
