@@ -9,6 +9,7 @@ import { TbBrandWhatsapp } from 'react-icons/tb';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import SellerModal from '@/components/seller/index/SellerModal';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import { sendGAEvent } from '@next/third-parties/google';
 
 export default function ProductModal({ product, set }) {
   const [seller, setSeller] = useState({});
@@ -19,6 +20,13 @@ export default function ProductModal({ product, set }) {
     if (product && product.sellerId) {
       setSeller(product.sellerId);
       setSchedules(product.schedules);
+      sendGAEvent('event', 'click_product', {
+        action: 'Clicked Product',
+        product_name: product.name,
+        product_price: product.price,
+        seller_name: seller.businessName,
+        product_id: product._id,
+        });
     }
   }, [product]);
 
@@ -115,6 +123,14 @@ export default function ProductModal({ product, set }) {
                     aria-label={`Contactar a ${
                       seller?.businessName || 'el vendedor'
                     } por WhatsApp`}
+                    onClick={() => {
+                      sendGAEvent('event', 'click_whatsapp_product', {
+                        action: 'Clicked WhatsApp Link',
+                        product_name: product.name,
+                        product_id: product._id,
+                        seller_name: seller.businessName,
+                      });
+                    }}
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>

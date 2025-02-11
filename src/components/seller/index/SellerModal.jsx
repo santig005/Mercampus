@@ -9,6 +9,7 @@ import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import { useEffect, useState } from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import { sendGAEvent } from '@next/third-parties/google';
 
 export default function SellerModal({ seller, set }) {
   const [schedules, setSchedules] = useState([]); // Estado para almacenar los horarios
@@ -25,6 +26,11 @@ export default function SellerModal({ seller, set }) {
     if (seller) {
       fetchSchedules();
       setImages([seller.logo]);
+      sendGAEvent('event', 'click_profile', {
+          action: 'Clicked Profile',
+          seller_name: seller.businessName,
+          seller_id: seller._id,
+        });
     }
   }, [seller]);
 
@@ -100,6 +106,14 @@ export default function SellerModal({ seller, set }) {
                     className='btn btn-primary border-none join-item w-1/2'
                     target='_blank'
                     referrerPolicy='no-referrer'
+                    onClick={() => {
+                      sendGAEvent('event', 'click_instagram', {
+                        action: 'Clicked Instagram Link',
+                        seller_name: seller.businessName,
+                        seller_instagramUser: seller.instagramUser,
+                        seller_id: seller._id,
+                      });
+                    }}
                   >
                     <TbBrandInstagram className='icon' /> Instagram
                   </a>
@@ -108,6 +122,13 @@ export default function SellerModal({ seller, set }) {
                     className='btn btn-primary join-item w-1/2'
                     target='_blank'
                     referrerPolicy='no-referrer'
+                    onClick={() => {
+                      sendGAEvent('event', 'click_whatsapp_seller', {
+                        action: 'Clicked WhatsApp Link',
+                        seller_name: seller.businessName,
+                        seller_id: seller._id,
+                      });
+                    }}
                   >
                     <TbBrandWhatsapp className='icon' /> WhatsApp
                   </a>
