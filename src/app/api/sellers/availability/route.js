@@ -29,7 +29,7 @@ export async function PATCH(req) {
         schedule.endTime >= currentTime
       ));
 
-      await Seller.findByIdAndUpdate(seller._id, { availability: isAvailable });
+      await Seller.findByIdAndUpdate(seller._id, { availability: isAvailable }, { new: true });
     }
 
     return NextResponse.json(
