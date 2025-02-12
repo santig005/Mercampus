@@ -1,6 +1,6 @@
 import { connectDB } from '@/utils/connectDB';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerschema';
+import { Seller } from '@/utils/models/sellerSchema2';
 import { NextResponse } from 'next/server';
 
 export async function PATCH(req) {

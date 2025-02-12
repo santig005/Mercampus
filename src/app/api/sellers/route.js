@@ -1,6 +1,6 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import { Seller } from '@/utils/models/sellerschema';
+import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { User } from '@/utils/models/userSchema';
 import { currentUser } from '@clerk/nextjs/server';

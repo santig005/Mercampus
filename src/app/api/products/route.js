@@ -5,7 +5,7 @@ import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
-import {Seller} from '@/utils/models/sellerschema';
+import {Seller} from '@/utils/models/sellerSchema2';
 
 export async function GET(req, res) {
   await connectDB();
