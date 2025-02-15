@@ -68,7 +68,7 @@ export default function SquirrelGame() {
         if (cookie.lane === position && 
             Math.abs(cookie.top - 450) < COLLISION_DISTANCE) {
               playCookieSound();
-          setScore(s => s + 1);
+          setScore(score + 1);
           setGameSpeed(s => Math.min(s + 1, 100)); // Reducimos aceleración
         }
       });
@@ -95,12 +95,12 @@ export default function SquirrelGame() {
     if (!touchStartX) return;
     const touchEndX = e.touches[0].clientX;
     const difference = touchStartX - touchEndX;
-
+  
     if (Math.abs(difference) > 50) { // Sensibilidad de desplazamiento
-      if (difference > 0 && position < 2) {
-        setPosition(p => p + 1);
-      } else if (difference < 0 && position > 0) {
+      if (difference > 0 && position > 0) { // Deslizando a la izquierda, mover hacia la izquierda
         setPosition(p => p - 1);
+      } else if (difference < 0 && position < 2) { // Deslizando a la derecha, mover hacia la derecha
+        setPosition(p => p + 1);
       }
       setTouchStartX(null);
     }
@@ -142,7 +142,7 @@ export default function SquirrelGame() {
             }
           }
         }
-      }, 100); // Intervalo más lento
+      }, 60); // Intervalo más lento
     }
     return () => clearInterval(gameInterval);
   }, [isPlaying, moveElements, generateRandomElement, obstacles, cookies]);
@@ -187,8 +187,8 @@ export default function SquirrelGame() {
             >
               <Image
                 src="/ardilla.png"
-                width={80}
-                height={80}
+                width={70}
+                height={70}
                 alt="Ardilla"
                 className="relative top-[450px]"
                 priority
@@ -208,8 +208,8 @@ export default function SquirrelGame() {
             >
               <Image
                 src={`/${obs.type}.png`}
-                width={60}
-                height={60}
+                width={70}
+                height={70}
                 alt={obs.type}
                 className="animate-pulse"
               />
@@ -231,6 +231,7 @@ export default function SquirrelGame() {
                 height={40}
                 alt="Galleta"
                 className="spin"
+                style={{ backgroundColor: 'transparent' }}
               />
             </div>
           ))}
