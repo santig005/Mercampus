@@ -71,7 +71,7 @@ const Producto = () => {
                         className='btn btn-circle'
                         onClick={() => {
                           //document.getElementById('product_modal').close();
-                          router.back();
+                          router.push('/antojos');
                         }}
                       >
                         <TbChevronLeft className='icon' />
