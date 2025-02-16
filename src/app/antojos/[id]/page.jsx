@@ -27,7 +27,7 @@ const Producto = () => {
 
   useEffect(() => {
     fetchProduct(id);
-  }, []);
+  }, [id]);
 
   const fetchProduct = async id => {
     setLoading(true);
@@ -79,11 +79,13 @@ const Producto = () => {
                     </div>
                   </div>
                   <SellerModal seller={sellerModalId} set={setSellerModalId} />
-                  <Carousel
-                    key={product._id}
-                    images={product.images}
-                    _id={product._id}
-                  />
+                  {product && product.images && (
+                    <Carousel
+                      key={product._id}
+                      images={product.images}
+                      _id={product._id}
+                    />
+                  )}
                 </div>
 
                 <div className='relative h-auto bg-inherit'>
