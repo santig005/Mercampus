@@ -67,8 +67,8 @@ export default function ProductGrid() {
                   className=''
                   key={product._id}
                   onClick={() => {
-                    //showModal(product)
-                    router.push(`/antojos/${product._id}`);
+                    showModal(product)
+                    //router.push(`/antojos/${product._id}`);
                   }}
                 >
                   <ProductCard product={product} />

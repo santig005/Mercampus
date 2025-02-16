@@ -2,8 +2,9 @@
 
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import Carousel from '@/components/Carousel';
-import TableSchema from '@/components/products/table/TableSche';
+import TableSchema from '@/components/seller/index/table/TableSchema';
 import SellerModal from '@/components/seller/index/SellerModal';
+import ShareButton from '@/components/products/share/ShareButton';
 import { priceFormat } from '@/utils/utilFn';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -50,11 +51,10 @@ const Producto = () => {
   return (
     <div>
       {loading ? (
-        <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50'>
-          <div className='flex justify-center items-center flex-col text-white'>
-            <TbLoader className='animate-spin text-6xl mb-4' />
-            <p className='text-xl'>Cargando...</p>
-          </div>
+        <div className='fixed inset-0 flex items-center justify-center z-50'>
+          <div className='flex justify-center'>
+                <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
+              </div>
         </div>
       ) : (
         <dialog
@@ -158,6 +158,7 @@ const Producto = () => {
                       Contactar por WhatsApp{' '}
                       <TbBrandWhatsapp className='icon' />
                     </a>
+                    <ShareButton product={product} />
                   </p>
                 </div>
               </div>
