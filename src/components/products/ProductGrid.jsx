@@ -5,7 +5,7 @@ import ProductCard from '@/components/products/ProductCard';
 import ProductModalHandler from '@/components/products/ProductModalHandler';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function ProductGrid() {
   const [products, setProducts] = useState([]);
@@ -15,6 +15,8 @@ export default function ProductGrid() {
   const searchParams = useSearchParams();
   const q = searchParams.get('q');
   const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
 
   const handleProductClick = id => {
     setClickedProductId(id);
@@ -64,7 +66,10 @@ export default function ProductGrid() {
                 <div
                   className=''
                   key={product._id}
-                  onClick={() => showModal(product)}
+                  onClick={() => {
+                    //showModal(product)
+                    router.push(`/antojos/${product._id}`);
+                  }}
                 >
                   <ProductCard product={product} />
                 </div>
