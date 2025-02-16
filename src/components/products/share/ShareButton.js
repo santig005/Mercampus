@@ -3,7 +3,6 @@ import { TbShare2 } from 'react-icons/tb';
 
 export default function ShareButton({ product }) {
   if (!product) return null;
-  console.log("el producto es ", product);
 
   const productUrl = `${window.location.origin}/antojos/${product._id}`;
   
