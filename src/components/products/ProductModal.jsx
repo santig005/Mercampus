@@ -7,6 +7,7 @@ import { TbChevronLeft } from 'react-icons/tb';
 import { TbHeart } from 'react-icons/tb';
 import { TbBrandWhatsapp } from 'react-icons/tb';
 import TableSchema from '@/components/seller/index/table/TableSchema';
+import ShareButton from './share/ShareButton';
 import SellerModal from '@/components/seller/index/SellerModal';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
@@ -134,6 +135,7 @@ export default function ProductModal({ product, set }) {
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>
+                  <ShareButton product={product} />
                 </p>
               </div>
             </div>

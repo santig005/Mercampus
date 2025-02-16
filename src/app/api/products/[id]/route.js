@@ -20,26 +20,17 @@ export async function GET(req, { params }) {
         { status: 404 }
       );
     }
-    console.log("el producto es:");
-    console.log(product);
     var schedules = await Schedule.find({ sellerId: product.sellerId._id });
-    console.log("los horarios son:");
-    console.log(schedules);
     schedules.sort((a, b) => {
       if (a.day !== b.day) return a.day - b.day;
       return a.startTime.localeCompare(b.startTime);
     });
-    console.log("los horarios ordenados son:");
-    console.log(schedules);
 
     // Transformar los días a nombres
-    const transformedSchedules = schedules.map(schedule => ({
+    schedules = schedules.map(schedule => ({
       ...schedule.toObject(),
       day: daysES[schedule.day - 1],
     }));
-    console.log('los horarios transformados son:');
-    console.log(transformedSchedules);
-    //schedules={schedules:transformedSchedules};
 
 
 
