@@ -5,7 +5,12 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
 
 export async function GET(req, { params }) {
-  await connectDB();
+  try{
+    await connectDB();
+  }catch(error){
+    console.log(error)
+  }
+  
 
   // get product by id
   try {
