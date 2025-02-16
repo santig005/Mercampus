@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
+import {Seller} from '@/utils/models/sellerSchema2';
 
 export async function GET(req, { params }) {
   try{
@@ -42,6 +43,7 @@ export async function GET(req, { params }) {
     return NextResponse.json({ ...product.toObject(), schedules}, { status: 200 });
 
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { message: 'Error getting product', error: error.message },
       { status: 500 }
