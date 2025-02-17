@@ -1,3 +1,4 @@
+'use client';
 import { getSellers } from '@/services/sellerService';
 import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';

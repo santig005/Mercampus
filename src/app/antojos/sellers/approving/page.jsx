@@ -1,19 +1,23 @@
-'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSeller } from '@/context/SellerContext';
+import { currentUser } from '@clerk/nextjs/server';
+import { getUserByEmail } from '@/services/userService';
+import { redirect } from 'next/navigation'
 
-const SellerApprovalStatus = () => {
-  const router = useRouter();
-  const { seller, loading: sellerLoading } = useSeller();
-
-  // Si ya está aprobado o si la carga del estado de vendedor ya ha terminado, redirigir.
-  useEffect(() => {
-    if (!sellerLoading && seller && seller.approved) {
-      // Si ya está aprobado, lo redirigimos al dashboard o página que corresponda
-      router.push('/antojos/sellers/schedules');
+const SellerApprovalStatus = async () => {
+  const user = await currentUser();
+    if (!user) {
+      redirect('/')
     }
-  }, [seller, sellerLoading, router]);
+    const email = user.primaryEmailAddress.emailAddress;
+    
+  
+    const getUser = async (email) => {
+      const [userData] = await Promise.all([getUserByEmail(email)]);
+      if (!(userData.role === 'seller')){
+        redirect('/antojos/sellers/register')
+      }
+    }
+    await getUser(email)
+    
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-[#F2F2F2] p-8">

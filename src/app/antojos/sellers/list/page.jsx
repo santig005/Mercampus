@@ -1,4 +1,3 @@
-'use client';
 import SellerGrid from '@/components/seller/index/SellerGrid';
 function Sellers() {
   return (
