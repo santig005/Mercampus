@@ -8,9 +8,9 @@ export default function ShareButton({ data, type }) {
   if (!data) return null;
 const generateUrl = () => {
   if (type === 'product') {
-    return `${window.location.origin}/antojos/${data._id}`;
+    return `${window.location.origin}/antojos/${data._id}?source=share`;
   }else if (type === 'seller') {
-    return `${window.location.origin}/antojos/sellers/${data._id}`;
+    return `${window.location.origin}/antojos/sellers/${data._id}?source=share`;
   }
   return '';
 }
