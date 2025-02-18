@@ -13,14 +13,14 @@ export const fetchAPI = async (endpoint, options = {}) => {
       ...options,
     });
 
+    // console.log(response);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Something went wrong');
+      throw new Error(response.statusText);
     }
 
     return await response.json();
   } catch (error) {
     console.error('API Fetch Error:', error);
-    throw error;
   }
 };
