@@ -10,6 +10,7 @@ import TableSchema from '@/components/seller/index/table/TableSchema';
 import { useEffect, useState } from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
+import ShareButton from '@/components/products/share/ShareButton';
 
 export default function SellerModal({ seller, set }) {
   const [schedules, setSchedules] = useState([]); // Estado para almacenar los horarios
@@ -98,40 +99,44 @@ export default function SellerModal({ seller, set }) {
                 </div>
               </div>
             </div>
-            <div className='bg-gray-200 rounded-t-3xl p-2 fixed bottom-0 w-full h-24 px-6'>
+            <div className='bg-gray-200 rounded-t-3xl py-4 p-2 fixed bottom-0 w-full h-auto px-6'>
               <div className='flex justify-center items-center h-full'>
-                <div className='join w-full'>
-                  <a
-                    href={`https://www.instagram.com/_u/${seller.instagramUser}`}
-                    className='btn btn-primary border-none join-item w-1/2'
-                    target='_blank'
-                    referrerPolicy='no-referrer'
-                    onClick={() => {
-                      sendGAEvent('event', 'click_instagram', {
-                        action: 'Clicked Instagram Link',
-                        seller_name: seller.businessName,
-                        seller_instagramUser: seller.instagramUser,
-                        seller_id: seller._id,
-                      });
-                    }}
-                  >
-                    <TbBrandInstagram className='icon' /> Instagram
-                  </a>
-                  <a
-                    href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
-                    className='btn btn-primary join-item w-1/2'
-                    target='_blank'
-                    referrerPolicy='no-referrer'
-                    onClick={() => {
-                      sendGAEvent('event', 'click_whatsapp_seller', {
-                        action: 'Clicked WhatsApp Link',
-                        seller_name: seller.businessName,
-                        seller_id: seller._id,
-                      });
-                    }}
-                  >
-                    <TbBrandWhatsapp className='icon' /> WhatsApp
-                  </a>
+                <div className="flex flex-col justify-between w-full">
+
+                  <div className='join w-full'>
+                    <a
+                      href={`https://www.instagram.com/_u/${seller.instagramUser}`}
+                      className='btn btn-primary border-none join-item w-1/2'
+                      target='_blank'
+                      referrerPolicy='no-referrer'
+                      onClick={() => {
+                        sendGAEvent('event', 'click_instagram', {
+                          action: 'Clicked Instagram Link',
+                          seller_name: seller.businessName,
+                          seller_instagramUser: seller.instagramUser,
+                          seller_id: seller._id,
+                        });
+                      }}
+                    >
+                      <TbBrandInstagram className='icon' /> Instagram
+                    </a>
+                    <a
+                      href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                      className='btn btn-primary join-item w-1/2'
+                      target='_blank'
+                      referrerPolicy='no-referrer'
+                      onClick={() => {
+                        sendGAEvent('event', 'click_whatsapp_seller', {
+                          action: 'Clicked WhatsApp Link',
+                          seller_name: seller.businessName,
+                          seller_id: seller._id,
+                        });
+                      }}
+                    >
+                      <TbBrandWhatsapp className='icon' /> WhatsApp
+                    </a>
+                  </div>
+                    <ShareButton data={seller} type="seller" />
                 </div>
               </div>
             </div>
