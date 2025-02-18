@@ -159,7 +159,7 @@ const ProductPage = ({id}) => {
                       Contactar por WhatsApp{' '}
                       <TbBrandWhatsapp className='icon' />
                     </a>
-                    <ShareButton product={product} />
+                    <ShareButton data={product} type="product" />
                   </p>
                 </div>
               </div>

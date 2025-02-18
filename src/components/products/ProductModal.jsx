@@ -135,7 +135,7 @@ export default function ProductModal({ product, set }) {
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>
-                  <ShareButton product={product} />
+                  <ShareButton data={product} type="product" />
                 </p>
               </div>
             </div>

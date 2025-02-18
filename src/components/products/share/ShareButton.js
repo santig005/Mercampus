@@ -2,13 +2,35 @@
 import { TbShare2, TbBrandWhatsapp, TbLink } from 'react-icons/tb';
 import { useState } from 'react';
 
-export default function ShareButton({ product }) {
+export default function ShareButton({ data, type }) {
   const [showModal, setShowModal] = useState(false); // Estado para controlar el modal
 
-  if (!product) return null;
+  if (!data) return null;
+const generateUrl = () => {
+  if (type === 'product') {
+    return `${window.location.origin}/antojos/${data._id}`;
+  }else if (type === 'seller') {
+    return `${window.location.origin}/antojos/sellers/${data._id}`;
+  }
+  return '';
+}
 
-  const productUrl = `${window.location.origin}/antojos/${product._id}`;
-  const shareText = `¡Mira este producto en Mercampus! \n${product.name} de ${product?.sellerId?.businessName}\n${productUrl}`;
+  const url = generateUrl();
+
+  const getText = () => {
+    if (type === 'product') {
+      return `¡Mira este producto en Mercampus! \n${data.name} de ${data?.sellerId?.businessName}\n${url}`;
+    } else if (type === 'seller') {
+      return `¡Mira este vendedor en Mercampus! \n${data.businessName}\n${url}`;
+    }
+    return '';
+  }
+
+  const shareText = getText();
+  // if (!product) return null;
+
+  // const productUrl = `${window.location.origin}/antojos/${product._id}`;
+  // const shareText = `¡Mira este producto en Mercampus! \n${product.name} de ${product?.sellerId?.businessName}\n${productUrl}`;
 
   // Función para compartir por WhatsApp
   const shareOnWhatsApp = () => {
@@ -19,7 +41,7 @@ export default function ShareButton({ product }) {
   // Función para copiar el enlace al portapapeles
   const copyLink = () => {
     navigator.clipboard
-      .writeText(productUrl)
+      .writeText(url)
       .then(() => {
         alert('¡Enlace copiado al portapapeles!'); // Puedes reemplazar esto con un toast o notificación
       })
