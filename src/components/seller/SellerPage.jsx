@@ -114,28 +114,6 @@ export default function SellerPage({ id }) {
                       <p className="text-[14px] text-secondary px-6">
                         {seller.description}
                       </p>
-                      <button
-                        className="btn max-w-min flex-nowrap mx-6"
-                        onClick={() => {
-                          const newSeller = {
-                            ...seller,
-                            schedules: seller.schedules,
-                          };
-                          setSellerModalId(newSeller);
-                          document.getElementById("seller_modal").showModal();
-                        }}
-                      >
-                        <div className="rounded-full size-10 overflow-hidden">
-                          <img
-                            className="img-full"
-                            src={seller.logo}
-                            alt={"Imagen del vendedor " + seller.businessName}
-                          />
-                        </div>
-                        <p className="my-card-subtitle !text-[14px] text-nowrap">
-                          {seller.businessName}
-                        </p>
-                      </button>
                       <div className="">
                         <h2 className="card-title px-6">Horario</h2>
                         {schedules && <TableSchema schedules={schedules} />}

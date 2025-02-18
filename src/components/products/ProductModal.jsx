@@ -103,7 +103,7 @@ export default function ProductModal({ product, set }) {
                 </div>
               </div>
             </div>
-            <div className='bg-gray-200 rounded-t-3xl p-2 fixed bottom-0 w-full h-32 px-6'>
+            <div className='bg-gray-200 rounded-t-3xl pt-4 fixed bottom-0 w-full h-auto px-6'>
               <div className='flex flex-col h-full justify-center'>
                 <h3 className='font-bold text-lg'>
                   {priceFormat(product.price)}
