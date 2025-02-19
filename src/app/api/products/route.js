@@ -43,9 +43,9 @@ export async function GET(req) {
     product => product.sellerId !== null
   );
 
-  const transformedProducts = await getPopulatedProducts(approvedProducts);
+  const populated = await getPopulatedProducts(approvedProducts);
 
-  return NextResponse.json({ products: transformedProducts }, { status: 200 });
+  return NextResponse.json({ products: populated }, { status: 200 });
 }
 
 const getPopulatedProducts = async approvedProducts => {
