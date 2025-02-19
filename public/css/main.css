@@ -70,6 +70,10 @@
   @apply text-primary bg-primary/15 border-primary;
 }
 
+.modal-width {
+  @apply container mx-auto w-full max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl;
+}
+
 @media (hover: hover) {
   .menu li > *:not(ul, .menu-title, details, .btn):active,
   .menu li > *:not(ul, .menu-title, details, .btn).active,

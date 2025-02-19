@@ -39,11 +39,13 @@ export default function CarouselModal({ images, initialIndex, id }) {
   }, [updateCurrentIndex]);
 
   return (
-    <dialog className='modal backdrop-blur-md p-4' id='carousel_modal'>
-      <div className='modal-box p-0 rounded-md h-auto !bg-transparent'>
+    <dialog className='modal backdrop-blur-md p-4' id={`carousel_modal_${id}`}>
+      <div className='modal-box p-0 rounded-md h-auto !bg-transparent modal-width'>
         {/* Cerrar el modal */}
         <button
-          onClick={() => document.getElementById('carousel_modal').close()}
+          onClick={() =>
+            document.getElementById(`carousel_modal_${id}`).close()
+          }
           className='absolute top-4 right-4 text-white text-2xl z-20 bg-white rounded-full p-1'
         >
           <MdCloseFullscreen className='text-black' />

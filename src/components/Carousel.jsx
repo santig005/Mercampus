@@ -58,7 +58,7 @@ export default function Carousel({ images, _id: id }) {
               key={id + index}
               className='carousel-item w-full flex-shrink-0 h-80 snap-center'
               onClick={() => {
-                document.getElementById('carousel_modal').showModal();
+                document.getElementById(`carousel_modal_${id}`).showModal();
               }}
             >
               <img
