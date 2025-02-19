@@ -11,6 +11,7 @@ import Carousel from "@/components/Carousel";
 import TableSchema from "@/components/seller/index/table/TableSchema";
 import AvailabilityBadge from "@/components/availability/AvailabilityBadge";
 import SellerModal from "@/components/seller/index/SellerModal";
+import ProductGrid from "@/components/products/ProductGrid";
 import { sendGAEvent } from "@next/third-parties/google";
 import React from "react";
 import ShareButton from "../products/share/ShareButton";
@@ -120,6 +121,12 @@ export default function SellerPage({ id }) {
                         <h2 className="card-title px-6">Horario</h2>
                         {schedules && <TableSchema schedules={schedules} />}
                       </div>
+                      <h2 className='card-title px-6 mb-2'>
+                          ¡Antojate de algo mas de este vendedor!
+                        </h2>
+                        <div className='px-2'>
+                          <ProductGrid sellerIdParam={seller._id} />
+                        </div>
                     </div>
                   </div>
                 </div>
