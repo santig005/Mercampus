@@ -37,7 +37,7 @@ export async function GET(req) {
       model: 'Seller',
       match: { approved: true },
     })
-    .sort({ availability: -1, createdAt: -1 }); // Primero ordena por availability, luego por createdAt
+    .sort({ availability: -1, createdAt: -1 });
 
   const approvedProducts = products.filter(
     product => product.sellerId !== null
@@ -47,66 +47,6 @@ export async function GET(req) {
 
   return NextResponse.json({ products: transformedProducts }, { status: 200 });
 }
-
-// export async function GET(req) {
-//   await connectDB();
-
-//   const url = new URL(req.url);
-//   const product = url.searchParams.get('product') || '';
-//   const category = url.searchParams.get('category') || '';
-//   const sellerId = url.searchParams.get('sellerId') || '';
-//   const limit = parseInt(url.searchParams.get('limit')) || 10;
-//   const offset = parseInt(url.searchParams.get('offset')) || 0;
-
-//   let filter = {};
-
-//   if (sellerId) {
-//     filter.sellerId = sellerId;
-//   }
-
-//   if (category) {
-//     filter.category = { $in: [category] };
-//   }
-
-//   if (product) {
-//     filter.name = { $regex: product, $options: 'i' };
-//   }
-
-//   // Filtra los productos que tienen un sellerId aprobado
-//   let products = await Product.aggregate([
-//     {
-//       $match: filter, // Aplica el filtro inicial
-//     },
-//     {
-//       $lookup: {
-//         from: 'sellers', // Nombre de la colección de sellers
-//         localField: 'sellerId',
-//         foreignField: '_id',
-//         as: 'seller',
-//       },
-//     },
-//     {
-//       $unwind: '$seller', // Convierte el array de sellers en un objeto
-//     },
-//     {
-//       $match: {
-//         'seller.approved': true, // Filtra solo los productos con seller aprobado
-//       },
-//     },
-//     {
-//       $skip: offset, // Salta los primeros 'offset' productos
-//     },
-//     {
-//       $limit: limit, // Limita el número de productos a 'limit'
-//     },
-//   ]);
-
-//   // console.log('Approved products:', products); // Depuración
-
-//   const transformedProducts = await getPopulatedProducts(products);
-
-//   return NextResponse.json(transformedProducts, { status: 200 });
-// }
 
 const getPopulatedProducts = async approvedProducts => {
   const populatedProducts = await Promise.all(
@@ -128,27 +68,6 @@ const getPopulatedProducts = async approvedProducts => {
 
   return populatedProducts;
 };
-
-// const getPopulatedProducts = async approvedProducts => {
-//   const populatedProducts = await Promise.all(
-//     approvedProducts.map(async product => {
-//       const schedules = await Schedule.find({ sellerId: product.sellerId._id });
-//       schedules.sort((a, b) =>
-//         a.day !== b.day ? a.day - b.day : a.startTime.localeCompare(b.startTime)
-//       );
-
-//       return {
-//         ...product, // Usa el objeto directamente, sin .toObject()
-//         schedules: schedules.map(schedule => ({
-//           ...schedule.toObject(), // Aquí sí puedes usar .toObject() porque schedule es un documento de Mongoose
-//           day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
-//         })),
-//       };
-//     })
-//   );
-
-//   return populatedProducts;
-// };
 
 export async function POST(req) {
   try {
