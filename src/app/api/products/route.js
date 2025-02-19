@@ -29,19 +29,15 @@ export async function GET(req) {
     filter.name = { $regex: product, $options: 'i' };
   }
 
-  // console.log('Query filter:', JSON.stringify(filter, null, 2));
-
   let products = await Product.find(filter)
     .populate({
-      path: 'sellerId',
-      model: 'Seller',
-      match: { approved: true },
-    })
-    .sort({ availability: -1, createdAt: -1 });
-
-  const approvedProducts = products.filter(
-    product => product.sellerId !== null
-  );
+      path: 'sellerId', // Campo relacionado a poblar
+      model: 'Seller', // Modelo al que pertenece el campo
+      match: {approved: true}, // Filtro para poblar
+    });
+    products = products.sort(() => Math.random() - 0.5); 
+    products.sort((a, b) => b.availability - a.availability);
+  const approvedProducts = products.filter(product => product.sellerId !== null);
 
   const populated = await getPopulatedProducts(approvedProducts);
 
