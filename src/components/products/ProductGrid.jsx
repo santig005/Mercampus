@@ -5,48 +5,26 @@ import ProductCard from '@/components/products/ProductCard';
 import ProductModalHandler from '@/components/products/ProductModalHandler';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
-export default function ProductGrid() {
+export default function ProductGrid({ sellerIdParam = '' }) {
   const [products, setProducts] = useState([]);
   const [parent] = useAutoAnimate();
-  const [clickedProductId, setClickedProductId] = useState(null);
   const containerRef = useRef(null);
   const searchParams = useSearchParams();
-  const q = searchParams.get('q');
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-
-  const handleProductClick = id => {
-    setClickedProductId(id);
-    document.getElementById(id).showModal();
-  };
-
-  const handleClickOutside = event => {
-    if (containerRef.current && !containerRef.current.contains(event.target)) {
-      setClickedProductId(null);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
+  // Extraemos los filtros desde la URL
+  const product = searchParams.get('product') || '';
+  const category = searchParams.get('category') || '';
+  const sellerId = searchParams.get('sellerId') || sellerIdParam;
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
-    if (q) {
-      const response = await getProducts(q);
-      setProducts(response);
-    } else {
-      const response = await getProducts();
-      setProducts(response);
-    }
+    const { products } = await getProducts(product, category, sellerId);
+    setProducts(products);
     setLoading(false);
-  }, [q]);
+  }, [product, category, sellerId]);
 
   useEffect(() => {
     loadProducts();
@@ -61,13 +39,22 @@ export default function ProductGrid() {
               <div className='flex justify-center'>
                 <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
               </div>
-            ) : products.length > 0 ? (
-              products.map(product => (
+            ) : products?.length > 0 ? (
+              products?.map(product => (
                 <div
                   className=''
                   key={product._id}
                   onClick={() => {
-                    showModal(product)
+                    if (sellerId) {
+                      // document.getElementById('product_modal_main').close();
+                      document
+                        .getElementById('product_modal_secondary')
+                        .close();
+                      showModal(product, 'secondary');
+                      // document.getElementById('seller_modal').close();
+                    } else {
+                      showModal(product, 'main');
+                    }
                     //router.push(`/antojos/${product._id}`);
                   }}
                 >

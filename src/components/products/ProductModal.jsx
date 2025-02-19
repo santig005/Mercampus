@@ -2,48 +2,63 @@
 'use client';
 import Carousel from '@/components/Carousel';
 import { priceFormat } from '@/utils/utilFn';
-import React, { useEffect, useState } from 'react';
-import { TbChevronLeft } from 'react-icons/tb';
-import { TbHeart } from 'react-icons/tb';
-import { TbBrandWhatsapp } from 'react-icons/tb';
+import React, { memo, useEffect, useState } from 'react';
+import { TbChevronLeft, TbHeart, TbBrandWhatsapp } from 'react-icons/tb';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import ShareButton from './share/ShareButton';
 import SellerModal from '@/components/seller/index/SellerModal';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
 
-export default function ProductModal({ product, set }) {
+function ProductModal({ product, theKey }) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState(0);
+  const [availability, setAvailability] = useState('');
+  const [images, setImages] = useState([]);
   const [seller, setSeller] = useState({});
   const [schedules, setSchedules] = useState([]);
   const [sellerModalId, setSellerModalId] = useState(null);
 
   useEffect(() => {
-    if (product && product.sellerId) {
-      setSeller(product.sellerId);
-      setSchedules(product.schedules);
+    if (product) {
+      setName(product.name || '');
+      setDescription(product.description || '');
+      setPrice(product.price || 0);
+      setAvailability(product.availability || '');
+      setImages(product.images || []);
+      setSeller(product.sellerId || {});
+      setSchedules(product.sellerId?.schedules || []);
+
       sendGAEvent('event', 'click_product', {
         action: 'Clicked Product',
         product_name: product.name,
         product_price: product.price,
-        seller_name: seller.businessName,
+        seller_name: product.sellerId?.businessName || '',
         product_id: product._id,
-        });
+      });
     }
+    // console.log(product);
   }, [product]);
 
   return (
     <div>
-      <dialog id='product_modal' className='modal modal-top h-screen'>
+      <dialog
+        id={`product_modal_${theKey}`}
+        className='modal modal-top h-screen backdrop-blur-md'
+      >
         {product ? (
           <>
-            <div className='modal-box w-full h-full rounded-none bg-primary p-0 relative'>
+            <div className='modal-box rounded-none bg-primary p-0 relative h-full modal-width shadow-lg'>
               <div className='sticky top-0 left-0'>
                 <div className='absolute w-full z-10'>
                   <div className='modal-action m-0 justify-between p-2'>
                     <button
                       className='btn btn-circle'
                       onClick={() => {
-                        document.getElementById('product_modal').close();
+                        document
+                          .getElementById(`product_modal_${theKey}`)
+                          .close();
                       }}
                     >
                       <TbChevronLeft className='icon' />
@@ -51,35 +66,25 @@ export default function ProductModal({ product, set }) {
                   </div>
                 </div>
                 <SellerModal seller={sellerModalId} set={setSellerModalId} />
-                <Carousel
-                  key={product._id}
-                  images={product.images}
-                  _id={product._id}
-                />
+                <Carousel key={product._id} images={images} _id={product._id} />
               </div>
 
               <div className='relative h-auto bg-inherit'>
                 <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
                   <div className='flex flex-col pb-32 gap-2'>
-                    {/* <h2 className='card-title px-6 mt-2'>{product.name}</h2> */}
                     <div className='flex flex-col px-6 gap-1'>
                       <h2 className='text-lg font-semibold break-words'>
-                        {product.name}
-                      </h2>{' '}
-                      {/* <span className='text-4xl mx-2'>•</span> */}
-                      <AvailabilityBadge availability={product.availability} />
+                        {name}
+                      </h2>
+                      <AvailabilityBadge availability={availability} />
                     </div>
                     <p className='text-[14px] text-secondary px-6'>
-                      {product.description}
+                      {description}
                     </p>
                     <button
-                      // href={`/seller/${seller._id}`}
                       className='btn max-w-min flex-nowrap mx-6'
                       onClick={() => {
-                        const newSeller = {
-                          ...product.sellerId,
-                          schedules: product.schedules,
-                        };
+                        const newSeller = { ...seller, schedules };
                         setSellerModalId(newSeller);
                         document.getElementById('seller_modal').showModal();
                       }}
@@ -88,14 +93,14 @@ export default function ProductModal({ product, set }) {
                         <img
                           className='img-full'
                           src={seller.logo}
-                          alt={'Imagen del publicador del producto '}
+                          alt='Imagen del publicador del producto'
                         />
                       </div>
                       <p className='my-card-subtitle !text-[14px] text-nowrap'>
                         {seller.businessName}
                       </p>
                     </button>
-                    <div className=''>
+                    <div>
                       <h2 className='card-title px-6'>Horario</h2>
                       {schedules && <TableSchema schedules={schedules} />}
                     </div>
@@ -103,11 +108,9 @@ export default function ProductModal({ product, set }) {
                 </div>
               </div>
             </div>
-            <div className='bg-gray-200 rounded-t-3xl pt-4 fixed bottom-0 w-full h-auto px-6'>
-              <div className='flex flex-col h-full justify-center'>
-                <h3 className='font-bold text-lg'>
-                  {priceFormat(product.price)}
-                </h3>
+            <div className='fixed bottom-0 h-auto w-full'>
+              <div className='bg-gray-200 rounded-t-3xl p-4 flex flex-col h-full justify-center modal-width'>
+                <h3 className='font-bold text-lg'>{priceFormat(price)}</h3>
                 <p className='py-4'>
                   <a
                     className='btn btn-primary w-full'
@@ -117,9 +120,7 @@ export default function ProductModal({ product, set }) {
                     )}?text=${encodeURIComponent(
                       `Hola ${
                         seller?.businessName || 'estimado vendedor'
-                      }, te vi en Mercampus. Estoy interesado en el producto ${
-                        product.name
-                      }. Podrías decirme dónde te encuentras?`
+                      }, te vi en Mercampus. Estoy interesado en el producto ${name}. Podrías decirme dónde te encuentras?`
                     )}`}
                     aria-label={`Contactar a ${
                       seller?.businessName || 'el vendedor'
@@ -127,7 +128,7 @@ export default function ProductModal({ product, set }) {
                     onClick={() => {
                       sendGAEvent('event', 'click_whatsapp_product', {
                         action: 'Clicked WhatsApp Link',
-                        product_name: product.name,
+                        product_name: name,
                         product_id: product._id,
                         seller_name: seller.businessName,
                       });
@@ -135,7 +136,7 @@ export default function ProductModal({ product, set }) {
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>
-                  <ShareButton data={product} type="product" />
+                  <ShareButton data={product} type='product' />
                 </p>
               </div>
             </div>
@@ -163,3 +164,5 @@ export default function ProductModal({ product, set }) {
     </div>
   );
 }
+
+export default memo(ProductModal);

@@ -1,21 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { categoriesList } from '@/utils/categoriesList';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocalStorage } from '@/utils/hooks/useLocalStorage';
 
 export default function CategoryGrid() {
-  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [activeCategory, setActiveCategory] = useLocalStorage(
+    'category',
+    'Todos'
+  );
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentCategory = params.get('category');
+
+    if (currentCategory) {
+      setActiveCategory(currentCategory);
+    } else if (activeCategory && activeCategory !== 'Todos') {
+      params.set('category', activeCategory);
+      router.replace(`?${params.toString()}`);
+    }
+  }, []);
 
   const handleChangeCategory = category => {
     setActiveCategory(category);
+    const params = new URLSearchParams(searchParams.toString());
+
     if (category !== 'Todos') {
-      router.push(`?q=${category}`);
+      params.set('category', category);
     } else {
-      router.push('/antojos');
+      params.delete('category');
     }
+
+    router.push(`?${params.toString()}`);
   };
+
   return (
     <div className='flex gap-2 overflow-x-auto whitespace-nowrap py-2 hide-scrollbar px-2'>
       {categoriesList.map(category => (
