@@ -28,7 +28,7 @@ function ProductModal({ product, theKey }) {
       setAvailability(product.availability || '');
       setImages(product.images || []);
       setSeller(product.sellerId || {});
-      setSchedules(product.sellerId?.schedules || []);
+      setSchedules(product.schedules || []);
 
       sendGAEvent('event', 'click_product', {
         action: 'Clicked Product',

@@ -39,9 +39,9 @@ export async function GET(req) {
     products.sort((a, b) => b.availability - a.availability);
   const approvedProducts = products.filter(product => product.sellerId !== null);
 
-  const transformedProducts = await getPopulatedProducts(approvedProducts);
+  const populated = await getPopulatedProducts(approvedProducts);
 
-  return NextResponse.json({ products: transformedProducts }, { status: 200 });
+  return NextResponse.json({ products: populated }, { status: 200 });
 }
 
 const getPopulatedProducts = async approvedProducts => {
