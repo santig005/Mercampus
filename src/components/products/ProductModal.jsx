@@ -71,7 +71,7 @@ function ProductModal({ product, theKey }) {
 
               <div className='relative h-auto bg-inherit'>
                 <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
-                  <div className='flex flex-col pb-32 gap-2'>
+                  <div className='flex flex-col pb-56 gap-2'>
                     <div className='flex flex-col px-6 gap-1'>
                       <h2 className='text-lg font-semibold break-words'>
                         {name}
