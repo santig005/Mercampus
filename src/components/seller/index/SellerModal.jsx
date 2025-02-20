@@ -114,7 +114,7 @@ export default function SellerModal({ seller, set }) {
               </div>
             </div>
             <div className='fixed bottom-0 h-auto w-full'>
-              <div className='bg-gray-200 rounded-t-3xl p-4 flex flex-col h-36 justify-center modal-width'>
+              <div className='bg-gray-200 rounded-t-3xl p-4 flex flex-col pb-24 h-56 justify-center modal-width'>
                 <div className='flex justify-center items-center h-full'>
                   <div className='flex flex-col justify-between w-full'>
                     <div className='join w-full'>

@@ -109,7 +109,7 @@ function ProductModal({ product, theKey }) {
               </div>
             </div>
             <div className='fixed bottom-0 h-auto w-full'>
-              <div className='bg-gray-200 rounded-t-3xl p-4 flex flex-col h-48 justify-center modal-width'>
+              <div className='bg-gray-200 rounded-t-3xl p-4 pb-24 flex flex-col h-64 justify-center modal-width'>
                 <h3 className='font-bold text-lg'>{priceFormat(price)}</h3>
                 <p className='py-4'>
                   <a
