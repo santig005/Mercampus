@@ -40,7 +40,7 @@ export default function SellerModal({ seller, set }) {
     <>
       <dialog
         id={`seller_modal`}
-        className="modal modal-top h-screen backdrop-blur-md"
+        className="modal modal-top h-dvh backdrop-blur-md"
       >
         {seller && (
           <>
@@ -66,7 +66,7 @@ export default function SellerModal({ seller, set }) {
 
               <div className="relative h-auto w-full bg-inherit">
                 <div className="bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6">
-                  <div className="flex flex-col pb-32 gap-2">
+                  <div className="flex flex-col pb-48 gap-2">
                     <div className="px-6 pt-2 mb-1">
                       <div className="flex flex-col gap-1">
                         <h2 className="card-title ">{seller.businessName}</h2>{" "}
@@ -114,7 +114,7 @@ export default function SellerModal({ seller, set }) {
               </div>
             </div>
             <div className="fixed bottom-0 h-auto w-full">
-              <div className="bg-gray-200 rounded-t-3xl p-4 flex flex-col h-36 justify-center modal-width">
+              <div className="bg-gray-200 rounded-t-3xl p-4 flex flex-col h-auto justify-center modal-width shadow-2xl shadow-black drop-shadow-2xl">
                 <div className="flex justify-center items-center h-full">
                   <div className="flex flex-col justify-between w-full">
                     <div className="join w-full">

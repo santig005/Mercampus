@@ -45,7 +45,7 @@ function ProductModal({ product, theKey }) {
     <div>
       <dialog
         id={`product_modal_${theKey}`}
-        className="modal modal-top h-screen backdrop-blur-md"
+        className="modal modal-top h-dvh backdrop-blur-md"
       >
         {product ? (
           <>
@@ -71,7 +71,7 @@ function ProductModal({ product, theKey }) {
 
               <div className="relative h-auto bg-inherit">
                 <div className="bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6">
-                  <div className="flex flex-col pb-32 gap-2">
+                  <div className="flex flex-col pb-56 gap-2">
                     <div className="flex flex-col px-6 gap-1">
                       <h2 className="text-lg font-semibold break-words">
                         {name}
@@ -108,10 +108,12 @@ function ProductModal({ product, theKey }) {
                 </div>
               </div>
             </div>
+            <ShareButton data={product} type="product" />
+
             <div className="fixed bottom-0 h-auto w-full">
-              <div className="bg-gray-200 rounded-t-3xl p-4 flex flex-col h-36 justify-center modal-width">
+              <div className="bg-gray-200 rounded-t-3xl p-4 flex flex-col h-auto justify-center modal-width shadow-2xl shadow-black drop-shadow-2xl">
                 <h3 className="font-bold text-lg">{priceFormat(price)}</h3>
-                <p className="py-4">
+                <div className="pt-2">
                   <a
                     className="btn btn-primary w-full"
                     target="_blank"
@@ -136,8 +138,8 @@ function ProductModal({ product, theKey }) {
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className="icon" />
                   </a>
-                  <ShareButton data={product} type="product" />
-                </p>
+                  {/* <ShareButton data={product} type="product" /> */}
+                </div>
               </div>
             </div>
           </>

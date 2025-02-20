@@ -71,7 +71,7 @@ export default function SellerPage({ id }) {
       ) : (
         <dialog
           id="seller_modal"
-          className="modal modal-top modal-open h-screen"
+          className="modal modal-top modal-open h-dvh"
         >
           {seller ? (
             <>
@@ -101,7 +101,7 @@ export default function SellerPage({ id }) {
 
                 <div className="relative h-auto bg-inherit">
                   <div className="bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6">
-                    <div className="flex flex-col pb-32 gap-2">
+                    <div className="flex flex-col pb-48 gap-2">
                       <div className="flex flex-col px-6 gap-1">
                         <h2 className="text-lg font-semibold break-words">
                           {seller.businessName}
@@ -134,7 +134,7 @@ export default function SellerPage({ id }) {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-200 rounded-t-3xl py-4 p-2 fixed bottom-0 w-full h-36 px-6">
+              <div className="bg-gray-200 rounded-t-3xl py-4 p-2 fixed bottom-0 w-full h-auto px-6 shadow-2xl shadow-black drop-shadow-2xl">
                 <div className="flex justify-center items-center h-full">
                   <div className="flex flex-col justify-between w-full">
                     <div className="join w-full">
