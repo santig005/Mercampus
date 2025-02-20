@@ -1,8 +1,8 @@
-'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import { getSellerByEmail } from '@/services/sellerService';
-import { getUserByEmail } from '@/services/userService';
+"use client";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { getSellerByEmail } from "@/services/sellerService";
+import { getUserByEmail } from "@/services/userService";
 const SellerContext = createContext(null);
 
 export const SellerProvider = ({ children }) => {
@@ -24,13 +24,12 @@ export const SellerProvider = ({ children }) => {
         const email = user.primaryEmailAddress?.emailAddress;
         if (email) {
           const sellerData = await getSellerByEmail(email);
-          setSeller(sellerData);
+          setSeller(sellerData.seller);
           const userData = await getUserByEmail(email);
           setDbUser(userData);
         }
-        //console.log("el seller en back es ",seller);
       } catch (error) {
-        console.error('Error fetching seller:', error);
+        console.error("Error fetching seller:", error);
         setSeller(false);
       } finally {
         setLoading(false);
@@ -51,7 +50,7 @@ export const SellerProvider = ({ children }) => {
 export const useSeller = () => {
   const context = useContext(SellerContext);
   if (context === undefined) {
-    throw new Error('useSeller must be used within a SellerProvider');
+    throw new Error("useSeller must be used within a SellerProvider");
   }
   return context;
 };

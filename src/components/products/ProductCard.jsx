@@ -11,7 +11,7 @@ export default function ProductCard({
   const renderCategories = () => {
     try {
       return category.map((category, index) => (
-        <span key={index} className='my-card-subtitle'>
+        <span key={index} className='my-card-subtitle text-[11px] mr-1 px-1 py-[2px] rounded-md bg-[#ff950b]/15'>
           {category}
         </span>
       ));
