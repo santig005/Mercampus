@@ -29,24 +29,25 @@ export async function GET(req) {
     filter.name = { $regex: product, $options: 'i' };
   }
 
-  let products = await Product.find(filter)
-    .populate({
-      path: 'sellerId', // Campo relacionado a poblar
-      model: 'Seller', // Modelo al que pertenece el campo
-      match: {approved: true}, // Filtro para poblar
-    });
-    products = products.sort(() => Math.random() - 0.5); 
-    products.sort((a, b) => b.availability - a.availability);
-  const approvedProducts = products.filter(product => product.sellerId !== null);
+  let products = await Product.find(filter).populate({
+    path: 'sellerId', // Campo relacionado a poblar
+    model: 'Seller', // Modelo al que pertenece el campo
+    match: { approved: true }, // Filtro para poblar
+  });
+  products = products.sort(() => Math.random() - 0.5);
+  products.sort((a, b) => b.availability - a.availability);
+  const approvedProducts = products.filter(
+    (product) => product.sellerId !== null
+  );
 
   const populated = await getPopulatedProducts(approvedProducts);
 
   return NextResponse.json({ products: populated }, { status: 200 });
 }
 
-const getPopulatedProducts = async approvedProducts => {
+const getPopulatedProducts = async (approvedProducts) => {
   const populatedProducts = await Promise.all(
-    approvedProducts.map(async product => {
+    approvedProducts.map(async (product) => {
       const schedules = await Schedule.find({ sellerId: product.sellerId._id });
       schedules.sort((a, b) =>
         a.day !== b.day ? a.day - b.day : a.startTime.localeCompare(b.startTime)
@@ -54,7 +55,7 @@ const getPopulatedProducts = async approvedProducts => {
 
       return {
         ...product.toObject(),
-        schedules: schedules.map(schedule => ({
+        schedules: schedules.map((schedule) => ({
           ...schedule.toObject(),
           day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
         })),
