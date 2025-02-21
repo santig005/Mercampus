@@ -29,8 +29,6 @@ yarn-error.log*
 .env*.local
 .env
 *.bat
-*.nix
-*.idx
 
 # vercel
 .vercel
