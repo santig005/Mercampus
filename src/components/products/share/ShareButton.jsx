@@ -64,7 +64,7 @@ export default function ShareButton({ data, type }) {
       {/* Botón para abrir el modal */}
 
       <dialog id={`my_modal_1_${type}`} className={`modal px-6 `}>
-        <div className='modal-box px-6 rounded-lg'>
+        <div className='modal-box px-6 rounded-lg modal-width'>
           <h2 className='text-lg font-semibold mb-4'>Compartir producto</h2>
 
           <button
