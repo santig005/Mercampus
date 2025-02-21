@@ -3,7 +3,12 @@
 import Carousel from '@/components/Carousel';
 import { priceFormat } from '@/utils/utilFn';
 import React, { memo, useEffect, useState } from 'react';
-import { TbChevronLeft, TbHeart, TbBrandWhatsapp } from 'react-icons/tb';
+import {
+  TbChevronLeft,
+  TbHeart,
+  TbBrandWhatsapp,
+  TbShare2,
+} from 'react-icons/tb';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import ShareButton from './share/ShareButton';
 import SellerModal from '@/components/seller/index/SellerModal';
@@ -41,12 +46,18 @@ function ProductModal({ product, theKey }) {
     // console.log(product);
   }, [product]);
 
+  const handleShowModal = () => {
+    document.getElementById('my_modal_1_product').showModal();
+  };
+
   return (
     <div>
       <dialog
         id={`product_modal_${theKey}`}
-        className='modal modal-top h-screen backdrop-blur-md'
+
+        className='modal modal-top h-dvh backdrop-blur-md'
       >
+        <ShareButton data={product} type='product' />
         {product ? (
           <>
             <div className='modal-box rounded-none bg-primary p-0 relative h-full modal-width shadow-lg'>
@@ -108,10 +119,11 @@ function ProductModal({ product, theKey }) {
                 </div>
               </div>
             </div>
+
             <div className='fixed bottom-0 h-auto w-full'>
-              <div className='bg-gray-200 rounded-t-3xl p-4 pb-24 flex flex-col h-64 justify-center modal-width'>
+              <div className='bg-gray-200 rounded-t-3xl p-4 flex flex-col h-auto justify-center modal-width shadow-2xl shadow-black drop-shadow-2xl'>
                 <h3 className='font-bold text-lg'>{priceFormat(price)}</h3>
-                <p className='py-4'>
+                <div className='pt-2'>
                   <a
                     className='btn btn-primary w-full'
                     target='_blank'
@@ -136,8 +148,14 @@ function ProductModal({ product, theKey }) {
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>
-                  <ShareButton data={product} type='product' />
-                </p>
+
+                  <button
+                    className='btn btn-secondary w-full mt-2'
+                    onClick={handleShowModal}
+                  >
+                    Recomendar a un amigo <TbShare2 className='icon' />
+                  </button>
+                </div>
               </div>
             </div>
           </>
