@@ -54,6 +54,7 @@ function ProductModal({ product, theKey }) {
     <div>
       <dialog
         id={`product_modal_${theKey}`}
+
         className='modal modal-top h-dvh backdrop-blur-md'
       >
         <ShareButton data={product} type='product' />
@@ -147,6 +148,7 @@ function ProductModal({ product, theKey }) {
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>
+
                   <button
                     className='btn btn-secondary w-full mt-2'
                     onClick={handleShowModal}
