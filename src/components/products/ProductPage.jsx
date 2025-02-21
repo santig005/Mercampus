@@ -13,9 +13,10 @@ import {
   TbChevronLeft,
   TbHeart,
   TbLoader,
+  TbShare2,
 } from 'react-icons/tb';
 
-const ProductPage = ({id}) => {
+const ProductPage = ({ id }) => {
   const [product, setProduct] = useState(null);
   const [seller, setSeller] = useState({});
   const [schedules, setSchedules] = useState([]);
@@ -28,12 +29,12 @@ const ProductPage = ({id}) => {
     fetchProduct(id);
   }, [id]);
 
-  const fetchProduct = async id => {
+  const fetchProduct = async (id) => {
     setLoading(true);
     if (id) {
       await fetch(`/api/products/${id}`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           setProduct(data);
         });
     }
@@ -47,19 +48,21 @@ const ProductPage = ({id}) => {
     }
   }, [product]);
 
+  const handleShowModal = () => {
+    document.getElementById('my_modal_1_product').showModal();
+  };
+
   return (
     <div>
       {loading ? (
         <div className='fixed inset-0 flex items-center justify-center z-50'>
           <div className='flex justify-center'>
-                <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
-              </div>
+            <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
+          </div>
         </div>
       ) : (
-        <dialog
-          id='product_modal'
-          className='modal modal-top modal-open h-dvh'
-        >
+        <dialog id='product_modal' className='modal modal-top modal-open h-dvh'>
+          <ShareButton data={product} type='product' />
           {product ? (
             <>
               <div className='modal-box w-full h-full rounded-none bg-primary p-0 relative'>
@@ -159,7 +162,12 @@ const ProductPage = ({id}) => {
                       Contactar por WhatsApp{' '}
                       <TbBrandWhatsapp className='icon' />
                     </a>
-                    <ShareButton data={product} type="product" />
+                    <button
+                      className='btn btn-secondary w-full mt-2'
+                      onClick={handleShowModal}
+                    >
+                      Recomendar a un amigo <TbShare2 className='icon' />
+                    </button>
                   </div>
                 </div>
               </div>
