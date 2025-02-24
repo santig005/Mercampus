@@ -35,7 +35,7 @@ function ProductModal({ product, theKey }) {
       setSeller(product.sellerId || {});
       setSchedules(product.schedules || []);
 
-      sendGAEvent('event', 'click_product', {
+      sendGAEvent('event', 'product_click', {
         action: 'Clicked Product',
         product_name: product.name,
         product_price: product.price,
