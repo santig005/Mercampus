@@ -8,6 +8,17 @@ export default function ProductCard({
   product: { _id: id, name, availability, category, price, images, owner },
   isClicked,
 }) {
+  const renderCategories = () => {
+    try {
+      return category.map((category, index) => (
+        <span key={index} className='my-card-subtitle text-[11px] mr-1 px-1 py-[2px] rounded-md bg-[#ff950b]/15'>
+          {category}
+        </span>
+      ));
+    } catch (error) {
+      return <span className='my-card-subtitle'>{category}</span>;
+    }
+  };
 
   return (
     <div
@@ -21,11 +32,7 @@ export default function ProductCard({
       <div className='flex flex-col justify-between'>
         <h2 className='my-card-title truncate w-60 block'>{name}</h2>
         <div className='my-card-subtitle truncate w-60 block text-primary/90'>
-          {category.map((cat, index) => (
-            <span key={index} className='text-[11px] mr-1 px-1 py-[2px] rounded-md bg-[#ff950b]/15'>
-              {cat}
-            </span>
-          ))}
+          {renderCategories()}
         </div>
         <p className='card-price'>{priceFormat(price)}</p>
         <div className='flex items-center gap-2'>

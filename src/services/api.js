@@ -1,26 +1,31 @@
-"use server";//
+'use server'; //
 
 // src/services/api.js
-const API_BASE_URL = process.env.NEXT_PUBLIC_URL + "/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_URL + '/api';
 
 export const fetchAPI = async (endpoint, options = {}) => {
+  console.log('petición a:', `${API_BASE_URL}${endpoint}`);
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         ...options.headers,
       },
       ...options,
     });
 
+    // console.log(response);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Something went wrong");
+      throw new Error(response.statusText);
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    // console.log('API Fetch Data:', data);
+
+    return data;
   } catch (error) {
-    console.error("API Fetch Error:", error);
-    throw error;
+    console.error('API Fetch Error:', error);
   }
 };

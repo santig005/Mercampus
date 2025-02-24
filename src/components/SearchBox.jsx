@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 function useDebounce(value, delay) {
@@ -11,10 +11,7 @@ function useDebounce(value, delay) {
       setDebouncedValue(value);
     }, delay);
 
-    // Cancelar el timeout si el valor cambia antes de que expire el delay
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [value, delay]);
 
   return debouncedValue;
@@ -23,16 +20,31 @@ function useDebounce(value, delay) {
 export default function SearchBox() {
   const [search, setSearch] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const category = searchParams.get('category') || '';
+  const sellerId = searchParams.get('sellerId') || '';
 
   const debouncedSearchValue = useDebounce(search, 500);
 
   useEffect(() => {
+    const params = new URLSearchParams();
+
     if (debouncedSearchValue.length >= 2) {
-      router.push(`?q=${debouncedSearchValue}`);
-    } else {
-      router.push('/antojos');
+      params.set('product', debouncedSearchValue);
     }
-  }, [debouncedSearchValue, router]);
+
+    if (category) {
+      params.set('category', category);
+    }
+
+    if (sellerId) {
+      params.set('sellerId', sellerId);
+    }
+
+    router.push(`?${params.toString()}`);
+  }, [debouncedSearchValue, category, sellerId, router]);
+
   return (
     <label className='input input-bordered flex items-center gap-2'>
       <input
@@ -40,7 +52,7 @@ export default function SearchBox() {
         className='grow'
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder='Busca tu antojo mas deseado'
+        placeholder='Busca tu antojo más deseado'
       />
       <svg
         xmlns='http://www.w3.org/2000/svg'

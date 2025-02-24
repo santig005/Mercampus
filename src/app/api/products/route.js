@@ -5,64 +5,67 @@ import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
-import {Seller} from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema2';
 
-export async function GET(req, res) {
+export async function GET(req) {
   await connectDB();
 
-  const product = new URL(req.url).searchParams.get('q') || '';
+  const url = new URL(req.url);
+  const product = url.searchParams.get('product') || '';
+  const category = url.searchParams.get('category') || '';
+  const sellerId = url.searchParams.get('sellerId') || '';
 
   let filter = {};
 
-  if (product) {
-    filter = {
-      $or: [
-        {
-          name: {
-            $regex: product, // Search for full or partial text in `name`
-            $options: 'i', // Not sensitive to uppercase/lowercase
-          },
-        },
-        {
-          category: {
-            $regex: product, // Search for full or partial text in `category`
-            $options: 'i', // Not sensitive to uppercase/lowercase
-          },
-        },
-      ],
-    };
+  if (sellerId) {
+    filter.sellerId = sellerId;
   }
 
-  let products = await Product.find(filter)
-    .populate({
-      path: 'sellerId', // Campo relacionado a poblar
-      model: 'Seller', // Modelo al que pertenece el campo
-      match: {approved: true}, // Filtro para poblar
-    });
-    products = products.sort(() => Math.random() - 0.5); 
-    products.sort((a, b) => b.availability - a.availability);
-  const approvedProducts = products.filter(product => product.sellerId !== null);
+  if (category) {
+    filter.category = { $in: [category] };
+  }
 
+  if (product) {
+    filter.name = { $regex: product, $options: 'i' };
+  }
+
+  let products = await Product.find(filter).populate({
+    path: 'sellerId', // Campo relacionado a poblar
+    model: 'Seller', // Modelo al que pertenece el campo
+    match: { approved: true }, // Filtro para poblar
+  });
+  products = products.sort(() => Math.random() - 0.5);
+  products.sort((a, b) => b.availability - a.availability);
+  const approvedProducts = products.filter(
+    (product) => product.sellerId !== null
+  );
+
+  const populated = await getPopulatedProducts(approvedProducts);
+
+  return NextResponse.json({ products: populated }, { status: 200 });
+}
+
+const getPopulatedProducts = async (approvedProducts) => {
   const populatedProducts = await Promise.all(
-    approvedProducts.map(async product => {
+    approvedProducts.map(async (product) => {
       const schedules = await Schedule.find({ sellerId: product.sellerId._id });
-      schedules.sort((a, b) => {
-        if (a.day !== b.day) return a.day - b.day;
-        return a.startTime.localeCompare(b.startTime);
-      });
-      return { ...product.toObject(), schedules };
+      schedules.sort((a, b) =>
+        a.day !== b.day ? a.day - b.day : a.startTime.localeCompare(b.startTime)
+      );
+
+      return {
+        ...product.toObject(),
+        schedules: schedules.map((schedule) => ({
+          ...schedule.toObject(),
+          day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
+        })),
+      };
     })
   );
-  const transformedProducts = populatedProducts.map(product => {
-    const transformedSchedules = product.schedules.map(schedule => ({
-      ...schedule.toObject(),
-      day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
-    }));
-    return { ...product, schedules: transformedSchedules };
-  });
-  return NextResponse.json(transformedProducts, { status: 200 });
-}
-// spell:disable
+
+  return populatedProducts;
+};
+
 export async function POST(req) {
   try {
     await connectDB();
@@ -77,7 +80,7 @@ export async function POST(req) {
       if (!tempUserId) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
       }
-      console.log("el id del usuario es ",tempUserId);
+      console.log('el id del usuario es ', tempUserId);
       const seller = await Seller.findOne({ userId: tempUserId });
       if (!seller) {
         return NextResponse.json(
@@ -87,15 +90,14 @@ export async function POST(req) {
       }
       const body = await req.json();
 
-      body.sellerId = seller._id; 
+      body.sellerId = seller._id;
       const newProduct = new Product(body);
-      try{
+      try {
         await newProduct.save();
+      } catch (error) {
+        console.log('error al guardar el producto', error);
       }
-      catch(error){
-        console.log("error al guardar el producto",error);
-      }
-      
+
       return NextResponse.json(
         { message: 'Product created successfully' },
         { status: 201 }

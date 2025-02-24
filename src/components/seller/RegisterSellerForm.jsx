@@ -8,7 +8,7 @@ import ImageGrid from '@/components/general/ImageGrid';
 import { useUser } from '@clerk/nextjs'
 import { useSeller } from '@/context/SellerContext';
 
-const RegisterSeller = () => {
+const RegisterSellerForm = () => {
   const router = useRouter();
   const [sellerData, setSellerData] = useState({
     businessName: '',
@@ -26,26 +26,26 @@ const RegisterSeller = () => {
   const { user } = useUser();
 
   // Redirect if there is no logged in user
-  useEffect(() => {
-    if (!user) {
-      window.location.href = '/';
-    }
-  }, [user]);
+//   useEffect(() => {
+//     if (!user) {
+//       window.location.href = '/';
+//     }
+//   }, [user]);
 
   // Redirect if seller is not approved
-  useEffect(() => {
-    if (!sellerLoading && seller && !seller.approved) {
-      router.push('/antojos/sellers/approving'); // Redirige a la página de estado de aprobación
-    }
-  }, [seller, sellerLoading, router]);
+//   useEffect(() => {
+//     if (!sellerLoading && seller && !seller.approved) {
+//       router.push('/antojos/sellers/approving'); // Redirige a la página de estado de aprobación
+//     }
+//   }, [seller, sellerLoading, router]);
 
-  useEffect(() => {
-         if (!sellerLoading) {
-           if (seller && seller.approved) {
-             window.location.href = '/antojos/sellers/schedules';
-           }  
-         }
-       }, [seller, sellerLoading]);
+//   useEffect(() => {
+//          if (!sellerLoading) {
+//            if (seller && seller.approved) {
+//              window.location.href = '/antojos/sellers/schedules';
+//            }  
+//          }
+//        }, [seller, sellerLoading]);
 
   
 
@@ -231,4 +231,4 @@ const RegisterSeller = () => {
   );
 };
 
-export default RegisterSeller;
+export default RegisterSellerForm;

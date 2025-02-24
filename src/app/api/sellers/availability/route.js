@@ -3,7 +3,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { NextResponse } from 'next/server';
 
-export async function PATCH(req) {
+/* export async function PATCH(req) {
   await connectDB();
 
   try {
@@ -42,4 +42,4 @@ export async function PATCH(req) {
       { status: 500 }
     );
   }
-}
+} */
