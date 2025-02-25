@@ -3,6 +3,7 @@ import { SellerProvider } from '@/context/SellerContext';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
 import { esMX } from '@clerk/localizations';
 import Analytics from '@/utils/analytics';
+import AdSense from '@/components/ads/adsense';
 
 import React from 'react';
 import '../../public/css/main.css';
@@ -55,6 +56,9 @@ export default function RootLayout({ children }) {
       }}
     >
       <html lang='es' className={`${montserrat.className} hide-scrollbar`}>
+        <head>
+          <AdSense />
+        </head>
         <body className='bg-primary'>
           <SellerProvider>
             <AnimationProvider>
