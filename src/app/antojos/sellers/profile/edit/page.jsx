@@ -3,11 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { updateSeller} from '@/services/sellerService';
 import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
+import Loading from '@/components/general/Loading';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
-import { useUser } from '@clerk/nextjs';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
+import { useCheckSeller } from '@/context/SellerContext';
  
 export default function EditSellerPage() {
   const [sellerAvailability, setSellerAvailability] = useState(false);
@@ -16,19 +17,11 @@ export default function EditSellerPage() {
   const [error, setError] = useState(null);
   const router = useRouter();
   const {seller:dataSeller, loading: sellerLoading } = useSeller();
-  const { user } = useUser();
-   
-     useEffect(() => {
-       if (!user) {
-         window.location.href = '/';
-       }
-     }, [user]);
+  const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
+  
    
      useEffect(() => {
        if (!sellerLoading) {
-         if (dataSeller==false) {
-           window.location.href = '/antojos/sellers/register';
-         }
          if(dataSeller){
             setSeller(dataSeller);
             setSellerAvailability(dataSeller.availability);
@@ -36,7 +29,7 @@ export default function EditSellerPage() {
        }
      }, [dataSeller, sellerLoading]);
  
- 
+     
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -64,8 +57,7 @@ export default function EditSellerPage() {
         console.error('Error updating seller availability:', error);
       }
     };
- 
-  if (sellerLoading || !seller) return <p>Cargando perfil...</p>;
+    if(!checkedSeller || !seller) return <Loading/>;
   if (error) return <p>{error}</p>;
  
   return (

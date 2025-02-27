@@ -6,13 +6,17 @@ import { Categories } from '@/utils/resources/categories';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
-import { useUser } from '@clerk/nextjs';
 import { useSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
+import Loading from '@/components/general/Loading';
+import {useCheckSeller} from '@/context/SellerContext';
 import Select from 'react-select'
 
 const AddProduct = () => {
   const router = useRouter();
+  const { seller, loading: sellerLoading } = useSeller();
+  const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
+  
   const [formData, setFormData] = useState({
     name: '',
     category: [],
@@ -26,23 +30,11 @@ const AddProduct = () => {
   const [errorCode, setErrorCode] = useState('');
   const [price, setPrice] = useState('');
   const [displayPrice, setDisplayPrice] = useState('');
-
-    const { seller, loading: sellerLoading } = useSeller();
-    const { user } = useUser();
   
-    useEffect(() => {
-           if (!user) {
-             window.location.href = '/';
-           }
-         }, [user]);
-       
-    useEffect(() => {
-      if (!sellerLoading) {
-        if (seller==false) {
-          window.location.href = '/antojos/sellers/register';
-        }
-      }
-    }, [seller, sellerLoading]);
+  
+
+
+  
 
   const categoryOptions = categories.map(category => ({
     value: category,
@@ -54,19 +46,14 @@ const AddProduct = () => {
     // Once the seller context is done loading, check if we have a valid seller
     useEffect(() => {
       if (!sellerLoading) {
-        if (seller==false) {
-          window.location.href = '/antojos/sellers/register';
-        } else {
-          const loadCategories = async () => {
-            const categoriesData = await Categories(); // Await the result
-            setCategories(categoriesData); // Update state with fetched categories
-          };
-          loadCategories();
-        }
+        const loadCategories = async () => {
+          const categoriesData = await Categories(); // Await the result
+          setCategories(categoriesData); // Update state with fetched categories
+        };
+        loadCategories();
       }
     }, [seller, sellerLoading]);
-  
-    if (sellerLoading ) return <div>Cargando...</div>;
+    if(!checkedSeller) return <Loading/>;
 
 
   const handleCategoryChange = selectedOptions => {

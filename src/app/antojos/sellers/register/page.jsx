@@ -5,8 +5,8 @@ import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import ImageGrid from '@/components/general/ImageGrid';
-import { useUser } from '@clerk/nextjs'
-import { useSeller } from '@/context/SellerContext';
+import Loading from '@/components/general/Loading';
+import {useCheckSeller} from '@/context/SellerContext';
 
 const RegisterSeller = () => {
   const router = useRouter();
@@ -21,33 +21,9 @@ const RegisterSeller = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
-  const {seller, loading: sellerLoading } = useSeller();
+  const {checkedSeller}=useCheckSeller("userNotSeller", "");
+  if(!checkedSeller) return <Loading/>;
 
-  const { user } = useUser();
-
-  // Redirect if there is no logged in user
-  useEffect(() => {
-    if (!user) {
-      window.location.href = '/';
-    }
-  }, [user]);
-
-  // Redirect if seller is not approved
-  useEffect(() => {
-    if (!sellerLoading && seller && !seller.approved) {
-      router.push('/antojos/sellers/approving'); // Redirige a la página de estado de aprobación
-    }
-  }, [seller, sellerLoading, router]);
-
-  useEffect(() => {
-         if (!sellerLoading) {
-           if (seller && seller.approved) {
-             window.location.href = '/antojos/sellers/schedules';
-           }  
-         }
-       }, [seller, sellerLoading]);
-
-  
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
@@ -84,8 +60,10 @@ const RegisterSeller = () => {
       });
 
       if (response.ok) {
+        console.log("al parecer todo salio bien");
         router.push('/antojos/sellers/approving');
       } else {
+        console.log("al parecer todo salio mal");
         const errorData = await response.json();
         console.error('Error:', errorData.message);
         setErrorCode(errorData.message);

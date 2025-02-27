@@ -5,9 +5,10 @@ import ProductCard from '@/components/products/ProductCard';
 import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import Loading from '@/components/general/Loading';
 import { updateSeller } from "@/services/sellerService";
-import { useUser } from "@clerk/nextjs";
 import { useSeller } from "@/context/SellerContext";  
+import { useCheckSeller } from "@/context/SellerContext";
 
 
 export default function EditProductsPage() {
@@ -18,37 +19,24 @@ export default function EditProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const { seller, loading: sellerLoading } = useSeller();
-  const { user } = useUser();
-    
-  // Redirect if there is no logged in user
-  useEffect(() => {
-    if (!user) {
-      window.location.href = '/';
-    }
-  }, [user]);
+  const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
+
 
   // Once the seller context is done loading, check if we have a valid seller
   useEffect(() => {
     if (!sellerLoading) {
-      if (seller==false) {
-        window.location.href = '/antojos/sellers/register';
-      } else {
-        if(seller){
-
-        async function fetchSellerProducts() {
-          try {
-            const response = await getSellerProducts(seller._id);
-            setProducts(response.products);
-          } catch (error) {
-            console.error('Error fetching products:', error);
-          } finally {
-            setIsLoading(false);
-          }
+      async function fetchSellerProducts() {
+        try {
+          const response = await getSellerProducts(seller._id);
+          setProducts(response.products);
+        } catch (error) {
+          console.error('Error fetching products:', error);
+        } finally {
+          setIsLoading(false);
         }
+      }
 
-        fetchSellerProducts();
-      }
-      }
+      fetchSellerProducts();
     }
   }, [seller, sellerLoading]);
     
@@ -93,6 +81,7 @@ export default function EditProductsPage() {
 
 
 
+  if(!checkedSeller) return <Loading/>;
   if (isLoading||sellerLoading) return <p>Cargando productos...</p>;
 
   return (
