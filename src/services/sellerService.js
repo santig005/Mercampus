@@ -10,7 +10,8 @@ export const getSellerById = async id => {
 
 export const getSellerByEmail = async email => {
   try {
-    return await fetchAPI(`/sellers/${email}`);
+    const result= await fetchAPI(`/sellers/${email}`);
+    return result?.seller ? result : {seller: null};
   } catch (error) {
     console.error('Error fetching seller by email:', error);
   }
@@ -22,3 +23,4 @@ export const updateSeller = async (id, data) => {
     body: JSON.stringify(data),
   });
 };
+

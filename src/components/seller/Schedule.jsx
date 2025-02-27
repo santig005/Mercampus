@@ -1,9 +1,10 @@
 import "daisyui";
 import { daysOfWeekES } from "@/utils/resources/days";
-import { getSchedules, createSchedule } from "@/services/scheduleService";
+import { getSchedules } from "@/services/scheduleService";
 import React, { useState,useEffect } from 'react';
-import { useUser } from "@clerk/nextjs";
 import {useSeller} from "@/context/SellerContext";
+import { useCheckSeller } from "@/context/SellerContext";
+import Loading from "../general/Loading";
 import { useRouter } from 'next/navigation';
 
 const Schedule = () => {
@@ -16,44 +17,33 @@ const Schedule = () => {
 
   // Get seller data and loading state from the context
   const { seller, loading: sellerLoading } = useSeller();
-  const { user } = useUser();
-
-  // Redirect if there is no logged in user
-  useEffect(() => {
-    if (!user) {
-      router.push('/');
-    }
-  }, [user,router]);
+  const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
+  
 
   // Once the seller context is done loading, check if we have a valid seller
   useEffect(() => {
     if (!sellerLoading) {
-      if (seller==false) {
-        router.push('/antojos/sellers/register'); 
-      } else {
-        const fetchSchedules = async () => {
-          if(!seller) return;
-          try {
-            const response = await getSchedules(seller._id);
-            const mappedSchedules = response.schedules.map((schedule) => ({
-              id: schedule._id,
-              day: schedule.day,
-              startTime: schedule.startTime,
-              endTime: schedule.endTime,
-            }));
-            setSchedules(mappedSchedules);
-          } catch (error) {
-            console.error('Error fetching schedules:', error);
-          } finally {
-            setIsLoadingSchedules(false);
-          }
-        };
-        fetchSchedules();
-      }
+      const fetchSchedules = async () => {
+        if(!seller) return;
+        try {
+          const response = await getSchedules(seller._id);
+          const mappedSchedules = response.schedules.map((schedule) => ({
+            id: schedule._id,
+            day: schedule.day,
+            startTime: schedule.startTime,
+            endTime: schedule.endTime,
+          }));
+          setSchedules(mappedSchedules);
+        } catch (error) {
+          console.error('Error fetching schedules:', error);
+        } finally {
+          setIsLoadingSchedules(false);
+        }
+      };
+      fetchSchedules();
     }
-  }, [seller, sellerLoading]);
-
-  if (sellerLoading || isLoadingSchedules) return <div>Cargando...</div>;
+  }, [seller, sellerLoading,router]);
+  if(!checkedSeller || isLoadingSchedules) return <Loading/>;
 
   const handleAddSchedule = () => {
     setSchedules([...schedules, { id:null,day: '', startTime: '', endTime: '' }]);

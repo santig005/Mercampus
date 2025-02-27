@@ -39,8 +39,11 @@ const sellerSchema = new mongoose.Schema({
         type: String,
         default: 'Universidad Eafit'
     },
-    
-});
+    },
+    {
+      timestamps: true,
+    }
+);
 
 export const Seller = mongoose.models.Seller || mongoose.model('Seller', sellerSchema);
 export default Seller;
