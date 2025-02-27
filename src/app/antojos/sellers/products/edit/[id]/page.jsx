@@ -5,6 +5,9 @@ import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import Loading from '@/components/general/Loading';
+import { useCheckSeller } from '@/context/SellerContext';
+import { useSeller } from '@/context/SellerContext';
 import { categories } from '@/utils/resources/categories';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
@@ -18,6 +21,8 @@ export default function EditPsroductPage({params}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const { seller, loading: sellerLoading } = useSeller();
+  const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
 
   const categoryOptions = categories.map(category => ({
     value: category,
@@ -26,19 +31,29 @@ export default function EditPsroductPage({params}) {
 
   useEffect(() => {
     async function fetchProduct() {
-      try {
-        const response = await getProductById(id);
-        setProduct(response);
+      
+        if(seller){
+          try {
+          const response = await getProductById(id);
+        if(response.sellerId._id !== seller?._id){
+          router.push('/antojos');
+        }
+        else{
+          setProduct(response);
+        }
       } catch (error) {
         setError('Error al cargar los detalles del producto.');
         console.error(error);
       } finally {
         setLoading(false);
       }
+        }
+        
     }
-
-    fetchProduct();
-  }, [id]);
+    if(checkedSeller){
+      fetchProduct();
+    }
+  }, [id,router,seller?._id,checkedSeller,sellerLoading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,8 +84,8 @@ export default function EditPsroductPage({params}) {
     }
     };
 
-
-  if (loading) return <p>Cargando producto...</p>;
+  if(!checkedSeller || !seller) return <Loading/>;  
+  if (loading || !product) return <p>Cargando producto...</p>;
   if (error) return <p>{error}</p>;
 
   return (

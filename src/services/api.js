@@ -14,10 +14,9 @@ export const fetchAPI = async (endpoint, options = {}) => {
       ...options,
     });
 
-    // console.log(response);
-
+    //console.log(response);
     if (!response.ok) {
-      throw new Error(response.statusText);
+      throw new Error('Network response was not ok');
     }
 
     const data = await response.json();
