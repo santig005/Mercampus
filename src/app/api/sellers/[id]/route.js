@@ -30,7 +30,7 @@ export async function GET(req, { params }) {
     try {
         await connectDB();
     
-        let seller
+        let seller;
     
         if (params.id.includes('@')) {
           const user = await User.findOne({ email: params.id });
