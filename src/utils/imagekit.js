@@ -1,4 +1,4 @@
-import ImageKit from "imagekit";
+import ImageKit from 'imagekit';
 
 const imagekit = new ImageKit({
   publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_KEY, // Your ImageKit public API key
