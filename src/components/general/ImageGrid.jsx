@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 
-export default function ImageGrid({ initialImages, onUpdateImages,nameFolder,title,maxImages }) {
+export default function ImageGrid({
+  initialImages,
+  onUpdateImages,
+  nameFolder,
+  title,
+  maxImages,
+}) {
   const [images, setImages] = useState(initialImages || []);
   const [loading, setLoading] = useState(false);
 
   const handleAddImage = async (event) => {
-
     if (maxImages && images.length >= maxImages) {
       return;
     }
@@ -49,21 +54,21 @@ export default function ImageGrid({ initialImages, onUpdateImages,nameFolder,tit
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">{title}</h3>
-      <div className="grid grid-cols-3 gap-4">
+      <h3 className='text-lg font-semibold mb-4'>{title}</h3>
+      <div className='grid grid-cols-3 gap-4'>
         {images.map((image, index) => (
           <div
             key={index}
-            className="relative w-full h-32 border rounded-md overflow-hidden"
+            className='relative w-32 h-32 border rounded-md overflow-hidden'
           >
             <img
               src={image}
               alt={`Imagen del producto ${index + 1}`}
-              className="w-full h-full object-cover"
+              className='w-full h-full object-cover'
             />
             <button
-              type="button"
-              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
+              type='button'
+              className='absolute top-1 right-1 bg-red-500 text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-600 transition'
               onClick={() => handleRemoveImage(index)}
             >
               ✕
@@ -72,23 +77,25 @@ export default function ImageGrid({ initialImages, onUpdateImages,nameFolder,tit
         ))}
 
         {/* Botón para agregar imagen */}
-        {images.length<maxImages&& (<div className="w-full h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md">
-          {loading ? (
-            <p className="text-sm text-gray-500">Subiendo...</p>
-          ) : (
-            <label className="cursor-pointer">
-              <span className="text-gray-500 text-sm font-medium">+ Agregar</span>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleAddImage}
-              />
-            </label>
-          )}
-        </div>)
-    }
-        
+        {images.length < maxImages && (
+          <div className='w-full h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md'>
+            {loading ? (
+              <p className='text-sm text-gray-500'>Subiendo...</p>
+            ) : (
+              <label className='cursor-pointer'>
+                <span className='text-gray-500 text-sm font-medium'>
+                  + Agregar
+                </span>
+                <input
+                  type='file'
+                  className='hidden'
+                  accept='image/*'
+                  onChange={handleAddImage}
+                />
+              </label>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
