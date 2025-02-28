@@ -78,7 +78,7 @@ export default function ImageGrid({
 
         {/* Botón para agregar imagen */}
         {images.length < maxImages && (
-          <div className='w-full h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md'>
+          <div className='w-32 h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md'>
             {loading ? (
               <p className='text-sm text-gray-500'>Subiendo...</p>
             ) : (
