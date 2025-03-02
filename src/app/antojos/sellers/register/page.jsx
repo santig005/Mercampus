@@ -7,6 +7,7 @@ import { IoClose } from 'react-icons/io5';
 import ImageGrid from '@/components/general/ImageGrid';
 import Loading from '@/components/general/Loading';
 import {useCheckSeller} from '@/context/SellerContext';
+import UniGraphicSelector from '@/components/university/UniGraphicSelector';
 
 const RegisterSeller = () => {
   const router = useRouter();
@@ -14,6 +15,7 @@ const RegisterSeller = () => {
     businessName: '',
     instagramUser: '',
     description: '',
+    university: '',
     logo: '',
     slogan: '',
     phoneNumber: '',
@@ -60,10 +62,8 @@ const RegisterSeller = () => {
       });
 
       if (response.ok) {
-        console.log("al parecer todo salio bien");
         router.push('/antojos/sellers/approving');
       } else {
-        console.log("al parecer todo salio mal");
         const errorData = await response.json();
         console.error('Error:', errorData.message);
         setErrorCode(errorData.message);
@@ -151,6 +151,14 @@ const RegisterSeller = () => {
                   onChange={handleChange}
                   name='slogan'
                 />
+                <div>
+                  <label>Universidad</label>
+                  <UniGraphicSelector 
+                    value={sellerData.university}
+                    onUniversityChange={(selected) => setSellerData({ ...sellerData, university: selected })}
+                  />    
+                </div>
+
                 <InputFields
                   title='Usuario de Instagram'
                   type='text'

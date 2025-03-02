@@ -9,6 +9,7 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
+import UniGraphicSelector from '@/components/university/UniGraphicSelector';
  
 export default function EditSellerPage() {
   const [sellerAvailability, setSellerAvailability] = useState(false);
@@ -34,6 +35,13 @@ export default function EditSellerPage() {
     e.preventDefault();
     try {
       await updateSeller(seller._id, seller);
+      //para cada uno de los campos de dataSeller actualizar el seller
+      Object.keys(seller).forEach(key => {
+        if (seller[key] !== dataSeller[key]) {
+          dataSeller[key] = seller[key];
+        }
+      });
+
       router.push('/');
     } catch (error) {
       setError('Error al actualizar el perfil del vendedor.');
@@ -46,10 +54,12 @@ export default function EditSellerPage() {
 
   const handleSellerAvailability = async () => {
       try {
+        dataSeller["availability"]=!sellerAvailability;
         setSellerAvailability(!sellerAvailability);
         const updatedSeller = await updateSeller(seller._id, { availability: !sellerAvailability });
         //if the request is not successful, correct the availability
         if (!updatedSeller) {
+          dataSeller["availability"]=!sellerAvailability;
           setSellerAvailability(!sellerAvailability);
         }
       }
@@ -105,6 +115,13 @@ export default function EditSellerPage() {
           onChange={(e) => setSeller({ ...seller, description: e.target.value })}
           name="description"
         />
+        <div>
+          <label>Universidad</label>
+          <UniGraphicSelector 
+            value={seller.university}
+            onUniversityChange={(selected) => setSeller({ ...seller, university: selected })}
+          />    
+        </div>
  
         <InputFields
           title="Usuario de Instagram"
