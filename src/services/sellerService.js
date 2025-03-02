@@ -1,7 +1,10 @@
 import { fetchAPI } from './api';
 
-export const getSellers = async () => {
-  return await fetchAPI('/sellers');
+export const getSellers = async (university) => {
+  const queryParams = new URLSearchParams();
+
+  if (university) queryParams.append('university', university); 
+  return await fetchAPI(`/sellers?${queryParams.toString()}`);
 };
 
 export const getSellerById = async id => {
@@ -10,7 +13,9 @@ export const getSellerById = async id => {
 
 export const getSellerByEmail = async email => {
   try {
+    console.log("hemos entrado en el seller service");
     const result= await fetchAPI(`/sellers/${email}`);
+    console.log("result", result);
     return result?.seller ? result : {seller: null};
   } catch (error) {
     console.error('Error fetching seller by email:', error);
