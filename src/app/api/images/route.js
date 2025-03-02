@@ -1,6 +1,6 @@
-import imagekit from "@/utils/imagekit";
-import { NextResponse } from "next/server";
-import sharp from "sharp";
+import imagekit from '@/utils/imagekit';
+import { NextResponse } from 'next/server';
+import sharp from 'sharp';
 
 export async function POST(req) {
   try {
@@ -10,7 +10,7 @@ export async function POST(req) {
 
     if (!file) {
       return NextResponse.json(
-        { error: "Missing file parameter" },
+        { error: 'Missing file parameter' },
         { status: 400 }
       );
     }
@@ -30,39 +30,33 @@ export async function POST(req) {
     return NextResponse.json(
       {
         url: response.url,
+        fileId: response.fileId,
       },
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function DELETE(req) {
-    try {
-    const { publicId } = await req.json();
-  
-      if (!fileId) {
-        return NextResponse.json(
-          { error: "Missing fileId parameter" },
-          { status: 400 }
-        );
-      }
-  
-      await imagekit.deleteFile(publicId);
-  
+  try {
+    const { fileId } = await req.json(); // Ahora usamos `fileId` correctamente
+    console.log('fileIdapi', fileId);
+    if (!fileId) {
       return NextResponse.json(
-        { message: "File deleted successfully" },
-        { status: 200 }
-      );
-    } catch (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
+        { error: 'Missing fileId parameter' },
+        { status: 400 }
       );
     }
+
+    await imagekit.deleteFile(fileId); // Eliminamos la imagen usando el `fileId`
+
+    return NextResponse.json(
+      { message: 'File deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+}

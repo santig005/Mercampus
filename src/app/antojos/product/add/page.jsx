@@ -6,17 +6,14 @@ import { Categories } from '@/utils/resources/categories';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
-import { useSeller } from '@/context/SellerContext';
-import ImageGrid from '@/components/general/ImageGrid';
 import Loading from '@/components/general/Loading';
 import {useCheckSeller} from '@/context/SellerContext';
-import Select from 'react-select'
+import ImageGrid from '@/components/general/ImageGrid';
+import Select from 'react-select';
 
 const AddProduct = () => {
   const router = useRouter();
-  const { seller, loading: sellerLoading } = useSeller();
   const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
-  
   const [formData, setFormData] = useState({
     name: '',
     category: [],
@@ -30,38 +27,32 @@ const AddProduct = () => {
   const [errorCode, setErrorCode] = useState('');
   const [price, setPrice] = useState('');
   const [displayPrice, setDisplayPrice] = useState('');
-  
-  
 
 
-  
-
-  const categoryOptions = categories.map(category => ({
+  const categoryOptions = categories.map((category) => ({
     value: category,
-    label: category
+    label: category,
   }));
 
+  // Once the seller context is done loading, check if we have a valid seller
+  useEffect(() => {
+    const loadCategories = async () => {
+      const categoriesData = await Categories(); // Await the result
+      setCategories(categoriesData); // Update state with fetched categories
+    };
+    loadCategories();
+  }, []);
 
-  
-    // Once the seller context is done loading, check if we have a valid seller
-    useEffect(() => {
-      if (!sellerLoading) {
-        const loadCategories = async () => {
-          const categoriesData = await Categories(); // Await the result
-          setCategories(categoriesData); // Update state with fetched categories
-        };
-        loadCategories();
-      }
-    }, [seller, sellerLoading]);
-    if(!checkedSeller) return <Loading/>;
+  if(!checkedSeller) return <Loading/>;
 
-
-  const handleCategoryChange = selectedOptions => {
-    const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
+  const handleCategoryChange = (selectedOptions) => {
+    const selectedValues = selectedOptions
+      ? selectedOptions.map((option) => option.value)
+      : [];
     handleChange({ target: { name: 'category', value: selectedValues } });
   };
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
     if (type === 'textarea') {
@@ -77,7 +68,7 @@ const AddProduct = () => {
     });
   };
 
-  const handlePriceChange = e => {
+  const handlePriceChange = (e) => {
     const numericValue = e.target.value.replace(/[^0-9]/g, '');
     let formattedValue = '';
 
@@ -94,7 +85,7 @@ const AddProduct = () => {
     setPrice(numericValue);
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
@@ -136,7 +127,6 @@ const AddProduct = () => {
 
   return (
     <>
-    
       <div className='flex flex-col h-dvh'>
         {/* Errors modal */}
         <dialog
@@ -199,12 +189,14 @@ const AddProduct = () => {
                   <label>Categoría</label>
                   <Select
                     isMulti
-                    name="category"
+                    name='category'
                     options={categoryOptions}
-                    value={categoryOptions.filter(option => formData.category?.includes(option.value))}
+                    value={categoryOptions.filter((option) =>
+                      formData.category?.includes(option.value)
+                    )}
                     onChange={handleCategoryChange}
-                    className="basic-multi-select w-full"
-                    classNamePrefix="Selecciona"
+                    className='basic-multi-select w-full'
+                    classNamePrefix='Selecciona'
                   />
                 </div>
                 <InputFields
@@ -225,13 +217,13 @@ const AddProduct = () => {
                   name='description'
                 />
                 <div>
-                <ImageGrid
-                  initialImages={formData.images}
-                  onUpdateImages={handleImagesUpdate}
-                  nameFolder='products'
-                  title='Imágenes del Producto'
-                  maxImages={5}
-                />
+                  <ImageGrid
+                    initialImages={formData.images}
+                    onUpdateImages={handleImagesUpdate}
+                    nameFolder='products'
+                    title='Imágenes del Producto'
+                    maxImages={5}
+                  />
                 </div>
                 <button
                   type='submit'
