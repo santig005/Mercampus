@@ -6,8 +6,6 @@ import { useCheckSeller } from "@/context/SellerContext";
 import Loading from "@/components/general/Loading";
 
 const SellerApprovalStatus = () => {
-  const router = useRouter();
-  const { seller, loading: sellerLoading, dbUser } = useSeller();
   const { checkedSeller } = useCheckSeller("sellerNotApproved", "/antojos/sellers/schedules");
 
   return checkedSeller ? (

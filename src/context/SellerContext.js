@@ -50,7 +50,7 @@ export const SellerProvider = ({ children }) => {
   }, [user,isLoaded]); // Only refetch when `user` changes
 
   return (
-    <SellerContext.Provider value={{ seller, loading, dbUser }}>
+    <SellerContext.Provider value={{ seller, setSeller, loading, dbUser,setDbUser }}>
       {children}
     </SellerContext.Provider>
   );
