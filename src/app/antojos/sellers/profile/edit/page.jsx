@@ -16,7 +16,7 @@ export default function EditSellerPage() {
  
   const [error, setError] = useState(null);
   const router = useRouter();
-  const {seller:dataSeller, loading: sellerLoading } = useSeller();
+  const {seller:dataSeller,setSeller:setDataSeller, loading: sellerLoading } = useSeller();
   const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
   
    
@@ -34,6 +34,7 @@ export default function EditSellerPage() {
     e.preventDefault();
     try {
       await updateSeller(seller._id, seller);
+      setDataSeller(seller);
       router.push('/');
     } catch (error) {
       setError('Error al actualizar el perfil del vendedor.');
@@ -47,9 +48,11 @@ export default function EditSellerPage() {
   const handleSellerAvailability = async () => {
       try {
         setSellerAvailability(!sellerAvailability);
+        setDataSeller({ ...seller, availability: !sellerAvailability });
         const updatedSeller = await updateSeller(seller._id, { availability: !sellerAvailability });
         //if the request is not successful, correct the availability
         if (!updatedSeller) {
+          setDataSeller({ ...seller, availability: !sellerAvailability });
           setSellerAvailability(!sellerAvailability);
         }
       }

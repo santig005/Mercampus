@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
@@ -7,6 +7,7 @@ import { IoClose } from 'react-icons/io5';
 import ImageGrid from '@/components/general/ImageGrid';
 import Loading from '@/components/general/Loading';
 import {useCheckSeller} from '@/context/SellerContext';
+import { useSeller } from '@/context/SellerContext';
 
 const RegisterSeller = () => {
   const router = useRouter();
@@ -21,6 +22,7 @@ const RegisterSeller = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
+  var { seller, setSeller,dbUser,setDbUser } = useSeller();
   const {checkedSeller}=useCheckSeller("userNotSeller", "");
   if(!checkedSeller) return <Loading/>;
 
@@ -60,10 +62,10 @@ const RegisterSeller = () => {
       });
 
       if (response.ok) {
-        console.log("al parecer todo salio bien");
+        setSeller(sellerData);
+        setDbUser({ ...dbUser, role: "seller" });
         router.push('/antojos/sellers/approving');
       } else {
-        console.log("al parecer todo salio mal");
         const errorData = await response.json();
         console.error('Error:', errorData.message);
         setErrorCode(errorData.message);

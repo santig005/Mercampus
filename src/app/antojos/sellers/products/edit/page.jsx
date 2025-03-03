@@ -18,7 +18,7 @@ export default function EditProductsPage() {
   const [sellerAvailability, setSellerAvailability] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { seller, loading: sellerLoading } = useSeller();
+  const { seller,setSeller, loading: sellerLoading } = useSeller();
   const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
 
 
@@ -35,6 +35,7 @@ export default function EditProductsPage() {
           setIsLoading(false);
         }
       }
+      setSellerAvailability(seller.availability);
 
       fetchSellerProducts();
     }
@@ -68,10 +69,12 @@ export default function EditProductsPage() {
   const handleSellerAvailability = async () => {
     try {
       setSellerAvailability(!sellerAvailability);
+      setSeller({ ...seller, availability: !sellerAvailability });
       const updatedSeller = await updateSeller(seller._id, { availability: !sellerAvailability });
       //if the request is not successful, correct the availability
       if (!updatedSeller) {
         setSellerAvailability(!sellerAvailability);
+        setSeller({ ...seller, availability: !sellerAvailability });
       }
     }
     catch (error) {
