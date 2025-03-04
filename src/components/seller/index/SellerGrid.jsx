@@ -5,11 +5,12 @@ import SellerCard from '@/components/seller/index/SellerCard';
 import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
 import { useSeller } from '@/context/SellerContext';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
-import {updateSeller} from '@/services/sellerService';
+import { updateSeller } from '@/services/sellerService';
+import SellerCardAV from '@/components/seller/index/SellerCardAV';
 
 export default function SellerGrid() {
   const [sellers, setSellers] = useState([]);
-  const {dbUser} = useSeller();
+  const { dbUser } = useSeller();
 
   useEffect(() => {
     async function fetchSellers() {
@@ -32,39 +33,42 @@ export default function SellerGrid() {
           seller._id === sellerId ? { ...seller, approved: !isOn } : seller
         )
       );
-      const response = await updateSeller(sellerId, {approved: !isOn});
-      if(response.error){
+      const response = await updateSeller(sellerId, { approved: !isOn });
+      if (response.error) {
         setSellers(prevSellers =>
           prevSellers.map(seller =>
             seller._id === sellerId ? { ...seller, approved: isOn } : seller
           )
         );
       }
-      console.log(response);
     } catch (error) {
       console.error('Error updating seller:', error);
     }
-  }
+  };
 
-
-  const visibleSellers = dbUser?.role === 'admin' ? sellers : sellers.filter(seller => seller.approved);
+  const visibleSellers =
+    dbUser?.role === 'admin'
+      ? sellers
+      : sellers.filter(seller => seller.approved);
 
   return (
     <SellerModalHandler>
       {showModal => (
-        <div className="flex flex-col gap-4">
+        <div className='flex flex-col gap-4'>
           {dbUser?.role === 'admin' ? (
-            // Diseño para ADMIN con padding derecho para el toggle
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pr-8">
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
               {sellers.map(seller => (
-                <div key={seller._id} className="bg-white shadow-md rounded-lg p-4 flex items-center justify-between gap-4">
-                  <div className="max-w-sm w-full" onClick={() => showModal(seller)}>
-                    <SellerCard seller={seller} />
-                  </div>  
-                  <div className="flex flex-col items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <div key={seller._id} className='bg-white shadow-md rounded-lg'>
+                  <div className='w-full' onClick={() => showModal(seller)}>
+                    <SellerCardAV seller={seller} />
+                  </div>
+                  <div className='flex justify-between p-2 w-full'>
+                    <p>Activo:</p>
                     <ToggleSwitch
                       isOn={seller.approved || false}
-                      onToggle={() => handleSellerApproval(seller.approved, seller._id)}
+                      onToggle={() =>
+                        handleSellerApproval(seller.approved, seller._id)
+                      }
                     />
                   </div>
                 </div>
@@ -72,9 +76,13 @@ export default function SellerGrid() {
             </div>
           ) : (
             // Diseño para usuarios normales (solo aprobados)
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
               {visibleSellers.map(seller => (
-                <div key={seller._id} onClick={() => showModal(seller)} className="cursor-pointer">
+                <div
+                  key={seller._id}
+                  onClick={() => showModal(seller)}
+                  className='cursor-pointer'
+                >
                   <SellerCard seller={seller} />
                 </div>
               ))}

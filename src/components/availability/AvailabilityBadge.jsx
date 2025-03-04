@@ -5,7 +5,7 @@ const AvailabilityBadge = ({ availability }) => {
     <div className='flex items-center space-x-2'>
       <div className='relative'>
         <label
-          className={`block w-20 h-[20px] rounded-md cursor-pointer transition-colors ${
+          className={`block w-20 h-[20px] rounded-md transition-colors ${
             availability ? 'bg-[#03CF30]/15' : 'bg-[#CF0303]/15'
           }`}
         >

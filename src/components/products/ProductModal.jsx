@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 import Carousel from '@/components/Carousel';
-import { priceFormat } from '@/utils/utilFn';
+import { parseIfJSON, priceFormat } from '@/utils/utilFn';
 import React, { memo, useEffect, useState } from 'react';
 import {
   TbChevronLeft,
@@ -54,7 +54,6 @@ function ProductModal({ product, theKey }) {
     <div>
       <dialog
         id={`product_modal_${theKey}`}
-
         className='modal modal-top h-dvh backdrop-blur-md'
       >
         <ShareButton data={product} type='product' />
@@ -89,8 +88,8 @@ function ProductModal({ product, theKey }) {
                       </h2>
                       <AvailabilityBadge availability={availability} />
                     </div>
-                    <p className='text-[14px] text-secondary px-6'>
-                      {description}
+                    <p className='text-[14px] text-secondary px-6 text-balance whitespace-pre-wrap'>
+                      {parseIfJSON(description)}
                     </p>
                     <button
                       className='btn max-w-min flex-nowrap mx-6'
