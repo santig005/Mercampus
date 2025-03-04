@@ -41,7 +41,6 @@ export default function SellerGrid() {
           )
         );
       }
-      console.log(response);
     } catch (error) {
       console.error('Error updating seller:', error);
     }
@@ -62,15 +61,15 @@ export default function SellerGrid() {
                 <div key={seller._id} className='bg-white shadow-md rounded-lg'>
                   <div className='w-full' onClick={() => showModal(seller)}>
                     <SellerCardAV seller={seller} />
-                    <div className='flex justify-between p-2 w-full'>
-                      <p>Activo:</p>
-                      <ToggleSwitch
-                        isOn={seller.approved || false}
-                        onToggle={() =>
-                          handleSellerApproval(seller.approved, seller._id)
-                        }
-                      />
-                    </div>
+                  </div>
+                  <div className='flex justify-between p-2 w-full'>
+                    <p>Activo:</p>
+                    <ToggleSwitch
+                      isOn={seller.approved || false}
+                      onToggle={() =>
+                        handleSellerApproval(seller.approved, seller._id)
+                      }
+                    />
                   </div>
                 </div>
               ))}
