@@ -15,6 +15,10 @@
   @apply unselectable;
 }
 
+img {
+  @apply unselectable pointer-events-none cursor-pointer;
+}
+
 .btn-danger {
   background-color: #dc3545 !important;
   border-color: #dc3545 !important;
