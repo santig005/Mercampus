@@ -1,11 +1,10 @@
-"use client";
+'use client';
 import Schedule from '@/components/seller/Schedule';
 
 const ScheduleRegister = () => {
-
   return (
     <div>
-        <Schedule/>
+      <Schedule />
     </div>
   );
 };

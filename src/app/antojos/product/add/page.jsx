@@ -7,13 +7,16 @@ import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import Loading from '@/components/general/Loading';
-import {useCheckSeller} from '@/context/SellerContext';
+import { useCheckSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
 
 const AddProduct = () => {
   const router = useRouter();
-  const {checkedSeller}=useCheckSeller("sellerApproved", "/antojos/sellers/approving");
+  const { checkedSeller } = useCheckSeller(
+    'sellerApproved',
+    '/antojos/sellers/approving'
+  );
   const [formData, setFormData] = useState({
     name: '',
     category: [],
@@ -28,8 +31,7 @@ const AddProduct = () => {
   const [price, setPrice] = useState('');
   const [displayPrice, setDisplayPrice] = useState('');
 
-
-  const categoryOptions = categories.map((category) => ({
+  const categoryOptions = categories.map(category => ({
     value: category,
     label: category,
   }));
@@ -43,24 +45,17 @@ const AddProduct = () => {
     loadCategories();
   }, []);
 
-  if(!checkedSeller) return <Loading/>;
+  if (!checkedSeller) return <Loading />;
 
-  const handleCategoryChange = (selectedOptions) => {
+  const handleCategoryChange = selectedOptions => {
     const selectedValues = selectedOptions
-      ? selectedOptions.map((option) => option.value)
+      ? selectedOptions.map(option => option.value)
       : [];
     handleChange({ target: { name: 'category', value: selectedValues } });
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
-
-    if (type === 'textarea') {
-      requestAnimationFrame(() => {
-        e.target.style.height = 'auto';
-        e.target.style.height = `${e.target.scrollHeight}px`;
-      });
-    }
 
     setFormData({
       ...formData,
@@ -68,24 +63,7 @@ const AddProduct = () => {
     });
   };
 
-  const handlePriceChange = (e) => {
-    const numericValue = e.target.value.replace(/[^0-9]/g, '');
-    let formattedValue = '';
-
-    if (numericValue !== '') {
-      formattedValue = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        useGrouping: true,
-      }).format(numericValue);
-    }
-
-    setDisplayPrice(formattedValue);
-    setPrice(numericValue);
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
 
@@ -93,7 +71,7 @@ const AddProduct = () => {
     const data = {
       name: formData.name,
       category: formData.category,
-      price: price,
+      price: formData.price,
       description: formData.description,
       images: formData.images, // Save uploaded image URLs
     };
@@ -121,13 +99,13 @@ const AddProduct = () => {
     setLoading(false);
   };
 
-  const handleImagesUpdate = (updatedImages) => {
+  const handleImagesUpdate = updatedImages => {
     setFormData({ ...formData, images: updatedImages });
   };
 
   return (
     <>
-      <div className='flex flex-col h-dvh'>
+      <div className='flex flex-col h-dvh relative'>
         {/* Errors modal */}
         <dialog
           id='errors'
@@ -160,7 +138,7 @@ const AddProduct = () => {
         {/* content */}
         <div
           id='register-bg'
-          className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center`}
+          className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center sticky top-0 left-0 overflow-hidden`}
         >
           {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
@@ -172,8 +150,8 @@ const AddProduct = () => {
             Por favor completa la información del producto
           </p>
         </div>
-        <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 pb-16'>
+        <div className='h-3/4 bg-[#393939]'>
+          <div className='bg-white rounded-t-3xl h-max w-full absolute px-6 pt-6 pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
@@ -191,7 +169,7 @@ const AddProduct = () => {
                     isMulti
                     name='category'
                     options={categoryOptions}
-                    value={categoryOptions.filter((option) =>
+                    value={categoryOptions.filter(option =>
                       formData.category?.includes(option.value)
                     )}
                     onChange={handleCategoryChange}
@@ -202,10 +180,10 @@ const AddProduct = () => {
                 <InputFields
                   title='Precio'
                   type='text'
-                  placeholder='Precio del producto'
-                  value={displayPrice}
-                  onChange={handlePriceChange}
                   name='price'
+                  placeholder='Precio del producto'
+                  // value={formData.price}
+                  onChange={handleChange}
                   required
                 />
                 <InputFields

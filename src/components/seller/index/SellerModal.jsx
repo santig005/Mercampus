@@ -13,6 +13,7 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '@/components/products/share/ShareButton';
 import ProductGrid from '@/components/products/ProductGrid';
+import { parseIfJSON } from '@/utils/utilFn';
 
 export default function SellerModal({ seller, set }) {
   const [schedules, setSchedules] = useState([]); // Estado para almacenar los horarios
@@ -89,8 +90,8 @@ export default function SellerModal({ seller, set }) {
                         &quot;
                       </p>
                     )}
-                    <p className='text-[16px] text-black px-6'>
-                      {seller.description}
+                    <p className='text-[16px] text-black px-6 text-balance whitespace-pre-wrap'>
+                      {parseIfJSON(seller.description)}
                     </p>
                     <div className='flex flex-col gap-4 mt-4'>
                       <div className=''>
