@@ -5,6 +5,16 @@
 .btn {
   @apply select-none hover:bg-primary/40 hover:border-transparent focus-visible:outline-none;
 }
+
+.unselectable {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+* {
+  @apply unselectable;
+}
+
 .btn-danger {
   background-color: #dc3545 !important;
   border-color: #dc3545 !important;
