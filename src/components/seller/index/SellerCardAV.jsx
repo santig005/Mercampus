@@ -2,7 +2,7 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { parseIfJSON } from '@/utils/utilFn';
 import React from 'react';
 
-export default function SellerCard({
+export default function SellerCardAV({
   seller: { id: _id, businessName, slogan, description, logo, availability },
   isClicked,
   onClick,
@@ -10,9 +10,7 @@ export default function SellerCard({
   return (
     <div
       // href={`/sellers/${id}`}
-      className={`bg-white drop-shadow-md flex gap-2 p-2 rounded-md transition-transform duration-300 cursor-pointer ${
-        isClicked ? 'scale-[0.95]' : 'scale-100'
-      }`}
+      className={'flex gap-2 p-2 rounded-md w-full cursor-pointer'}
       onClick={onClick}
     >
       <div className='size-24 rounded-md overflow-hidden aspect-square flex-shrink-0'>

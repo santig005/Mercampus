@@ -11,6 +11,7 @@ import { FcCheckmark } from 'react-icons/fc';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import Link from 'next/link';
+import { IoIosWarning } from 'react-icons/io';
 
 export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -245,7 +246,7 @@ export default function SignUpForm() {
 
   return (
     <>
-      <div className='flex flex-col h-dvh'>
+      <div className='flex flex-col h-dvh relative'>
         {/* Verification modal */}
         {verifying && (
           <dialog id='errors' className={`modal modal-open`}>
@@ -330,7 +331,9 @@ export default function SignUpForm() {
         {/* content */}
         <div
           id='register-bg'
-          className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center`}
+          className={
+            'h-1/4 bg-[#393939] flex flex-col justify-center items-center sticky top-0 left-0'
+          }
         >
           <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
@@ -339,7 +342,15 @@ export default function SignUpForm() {
           <p className='text-white'>Por favor regístrate para comenzar</p>
         </div>
         <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+          <div className='bg-white rounded-t-3xl h-max w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+            <p className='my-4 bg-yellow-300/40 text-yellow-700 flex gap-4 p-4 rounded-md justify-center items-center'>
+              <div className=''>
+                <IoIosWarning className='text-2xl animate-pulse' />
+              </div>
+              <span className='font-semibold'>
+                Este paso solo es necesario si quieres ser vendor/vendedora
+              </span>
+            </p>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields

@@ -15,6 +15,7 @@ import SellerModal from '@/components/seller/index/SellerModal';
 import ProductGrid from '@/components/products/ProductGrid';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '../products/share/ShareButton';
+import { parseIfJSON } from '@/utils/utilFn';
 
 export default function SellerPage({ id }) {
   const [seller, setSeller] = useState(null);
@@ -119,8 +120,8 @@ export default function SellerPage({ id }) {
                           &quot;
                         </p>
                       )}
-                      <p className='text-[14px] text-secondary px-6'>
-                        {seller.description}
+                      <p className='text-[14px] text-secondary px-6 text-balance whitespace-pre-wrap'>
+                        {parseIfJSON(seller.description)}
                       </p>
                       <div className=''>
                         <h2 className='card-title px-6'>Horario</h2>

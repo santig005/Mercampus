@@ -6,7 +6,7 @@ import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import ImageGrid from '@/components/general/ImageGrid';
 import Loading from '@/components/general/Loading';
-import {useCheckSeller} from '@/context/SellerContext';
+import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
 
 const RegisterSeller = () => {
@@ -22,26 +22,28 @@ const RegisterSeller = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
-  var { seller, setSeller,dbUser,setDbUser } = useSeller();
-  const {checkedSeller}=useCheckSeller("userNotSeller", "");
-  if(!checkedSeller) return <Loading/>;
-
+  var { seller, setSeller, dbUser, setDbUser } = useSeller();
+  const { checkedSeller } = useCheckSeller('userNotSeller', '');
+  if (!checkedSeller) return <Loading />;
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
 
-    if (type === 'textarea') {
-      requestAnimationFrame(() => {
-        e.target.style.height = 'auto';
-        e.target.style.height = `${e.target.scrollHeight}px`;
-      });
+    let newValue = type === 'checkbox' ? checked : value;
+
+    // Si el campo es "phone", limpiamos el número antes de guardarlo
+    if (name === 'phoneNumber') {
+      newValue = value.replace(/\D/g, '').slice(0, 10); // Solo números, máx. 10 dígitos
     }
 
-    setSellerData({
-      ...sellerData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
+    if (name) {
+      setSellerData({
+        ...sellerData,
+        [name]: newValue,
+      });
+    }
   };
+
   const handleImagesUpdate = updatedImages => {
     setSellerData({ ...sellerData, images: updatedImages });
   };
@@ -50,7 +52,9 @@ const RegisterSeller = () => {
     e.preventDefault();
     setLoading(true);
 
-    sellerData.logo = sellerData.images[0];
+    sellerData.logo = sellerData?.images[0];
+    sellerData.description = JSON.stringify(sellerData.description);
+    // console.log(sellerData);
 
     try {
       const response = await fetch('/api/sellers', {
@@ -63,7 +67,7 @@ const RegisterSeller = () => {
 
       if (response.ok) {
         setSeller(sellerData);
-        setDbUser({ ...dbUser, role: "seller" });
+        setDbUser({ ...dbUser, role: 'seller' });
         router.push('/antojos/sellers/approving');
       } else {
         const errorData = await response.json();
@@ -78,41 +82,11 @@ const RegisterSeller = () => {
   };
 
   return (
-    <>
-      <div className='flex flex-col h-dvh overflow-hidden'>
-        {/* Errors modal */}
-        <dialog
-          id='errors'
-          className={`modal ${errorCode ? 'modal-open' : ''}`}
-        >
-          <div className='modal-box bg-[#fde6e6] p-3'>
-            <div className='flex justify-start items-center gap-3 w-full'>
-              <div className=''>
-                <FcHighPriority className='text-red-400 text-4xl' />
-              </div>
-              <div className='w-full'>
-                <h3 className='font-bold text-lg flex justify-between'>
-                  ¡Atención!
-                  <form method='dialog'>
-                    {/* if there is a button in form, it will close the modal */}
-                    <button
-                      className='font-normal'
-                      onClick={() => setErrorCode('')}
-                    >
-                      <IoClose className='text-red-400 text-2xl' />
-                    </button>
-                  </form>
-                </h3>
-                <p className='py-2'>{errorCode}</p>
-              </div>
-            </div>
-          </div>
-        </dialog>
-
-        {/* content */}
+    <div className='h-[836px] relative'>
+      <div className='h-1/4 sticky top-0 left-0'>
         <div
           id='register-bg'
-          className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center overflow-hidden`}
+          className='bg-[#393939] h-full flex flex-col justify-center items-center overflow-hidden'
         >
           {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
@@ -124,8 +98,10 @@ const RegisterSeller = () => {
             Por favor completa la información de tu negocio
           </p>
         </div>
-        <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+      </div>
+      <div className='h-3/4'>
+        <div className='relative bg-[#393939]'>
+          <div className='bg-white rounded-t-3xl h-max w-full px-6 pt-6 pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
@@ -144,6 +120,7 @@ const RegisterSeller = () => {
                   value={sellerData.description}
                   onChange={handleChange}
                   name='description'
+                  required
                 />
                 <InputFields
                   title='Slogan'
@@ -160,30 +137,17 @@ const RegisterSeller = () => {
                   value={sellerData.instagramUser}
                   onChange={handleChange}
                   name='instagramUser'
-                  required
                 />
+
                 <InputFields
                   title='Teléfono'
-                  type='text'
+                  type='tel'
                   placeholder='Número de teléfono'
                   value={sellerData.phoneNumber}
                   onChange={handleChange}
                   name='phoneNumber'
                   required
                 />
-                {/* <div>
-                  <label>Logo</label>
-                  <input
-                    type="file"
-                    name="images"
-                    multiple
-                    onChange={(e) =>
-                      setSellerData({ ...sellerData, images: [...e.target.files] })
-                    }
-                    required
-                    className="file-input file-input-bordered w-full"
-                  />
-                </div> */}
                 <ImageGrid
                   initialImages={sellerData.images}
                   onUpdateImages={handleImagesUpdate}
@@ -207,7 +171,7 @@ const RegisterSeller = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

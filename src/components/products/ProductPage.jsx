@@ -5,7 +5,7 @@ import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import SellerModal from '@/components/seller/index/SellerModal';
 import ShareButton from '@/components/products/share/ShareButton';
-import { priceFormat } from '@/utils/utilFn';
+import { parseIfJSON, priceFormat } from '@/utils/utilFn';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -29,12 +29,12 @@ const ProductPage = ({ id }) => {
     fetchProduct(id);
   }, [id]);
 
-  const fetchProduct = async (id) => {
+  const fetchProduct = async id => {
     setLoading(true);
     if (id) {
       await fetch(`/api/products/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
+        .then(res => res.json())
+        .then(data => {
           setProduct(data);
         });
     }
@@ -103,8 +103,8 @@ const ProductPage = ({ id }) => {
                           availability={product.availability}
                         />
                       </div>
-                      <p className='text-[14px] text-secondary px-6'>
-                        {product.description}
+                      <p className='text-[14px] text-secondary px-6 text-balance whitespace-pre-wrap'>
+                        {parseIfJSON(product.description)}
                       </p>
                       <button
                         // href={`/seller/${seller._id}`}
