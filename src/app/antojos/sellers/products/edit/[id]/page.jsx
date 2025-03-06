@@ -15,6 +15,7 @@ import { useSeller } from '@/context/SellerContext';
 import { categories } from '@/utils/resources/categories';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
+import ConfirmModal from '@/components/products/ConfirmModal';
 
 export default function EditPsroductPage({ params }) {
   const { id } = params;
@@ -29,8 +30,9 @@ export default function EditPsroductPage({ params }) {
     'sellerApproved',
     '/antojos/sellers/approving'
   );
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const categoryOptions = categories.map(category => ({
+  const categoryOptions = categories.map((category) => ({
     value: category,
     label: category,
   }));
@@ -58,7 +60,7 @@ export default function EditPsroductPage({ params }) {
     }
   }, [id, router, seller?._id, checkedSeller, sellerLoading]);
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await updateProduct(id, product);
@@ -69,24 +71,29 @@ export default function EditPsroductPage({ params }) {
     }
   };
 
-  const handleCategoryChange = selectedOptions => {
+  const handleCategoryChange = (selectedOptions) => {
     const selectedValues = selectedOptions
-      ? selectedOptions.map(option => option.value)
+      ? selectedOptions.map((option) => option.value)
       : [];
-    setProduct(prev => ({ ...prev, category: selectedValues }));
+    setProduct((prev) => ({ ...prev, category: selectedValues }));
   };
 
-  const handleImagesUpdate = updatedImages => {
+  const handleImagesUpdate = (updatedImages) => {
     setProduct({ ...product, images: updatedImages });
   };
   const handleDeleteProduct = async () => {
     try {
+      setModalOpen(false);
       await deleteProduct(id);
       router.push('/antojos/sellers/products/edit');
     } catch (error) {
       setError('Error al eliminar el producto.');
       console.error(error);
     }
+  };
+
+  const openConfirmModal = () => {
+    setModalOpen(true);
   };
 
   if (!checkedSeller || !seller) return <Loading />;
@@ -116,7 +123,9 @@ export default function EditPsroductPage({ params }) {
                 type='text'
                 placeholder='Nombre del producto'
                 value={product.name}
-                onChange={e => setProduct({ ...product, name: e.target.value })}
+                onChange={(e) =>
+                  setProduct({ ...product, name: e.target.value })
+                }
                 name='name'
                 required
               />
@@ -126,7 +135,7 @@ export default function EditPsroductPage({ params }) {
                 type='text'
                 placeholder='Precio'
                 value={product.price}
-                onChange={e =>
+                onChange={(e) =>
                   setProduct({ ...product, price: e.target.value })
                 }
                 name='price'
@@ -161,7 +170,7 @@ export default function EditPsroductPage({ params }) {
                   isMulti
                   name='category'
                   options={categoryOptions}
-                  value={categoryOptions.filter(option =>
+                  value={categoryOptions.filter((option) =>
                     product.category?.includes(option.value)
                   )}
                   onChange={handleCategoryChange}
@@ -175,7 +184,7 @@ export default function EditPsroductPage({ params }) {
                 type='textarea'
                 placeholder='Descripción'
                 value={product.description}
-                onChange={e =>
+                onChange={(e) =>
                   setProduct({ ...product, description: e.target.value })
                 }
                 name='description'
@@ -192,10 +201,16 @@ export default function EditPsroductPage({ params }) {
                 <button
                   type='button'
                   className='btn btn-danger mr-4'
-                  onClick={handleDeleteProduct}
+                  onClick={openConfirmModal}
                 >
                   Eliminar Producto
                 </button>
+
+                <ConfirmModal
+                  isOpen={modalOpen}
+                  onClose={() => setModalOpen(false)}
+                  onConfirm={handleDeleteProduct}
+                />
                 <button type='submit' className='btn btn-primary'>
                   Guardar Cambios
                 </button>
