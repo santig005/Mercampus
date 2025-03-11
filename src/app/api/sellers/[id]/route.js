@@ -99,3 +99,33 @@ export async function PUT(req, { params }) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
+export async function PATCH(req, { params }) {
+  try {
+    // Connect to the database
+    await connectDB();
+    // Get the seller ID from the URL
+    const { id } = params;
+
+    // Parse the request body
+    const updates = await req.json();
+
+    // Validate that there is data to update
+    if (!updates || Object.keys(updates).length === 0) {
+      return NextResponse.json({ message: "No data provided for update" }, { status: 400 });
+    }
+
+    // Update the seller in the database
+    const updatedSeller = await Seller.findByIdAndUpdate( id, updates, { new: true });
+    console.log('updatedSeller:', updatedSeller);
+    console.log('updates:', updates);
+    // If the seller does not exist
+    if (!updatedSeller) {
+      return NextResponse.json({ message: "Seller not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ seller: updatedSeller }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ message: "Error updating seller", error: error.message }, { status: 500 });
+  }
+}

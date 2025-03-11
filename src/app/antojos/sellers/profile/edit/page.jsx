@@ -4,7 +4,7 @@ import { updateSeller } from '@/services/sellerService';
 import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
 import Loading from '@/components/general/Loading';
-import ToggleSwitch from '@/components/availability/ToggleSwitch';
+import ExtraTimeBadge2 from '@/components/availability/extraTimeBadge2';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
@@ -12,13 +12,17 @@ import { useCheckSeller } from '@/context/SellerContext';
 
 export default function EditSellerPage() {
   const [sellerAvailability, setSellerAvailability] = useState(false);
-  const [seller, setSeller] = useState(null);
+  const [sellerExtraTime, setSellerExtraTime] = useState(null);
+  const [formSeller, setFormSeller] = useState(null);
+ 
 
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
   const {
-    seller: dataSeller,
-    setSeller: setDataSeller,
+    seller,
+    setSeller,
     loading: sellerLoading,
   } = useSeller();
   const { checkedSeller } = useCheckSeller(
@@ -28,19 +32,17 @@ export default function EditSellerPage() {
 
   useEffect(() => {
     if (!sellerLoading) {
-      if (dataSeller) {
-        setSeller(dataSeller);
-        setSellerAvailability(dataSeller.availability);
+      if (seller) {
+        setFormSeller(seller);
       }
     }
-  }, [dataSeller, sellerLoading]);
+  }, [seller, sellerLoading]);
 
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      await updateSeller(seller._id, seller);
-      setDataSeller(seller);
-      router.push('/');
+      await updateSeller(seller._id, formSeller);
+      setSeller(formSeller);
     } catch (error) {
       setError('Error al actualizar el perfil del vendedor.');
       console.error(error);
@@ -50,22 +52,34 @@ export default function EditSellerPage() {
     setSeller({ ...seller, logo: updatedImages[0] });
   };
 
-  const handleSellerAvailability = async () => {
-    try {
-      setSellerAvailability(!sellerAvailability);
-      setDataSeller({ ...seller, availability: !sellerAvailability });
-      const updatedSeller = await updateSeller(seller._id, {
-        availability: !sellerAvailability,
-      });
-      //if the request is not successful, correct the availability
-      if (!updatedSeller) {
-        setDataSeller({ ...seller, availability: !sellerAvailability });
-        setSellerAvailability(!sellerAvailability);
-      }
-    } catch (error) {
-      console.error('Error updating seller availability:', error);
+  const handleFinish = async () => {
+    if (!seller) {
+      setError('Error: No se encontró el vendedor.');
+      return;
     }
-  };
+  
+    try {
+      setLoading(true);
+      const sellerData = { statusExtraTime: false };
+  
+      const response = await fetch(`/api/sellers/${seller._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sellerData),
+      });
+  
+      if (!response.ok) throw new Error('Error finalizando la disponibilidad');
+      console.log("vendor",seller);
+      setSeller({...seller, statusExtraTime: false});
+      console.log("despues de ",seller);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };  
+  
+  
   if (!checkedSeller || !seller) return <Loading />;
   if (error) return <p>{error}</p>;
 
@@ -92,11 +106,24 @@ export default function EditSellerPage() {
                   <h3>Mi disponibilidad</h3>
                   <AvailabilityBadge availability={sellerAvailability} />
                 </div>
-                <ToggleSwitch
-                  isOn={sellerAvailability}
-                  onToggle={() => handleSellerAvailability()}
-                />
               </div>
+
+          <div>
+          <div
+            className={`flex justify-between items-center gap-4 p-2 rounded shadow-md ${
+            seller.statusExtraTime ? 'bg-gray-200 opacity-50 pointer-events-none' : 'bg-white'}`}
+          >
+            <ExtraTimeBadge2 
+            seller={seller} 
+            setSeller={setSeller}
+             />
+          </div>
+        </div>
+        {seller.statusExtraTime && (
+          <button className='btn btn-primary' onClick={handleFinish}>
+            Finalizar
+          </button>
+        )}
 
               <InputFields
                 title='Nombre del Negocio'

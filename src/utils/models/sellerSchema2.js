@@ -22,6 +22,17 @@ const sellerSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    statusExtraTime: {
+        type: Boolean,
+        default: false
+    },
+    extraTime : {
+        type: Date
+    },
+    temporalAvailability: {
+        type: Boolean,
+        default: false
+    },
     phoneNumber: {
         type: Number,
         required: true
