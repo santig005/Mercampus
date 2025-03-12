@@ -16,7 +16,7 @@ export default function InputFields({
   ...props
 }) {
   const [inputValue, setInputValue] = useState(value || '');
-  const [validNumber, setValidNumber] = useState(undefined);
+  const [validNumber, setValidNumber] = useState(true);
   const [displayPrice, setDisplayPrice] = useState(
     formatValue(title.includes('Precio') ? value : '')
   );
@@ -24,7 +24,7 @@ export default function InputFields({
     formatPhone(title.includes('Teléfono') ? value : '')
   );
 
-  const handlePriceChange = (e) => {
+  const handlePriceChange = e => {
     const rawValue = e.target.value.replace(/\D/g, ''); // Elimina caracteres no numéricos
     const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
 
@@ -37,7 +37,7 @@ export default function InputFields({
     onChange({ target: { name: 'price', value: numericValue.toString() } });
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     handleResize(e);
     setInputValue(e.target.value);
     if (onChange) {
@@ -45,7 +45,7 @@ export default function InputFields({
     }
   };
 
-  const handleResize = (e) => {
+  const handleResize = e => {
     requestAnimationFrame(() => {
       e.target.style.height = 'auto';
       e.target.style.height = `${e.target.scrollHeight}px`;
@@ -53,7 +53,7 @@ export default function InputFields({
   };
 
   // make a function to handle the phone number input field
-  const handlePhoneChange = (e) => {
+  const handlePhoneChange = e => {
     let { value } = e.target;
     let phone = value.replace(/\D/g, ''); // Elimina caracteres no numéricos
 
@@ -82,7 +82,7 @@ export default function InputFields({
   useEffect(() => {
     // Ejecuta handleResize para cada textarea cuando el componente se monta
     const textAreas = document.querySelectorAll('textarea');
-    textAreas.forEach((textarea) => handleResize({ target: textarea }));
+    textAreas.forEach(textarea => handleResize({ target: textarea }));
   }, []);
 
   return (
@@ -102,16 +102,14 @@ export default function InputFields({
             {...props}
           />
         ) : type === 'tel' ? (
-          <div className='flex items-center flex-grow rounded-md'>
-            <div className='rounded-l-md overflow-hidden h-12 w-16 pointer-events-none p-4 bg-[#f0f5fa]'>
+          <div className='flex items-center flex-grow'>
+            <div className='rounded-l-md overflow-hidden h-12 w-16 pointer-events-none'>
               <img src={Flag.src} alt='' className='h-full w-full' />
             </div>
             <input
               type={type}
               className={`bg-[#f0f5fa] min-h-10 px-4 rounded-none rounded-r-md input w-full ${
-                validNumber === undefined
-                  ? 'border-none' // Color de borde por defecto
-                  : validNumber
+                validNumber
                   ? 'focus-within:border-green-500 border-green-500'
                   : 'focus-within:border-red-500 border-red-500'
               } ${className} ${secureText ? 'tracking-wide' : ''}`}

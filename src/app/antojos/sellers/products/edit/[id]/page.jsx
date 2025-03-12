@@ -9,14 +9,12 @@ import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
-import { IoIosWarning } from 'react-icons/io';
 import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
 import { categories } from '@/utils/resources/categories';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
-import ConfirmModal from '@/components/products/ConfirmModal';
 
 export default function EditPsroductPage({ params }) {
   const { id } = params;
@@ -25,16 +23,14 @@ export default function EditPsroductPage({ params }) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [inappropriateWarning, setInappropriateWarning] = useState(null);
   const router = useRouter();
   const { seller, loading: sellerLoading } = useSeller();
   const { checkedSeller } = useCheckSeller(
     'sellerApproved',
     '/antojos/sellers/approving'
   );
-  const [modalOpen, setModalOpen] = useState(false);
 
-  const categoryOptions = categories.map((category) => ({
+  const categoryOptions = categories.map(category => ({
     value: category,
     label: category,
   }));
@@ -62,29 +58,8 @@ export default function EditPsroductPage({ params }) {
     }
   }, [id, router, seller?._id, checkedSeller, sellerLoading]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    setInappropriateWarning(null);
-
-    // Content moderation check
-    const moderationResponse = await fetch('/api/contentDetection/textDetection', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text: `${product.name} ${product.description}`,
-      }),
-    });
-
-    const moderationResult = await moderationResponse.json();
-
-    if (moderationResult.data.Sentiment === 'NEGATIVE') {
-      setInappropriateWarning('Tu descripción contiene contenido inapropiado. Modifícalo antes de continuar.');
-      setLoading(false);
-      return; // Stop form submission
-    }    
-
     try {
       await updateProduct(id, product);
       router.push('/antojos/sellers/products/edit');
@@ -94,19 +69,18 @@ export default function EditPsroductPage({ params }) {
     }
   };
 
-  const handleCategoryChange = (selectedOptions) => {
+  const handleCategoryChange = selectedOptions => {
     const selectedValues = selectedOptions
-      ? selectedOptions.map((option) => option.value)
+      ? selectedOptions.map(option => option.value)
       : [];
-    setProduct((prev) => ({ ...prev, category: selectedValues }));
+    setProduct(prev => ({ ...prev, category: selectedValues }));
   };
 
-  const handleImagesUpdate = (updatedImages) => {
+  const handleImagesUpdate = updatedImages => {
     setProduct({ ...product, images: updatedImages });
   };
   const handleDeleteProduct = async () => {
     try {
-      setModalOpen(false);
       await deleteProduct(id);
       router.push('/antojos/sellers/products/edit');
     } catch (error) {
@@ -115,35 +89,12 @@ export default function EditPsroductPage({ params }) {
     }
   };
 
-  const openConfirmModal = () => {
-    setModalOpen(true);
-  };
-
   if (!checkedSeller || !seller) return <Loading />;
   if (loading || !product) return <p>Cargando producto...</p>;
   if (error) return <p>{error}</p>;
 
   return (
     <div className='flex flex-col h-dvh relative'>
-        {inappropriateWarning && (
-          <dialog id='warning-modal' className='modal modal-open'>
-            <div className='modal-box bg-yellow-200 p-3 relative'>
-              <button
-                className='absolute top-2 right-2 text-yellow-600 text-2xl'
-                onClick={() => setInappropriateWarning(null)}
-              >
-                <IoClose />
-              </button>
-              <div className='flex items-center gap-3 w-full'>
-                <IoIosWarning className='text-yellow-600 text-4xl' />
-                <div className='w-full'>
-                  <h3 className='font-bold text-lg text-center'>Advertencia</h3>
-                  <p className='py-2'>{inappropriateWarning}</p>
-                </div>
-              </div>
-            </div>
-          </dialog>
-        )}
       <div
         id='register-bg'
         className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center sticky top-0 left-0 overflow-hidden`}
@@ -165,9 +116,7 @@ export default function EditPsroductPage({ params }) {
                 type='text'
                 placeholder='Nombre del producto'
                 value={product.name}
-                onChange={(e) =>
-                  setProduct({ ...product, name: e.target.value })
-                }
+                onChange={e => setProduct({ ...product, name: e.target.value })}
                 name='name'
                 required
               />
@@ -177,7 +126,7 @@ export default function EditPsroductPage({ params }) {
                 type='text'
                 placeholder='Precio'
                 value={product.price}
-                onChange={(e) =>
+                onChange={e =>
                   setProduct({ ...product, price: e.target.value })
                 }
                 name='price'
@@ -212,7 +161,7 @@ export default function EditPsroductPage({ params }) {
                   isMulti
                   name='category'
                   options={categoryOptions}
-                  value={categoryOptions.filter((option) =>
+                  value={categoryOptions.filter(option =>
                     product.category?.includes(option.value)
                   )}
                   onChange={handleCategoryChange}
@@ -226,7 +175,7 @@ export default function EditPsroductPage({ params }) {
                 type='textarea'
                 placeholder='Descripción'
                 value={product.description}
-                onChange={(e) =>
+                onChange={e =>
                   setProduct({ ...product, description: e.target.value })
                 }
                 name='description'
@@ -243,16 +192,10 @@ export default function EditPsroductPage({ params }) {
                 <button
                   type='button'
                   className='btn btn-danger mr-4'
-                  onClick={openConfirmModal}
+                  onClick={handleDeleteProduct}
                 >
                   Eliminar Producto
                 </button>
-
-                <ConfirmModal
-                  isOpen={modalOpen}
-                  onClose={() => setModalOpen(false)}
-                  onConfirm={handleDeleteProduct}
-                />
                 <button type='submit' className='btn btn-primary'>
                   Guardar Cambios
                 </button>
