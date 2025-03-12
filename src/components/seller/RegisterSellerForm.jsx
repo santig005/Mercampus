@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
-import { IoClose } from 'react-icons/io5';
+//import { IoClose } from 'react-icons/io5';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useUser } from '@clerk/nextjs'
 import { useSeller } from '@/context/SellerContext';
@@ -119,7 +119,8 @@ const RegisterSellerForm = () => {
                       className='font-normal'
                       onClick={() => setErrorCode('')}
                     >
-                      <IoClose className='text-red-400 text-2xl' />
+                      X
+                      {/* <IoClose className='text-red-400 text-2xl' /> */}
                     </button>
                   </form>
                 </h3>
