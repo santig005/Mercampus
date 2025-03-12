@@ -5,6 +5,7 @@ import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
 import Loading from '@/components/general/Loading';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
+import { IoIosWarning } from 'react-icons/io';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
@@ -15,6 +16,7 @@ export default function EditSellerPage() {
   const [seller, setSeller] = useState(null);
 
   const [error, setError] = useState(null);
+  const [inappropriateWarning, setInappropriateWarning] = useState(null);
   const router = useRouter();
   const {
     seller: dataSeller,
@@ -37,6 +39,27 @@ export default function EditSellerPage() {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    setInappropriateWarning(null);
+
+    // Content moderation check
+    const moderationResponse = await fetch('/api/contentDetection/textDetection', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: `${seller.businessName} ${seller.description} ${seller.slogan}`,
+      }),
+    });
+
+    const moderationResult = await moderationResponse.json();
+
+    if (moderationResult.data.Sentiment === 'NEGATIVE') {
+      setInappropriateWarning('Tu descripción contiene contenido inapropiado. Modifícalo antes de continuar.');
+      setLoading(false);
+      return; // Stop form submission
+    }
+
     try {
       await updateSeller(seller._id, seller);
       setDataSeller(seller);
@@ -71,6 +94,25 @@ export default function EditSellerPage() {
 
   return (
     <div className='flex flex-col h-dvh relative'>
+        {inappropriateWarning && (
+          <dialog id='warning-modal' className='modal modal-open'>
+            <div className='modal-box bg-yellow-200 p-3 relative'>
+              <button
+                className='absolute top-2 right-2 text-yellow-600 text-2xl'
+                onClick={() => setInappropriateWarning(null)}
+              >
+                <IoClose />
+              </button>
+              <div className='flex items-center gap-3 w-full'>
+                <IoIosWarning className='text-yellow-600 text-4xl' />
+                <div className='w-full'>
+                  <h3 className='font-bold text-lg text-center'>Advertencia</h3>
+                  <p className='py-2'>{inappropriateWarning}</p>
+                </div>
+              </div>
+            </div>
+          </dialog>
+        )}
       <div
         id='register-bg'
         className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center sticky top-0 left-0 overflow-hidden`}
