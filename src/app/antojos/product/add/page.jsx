@@ -167,8 +167,7 @@ const AddProduct = () => {
                 className='absolute top-2 right-2 text-yellow-600 text-2xl'
                 onClick={() => setInappropriateWarning(null)}
               >
-                X
-                {/* <IoClose /> */}
+                <IoClose />
               </button>
               <div className='flex items-center gap-3 w-full'>
                 <IoIosWarning className='text-yellow-600 text-4xl' />
