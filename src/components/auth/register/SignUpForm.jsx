@@ -348,7 +348,7 @@ export default function SignUpForm() {
                 <IoIosWarning className='text-2xl animate-pulse' />
               </div>
               <span className='font-semibold'>
-                Este paso solo es necesario si quieres ser vendor/vendedora
+                Este paso solo es necesario si quieres ser vendedor/vendedora
               </span>
             </p>
             <form onSubmit={handleSubmit}>
