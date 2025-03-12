@@ -5,7 +5,7 @@ import { useAuth, useSignIn } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { TbChevronLeft, TbHeart } from 'react-icons/tb';
 import { FcCheckmark, FcHighPriority } from 'react-icons/fc';
-import { IoClose } from 'react-icons/io5';
+//import { IoClose } from 'react-icons/io5';
 import InputFields from '@/components/auth/register/InputFields';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import ForgotPasswordImg from '@/../public/images/forgot_password.svg';
@@ -472,7 +472,8 @@ export default function ForgotPassword({ setForgotPassword }) {
                 <form method='dialog'>
                   {/* if there is a button in form, it will close the modal */}
                   <button className='font-normal' onClick={() => setError('')}>
-                    <IoClose className='text-red-400 text-2xl' />
+                    {/* <IoClose className='text-red-400 text-2xl' /> */}
+                    X
                   </button>
                 </form>
               </h3>

@@ -9,7 +9,7 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { TbChevronLeft } from 'react-icons/tb';
 import { FcCheckmark } from 'react-icons/fc';
 import { FcHighPriority } from 'react-icons/fc';
-import { IoClose } from 'react-icons/io5';
+//import { IoClose } from 'react-icons/io5';
 import Link from 'next/link';
 import { IoIosWarning } from 'react-icons/io';
 
@@ -318,7 +318,7 @@ export default function SignUpForm() {
                       className='font-normal'
                       onClick={() => setErrorCode('')}
                     >
-                      <IoClose className='text-red-400 text-2xl' />
+                      {/* <IoClose className='text-red-400 text-2xl' /> */}
                     </button>
                   </form>
                 </h3>
