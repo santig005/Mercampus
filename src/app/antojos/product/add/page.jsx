@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Categories } from '@/utils/resources/categories';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
-//import { IoClose } from 'react-icons/io5';
+import { IoClose } from 'react-icons/io5';
 import { IoIosWarning } from 'react-icons/io';
 import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
@@ -147,8 +147,7 @@ const AddProduct = () => {
                       className='font-normal'
                       onClick={() => setErrorCode('')}
                     >
-                      {/* <IoClose className='text-red-400 text-2xl' /> */}
-                      X
+                      <IoClose className='text-red-400 text-2xl' />
                     </button>
                   </form>
                 </h3>

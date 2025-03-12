@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
-//import { IoClose } from 'react-icons/io5';
+import { IoClose } from 'react-icons/io5';
 import { IoIosWarning } from 'react-icons/io';
 import ImageGrid from '@/components/general/ImageGrid';
 import Loading from '@/components/general/Loading';
@@ -112,8 +112,7 @@ const RegisterSeller = () => {
               className='absolute top-2 right-2 text-yellow-600 text-2xl'
               onClick={() => setInappropriateWarning(null)}
             >
-              X
-              {/* <IoClose /> */}
+              <IoClose />
             </button>
             <div className='flex items-center gap-3 w-full'>
               <IoIosWarning className='text-yellow-600 text-4xl' />
