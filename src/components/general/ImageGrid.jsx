@@ -10,7 +10,7 @@ export default function ImageGrid({
   const [images, setImages] = useState(initialImages || []);
   const [loading, setLoading] = useState(false);
 
-  const handleAddImage = async (event) => {
+  const handleAddImage = async event => {
     if (maxImages && images.length >= maxImages) {
       return;
     }
@@ -46,7 +46,7 @@ export default function ImageGrid({
     }
   };
 
-  const handleRemoveImage = async (index) => {
+  const handleRemoveImage = async index => {
     const imageUrl = images[index];
     console.log('imageUrl', imageUrl);
     try {
@@ -78,7 +78,12 @@ export default function ImageGrid({
   return (
     <div>
       <h3 className='text-lg font-semibold mb-4'>{title}</h3>
-      <div className='grid grid-cols-3 gap-4'>
+      <div
+        className='grid gap-4 w-full'
+        style={{
+          gridTemplateColumns: 'repeat(auto-fit, 128px)',
+        }}
+      >
         {images.map((image, index) => (
           <div
             key={index}
