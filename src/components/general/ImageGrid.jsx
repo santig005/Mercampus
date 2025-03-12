@@ -48,16 +48,12 @@ export default function ImageGrid({
 
   const handleRemoveImage = async index => {
     const imageUrl = images[index];
-    console.log('imageUrl', imageUrl);
     try {
-      // 1️⃣ Obtener el fileId a partir de la URL
       const responseFileId = await fetch(
         `/api/fileId?url=${encodeURIComponent(imageUrl)}`
       );
       if (!responseFileId.ok) throw new Error('Error al obtener el fileId');
       const { fileId } = await responseFileId.json();
-      console.log('fileId', fileId);
-      // 2️⃣ Enviar petición para eliminar la imagen usando el fileId
       const responseDelete = await fetch('/api/images', {
         method: 'DELETE',
         body: JSON.stringify({ fileId }),
@@ -65,7 +61,6 @@ export default function ImageGrid({
 
       if (!responseDelete.ok) throw new Error('Error al eliminar la imagen');
 
-      // 3️⃣ Actualizar el estado eliminando la imagen del arreglo
       const updatedImages = images.filter((_, i) => i !== index);
       setImages(updatedImages);
       onUpdateImages(updatedImages);
