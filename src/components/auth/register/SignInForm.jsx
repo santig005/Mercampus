@@ -7,7 +7,7 @@ import ProvidersButton from '@/components/auth/ProvidersButton';
 import { TbChevronLeft } from 'react-icons/tb';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
-//import { IoClose } from 'react-icons/io5';
+import { IoClose } from 'react-icons/io5';
 import ForgotPassword from '@/components/auth/ForgotPassword';
 import Link from 'next/link';
 
@@ -132,8 +132,7 @@ export default function SignInForm() {
                       className='font-normal'
                       onClick={() => setErrorCode('')}
                     >
-                      X
-                      {/* <IoClose className='text-red-400 text-2xl' /> */}
+                      <IoClose className='text-red-400 text-2xl' />
                     </button>
                   </form>
                 </h3>
