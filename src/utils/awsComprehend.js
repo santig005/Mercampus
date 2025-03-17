@@ -1,37 +1,36 @@
-import { ComprehendClient, DetectToxicContentCommand } from "@aws-sdk/client-comprehend";
+const { ComprehendClient, DetectToxicContentCommand } = require("@aws-sdk/client-comprehend");
 
-// Initialize AWS Comprehend client
 const client = new ComprehendClient({
-  region: "us-east-1", // Change to your AWS region
+  region: "us-east-1",
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
-// Function to detect inappropriate text
-export const detectInappropriateText = async (text) => {
+export async function detectInappropriateText(text) {
   if (!text) return { error: "No text provided" };
 
   const body = {
-    TextSegments: [{ Text: text }], // Supports up to 25 texts
-    LanguageCode: "en", // Corrected property name
+    TextSegments: [{ Text: text }],
+    LanguageCode: "en",
   };
 
   try {
     const command = new DetectToxicContentCommand(body);
     const response = await client.send(command);
+    console.log("Response:", response);
 
-    if (!response.ResultList || response.ResultList.length === 0) {
+    if (!response?.ResultList?.length) {
       return { error: "No analysis results returned" };
+    }else{
+      return { response };
     }
-
-    return { response };
-
   } catch (error) {
     console.error("Error detecting content:", error);
-    return { error: "Failed to analyze content" };
+    return { error: "Failed to analyze content. Please try again later." };
   }
-};
+}
 
+//module.exports = detectInappropriateText; // For testing jest purposes
 export default detectInappropriateText;

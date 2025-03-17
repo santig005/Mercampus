@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Loading from '@/components/general/Loading';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import { IoIosWarning } from 'react-icons/io';
+import { IoClose } from 'react-icons/io5';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
@@ -33,6 +34,7 @@ export default function EditSellerPage() {
       if (dataSeller) {
         setSeller(dataSeller);
         setSellerAvailability(dataSeller.availability);
+        setInappropriateWarning(null);
       }
     }
   }, [dataSeller, sellerLoading]);
@@ -51,14 +53,12 @@ export default function EditSellerPage() {
         text: `${seller.businessName} ${seller.description} ${seller.slogan}`,
       }),
     });
+    const moderationData = await moderationResponse.json();
 
-    const moderationResult = await moderationResponse.json();
-
-    if (moderationResult.data.Sentiment === 'NEGATIVE') {
-      setInappropriateWarning('Tu descripción contiene contenido inapropiado. Modifícalo antes de continuar.');
-      setLoading(false);
+    if (moderationData.data.Sentiment === 'NEGATIVE') {
+      setInappropriateWarning('Tu perfil contiene contenido inapropiado. Modifícalo antes de continuar.');
       return; // Stop form submission
-    }
+    } 
 
     try {
       await updateSeller(seller._id, seller);
@@ -145,9 +145,10 @@ export default function EditSellerPage() {
                 type='text'
                 placeholder='Nombre del Negocio'
                 value={seller.businessName || ''}
-                onChange={e =>
-                  setSeller({ ...seller, businessName: e.target.value })
-                }
+                onChange={e => {
+                  setInappropriateWarning(null);
+                  setSeller({ ...seller, businessName: e.target.value });
+                }}
                 name='businessName'
                 required
               />
@@ -157,7 +158,10 @@ export default function EditSellerPage() {
                 type='text'
                 placeholder='Eslogan del negocio'
                 value={seller.slogan || ''}
-                onChange={e => setSeller({ ...seller, slogan: e.target.value })}
+                onChange={e => {
+                  setInappropriateWarning(null);
+                  setSeller({ ...seller, slogan: e.target.value });
+                }}
                 name='slogan'
               />
 
@@ -167,9 +171,10 @@ export default function EditSellerPage() {
                 name='description'
                 placeholder='Descripción del negocio'
                 value={seller.description || ''}
-                onChange={e =>
+                onChange={e => {
+                  setInappropriateWarning(null);
                   setSeller({ ...seller, description: e.target.value })
-                }
+                }}
               />
 
               <InputFields

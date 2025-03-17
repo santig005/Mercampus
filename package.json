@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest"
   },
   "dependencies": {
     "@aws-sdk/client-comprehend": "^3.758.0",
@@ -14,7 +15,6 @@
     "@clerk/nextjs": "^5.6.0",
     "@formkit/auto-animate": "^0.8.2",
     "@next/third-parties": "^15.1.6",
-    "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.0",
     "imagekit": "^6.0.0",
@@ -33,11 +33,19 @@
     "svix": "^1.36.0"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
     "@types/react": "^18.3.5",
     "daisyui": "^4.12.10",
+    "dotenv": "^16.4.7",
     "eslint": "^8",
     "eslint-config-next": "14.2.8",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1"
+    "supertest": "^7.0.0",
+    "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2"
   }
 }

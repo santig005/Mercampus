@@ -63,6 +63,10 @@ const AddProduct = () => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
+      // Reset warning if the user edits the text
+    if (name === 'name' || name === 'description') {
+      setInappropriateWarning(null);
+  }
   };
 
   const handleSubmit = async e => {
@@ -84,10 +88,10 @@ const AddProduct = () => {
     const moderationData = await moderationResponse.json();
 
     if (moderationData.data.Sentiment === 'NEGATIVE') {
-      setInappropriateWarning('Tu descripción contiene contenido inapropiado. Modifícalo antes de continuar.');
+      setInappropriateWarning('Tu producto contiene contenido inapropiado. Modifícalo antes de continuar.');
       setLoading(false);
       return; // Stop form submission
-    }    
+    } 
 
     // Prepare product data
     const data = {

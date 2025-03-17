@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { IoIosWarning } from 'react-icons/io';
+import { IoClose } from 'react-icons/io5';
 import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
@@ -42,6 +43,7 @@ export default function EditPsroductPage({ params }) {
       if (seller) {
         try {
           const response = await getProductById(id);
+          setInappropriateWarning(null);
           if (response.sellerId._id !== seller?._id) {
             router.push('/antojos');
           } else {
@@ -74,11 +76,10 @@ export default function EditPsroductPage({ params }) {
         text: `${product.name} ${product.description}`,
       }),
     });
+    const moderationData = await moderationResponse.json();
 
-    const moderationResult = await moderationResponse.json();
-
-    if (moderationResult.data.Sentiment === 'NEGATIVE') {
-      setInappropriateWarning('Tu descripción contiene contenido inapropiado. Modifícalo antes de continuar.');
+    if (moderationData.data.Sentiment === 'NEGATIVE') {
+      setInappropriateWarning('Tu producto contiene contenido inapropiado. Modifícalo antes de continuar.');
       setLoading(false);
       return; // Stop form submission
     }    
@@ -158,7 +159,10 @@ export default function EditPsroductPage({ params }) {
                 type='text'
                 placeholder='Nombre del producto'
                 value={product.name}
-                onChange={e => setProduct({ ...product, name: e.target.value })}
+                onChange={e => {
+                  setInappropriateWarning(null);
+                  setProduct({ ...product, name: e.target.value });
+                }}
                 name='name'
                 required
               />
@@ -217,9 +221,10 @@ export default function EditPsroductPage({ params }) {
                 type='textarea'
                 placeholder='Descripción'
                 value={product.description}
-                onChange={e =>
-                  setProduct({ ...product, description: e.target.value })
-                }
+                onChange={e => {
+                  setInappropriateWarning(null);
+                  setProduct({ ...product, description: e.target.value });
+                }}
                 name='description'
                 required
               />

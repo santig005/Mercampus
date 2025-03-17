@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InputFields from '@/components/auth/register/InputFields';
-import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import { IoIosWarning } from 'react-icons/io';
 import ImageGrid from '@/components/general/ImageGrid';
@@ -44,6 +43,10 @@ const RegisterSeller = () => {
         [name]: newValue,
       });
     }
+
+    if (businessName === 'Businessname' && description === 'Description' && slogan === 'Slogan') {
+      setInappropriateWarning(null);
+    }
   };
 
   const handleImagesUpdate = updatedImages => {
@@ -65,14 +68,12 @@ const RegisterSeller = () => {
         text: `${sellerData.businessName} ${sellerData.description} ${sellerData.slogan}`,
       }),
     });
+    const moderationData = await moderationResponse.json();
 
-    const moderationResult = await moderationResponse.json();
-
-    if (moderationResult.data.Sentiment === 'NEGATIVE') {
-      setInappropriateWarning('Contenido inapropiado detectado. Modifícalo antes de continuar.');
-      setLoading(false);
+    if (moderationData.data.Sentiment === 'NEGATIVE') {
+      setInappropriateWarning('Tu perfil contiene contenido inapropiado. Modifícalo antes de continuar.');
       return; // Stop form submission
-    }
+    } 
 
     sellerData.logo = sellerData?.images[0];
     sellerData.description = JSON.stringify(sellerData.description);

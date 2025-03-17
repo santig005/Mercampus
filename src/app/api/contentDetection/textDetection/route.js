@@ -1,5 +1,6 @@
-import detectInappropriateText from "@/utils/awsComprehend";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import containsBlacklistedWord from '@/utils/blackList';
+import { detectInappropriateText } from '@/utils/awsComprehend';
 
 export async function POST(req) {
   try {
@@ -10,6 +11,13 @@ export async function POST(req) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
 
+    // Check if text contains blacklisted words
+    if (containsBlacklistedWord(body.text)) {
+      return NextResponse.json(
+        { data: { Sentiment: "NEGATIVE" } }
+      );
+    }
+
     // Call AWS Comprehend to analyze the text
     const analysisResult = await detectInappropriateText(body.text);
 
@@ -18,16 +26,17 @@ export async function POST(req) {
     }
 
     const result = analysisResult.response.ResultList[0];
+    console.log("Analysis result:", result);
 
-    if ((result?.Labels ?? []).some(label => label.Score > 0.35) || result.Toxicity>0.35){
+    if ((result?.Labels ?? []).some(label => label.Score > 0.45) || result.Toxicity>0.35){
       return NextResponse.json(
         { data: { Sentiment: "NEGATIVE" } }
       );
+    }else{
+      return NextResponse.json(
+        { data: { Sentiment: "POSITIVE" } }
+      );
     }
-
-    return NextResponse.json(
-      { data: result }
-    );
 
   } catch (error) {
     console.error("API Error:", error);
