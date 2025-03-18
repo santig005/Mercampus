@@ -4,6 +4,9 @@ import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
 import {Seller} from '@/utils/models/sellerSchema2';
+import { User } from '@/utils/models/userSchema';
+import { currentUser } from '@clerk/nextjs/server';
+import mongoose from 'mongoose';
 
 export async function GET(req, { params }) {
   try{
@@ -62,22 +65,73 @@ export async function PUT(req, { params }) {
     return NextResponse.json({ error: error.message });
   }
 }
-
 export async function DELETE(req, { params }) {
   await connectDB();
   try {
-    const { id } = params;
-    const deletedProduct = await Product.findByIdAndDelete(id);
-    if (!deletedProduct) {
+    // 1. Validar formato del ID primero
+    const idproduct = params.id;
+    console.log("el id es: ", idproduct);
+    //imprimimos el tipo
+    console.log("el tipo es: ", typeof idproduct);
+    if (!mongoose.Types.ObjectId.isValid(idproduct)) {
       return NextResponse.json(
-        { message: 'Product not found' },
+        { message: 'ID de producto inválido' },
+        { status: 400 }
+      );
+    }
+
+    // 2. Autenticación
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json(
+        { message: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    // 3. Buscar usuario en DB
+    const email = user.emailAddresses[0].emailAddress;
+    const userDB = await User.findOne({ email });
+    if (!userDB) {
+      return NextResponse.json(
+        { message: 'Usuario no encontrado' },
         { status: 404 }
       );
     }
+
+    // 4. Verificar rol de vendedor
+    const seller = await Seller.findOne({ userId: userDB._id });
+    if (!seller) {
+      return NextResponse.json(
+        { message: 'Acceso denegado. Solo vendedores' },
+        { status: 403 }
+      );
+    }
+
+    // 5. Obtener producto y verificar propiedad
+    const product = await Product.findById(idproduct); // <-- Corregido aquí
+    if (!product) {
+      return NextResponse.json(
+        { message: 'Producto no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    if (product.sellerId.toString() !== seller._id.toString()) {
+      return NextResponse.json(
+        { message: 'No tienes permisos para eliminar este producto' },
+        { status: 403 }
+      );
+    }
+
+    // 6. Eliminar producto
+    await Product.findByIdAndDelete(idproduct); // <-- Corregido aquí
+    
     return NextResponse.json(
-      { message: 'Product deleted successfully' },
+      { message: 'Producto eliminado' },
       { status: 200 }
     );
+
   } catch (error) {
     return NextResponse.json(
       { message: 'Error deleting product', error: error.message },
