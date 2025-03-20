@@ -23,8 +23,6 @@ export default function ProductGrid({ sellerIdParam = '' }) {
 
 
   const loadProducts = useCallback(async () => {
-    console.log("cuando va a cargar los productos");
-    console.log("university", university);
     setLoading(true);
     const { products } = await getProducts(product, category, sellerId,university);
     setProducts(products);
