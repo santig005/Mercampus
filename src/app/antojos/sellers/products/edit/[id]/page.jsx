@@ -33,7 +33,7 @@ export default function EditPsroductPage({ params }) {
     '/antojos/sellers/approving'
   );
 
-  const categoryOptions = categories.map(category => ({
+  const categoryOptions = categories.map((category) => ({
     value: category,
     label: category,
   }));
@@ -62,45 +62,56 @@ export default function EditPsroductPage({ params }) {
     }
   }, [id, router, seller?._id, checkedSeller, sellerLoading]);
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setInappropriateWarning(null);
-
-    // Content moderation check
-    const moderationResponse = await fetch('/api/contentDetection/textDetection', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text: `${product.name} ${product.description}`,
-      }),
-    });
-    const moderationData = await moderationResponse.json();
-
-    if (moderationData.data.Sentiment === 'NEGATIVE') {
-      setInappropriateWarning('Tu producto contiene contenido inapropiado. Modifícalo antes de continuar.');
-      setLoading(false);
-      return; // Stop form submission
-    }    
+    setLoading(true);
 
     try {
+      // Petición a la API corregida
+      const moderationResponse = await fetch(
+        '/api/contentDetection/textDetection',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            inputText: `${product.name} ${product.description}`,
+          }),
+        }
+      );
+
+      if (!moderationResponse.ok) {
+        throw new Error('Error en la respuesta del servidor.');
+      }
+
+      const moderationData = await moderationResponse.json();
+      if (moderationData.resultado === 'NOAPROPIADO') {
+        setInappropriateWarning(
+          `Tu producto contiene contenido inapropiado: ${moderationData.descripcion}`
+        );
+        setLoading(false);
+        return; // Detiene el envío
+      }
+
+      // Si pasa la validación, actualizar el producto
       await updateProduct(id, product);
       router.push('/antojos/sellers/products/edit');
     } catch (error) {
       setError('Error al actualizar el producto.');
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCategoryChange = selectedOptions => {
+  const handleCategoryChange = (selectedOptions) => {
     const selectedValues = selectedOptions
-      ? selectedOptions.map(option => option.value)
+      ? selectedOptions.map((option) => option.value)
       : [];
-    setProduct(prev => ({ ...prev, category: selectedValues }));
+    setProduct((prev) => ({ ...prev, category: selectedValues }));
   };
 
-  const handleImagesUpdate = updatedImages => {
+  const handleImagesUpdate = (updatedImages) => {
     setProduct({ ...product, images: updatedImages });
   };
   const handleDeleteProduct = async () => {
@@ -119,25 +130,25 @@ export default function EditPsroductPage({ params }) {
 
   return (
     <div className='flex flex-col h-dvh relative'>
-        {inappropriateWarning && (
-          <dialog id='warning-modal' className='modal modal-open'>
-            <div className='modal-box bg-yellow-200 p-3 relative'>
-              <button
-                className='absolute top-2 right-2 text-yellow-600 text-2xl'
-                onClick={() => setInappropriateWarning(null)}
-              >
-                <IoClose />
-              </button>
-              <div className='flex items-center gap-3 w-full'>
-                <IoIosWarning className='text-yellow-600 text-4xl' />
-                <div className='w-full'>
-                  <h3 className='font-bold text-lg text-center'>Advertencia</h3>
-                  <p className='py-2'>{inappropriateWarning}</p>
-                </div>
+      {inappropriateWarning && (
+        <dialog id='warning-modal' className='modal modal-open'>
+          <div className='modal-box bg-yellow-200 p-3 relative'>
+            <button
+              className='absolute top-2 right-2 text-yellow-600 text-2xl'
+              onClick={() => setInappropriateWarning(null)}
+            >
+              <IoClose />
+            </button>
+            <div className='flex items-center gap-3 w-full'>
+              <IoIosWarning className='text-yellow-600 text-4xl' />
+              <div className='w-full'>
+                <h3 className='font-bold text-lg text-center'>Advertencia</h3>
+                <p className='py-2'>{inappropriateWarning}</p>
               </div>
             </div>
-          </dialog>
-        )}
+          </div>
+        </dialog>
+      )}
       <div
         id='register-bg'
         className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center sticky top-0 left-0 overflow-hidden`}
@@ -159,7 +170,7 @@ export default function EditPsroductPage({ params }) {
                 type='text'
                 placeholder='Nombre del producto'
                 value={product.name}
-                onChange={e => {
+                onChange={(e) => {
                   setInappropriateWarning(null);
                   setProduct({ ...product, name: e.target.value });
                 }}
@@ -172,7 +183,7 @@ export default function EditPsroductPage({ params }) {
                 type='text'
                 placeholder='Precio'
                 value={product.price}
-                onChange={e =>
+                onChange={(e) =>
                   setProduct({ ...product, price: e.target.value })
                 }
                 name='price'
@@ -207,7 +218,7 @@ export default function EditPsroductPage({ params }) {
                   isMulti
                   name='category'
                   options={categoryOptions}
-                  value={categoryOptions.filter(option =>
+                  value={categoryOptions.filter((option) =>
                     product.category?.includes(option.value)
                   )}
                   onChange={handleCategoryChange}
@@ -221,7 +232,7 @@ export default function EditPsroductPage({ params }) {
                 type='textarea'
                 placeholder='Descripción'
                 value={product.description}
-                onChange={e => {
+                onChange={(e) => {
                   setInappropriateWarning(null);
                   setProduct({ ...product, description: e.target.value });
                 }}

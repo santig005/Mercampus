@@ -4,7 +4,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_URL + '/api';
 
 export const fetchAPI = async (endpoint, options = {}) => {
-  console.log('petición a:', `${API_BASE_URL}${endpoint}`);
+  // console.log('petición a:', `${API_BASE_URL}${endpoint}`);
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {

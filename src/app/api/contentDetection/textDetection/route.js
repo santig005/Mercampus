@@ -1,45 +1,38 @@
-import { NextResponse } from 'next/server';
-import containsBlacklistedWord from '@/utils/blackList';
-import { detectInappropriateText } from '@/utils/awsComprehend';
+import { OpenAI } from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // Asegúrate de definir esta variable en .env.local
+});
 
 export async function POST(req) {
   try {
-    // Parse the request body
-    const body = await req.json();
+    const { inputText } = await req.json();
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content:
+            "Eres un modelo especializado en detectar si el texto de productos en un ecommerce son APROPIADOS o NOAPROPIADOS, considerando también la jerga colombiana. Responde solo en formato JSON con los campos 'resultado' y 'descripcion' y descripcion solo si es inapropiado especificando qué parte o palabras del texto lo hacen inapropiado.",
+        },
+        { role: 'user', content: inputText },
+      ],
+      temperature: 1,
+      max_tokens: 100,
+      response_format: { type: 'json_object' },
+    });
 
-    if (!body || !body.text || body.text.trim() === "") {
-      return NextResponse.json({ error: "Text is required" }, { status: 400 });
-    }
-
-    // Check if text contains blacklisted words
-    if (containsBlacklistedWord(body.text)) {
-      return NextResponse.json(
-        { data: { Sentiment: "NEGATIVE" } }
-      );
-    }
-
-    // Call AWS Comprehend to analyze the text
-    const analysisResult = await detectInappropriateText(body.text);
-
-    if (!analysisResult) {
-      return NextResponse.json({ error: "Failed to analyze content" }, { status: 500 });
-    }
-
-    const result = analysisResult.response.ResultList[0];
-    console.log("Analysis result:", result);
-
-    if ((result?.Labels ?? []).some(label => label.Score > 0.45) || result.Toxicity>0.35){
-      return NextResponse.json(
-        { data: { Sentiment: "NEGATIVE" } }
-      );
-    }else{
-      return NextResponse.json(
-        { data: { Sentiment: "POSITIVE" } }
-      );
-    }
-
+    const outputText = response.choices[0]?.message?.content?.trim();
+    const output = JSON.parse(outputText);
+    return new Response(JSON.stringify(output), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error("API Error:", error);
-    return NextResponse.json({ error: "Invalid request" }, { status: 500 });
+    console.error('Error en OpenAI:', error);
+    return new Response(JSON.stringify({ error: 'Error interno en la API.' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
