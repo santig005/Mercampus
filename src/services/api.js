@@ -28,6 +28,7 @@ export const fetchAPI = async (endpoint, options = {}) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
+        "x-internal-fetch": "true",
         ...options.headers,
       },
       ...options,
