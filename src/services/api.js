@@ -1,7 +1,11 @@
 'use server'; //
 
-// src/services/api.js
-const API_BASE_URL = process.env.NEXT_PUBLIC_URL + '/api';
+const API_BASE_URL =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000/api' // Local
+    : process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
+    ? 'https://mercampus.vercel.app/api' // Producción
+    : `https://${process.env.VERCEL_URL}/api`; // Previews en Vercel
 
 export const fetchAPI = async (endpoint, options = {}) => {
   console.log('petición a:', `${API_BASE_URL}${endpoint}`);
