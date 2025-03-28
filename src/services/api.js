@@ -2,13 +2,25 @@
 
 const isServer = typeof window === 'undefined';
 
-const API_BASE_URL = isServer
-  ? '/api' // Si se está ejecutando en el servidor, usar ruta relativa
-  : process.env.NODE_ENV === 'development'
-  ? 'http://localhost:3000/api'
-  : process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
-  ? 'https://mercampus.vercel.app/api'
-  : `https://${process.env.VERCEL_URL}/api`; // En previews desde el cliente
+const API_BASE_URL = (() => {
+  // En el servidor se necesita URL completa
+  if (isServer) {
+    if (process.env.NODE_ENV === 'development') {
+      return 'http://localhost:3000/api';
+    }
+    // En producción o preview: si VERCEL_URL está disponible úsalo
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}/api`;
+    }
+    // Fallback en caso de que no se tenga VERCEL_URL
+    return 'https://mercampus.vercel.app/api';
+  } else {
+    // En el cliente se puede usar la URL relativa en producción
+    return process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/api'
+      : '/api';
+  }
+})();
 
 export const fetchAPI = async (endpoint, options = {}) => {
   console.log('petición a:', `${API_BASE_URL}${endpoint}`);
