@@ -3,13 +3,14 @@ import { parseIfJSON } from '@/utils/utilFn';
 import React from 'react';
 
 export default function SellerCardAV({
-  seller: { id: _id, businessName, slogan, description, logo, availability },
+  seller,
   isClicked,
   onClick,
 }) {
+  const { id: _id, businessName, slogan, description, logo, schedules } = seller;
+
   return (
     <div
-      // href={`/sellers/${id}`}
       className={'flex gap-2 p-2 rounded-md w-full cursor-pointer'}
       onClick={onClick}
     >
@@ -27,7 +28,7 @@ export default function SellerCardAV({
         <h4 className='my-card-subtitle text-primary/70 m-0 p-0 truncate w-60'>
           {slogan}
         </h4>
-        <AvailabilityBadge availability={availability}></AvailabilityBadge>
+        <AvailabilityBadge schedules={schedules}></AvailabilityBadge>
       </div>
     </div>
   );

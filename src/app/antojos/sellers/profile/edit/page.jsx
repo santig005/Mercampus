@@ -4,7 +4,8 @@ import { updateSeller } from '@/services/sellerService';
 import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
 import Loading from '@/components/general/Loading';
-import ExtraTimeBadge2 from '@/components/availability/extraTimeBadge2';
+import ExtraTimeBadge from '@/components/availability/extraTimeBadge';
+import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
@@ -12,6 +13,7 @@ import { useCheckSeller } from '@/context/SellerContext';
 
 export default function EditSellerPage() {
   const [sellerAvailability, setSellerAvailability] = useState(false);
+  const [schedules, setSchedules] = useState([]); 
   const [sellerExtraTime, setSellerExtraTime] = useState(null);
   const [formSeller, setFormSeller] = useState(null);
  
@@ -34,9 +36,21 @@ export default function EditSellerPage() {
     if (!sellerLoading) {
       if (seller) {
         setFormSeller(seller);
+        setSellerAvailability(seller.availability);
+        fetchSchedules();
       }
     }
   }, [seller, sellerLoading]);
+
+  async function fetchSchedules() {
+    try {
+      if (seller?.schedules) {
+        setSchedules(seller.schedules);
+      }
+    } catch (error) {
+      console.error('Error obteniendo horarios:', error);
+    }
+  }
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -104,21 +118,10 @@ export default function EditSellerPage() {
               <div className='flex justify-between items-center gap-4 p-2 bg-white rounded shadow-md'>
                 <div>
                   <h3>Mi disponibilidad</h3>
-                  <AvailabilityBadge availability={sellerAvailability} />
+                  <AvailabilityBadge schedules={schedules} />
                 </div>
               </div>
 
-          <div>
-          <div
-            className={`flex justify-between items-center gap-4 p-2 rounded shadow-md ${
-            seller.statusExtraTime ? 'bg-gray-200 opacity-50 pointer-events-none' : 'bg-white'}`}
-          >
-            <ExtraTimeBadge2 
-            seller={seller} 
-            setSeller={setSeller}
-             />
-          </div>
-        </div>
         {seller.statusExtraTime && (
           <button className='btn btn-primary' onClick={handleFinish}>
             Finalizar

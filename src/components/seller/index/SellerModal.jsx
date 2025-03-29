@@ -78,7 +78,7 @@ export default function SellerModal({ seller, set }) {
                       <div className='flex flex-col gap-1'>
                         <h2 className='card-title '>{seller.businessName}</h2>{' '}
                         {/* <span className='text-4xl mx-2'>•</span> */}
-                        <AvailabilityBadge availability={seller.availability} />
+                        <AvailabilityBadge schedules={schedules} />
                       </div>
                     </div>
                     {seller.slogan && (

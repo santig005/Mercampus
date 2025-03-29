@@ -3,10 +3,10 @@ import { parseIfJSON } from '@/utils/utilFn';
 import React from 'react';
 
 export default function SellerCard({
-  seller: { id: _id, businessName, slogan, description, logo, availability },
+  seller: { id: _id, businessName, slogan, description, logo, schedules },
   isClicked,
   onClick,
-}) {
+}){
   return (
     <div
       // href={`/sellers/${id}`}
@@ -29,7 +29,7 @@ export default function SellerCard({
         <h4 className='my-card-subtitle text-primary/70 m-0 p-0 truncate w-60'>
           {slogan}
         </h4>
-        <AvailabilityBadge availability={availability}></AvailabilityBadge>
+        <AvailabilityBadge schedules={schedules}></AvailabilityBadge>
       </div>
     </div>
   );

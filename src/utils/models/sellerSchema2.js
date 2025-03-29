@@ -18,10 +18,6 @@ const sellerSchema = new mongoose.Schema({
     instagramUser: {
         type: String
     },
-    availability: {
-        type: Boolean,
-        default: true
-    },
     statusExtraTime: {
         type: Boolean,
         default: false
