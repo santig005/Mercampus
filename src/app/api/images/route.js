@@ -1,6 +1,16 @@
 import imagekit from '@/utils/imagekit';
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
+import { RekognitionClient, DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
+
+// Configurar AWS Rekognition
+const rekognitionClient = new RekognitionClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_REKOGNITION_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_REKOGNITION_SECRET_ACCESS_KEY,
+  },
+});
 
 export async function POST(req) {
   try {
@@ -17,6 +27,25 @@ export async function POST(req) {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Verificar contenido con Rekognition
+    const command = new DetectModerationLabelsCommand({
+      Image: {
+        Bytes: buffer,
+      },
+      MinConfidence: 40, // Nivel de confianza mínimo (ajustable)
+    });
+    const data = await rekognitionClient.send(command);
+    console.log(' data es ', data);
+    if (data.ModerationLabels.length > 0) {
+      return NextResponse.json(
+        { error: 'La imagen contiene contenido inapropiado' },
+        { status: 400 }
+      );
+    }
+
+
+
     const resizedBuffer = await sharp(buffer)
       .resize({ width: 800 }) // Resize width to 800px (adjust as needed)
       .toBuffer();
