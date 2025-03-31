@@ -29,9 +29,12 @@ export default function ImageGrid({
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.error === 'La imagen contiene contenido inapropiado') {
+          throw new Error('La imagen contiene contenido inapropiado');
+        }
         throw new Error('Error uploading image');
       }
-
       const data = await response.json();
       const newImageUrl = data.url;
 
@@ -40,7 +43,11 @@ export default function ImageGrid({
       onUpdateImages(updatedImages); // Update parent component
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Hubo un problema al subir la imagen. Inténtalo de nuevo.');
+      if (error.message === 'La imagen contiene contenido inapropiado') {
+        alert('La imagen contiene contenido inapropiado. Por favor, sube una imagen diferente.');
+      } else {
+        alert('Hubo un problema al subir la imagen. Inténtalo de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
