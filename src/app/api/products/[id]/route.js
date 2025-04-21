@@ -7,6 +7,9 @@ import {Seller} from '@/utils/models/sellerSchema2';
 import { User } from '@/utils/models/userSchema';
 import { currentUser } from '@clerk/nextjs/server';
 import mongoose from 'mongoose';
+import { getCurrentSeller } from '@/utils/lib/auth';
+
+import { verifyOwnershipAndGetSellerId } from '@/utils/lib/auth';
 
 export async function GET(req, { params }) {
   try{
@@ -56,86 +59,73 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    connectDB();
+    await connectDB(); // Conecta al inicio
+    const { id: productId } = params;
+
+    // 1. Verificar propiedad Y obtener ID del vendedor (1 consulta principal)
+    // Esta función maneja: validación de ID, auth Clerk, y propiedad del producto.
+    // Si algo falla, lanzará un error capturado por el catch.
+    const sellerId = await verifyOwnershipAndGetSellerId(productId);
+    console.log(`PUT - Verificación exitosa para producto ${productId}, propietario ${sellerId}`);
+
+    // 2. Obtener los datos a actualizar del cuerpo de la solicitud
     const data = await req.json();
-    const product = await Product.findByIdAndUpdate(params.id, data);
-    return NextResponse.json(product);
+    // Opcional: Validar los datos recibidos (ej. que 'name' no esté vacío, etc.) si es necesario
+
+    // 3. Si la verificación pasó, realizar la actualización
+    //    Usamos { new: true } para que devuelva el documento actualizado.
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      data, // Los datos a actualizar
+    );
+
+    // 4. Verificar si la actualización fue exitosa
+    if (!updatedProduct) {
+        // Esto podría pasar si el producto fue eliminado justo entre la verificación y la actualización (poco probable pero posible)
+        console.warn(`Advertencia en PUT: Producto ${productId} no encontrado en findByIdAndUpdate después de verificar propiedad.`);
+        throw { status: 404, message: 'Producto no encontrado al intentar actualizar (inesperado).' };
+    }
+
+    console.log(`PUT - Producto ${productId} actualizado exitosamente.`);
+    return NextResponse.json(updatedProduct, { status: 200 });
   } catch (error) {
-    console.log(params);
+    console.error(`Error en PUT /api/products/${params.id}:`, error);
     return NextResponse.json({ error: error.message });
   }
 }
+
 export async function DELETE(req, { params }) {
-  await connectDB();
   try {
-    // 1. Validar formato del ID primero
-    const idproduct = params.id;
-    console.log("el id es: ", idproduct);
-    //imprimimos el tipo
-    console.log("el tipo es: ", typeof idproduct);
-    if (!mongoose.Types.ObjectId.isValid(idproduct)) {
-      return NextResponse.json(
-        { message: 'ID de producto inválido' },
-        { status: 400 }
-      );
+    await connectDB();
+    const { id: productId } = params;
+
+    // 1. Verificar propiedad Y obtener ID del vendedor (1 consulta principal)
+    // Esta función ahora valida el ID, la autenticación y la propiedad.
+    // Si algo falla, lanzará un error que será capturado por el catch.
+    const sellerId = await verifyOwnershipAndGetSellerId(productId);
+    console.log(`DELETE - Verificación exitosa para producto ${productId}, propietario ${sellerId}`);
+
+    // 2. Si la verificación pasó, proceder a eliminar
+    const deletedProduct = await Product.findByIdAndDelete(productId);
+
+    // Doble check por si acaso (aunque verifyOwnership debería garantizar que existe)
+    if (!deletedProduct) {
+      console.warn(`Advertencia en DELETE: Producto ${productId} no encontrado en findByIdAndDelete después de verificar propiedad.`);
+      // Podríamos devolver 404 aquí, pero es una condición de carrera improbable.
+      // Mantener el flujo normal asumiendo que la verificación es suficiente.
+      // O lanzar un error específico si quieres ser extra cauto.
+       throw { status: 404, message: 'El producto fue eliminado concurrentemente o no se encontró (inesperado).' };
     }
 
-    // 2. Autenticación
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json(
-        { message: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
-    // 3. Buscar usuario en DB
-    const email = user.emailAddresses[0].emailAddress;
-    const userDB = await User.findOne({ email });
-    if (!userDB) {
-      return NextResponse.json(
-        { message: 'Usuario no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // 4. Verificar rol de vendedor
-    const seller = await Seller.findOne({ userId: userDB._id });
-    if (!seller) {
-      return NextResponse.json(
-        { message: 'Acceso denegado. Solo vendedores' },
-        { status: 403 }
-      );
-    }
-
-    // 5. Obtener producto y verificar propiedad
-    const product = await Product.findById(idproduct); // <-- Corregido aquí
-    if (!product) {
-      return NextResponse.json(
-        { message: 'Producto no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    if (product.sellerId.toString() !== seller._id.toString()) {
-      return NextResponse.json(
-        { message: 'No tienes permisos para eliminar este producto' },
-        { status: 403 }
-      );
-    }
-
-    // 6. Eliminar producto
-    await Product.findByIdAndDelete(idproduct); // <-- Corregido aquí
-    
-    return NextResponse.json(
-      { message: 'Producto eliminado' },
-      { status: 200 }
-    );
+    console.log(`DELETE - Producto ${productId} eliminado exitosamente.`);
+    return NextResponse.json({ message: 'Producto eliminado correctamente' }, { status: 200 });
 
   } catch (error) {
+    // Captura cualquier error lanzado por verifyOwnershipAndGetSellerId o findByIdAndDelete
+    console.error(`Error en DELETE /api/products/${params.id}:`, error);
     return NextResponse.json(
-      { message: 'Error deleting product', error: error.message },
-      { status: 500 }
+      { message: error.message || 'Error interno del servidor.' },
+      { status: error.status || 500 }
     );
   }
 }

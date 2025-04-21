@@ -4,6 +4,7 @@ import { Seller } from "@/utils/models/sellerSchema2";
 import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
+import { verifySeller } from "@/utils/lib/auth";
 
 export async function GET(req, { params }) {
     // try {
@@ -76,6 +77,15 @@ export async function PUT(req, { params }) {
     try {
         connectDB();
         const data = await req.json();
+        const targetIdentifier = params.id; // El ID o email del vendedor a modificar
+
+        // 1. Verificar que el usuario autenticado es el dueño del perfil a modificar
+        //    Esta función valida auth, rol y que target === authenticated.
+        //    Devuelve el ID del vendedor si todo ok, o lanza error si no.
+        const verifiedSellerId = await verifySeller(targetIdentifier);
+        if (!verifiedSellerId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        }
         let seller;
 
         if (params.id.includes('@')) {
