@@ -90,47 +90,85 @@ export const verifyOwnershipAndGetSellerId = async (productId) => {
   }
 };
 
-export const verifySeller=async (sellerId) => {
-  try{
-    // 2. Obtener usuario actual de Clerk
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
-      throw { status: 401, message: 'No autenticado (Clerk).' };
-    }
-    // Asegúrate que el usuario tenga email
-     if (!clerkUser.emailAddresses || clerkUser.emailAddresses.length === 0) {
-        throw { status: 400, message: 'Usuario Clerk no tiene email.' };
-    }
-    const userEmail = clerkUser.emailAddresses[0].emailAddress;
-    console.log(`Verificando propiedad para seller ${sellerId} por usuario ${userEmail}`);
+export const verifySeller = async (sellerId) => {
+  await connectDB();
 
-    const seller = await Seller.findById(sellerId)
-      .select('userId approved') // Solo necesitamos el userId y approved del vendedor inicialmente
-      .populate({
-        userId: 1, // Para obtener el userId del vendedor
-        model: 'User', // Especificar modelo User
-        match: { email: userEmail }, // *** ¡La Clave! Match con el email del usuario actual ***
-        select: '_id email' // Solo necesitamos confirmar que el usuario existe y coincide
-        })
-        .lean(); // Usar lean para mejor rendimiento
-
-        if (!seller) {
-          console.log(`Vendedor ${sellerId} no encontrado.`);
-          throw { status: 404, message: 'Vendedor no encontrado.' };
-        }
-        if (!seller.userId) {
-          console.log(`Usuario ${userEmail} NO es propietario del vendedor ${sellerId}. Acceso denegado.`);
-          throw { status: 403, message: 'No tienes permiso para modificar este vendedor.' };
-        }
-
-        // (Opcional) Verificar si el vendedor está aprobado, si aplica
-        if (!seller.approved) {
-          console.log(`Vendedor ${sellerId} (usuario ${userEmail}) no está aprobado.`);
-          throw { status: 403, message: 'Tu cuenta de vendedor no está aprobada.' };
-        }
-        return seller.userId;
-
-  } catch (error) {
-    console.error("Error inesperado en verifySeller:", error);  
+  // 1) Usuario Clerk
+  const clerkUser = await currentUser();
+  if (!clerkUser?.emailAddresses?.length) {
+    throw { status: 401, message: 'No autenticado.' };
   }
+  const userEmail = clerkUser.emailAddresses[0].emailAddress;
+
+  // 2) Pipeline de agregación
+  const [doc] = await Seller.aggregate([
+    // a) Filtrar el seller por su _id
+    { $match: { _id: mongoose.Types.ObjectId(sellerId) } },
+
+    // b) Lookup para traer su userId (dueño) y proyectar ese campo
+    {
+      $project: {
+        userId: 1,
+        approved: 1
+      }
+    },
+
+    // c) Lookup al usuario propietario del seller
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'owner'
+      }
+    },
+    { $unwind: '$owner' },
+
+    // d) Lookup a tu usuario de sesión para obtener su rol
+    {
+      $lookup: {
+        from: 'users',
+        let: { mail: userEmail },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$email', '$$mail'] } } },
+          { $project: { role: 1 } }
+        ],
+        as: 'sessionUser'
+      }
+    },
+    { $unwind: '$sessionUser' },
+
+    // e) Sólo dejar pasar si eres dueño o admin
+    {
+      $match: {
+        $or: [
+          { 'owner.email': userEmail },       // dueñe@ del seller
+          { 'sessionUser.role': 'admin' }     // o admin
+        ]
+      }
+    },
+
+    // f) Proyectar sólo lo que necesitas devolver
+    {
+      $project: {
+        _id: 0,
+        sellerId: '$_id',
+        userId: '$userId',
+        approved: 1
+      }
+    }
+  ]);
+
+  if (!doc) {
+    // No existe o no tienes permiso
+    throw { status: 403, message: 'No autorizado o vendedor no existe.' };
   }
+
+  // (Opcional) si necesitas verificar approved:
+  if (!doc.approved) {
+    throw { status: 403, message: 'Cuenta de vendedor no aprobado.' };
+  }
+
+  // Devuelves el userId del seller (o cualquier dato que necesites)
+  return doc;
+};
