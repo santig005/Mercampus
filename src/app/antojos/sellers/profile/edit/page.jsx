@@ -9,7 +9,8 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
-
+import UniGraphicSelector from '@/components/university/UniGraphicSelector';
+ 
 export default function EditSellerPage() {
   const [sellerAvailability, setSellerAvailability] = useState(false);
   const [seller, setSeller] = useState(null);
