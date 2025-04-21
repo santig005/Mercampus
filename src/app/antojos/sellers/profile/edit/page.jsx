@@ -110,6 +110,13 @@ export default function EditSellerPage() {
                 name='businessName'
                 required
               />
+               <div>
+                <label>Universidad</label>
+                <UniGraphicSelector 
+                  value={seller.university}
+                  onUniversityChange={(selected) => setSeller({ ...seller, university: selected })}
+                />    
+              </div>
 
               <InputFields
                 title='Eslogan'

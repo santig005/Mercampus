@@ -20,10 +20,10 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
   };
 
   return (
-    <div className='relative flex items-center space-x-2'>
-      <label htmlFor='university' className='block text-sm font-medium text-gray-700'>
+    <div className='relative flex items-center'>
+      <label htmlFor='university' className='block text-sm font-medium text-gray-700 mr-2'>
         <svg
-          className='inline-block w-5 h-5 mr-2 text-gray-500'
+          className='inline-block w-5 h-5 text-gray-500'
           xmlns='http://www.w3.org/2000/svg'
           fill='none'
           viewBox='0 0 24 24'
@@ -37,25 +37,23 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
           />
         </svg>
       </label>
-      <select
-        id='university'
-        value={value}
-        onChange={handleChange}
-        className='mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md'
-      >
-        {universities.map((uni) => (
-          <option key={uni} value={uni}>
-            {uni}
-          </option>
-        ))}
-      </select>
-
-      {/* Icono de información con tooltip */}
-      <div className='relative inline-block'>
+      <div className='relative flex-1'>
+        <select
+          id='university'
+          value={value}
+          onChange={handleChange}
+          className='mt-1 block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md'
+        >
+          {universities.map((uni) => (
+            <option key={uni} value={uni} className='text-sm'>
+              {uni}
+            </option>
+          ))}
+        </select>
         <button
           type='button'
           onClick={toggleTooltip}
-          className='ml-2 p-1 focus:outline-none'
+          className='absolute right-2 top-1/2 transform -translate-y-1/2 p-1 focus:outline-none'
           aria-label='Información'
         >
           <svg
@@ -72,9 +70,8 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
           </svg>
         </button>
         {showTooltip && (
-          <div className='absolute top-full right-0 mt-2 w-64 p-2 bg-white border border-gray-300 rounded-lg shadow-lg text-sm text-gray-800'>
-            Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con
-            finalidad de filtro de búsqueda.
+          <div className='absolute top-full right-2 mt-2 w-64 p-2 bg-white border border-gray-300 rounded-lg shadow-lg text-sm text-gray-800'>
+            Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con finalidad de filtro de búsqueda.
           </div>
         )}
       </div>
