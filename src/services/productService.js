@@ -4,16 +4,20 @@ export const getProducts = async (
   product,
   category,
   sellerId,
+  university,
   limit,
-  offset
+  offset,
+  
 ) => {
   const queryParams = new URLSearchParams();
 
   if (product) queryParams.append('product', product);
   if (category) queryParams.append('category', category);
   if (sellerId) queryParams.append('sellerId', sellerId);
+  if (university) queryParams.append('university', university);
   if (limit) queryParams.append('limit', limit);
   if (offset) queryParams.append('offset', offset);
+  
 
   return await fetchAPI(`/products?${queryParams.toString()}`);
 };

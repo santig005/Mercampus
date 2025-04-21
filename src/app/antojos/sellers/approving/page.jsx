@@ -7,8 +7,9 @@ import Loading from "@/components/general/Loading";
 
 const SellerApprovalStatus = () => {
   const { checkedSeller } = useCheckSeller("sellerNotApproved", "/antojos/sellers/schedules");
+  if(!checkedSeller){return <Loading />}
 
-  return checkedSeller ? (
+  return (
     <div className="flex flex-col items-center justify-center h-screen bg-[#F2F2F2] p-8">
       <div className="bg-[#FF7622] rounded-lg p-6 text-center">
         <h1 className="text-3xl font-bold mb-4">
@@ -23,9 +24,7 @@ const SellerApprovalStatus = () => {
         </p>
       </div>
     </div>
-  ) : (
-    <Loading />
-  );
+  )
 };
 
 export default SellerApprovalStatus;

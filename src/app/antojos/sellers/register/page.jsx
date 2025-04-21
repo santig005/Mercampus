@@ -9,6 +9,7 @@ import ImageGrid from '@/components/general/ImageGrid';
 import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
+import UniGraphicSelector from '@/components/university/UniGraphicSelector';
 
 const RegisterSeller = () => {
   const router = useRouter();
@@ -16,6 +17,7 @@ const RegisterSeller = () => {
     businessName: '',
     instagramUser: '',
     description: '',
+    university: '',
     logo: '',
     slogan: '',
     phoneNumber: '',
@@ -131,6 +133,14 @@ const RegisterSeller = () => {
                   onChange={handleChange}
                   name='slogan'
                 />
+                <div>
+                  <label>Universidad</label>
+                  <UniGraphicSelector 
+                    value={sellerData.university}
+                    onUniversityChange={(selected) => setSellerData({ ...sellerData, university: selected })}
+                  />    
+                </div>
+
                 <InputFields
                   title='Usuario de Instagram'
                   type='text'

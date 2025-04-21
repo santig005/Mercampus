@@ -37,14 +37,9 @@ import {
 const SideBar = ({ userId }) => {
   const { seller, loading: sellerLoading } = useSeller();
 
-  // Don't delete these useEffect please
-  useEffect(() => {
-    if (!sellerLoading) {
-      if (seller === false) {
-        //window.location.href = '/antojos/sellers/register';
-      }
-    }
-  }, [seller, sellerLoading]);
+  
+
+
 
   return (
     <div className='drawer-side'>

@@ -10,9 +10,15 @@ export async function GET(req) {
   try {
     // Connnect to the database
     await connectDB();
+    const url = new URL(req.url);
+    const university = url.searchParams.get('university') || '';
 
     // Get all sellers
-    const sellers = await Seller.find();
+    var sellers = await Seller.find();
+    if
+    (university) {
+      sellers = sellers.filter((seller) => seller.university === university);
+    }
     if (!sellers || sellers.length === 0) {
       return NextResponse.json({ message: 'Sellers not found' }, { status: 404 });
     }

@@ -6,16 +6,18 @@ import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
 import { useSeller } from '@/context/SellerContext';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import { updateSeller } from '@/services/sellerService';
+import { useUniversity } from '@/context/UniversityContext';
 import SellerCardAV from '@/components/seller/index/SellerCardAV';
 
 export default function SellerGrid() {
   const [sellers, setSellers] = useState([]);
-  const { dbUser } = useSeller();
+  const {dbUser} = useSeller();
+  const {university} = useUniversity();
 
   useEffect(() => {
     async function fetchSellers() {
       try {
-        const data = await getSellers();
+        const data = await getSellers(university);
         setSellers(data.sellers);
       } catch (error) {
         console.error('Error fetching sellers:', error);
@@ -23,7 +25,7 @@ export default function SellerGrid() {
     }
 
     fetchSellers();
-  }, []);
+  }, [university]);
 
   const handleSellerApproval = async (isOn, sellerId) => {
     try {

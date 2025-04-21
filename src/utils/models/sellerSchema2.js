@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-
+import { universities } from '@/utils/resources/universities';
 const sellerSchema = new mongoose.Schema({
     businessName: {
         type: String,
@@ -37,7 +37,8 @@ const sellerSchema = new mongoose.Schema({
     },
     university:{
         type: String,
-        default: 'Universidad Eafit'
+        default: 'Universidad Eafit',
+        enum: universities
     },
     },
     {

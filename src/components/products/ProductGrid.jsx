@@ -6,6 +6,7 @@ import ProductModalHandler from '@/components/products/ProductModalHandler';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useSearchParams } from 'next/navigation';
+import { useUniversity } from '@/context/UniversityContext';
 
 export default function ProductGrid({ sellerIdParam = '' }) {
   const [products, setProducts] = useState([]);
@@ -13,18 +14,20 @@ export default function ProductGrid({ sellerIdParam = '' }) {
   const containerRef = useRef(null);
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const { university } = useUniversity();
 
   // Extraemos los filtros desde la URL
   const product = searchParams.get('product') || '';
   const category = searchParams.get('category') || '';
   const sellerId = searchParams.get('sellerId') || sellerIdParam;
 
+
   const loadProducts = useCallback(async () => {
     setLoading(true);
-    const { products } = await getProducts(product, category, sellerId);
+    const { products } = await getProducts(product, category, sellerId,university);
     setProducts(products);
     setLoading(false);
-  }, [product, category, sellerId]);
+  }, [product, category, sellerId,university]);
 
   useEffect(() => {
     loadProducts();

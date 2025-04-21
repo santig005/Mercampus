@@ -1,5 +1,6 @@
 import { Montserrat } from 'next/font/google';
 import { SellerProvider } from '@/context/SellerContext';
+import { UniversityProvider } from '@/context/UniversityContext';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
 import { esMX } from '@clerk/localizations';
 import Analytics from '@/utils/analytics';
@@ -60,6 +61,7 @@ export default function RootLayout({ children }) {
           <AdSense />
         </head>
         <body className='bg-primary'>
+          <UniversityProvider>
           <SellerProvider>
             <AnimationProvider>
               <ClerkLoading>
@@ -72,6 +74,7 @@ export default function RootLayout({ children }) {
               <ClerkLoaded>{children}</ClerkLoaded>
             </AnimationProvider>
           </SellerProvider>
+          </UniversityProvider>
         </body>
         <Analytics />
       </html>
