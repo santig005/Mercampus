@@ -9,10 +9,13 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
  */
 async function getEmailFromToken() {
   const { userId } = auth();
+  console.log("userId", userId);
+  
   if (!userId) {
     throw new AppError("No autenticado.", 401);
   }
   const client=clerkClient();
+  
   const user = await client.users.getUser(userId);
   const email = user.emailAddresses?.[0]?.emailAddress;
   if (!email) {
