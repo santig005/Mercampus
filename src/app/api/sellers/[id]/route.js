@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
+export const fetchCache = 'no-store';
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
 import { Seller } from "@/utils/models/sellerSchema2";
@@ -8,7 +8,22 @@ import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
 import { verifySellerId,verifySellerEmail } from "@/utils/lib/auth";
+import { getAuth } from "@clerk/nextjs/server";
 
+
+function extractAuthHeader(req) {
+  let auth = req.headers.get("authorization");
+  if (!auth) {
+    const sc = req.headers.get("x-vercel-sc-headers");
+    if (sc) {
+      try {
+        const obj = JSON.parse(sc);
+        auth = obj.Authorization || obj.authorization;
+      } catch {}
+    }
+  }
+  return auth;
+}
 export async function GET(req, { params }) {
     try {
         await connectDB();
@@ -56,6 +71,19 @@ export async function GET(req, { params }) {
 }
 export async function PUT(req, { params }) {
   try {
+    try{
+      console.log("vamos por el authHeader");
+      const authHeader = extractAuthHeader(req);
+      console.log("authHeader");
+      console.log(authHeader);
+  const { userId } = getAuth({ headers: { authorization: authHeader } });
+  console.log("userId");
+  console.log(userId);
+    }
+    catch(error){
+      console.log(error)
+    }
+    
       console.log('Cookies recibidas:', req.headers);
       await connectDB();
       const data = await req.json();
