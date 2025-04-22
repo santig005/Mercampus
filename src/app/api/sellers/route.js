@@ -72,16 +72,18 @@ export async function POST(req) {
     try{  
       body.userId = tempUserId;
       body.clerkId = user.id;
-      usuario.role="seller";
-      usuario.save()
+      
     }catch(error){
       console.log(error);
     }
 
     // Create a new seller using the Seller model
     try{
-      const newSeller = new Seller(body); 
+      const newSeller = new Seller(body);
       await newSeller.save();
+      usuario.sellerId=newSeller._id;
+      usuario.role="seller";
+      usuario.save()
 
     }catch(error){
       console.log(error);

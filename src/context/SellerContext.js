@@ -1,4 +1,77 @@
+// SellerContext.js
 "use client";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { getUserWithSellerByEmail } from "@/services/userService";
+import { useRouter } from "next/navigation";
+
+const SellerContext = createContext(null);
+
+export const SellerProvider = ({ children }) => {
+  const { user, isLoaded } = useUser();
+  const [seller, setSeller] = useState("Loading");
+  const [dbUser, setDbUser] = useState("Loading");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSeller = async () => {
+      if (!isLoaded) {
+        return;
+      }
+      if (!user) {
+        setLoading(false);
+        setSeller(false);
+        setDbUser(false);
+        return;
+      }
+
+      try {
+        const email = user.primaryEmailAddress?.emailAddress;
+        if (email) {
+            const response = await getUserWithSellerByEmail(email);
+          const { user: dbUser, seller } = response;
+          if (seller) {
+            setSeller(seller);
+          } else {
+            setSeller("None");
+          }
+          if (dbUser) {
+            setDbUser(dbUser);
+          } else {
+            setDbUser("None");
+          }
+        } else {
+          setSeller(false);
+        }
+      } catch (error) {
+        console.error("Error fetching seller:", error);
+        setSeller(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSeller();
+  }, [user, isLoaded]);
+
+  return (
+    <SellerContext.Provider value={{ seller, setSeller, loading, dbUser, setDbUser }}>
+      {children}
+    </SellerContext.Provider>
+  );
+};
+
+// Custom hook para consumir el contexto
+export const useSeller = () => {
+  const context = useContext(SellerContext);
+  if (context === undefined) {
+    throw new Error("useSeller must be used within a SellerProvider");
+  }
+  return context;
+};
+
+
+/* "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { getSellerByEmail } from "@/services/sellerService";
@@ -63,7 +136,7 @@ export const useSeller = () => {
     throw new Error("useSeller must be used within a SellerProvider");
   }
   return context;
-};
+}; */
 
 /**
  * Hook to check the seller's status and redirect based on their condition.

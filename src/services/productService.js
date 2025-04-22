@@ -1,4 +1,5 @@
 import { fetchAPI } from './api';
+import { fetchAPIToken } from './apiToken';
 
 export const getProducts = async (
   product,
@@ -37,15 +38,15 @@ export const createProduct = async productData => {
   });
 };
 
-export const updateProduct = async (id, productData) => {
-  return await fetchAPI(`/products/${id}`, {
+export const updateProduct = async (id, productData,token) => {
+  return await fetchAPIToken(`/products/${id}`, token,{
     method: 'PUT',
     body: JSON.stringify(productData),
   });
 };
 
-export const deleteProduct = async id => {
-  return await fetchAPI(`/products/${id}`, {
+export const deleteProduct = async (id ,token)=> {
+  return await fetchAPIToken(`/products/${id}`, token,{
     method: 'DELETE',
   });
 };
