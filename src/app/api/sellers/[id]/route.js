@@ -4,30 +4,9 @@ import { Seller } from "@/utils/models/sellerSchema2";
 import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
-import { verifySeller } from "@/utils/lib/auth";
+import { verifySellerId,verifySellerEmail } from "@/utils/lib/auth";
 
 export async function GET(req, { params }) {
-    // try {
-    //     connectDB();
-    //     let seller;
-    //     if (params.id.includes('@')) {
-    //         const user = await User.findOne({ email: params.id });
-
-    //         if (!user) {
-    //             return NextResponse.json({ error: "User not found" }, { status: 404 });
-    //           }
-    //           seller = await Seller.findOne({ userId: user._id });
-    //     } else 
-    //     {
-    //         seller = await Seller.findById(params.id);
-    //         }
-            
-        
-    //     return NextResponse.json({seller}, { status: 200 });
-    // } catch (error) {
-    //     console.log(params);
-    //     return NextResponse.json({ error: error.message }, { status: 500 });
-    // }
     try {
         await connectDB();
     
@@ -72,40 +51,33 @@ export async function GET(req, { params }) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 }
-
 export async function PUT(req, { params }) {
-    try {
-        connectDB();
-        const data = await req.json();
-        const targetIdentifier = params.id; // El ID o email del vendedor a modificar
+  try {
+      await connectDB();
+      const data = await req.json();
+      let seller;
+      if (params.id.includes('@')) {
+          verifySellerEmail(params.id);
+          const userDb = await User.findOne({ email: params.id });
 
-        // 1. Verificar que el usuario autenticado es el dueño del perfil a modificar
-        //    Esta función valida auth, rol y que target === authenticated.
-        //    Devuelve el ID del vendedor si todo ok, o lanza error si no.
-        const verifiedSellerId = await verifySeller(targetIdentifier);
-        if (!verifiedSellerId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-        }
-        let seller;
+          if (!userDb) {
+              return NextResponse.json({ error: "User not found" }, { status: 404 });
+          }
+          seller = await Seller.findOneAndUpdate({ userId: userDb._id }, data, { new: true });
+      } else {
+          await verifySellerId(params.id);
+          seller = await Seller.findByIdAndUpdate(params.id, data, { new: true });
+      }
 
-        if (params.id.includes('@')) {
-            const user = await User.findOne({ email: params.id });
+      if (!seller) {
+          return NextResponse.json({ error: "Seller not found" }, { status: 404 });
+      }
 
-            if (!user) {
-                return NextResponse.json({ error: "User not found" }, { status: 404 });
-            }
-            seller = await Seller.findOneAndUpdate({ userId: user._id }, data, { new: true });
-        } else {
-            seller = await Seller.findByIdAndUpdate(params.id, data, { new: true });
-        }
-
-        if (!seller) {
-            return NextResponse.json({ error: "Seller not found" }, { status: 404 });
-        }
-
-        return NextResponse.json({ seller }, { status: 200 });
-    } catch (error) {
-        console.log(params);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+      return NextResponse.json({ seller }, { status: 200 });
+  }  catch (error) {
+    const status = error?.status || 500;
+    const message = error?.message || "Error interno del servidor";
+    console.error("[PUT /api/sellers/:id]", message);
+    return NextResponse.json({ error: message }, { status });
+  }
 }
