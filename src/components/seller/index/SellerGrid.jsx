@@ -8,11 +8,13 @@ import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import { updateSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
 import SellerCardAV from '@/components/seller/index/SellerCardAV';
+import { useAuth } from '@clerk/nextjs';
 
 export default function SellerGrid() {
   const [sellers, setSellers] = useState([]);
   const {dbUser} = useSeller();
   const {university} = useUniversity();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     async function fetchSellers() {
@@ -35,7 +37,8 @@ export default function SellerGrid() {
           seller._id === sellerId ? { ...seller, approved: !isOn } : seller
         )
       );
-      const response = await updateSeller(sellerId, { approved: !isOn });
+      const token = await getToken({ template: 'larga_vida' ,skipCache: true});
+      const response = await updateSeller(sellerId, { approved: !isOn },token);
       if (response.error) {
         setSellers(prevSellers =>
           prevSellers.map(seller =>

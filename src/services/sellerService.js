@@ -1,4 +1,5 @@
 import { fetchAPI } from './api';
+import { fetchAPIToken } from './apiToken';	
 
 export const getSellers = async (university) => {
   const queryParams = new URLSearchParams();
@@ -20,8 +21,8 @@ export const getSellerByEmail = async email => {
   }
 };
 
-export const updateSeller = async (id, data) => {
-  return await fetchAPI(`/sellers/${id}`, {
+export const updateSeller = async (id, data,token) => {
+  return await fetchAPIToken(`/sellers/${id}`,token, {
     method: 'PUT',
     body: JSON.stringify(data),
   });

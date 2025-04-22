@@ -37,10 +37,6 @@ import {
 const SideBar = ({ userId }) => {
   const { seller, loading: sellerLoading } = useSeller();
 
-  
-
-
-
   return (
     <div className='drawer-side'>
       <label

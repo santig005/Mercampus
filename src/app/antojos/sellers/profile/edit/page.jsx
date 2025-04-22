@@ -10,6 +10,7 @@ import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 import UniGraphicSelector from '@/components/university/UniGraphicSelector';
+import { useAuth } from '@clerk/nextjs';
  
 export default function EditSellerPage() {
   const [sellerAvailability, setSellerAvailability] = useState(false);
@@ -26,6 +27,7 @@ export default function EditSellerPage() {
     'sellerApproved',
     '/antojos/sellers/approving'
   );
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (!sellerLoading) {
@@ -39,7 +41,8 @@ export default function EditSellerPage() {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      await updateSeller(seller._id, seller);
+      const token = await getToken({ template: 'larga_vida' ,skipCache: true});
+      await updateSeller(seller._id, seller,token);
       setDataSeller(seller);
       router.push('/');
     } catch (error) {
@@ -53,11 +56,12 @@ export default function EditSellerPage() {
 
   const handleSellerAvailability = async () => {
     try {
+      const token = await getToken({ template: 'larga_vida',skipCache: true });
       setSellerAvailability(!sellerAvailability);
       setDataSeller({ ...seller, availability: !sellerAvailability });
       const updatedSeller = await updateSeller(seller._id, {
         availability: !sellerAvailability,
-      });
+      },token);
       //if the request is not successful, correct the availability
       if (!updatedSeller) {
         setDataSeller({ ...seller, availability: !sellerAvailability });
