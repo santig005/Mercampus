@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
 import { Seller } from "@/utils/models/sellerSchema2";
