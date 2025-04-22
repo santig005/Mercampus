@@ -1,6 +1,4 @@
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'no-store';
+export const runtime = 'edge';
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
 import { Seller } from "@/utils/models/sellerSchema2";
@@ -13,8 +11,12 @@ import { getAuth } from "@clerk/nextjs/server";
 
 function extractAuthHeader(req) {
   let auth = req.headers.get("authorization");
+  console.log("authHeader dentro");
+  console.log(auth);
   if (!auth) {
     const sc = req.headers.get("x-vercel-sc-headers");
+    console.log("scHeader dentro");
+    console.log(sc);
     if (sc) {
       try {
         const obj = JSON.parse(sc);
