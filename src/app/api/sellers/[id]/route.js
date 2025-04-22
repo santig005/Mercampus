@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
 import { Seller } from "@/utils/models/sellerSchema2";
@@ -19,7 +18,10 @@ function extractAuthHeader(req) {
     console.log(sc);
     if (sc) {
       try {
+        console.log("scHeader dentro try");
         const obj = JSON.parse(sc);
+        console.log("scHeader dentro try parseado");
+        console.log(obj);
         auth = obj.Authorization || obj.authorization;
       } catch {}
     }
