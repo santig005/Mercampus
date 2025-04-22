@@ -7,6 +7,7 @@ export const fetchAPIToken = async (endpoint, token, options = {}) => {
     try {
         
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          credentials: "include",
             headers: {
               'Content-Type': 'application/json',
               Authorization:`Bearer ${token}`,
