@@ -37,7 +37,7 @@ export default function SellerGrid() {
           seller._id === sellerId ? { ...seller, approved: !isOn } : seller
         )
       );
-      const token = await getToken({ template: 'larga_vida' ,skipCache: true});
+      const token = await getToken({ skipCache: true});
       const response = await updateSeller(sellerId, { approved: !isOn },token);
       if (response.error) {
         setSellers(prevSellers =>
