@@ -41,7 +41,7 @@ export default function EditSellerPage() {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      const token = await getToken({ template: 'larga_vida' ,skipCache: true});
+      const token = await getToken({ skipCache: true});
       await updateSeller(seller._id, seller,token);
       setDataSeller(seller);
       router.push('/');
@@ -56,7 +56,7 @@ export default function EditSellerPage() {
 
   const handleSellerAvailability = async () => {
     try {
-      const token = await getToken({ template: 'larga_vida',skipCache: true });
+      const token = await getToken({ skipCache: true });
       setSellerAvailability(!sellerAvailability);
       setDataSeller({ ...seller, availability: !sellerAvailability });
       const updatedSeller = await updateSeller(seller._id, {

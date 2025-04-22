@@ -58,7 +58,7 @@ export default function EditProductsPage() {
             : product
         )
       );
-      const token = await getToken({ template: 'larga_vida' ,skipCache: true});
+      const token = await getToken({ skipCache: true});
       console.log("etngo token");
       console.log(token);
       const updatedProduct = await updateProduct(id, {
@@ -82,7 +82,7 @@ export default function EditProductsPage() {
     try {
       setSellerAvailability(!sellerAvailability);
       setSeller({ ...seller, availability: !sellerAvailability });
-      const token = await getToken({ template: 'larga_vida' ,skipCache: true});
+      const token = await getToken({skipCache: true});
       const updatedSeller = await updateSeller(seller._id, {
         availability: !sellerAvailability
       },token);
