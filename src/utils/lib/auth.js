@@ -8,8 +8,10 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
  * Obtiene email a partir de token de clerk 
  */
 async function getEmailFromToken() {
+  console.log("voy a extraer");
   const { userId } = auth();
-  console.log("userId", userId);
+  console.log("userId");
+  console.log(userId);
   
   if (!userId) {
     throw new AppError("No autenticado.", 401);

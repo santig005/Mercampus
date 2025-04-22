@@ -53,6 +53,7 @@ export async function GET(req, { params }) {
 }
 export async function PUT(req, { params }) {
   try {
+      console.log('Cookies recibidas:', req.headers);
       await connectDB();
       const data = await req.json();
       let seller;
