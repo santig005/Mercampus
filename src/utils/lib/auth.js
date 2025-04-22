@@ -66,8 +66,7 @@ export const verifyOwnershipAndGetSellerId = async (productId) => {
  * Verifica si el usuario autenticado (o admin) puede acceder
  * al seller con _id = sellerId. Devuelve { user, seller } si OK.
  */
-export const verifySellerId = async (sellerId) => {
-  const email = await getEmailFromToken();
+export const verifySellerId = async (sellerId,email) => {
   const { user, seller, error } = await getUserWithSellerByEmail(email);
   if (error) {
     throw new AppError("Error interno obteniendo datos de usuario.", 500);

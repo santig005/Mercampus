@@ -5,7 +5,8 @@ import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
 import { verifySellerId,verifySellerEmail } from "@/utils/lib/auth";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth,clerkClient } from "@clerk/nextjs/server";
+
 
 
 function extractAuthHeader(req) {
@@ -75,25 +76,30 @@ export async function GET(req, { params }) {
 }
 export async function PUT(req, { params }) {
   try {
-    try{
-      console.log("vamos por el authHeader");
-      const authHeader = extractAuthHeader(req);
-      console.log("authHeader");
-      console.log(authHeader);
-  const { userId } = getAuth({ headers: { authorization: authHeader } });
-  console.log("userId");
-  console.log(userId);
-    }
-    catch(error){
-      console.log(error)
-    }
+       console.log("voy a extraer");
+        const { userId } = auth();
+        console.log("userId");
+        console.log(userId);
+        
+        if (!userId) {
+          //throw new AppError("No autenticado.", 401);
+          return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+        }
+        const client=clerkClient();
+        
+        const user = await client.users.getUser(userId);
+        const email = user.emailAddresses?.[0]?.emailAddress;
+        if (!email) {
+          //throw new AppError("No se encontró email en Clerk.", 500);
+          return NextResponse.json({ error: "No se encontró email en Clerk." }, { status: 500 });
+        }
     
       console.log('Cookies recibidas:', req.headers);
       await connectDB();
       const data = await req.json();
       let seller;
       if (params.id.includes('@')) {
-          verifySellerEmail(params.id);
+          verifySellerEmail(params.id,email);
           const userDb = await User.findOne({ email: params.id });
 
           if (!userDb) {
@@ -101,7 +107,7 @@ export async function PUT(req, { params }) {
           }
           seller = await Seller.findOneAndUpdate({ userId: userDb._id }, data, { new: true });
       } else {
-          await verifySellerId(params.id);
+          await verifySellerId(params.id,email);
           seller = await Seller.findByIdAndUpdate(params.id, data, { new: true });
       }
 
