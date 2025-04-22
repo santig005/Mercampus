@@ -77,7 +77,7 @@ export async function GET(req, { params }) {
 export async function PUT(req, { params }) {
   try {
        console.log("voy a extraer");
-        const { userId } = auth();
+        const { userId } = await auth();
         console.log("userId");
         console.log(userId);
         
