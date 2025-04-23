@@ -58,14 +58,15 @@ export async function GET(req, { params }) {
 export async function PUT(req, { params }) {
   try {
     console.log("→ PUT /api/products/:id, arrancando auth...");
-    const { userId, email } = await getUserFromToken(req);
-    console.log("✔️ Sesión válida para userId:", userId, "email:", email);
+    //const { userId, email } = await getUserFromToken(req);
+    //console.log("✔️ Sesión válida para userId:", userId, "email:", email);
 
     // 3) Verifica que el usuario autenticado sea el vendedor propietario del producto dado, y devuelve el sellerId.
     
     await connectDB();
     // 1) valida auth + ownership
-    await verifyOwnershipAndGetSellerId(params.id,email);
+    
+    //7await verifyOwnershipAndGetSellerId(params.id,email);
 
     // 2) haz el update
     const data = await req.json();
@@ -87,7 +88,7 @@ export async function DELETE(req, { params }) {
   try {
     await connectDB();
     // 1) valida auth + ownership
-    await verifyOwnershipAndGetSellerId(params.id);
+    //await verifyOwnershipAndGetSellerId(params.id);
 
     // 2) haz el delete
     const deleted = await Product.findByIdAndDelete(params.id);
