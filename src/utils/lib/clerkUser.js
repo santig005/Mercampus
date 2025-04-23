@@ -21,7 +21,7 @@ export async function getUserFromToken(req) {
     console.log("Token obtenido del header:");
     console.log(token);
   } else {
-    console.log("No había Bearer en header, miro la cookie __session...");
+    /* console.log("No había Bearer en header, miro la cookie __session...");
     const cookieHeader = req.headers.get("cookie") || "";
     console.log("cookieHeader:");
     console.log(cookieHeader);
@@ -38,7 +38,34 @@ export async function getUserFromToken(req) {
       token = decodeURIComponent(val);
       console.log("Token obtenido de __session cookie:");
       console.log(token);
-    }
+    } */
+   // Intento 2: Headers especiales de Vercel (producción)
+   const vercelHeaders = req.headers.get("x-vercel-sc-headers");
+   if (vercelHeaders) {
+     try {
+       const parsedVercelHeaders = JSON.parse(vercelHeaders);
+       if (parsedVercelHeaders.Authorization?.startsWith("Bearer ")) {
+         token = parsedVercelHeaders.Authorization.slice(7);
+         console.log("Token obtenido de x-vercel-sc-headers");
+       }
+     } catch (error) {
+       console.error("Error parseando x-vercel-sc-headers:", error);
+     }
+   }
+   
+   // Intento 3: Cookie __session (solo si no se encontró en headers)
+   if (!token) {
+     const cookieHeader = req.headers.get("cookie") || "";
+     const maybeCookie = cookieHeader
+       .split(";")
+       .find(c => c.trim().startsWith("__session="));
+     
+     if (maybeCookie) {
+       const [, val] = maybeCookie.split("=");
+       token = decodeURIComponent(val);
+       console.log("Token obtenido de __session cookie");
+     }
+   }
   }
 
   if (!token) {

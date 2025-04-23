@@ -57,37 +57,6 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    /* console.log("entramos a put");
-      // 1) Extrae el token (cookie __session o header Authorization)
-    const cookies = new Cookies(req, new NextResponse());
-    console.log("cookies");
-    console.log(cookies);
-    const tokenSameOrigin = cookies.get("__session");
-    console.log("tokenSameOrigin"); 
-    console.log(tokenSameOrigin);
-    const authHeader= req.headers.get("authorization");
-    console.log("authHeader");
-    console.log(authHeader);
-    const token= tokenSameOrigin || authHeader?.split(" ")[1];
-    console.log("token");
-    console.log(token);
-    if (!token) {
-      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-    }
-
-    let session;
-    try {
-      const clerk = clerkClient();
-      session = await clerk.sessions.verifySessionToken(token);
-      console.log("🛂 Sesión verificada:", session);
-    } catch (err) {
-      console.error("❌ Error validando sesión con Clerk:", err);
-      return NextResponse.json({ error: "Token inválido o expirado." }, { status: 401 });
-    }
-
-    email=session.user.emailAddresses[0].emailAddress;
-    console.log("email");
-    console.log(email); */
     console.log("→ PUT /api/products/:id, arrancando auth...");
     const { userId, email } = await getUserFromToken(req);
     console.log("✔️ Sesión válida para userId:", userId, "email:", email);
