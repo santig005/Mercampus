@@ -76,7 +76,7 @@ export async function GET(req, { params }) {
 }
 export async function PUT(req, { params }) {
   try {
-       console.log("voy a extraer");
+       /* console.log("voy a extraer");
         const { userId } = await auth();
         console.log("userId");
         console.log(userId);
@@ -94,12 +94,12 @@ export async function PUT(req, { params }) {
           return NextResponse.json({ error: "No se encontró email en Clerk." }, { status: 500 });
         }
     
-      console.log('Cookies recibidas:', req.headers);
+      console.log('Cookies recibidas:', req.headers); */
       await connectDB();
       const data = await req.json();
       let seller;
       if (params.id.includes('@')) {
-          verifySellerEmail(params.id,email);
+          //verifySellerEmail(params.id,email);
           const userDb = await User.findOne({ email: params.id });
 
           if (!userDb) {
@@ -107,7 +107,7 @@ export async function PUT(req, { params }) {
           }
           seller = await Seller.findOneAndUpdate({ userId: userDb._id }, data, { new: true });
       } else {
-          await verifySellerId(params.id,email);
+          ///await verifySellerId(params.id,email);
           seller = await Seller.findByIdAndUpdate(params.id, data, { new: true });
       }
 
