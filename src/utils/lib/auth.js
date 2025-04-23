@@ -29,13 +29,16 @@ async function getEmailFromToken() {
  * Verifica que el usuario autenticado sea el vendedor propietario
  * del producto dado, y devuelve el sellerId.
  */
-export const verifyOwnershipAndGetSellerId = async (productId) => {
-  const email = await getEmailFromToken();
-  const { user:dbUser, seller, error } = await getUserWithSellerByEmail(email);
+export const verifyOwnershipAndGetSellerId = async (productId,email) => {
+  const { user, seller, error } = await getUserWithSellerByEmail(email);
+  console.log("user, seller, error");
+  console.log(user);
+  console.log(seller);
+  console.log(error);
   if (error) {
     throw { status: 500, message: "Error interno obteniendo datos de usuario." };
   }
-  if(!dbUser){
+  if(!user){
     throw { status: 403, message: "No eres usuario registrado." };
   }
   if (!seller) {
