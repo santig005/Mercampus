@@ -38,15 +38,15 @@ export const createProduct = async productData => {
   });
 };
 
-export const updateProduct = async (id, productData,token) => {
-  return await fetchAPIToken(`/products/${id}`, token,{
+export const updateProduct = async (id, productData,email) => {
+  return await fetchAPIToken(`/products/${id}`,{
     method: 'PUT',
-    body: JSON.stringify(productData),
+    body: JSON.stringify({productData,email}),
   });
 };
 
-export const deleteProduct = async (id ,token)=> {
-  return await fetchAPIToken(`/products/${id}`, token,{
+export const deleteProduct = async (id)=> {
+  return await fetchAPIToken(`/products/${id}`,{
     method: 'DELETE',
   });
 };

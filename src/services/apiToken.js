@@ -1,16 +1,18 @@
 // src/services/apiToken.js
 'use server';
+
+import {auth} from "@clerk/nextjs/server";
 const API_BASE_URL = process.env.NEXT_PUBLIC_URL + '/api';
 
-export const fetchAPIToken = async (endpoint, token, options = {}) => {
-  
+export const fetchAPIToken = async (endpoint, options = {}) => {
+    const {getToken} = auth();
     try {
         
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
           credentials: "include",
             headers: {
               'Content-Type': 'application/json',
-              Authorization:`Bearer ${token}`,
+              Authorization:`Bearer ${await getToken()}`,
             },
             ...options,
           });

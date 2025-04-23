@@ -66,7 +66,7 @@ export async function PUT(req, { params }) {
     await connectDB();
     // 1) valida auth + ownership
     
-    //7await verifyOwnershipAndGetSellerId(params.id,email);
+    //await verifyOwnershipAndGetSellerId(params.id,email);
 
     // 2) haz el update
     const data = await req.json();
