@@ -10,6 +10,8 @@ import {
   MdLiveHelp,
   MdOutlineLiveHelp,
   MdEmojiPeople,
+  MdDashboard,
+  MdOutlineDashboard,
 } from 'react-icons/md';
 
 import {
@@ -113,6 +115,14 @@ const SideBar = ({ userId }) => {
                   Gestionar
                 </summary>
                 <ul className='flex flex-col gap-2'>
+                  <li>
+                    <SidebarBtn
+                      text='Dashboard'
+                      goto='/antojos/sellers/dashboard'
+                      iconActive={<MdDashboard className='size-5' />}
+                      iconInactive={<MdOutlineDashboard className='size-5' />}
+                    />
+                  </li>
                   <li>
                     <SidebarBtn
                       text='Agregar productos'

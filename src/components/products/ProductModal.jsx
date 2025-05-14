@@ -13,6 +13,7 @@ import TableSchema from '@/components/seller/index/table/TableSchema';
 import ShareButton from './share/ShareButton';
 import SellerModal from '@/components/seller/index/SellerModal';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
+import { logProductEvent } from '@/utils/eventLogger'; // IMPORTAR LA NUEVA FUNCIÓN
 import { sendGAEvent } from '@next/third-parties/google';
 
 function ProductModal({ product, theKey }) {
@@ -46,9 +47,26 @@ function ProductModal({ product, theKey }) {
     // console.log(product);
   }, [product]);
 
+
   const handleShowModal = () => {
     document.getElementById('my_modal_1_product').showModal();
   };
+
+  const handleWhatsAppClick = () => {
+    if (product && product._id && seller && seller._id) {
+      console.log("Nos han ordenado que registramos eventos");
+      logProductEvent(product._id, seller._id, 'whatsapp'); // LLAMAR AL REGISTRO DE EVENTO
+    }
+    // El GA event ya estaba aquí, mantenlo o decide si es redundante
+    sendGAEvent('event', 'click_whatsapp_product', {
+      action: 'Clicked WhatsApp Link',
+      product_name: name,
+      product_id: product._id,
+      seller_name: seller.businessName,
+    });
+    // La navegación a WhatsApp se manejará por el href del <a> tag
+  };
+
 
   return (
     <div>
@@ -136,14 +154,7 @@ function ProductModal({ product, theKey }) {
                     aria-label={`Contactar a ${
                       seller?.businessName || 'el vendedor'
                     } por WhatsApp`}
-                    onClick={() => {
-                      sendGAEvent('event', 'click_whatsapp_product', {
-                        action: 'Clicked WhatsApp Link',
-                        product_name: name,
-                        product_id: product._id,
-                        seller_name: seller.businessName,
-                      });
-                    }}
+                    onClick={handleWhatsAppClick} // ACTUALIZADO
                   >
                     Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
                   </a>
