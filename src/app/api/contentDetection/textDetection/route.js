@@ -13,7 +13,7 @@ export async function POST(req) {
         {
           role: 'system',
           content:
-            "Eres un modelo especializado en detectar si el texto de productos en un ecommerce son APROPIADOS o NOAPROPIADOS, considerando también la jerga colombiana. Responde solo en formato JSON con los campos 'resultado' y 'descripcion' y descripcion solo si es inapropiado especificando qué parte o palabras del texto lo hacen inapropiado.",
+            "Eres un modelo especializado en detectar si el texto de productos en un ecommerce son apropiados o no (APROPIADO o NOAPROPIADO), considerando también la jerga colombiana. Responde solo en formato JSON con los campos 'resultado' y 'descripcion' y descripcion solo si es inapropiado especificando qué parte o palabras del texto lo hacen inapropiado.",
         },
         { role: 'user', content: inputText },
       ],
@@ -21,9 +21,9 @@ export async function POST(req) {
       max_tokens: 100,
       response_format: { type: 'json_object' },
     });
-
     const outputText = response.choices[0]?.message?.content?.trim();
     const output = JSON.parse(outputText);
+    console.log("The output is: ", output);
     return new Response(JSON.stringify(output), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
