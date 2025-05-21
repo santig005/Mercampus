@@ -6,6 +6,9 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { Bar, Pie, Line, Doughnut } from 'react-chartjs-2';
 import { format, subDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import ReactMarkdown from 'react-markdown';
 
 // Registrar componentes de ChartJS
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement);
@@ -22,6 +25,8 @@ export default function SellerDashboard() {
   const [categoryStats, setCategoryStats] = useState([]);
   const [dateStats, setDateStats] = useState([]);
   const [hourStats, setHourStats] = useState([]);
+  const [insights, setInsights] = useState('');
+  const [generatingInsights, setGeneratingInsights] = useState(false);
 
   useEffect(() => {
     // Redireccionar si no es un vendedor aprobado
@@ -212,6 +217,35 @@ export default function SellerDashboard() {
     return { sourceData, productData, categoryData, timeData, hourData };
   };
 
+  const generateInsights = async () => {
+    try {
+      setGeneratingInsights(true);
+      const response = await fetch('/api/insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          events,
+          products,
+          categoryStats,
+          dateStats,
+          hourStats
+        }),
+      });
+
+      const data = await response.json();
+      if (data.insights) {
+        setInsights(data.insights);
+      }
+    } catch (error) {
+      console.error('Error al generar insights:', error);
+    } finally {
+      setGeneratingInsights(false);
+    }
+  };
+
+
   if (sellerLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -229,7 +263,25 @@ export default function SellerDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Dashboard de Vendedor</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Dashboard de Vendedor</h1>
+        <div className="flex gap-4">
+          <button 
+            className="btn btn-primary"
+            onClick={generateInsights}
+            disabled={generatingInsights || !events.length}
+          >
+            {generatingInsights ? (
+              <>
+                <span className="loading loading-spinner loading-sm"></span>
+                Generando Insights...
+              </>
+            ) : (
+              'Generar Insights'
+            )}
+          </button>
+        </div>
+      </div>
       
       {/* Filtros */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -401,6 +453,18 @@ export default function SellerDashboard() {
         <div className="text-center py-10">
           <p className="text-xl">No hay datos disponibles para mostrar</p>
           <p>Los contactos a tus productos aparecerán aquí cuando los clientes hagan clic en los botones de contacto.</p>
+        </div>
+      )}
+
+      {/* Insights Section */}
+      {insights && (
+        <div className="card bg-base-100 shadow-xl mb-6">
+          <div className="card-body">
+            <h2 className="card-title">Análisis de Datos</h2>
+            <div className="prose max-w-none">
+              <ReactMarkdown>{insights}</ReactMarkdown>
+            </div>
+          </div>
         </div>
       )}
     </div>
