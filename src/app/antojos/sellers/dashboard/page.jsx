@@ -21,6 +21,7 @@ export default function SellerDashboard() {
   const [products, setProducts] = useState([]);
   const [categoryStats, setCategoryStats] = useState([]);
   const [dateStats, setDateStats] = useState([]);
+  const [hourStats, setHourStats] = useState([]);
 
   useEffect(() => {
     // Redireccionar si no es un vendedor aprobado
@@ -70,6 +71,19 @@ export default function SellerDashboard() {
         }
         
         setEvents(filteredEvents);
+        
+        // Procesar estadísticas por hora
+        const hourCounts = new Array(24).fill(0);
+        filteredEvents.forEach(event => {
+          const hour = new Date(event.eventTimestamp).getHours();
+          hourCounts[hour]++;
+        });
+        
+        const hourStats = hourCounts.map((count, hour) => ({
+          hour: `${hour}:00`,
+          count
+        }));
+        setHourStats(hourStats);
         
         // Extraer lista única de productos
         const uniqueProducts = [...new Map(
@@ -180,7 +194,22 @@ export default function SellerDashboard() {
       }]
     };
     
-    return { sourceData, productData, categoryData, timeData };
+    // Datos para gráfico por hora
+    const hourLabels = hourStats.map(h => h.hour);
+    const hourCounts = hourStats.map(h => h.count);
+    
+    const hourData = {
+      labels: hourLabels,
+      datasets: [{
+        label: 'Contactos por hora',
+        data: hourCounts,
+        backgroundColor: 'rgba(153, 102, 255, 0.5)',
+        borderColor: 'rgba(153, 102, 255, 1)',
+        borderWidth: 1
+      }]
+    };
+    
+    return { sourceData, productData, categoryData, timeData, hourData };
   };
 
   if (sellerLoading || loading) {
@@ -195,8 +224,8 @@ export default function SellerDashboard() {
     return null; // No renderizar nada si no es vendedor aprobado
   }
 
-  const { sourceData, productData, categoryData, timeData } = events.length ? prepareChartData() : 
-    { sourceData: null, productData: null, categoryData: null, timeData: null };
+  const { sourceData, productData, categoryData, timeData, hourData } = events.length ? prepareChartData() : 
+    { sourceData: null, productData: null, categoryData: null, timeData: null, hourData: null };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -334,6 +363,32 @@ export default function SellerDashboard() {
                     x: {
                       grid: {
                         display: false
+                      }
+                    }
+                  }
+                }} />
+              </div>
+            </div>
+          </div>
+          
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title">Contactos por Hora del Día</h2>
+              <div className="h-80">
+                <Bar data={hourData} options={{
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'Número de contactos'
+                      }
+                    },
+                    x: {
+                      title: {
+                        display: true,
+                        text: 'Hora del día'
                       }
                     }
                   }
