@@ -156,7 +156,7 @@ export default function EditPsroductPage({ params }) {
         {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
           </Link> */}
-        <h2 className='text-2xl font-semibold text-white'>Edita tu prodcuto</h2>
+        <h2 className='text-2xl font-semibold text-white'>Edita tu producto</h2>
         <p className='text-white'>
           Por favor completa la información del producto
         </p>
