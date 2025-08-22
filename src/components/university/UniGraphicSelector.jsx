@@ -1,17 +1,18 @@
 'use client';
 import React, { useState } from 'react';
 import { universities } from '@/utils/resources/universities';
+import { IoLocationSharp, IoInformationCircle } from 'react-icons/io5';
+import { FaChevronDown } from 'react-icons/fa';
 
 const UniGraphicSelector = ({ value, onUniversityChange }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleChange = (event) => {
-    const selectedUniversity = event.target.value;
-    if (onUniversityChange) {
-      onUniversityChange(selectedUniversity);
-    }
+  const handleSelectUniversity = (university) => {
+    onUniversityChange(university);
+    setIsOpen(false);
   };
-
+  
   const toggleTooltip = () => {
     setShowTooltip((prev) => !prev);
     if (!showTooltip) {
@@ -22,56 +23,49 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
   return (
     <div className='relative flex items-center'>
       <label htmlFor='university' className='block text-sm font-medium text-gray-700 mr-2'>
-        <svg
-          className='inline-block w-5 h-5 text-gray-500'
-          xmlns='http://www.w3.org/2000/svg'
-          fill='none'
-          viewBox='0 0 24 24'
-          stroke='currentColor'
-        >
-          <path
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            strokeWidth='2'
-            d='M12 2C8.13401 2 5 5.13401 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13401 15.866 2 12 2ZM12 11C10.3431 11 9 9.65685 9 8C9 6.34315 10.3431 5 12 5C13.6569 5 15 6.34315 15 8C15 9.65685 13.6569 11 12 11Z'
-          />
-        </svg>
+        <IoLocationSharp className='inline-block w-5 h-5 text-gray-500' />
       </label>
-      <div className='relative flex-1'>
-        <select
-          id='university'
-          value={value}
-          onChange={handleChange}
-          className='mt-1 block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md'
+      <div className='relative flex-grow'>
+        <button
+          type='button'
+          className={`flex items-center justify-between w-full pl-3 pr-8 py-2 text-sm border rounded-md bg-white shadow-sm focus:outline-none ${value !== 'Seleccionar Universidad' ? 'border-orange-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'}`}
+          onClick={() => setIsOpen(!isOpen)}
         >
-          {universities.map((uni) => (
-            <option key={uni} value={uni} className='text-sm'>
-              {uni}
-            </option>
-          ))}
-        </select>
+          <span className='truncate mr-2'>{value}</span>
+
+          <FaChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`} />
+        </button>
+        {isOpen && (
+          <ul className='absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto'>
+            {universities.map((uni) => (
+              <li
+                key={uni}
+                className='px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer'
+                onClick={() => handleSelectUniversity(uni)}
+              >
+                {uni}
+              </li>
+            ))}
+          </ul>
+        )}
+
         <button
           type='button'
           onClick={toggleTooltip}
-          className='absolute right-2 top-1/2 transform -translate-y-1/2 p-1 focus:outline-none'
+          className='absolute right-1 top-1/2 transform -translate-y-1/2 p-1 focus:outline-none'
           aria-label='Información'
         >
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
+          <IoInformationCircle
             className='h-5 w-5 text-yellow-500'
-            viewBox='0 0 20 20'
-            fill='currentColor'
           >
-            <path
-              fillRule='evenodd'
-              d='M18 10c0 4.418-3.582 8-8 8s-8-3.582-8-8 3.582-8 8-8 8 3.582 8 8zm-8-1a1 1 0 110-2 1 1 0 010 2zm1 2a1 1 0 00-1-1H9a1 1 0 100 2h1v3a1 1 0 102 0v-4z'
-              clipRule='evenodd'
-            />
-          </svg>
+          </IoInformationCircle>
+
         </button>
+
         {showTooltip && (
+
           <div className='absolute top-full right-2 mt-2 w-64 p-2 bg-white border border-gray-300 rounded-lg shadow-lg text-sm text-gray-800'>
-            Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con finalidad de filtro de búsqueda.
+            Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con finalidad de filtro de búsqueda.          
           </div>
         )}
       </div>
