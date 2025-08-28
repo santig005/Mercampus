@@ -162,7 +162,7 @@ const InfoPage = () => {
 
       <footer className="bg-gray-900 text-white py-8">
         <div className="container mx-auto text-center px-4">
-          <p>&copy; 2023 Mercampus. Todos los derechos reservados.</p>
+          <p>&copy; 2025 Mercampus. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
