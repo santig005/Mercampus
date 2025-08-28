@@ -10,6 +10,8 @@ import {
   MdLiveHelp,
   MdOutlineLiveHelp,
   MdEmojiPeople,
+  MdInfo,
+  MdOutlineInfo
 } from 'react-icons/md';
 
 import {
@@ -146,6 +148,14 @@ const SideBar = ({ userId }) => {
               goto='/antojos/pqrs'
               iconActive={<MdLiveHelp className='size-5' />}
               iconInactive={<MdOutlineLiveHelp className='size-5' />}
+            />
+          </li>
+          <li>
+            <SidebarBtn
+              text='Información'
+              goto='/info'
+              iconActive={<MdInfo className='size-5' />}
+              iconInactive={<MdOutlineInfo className='size-5' />}
             />
           </li>
         </div>
