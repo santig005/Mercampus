@@ -18,7 +18,11 @@ module.exports = {
     ],
   },
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        'xs': '375px',
+      },
+    },
   },
   plugins: [require('daisyui')],
 };
