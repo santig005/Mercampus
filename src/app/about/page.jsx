@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FaHamburger, FaBook, FaHome, FaTicketAlt, FaInstagram, FaArrowRight, FaUsers, FaShieldAlt, FaRocket, FaSearch, FaClock, FaMobile, FaStar, FaCheckCircle } from 'react-icons/fa';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 const InfoPage = () => {
   return (
@@ -16,25 +17,55 @@ const InfoPage = () => {
         <div className="relative mx-auto max-w-6xl px-6 py-20 lg:py-28">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             {/* Left Column - Text Content */}
-            <div className="flex-1 text-left space-y-8">
+            <motion.div 
+              className="flex-1 text-left space-y-8"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
               <div className="space-y-4">
-                <div className="inline-flex items-center px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                <motion.div 
+                  className="inline-flex items-center px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-medium"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
                   <FaRocket className="mr-2" />
                   La plataforma #1 para estudiantes
-                </div>
-                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
+                </motion.div>
+                <motion.h1 
+                  className="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                >
                   Mercampus
-                </h1>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-600 leading-relaxed">
+                </motion.h1>
+                <motion.h2 
+                  className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-600 leading-relaxed"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                >
                   Conecta, compra y vende dentro de tu universidad
-                </h2>
+                </motion.h2>
               </div>
               
-              <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl">
+              <motion.p 
+                className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.8 }}
+              >
                 La plataforma donde los estudiantes ofrecen y descubren productos, alimentos, servicios y mucho más.
-              </p>
+              </motion.p>
               
-              <div className="flex flex-col sm:flex-row gap-4">
+              <motion.div 
+                className="flex flex-col sm:flex-row gap-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 1.0 }}
+              >
                 <Link href="/auth/register" className="group inline-flex items-center px-8 py-4 bg-orange-500 text-white rounded-2xl text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                   Únete ahora
                   <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
@@ -42,9 +73,14 @@ const InfoPage = () => {
                 <Link href="/antojos" className="inline-flex items-center px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-2xl text-lg font-semibold hover:border-orange-500 hover:text-orange-600 transition-all duration-300">
                   Explorar productos
                 </Link>
-              </div>
+              </motion.div>
               
-              <div className="flex items-center gap-8 pt-4">
+              <motion.div 
+                className="flex items-center gap-8 pt-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 1.2 }}
+              >
                 <div className="flex items-center gap-2">
                   <FaUsers className="text-orange-500 text-xl" />
                   <span className="text-gray-600">+100 estudiantes</span>
@@ -53,12 +89,21 @@ const InfoPage = () => {
                   <FaShieldAlt className="text-orange-500 text-xl" />
                   <span className="text-gray-600">100% seguro</span>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
             
             {/* Right Column - Image */}
-            <div className="hidden lg:flex flex-1 justify-center lg:justify-end">
-              <div className="relative">
+            <motion.div 
+              className="hidden lg:flex flex-1 justify-center lg:justify-end"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 1.0, delay: 0.5 }}
+            >
+              <motion.div 
+                className="relative"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+              >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-orange-300/10 rounded-3xl blur-xl"></div>
                 <Image 
                   src="/images/hero/hero-image.png" 
@@ -69,8 +114,8 @@ const InfoPage = () => {
                   className="relative max-w-full h-auto rounded-3xl shadow-2xl"
                   priority
                 />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </header>
@@ -88,29 +133,62 @@ const InfoPage = () => {
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+            <motion.div 
+              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-150 hover:shadow-xl hover:-translate-y-2"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.03,
+                rotateY: 2,
+                transition: { duration: 0.01 }
+              }}
+            >
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-200 transition-colors duration-300">
                 <FaSearch className="w-8 h-8 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Búsqueda ineficiente</h3>
               <p className="text-gray-600 leading-relaxed">"No encuentro lo que busco en el campus de manera rápida y organizada."</p>
-            </div>
+            </motion.div>
             
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+            <motion.div 
+              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.03,
+                rotateY: 2,
+                transition: { duration: 0.01 }
+              }}
+            >
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-200 transition-colors duration-300">
                 <FaClock className="w-8 h-8 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Pérdida de tiempo</h3>
               <p className="text-gray-600 leading-relaxed">"No tengo tiempo para estar ofreciendo mis productos por WhatsApp."</p>
-            </div>
+            </motion.div>
             
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+            <motion.div 
+              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.03,
+                rotateY: 2,
+                transition: { duration: 0.01 }
+              }}
+            >
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-200 transition-colors duration-300">
                 <FaShieldAlt className="w-8 h-8 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Falta de confianza</h3>
               <p className="text-gray-600 leading-relaxed">"Falta un espacio confiable y organizado para comprar y vender."</p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -131,51 +209,115 @@ const InfoPage = () => {
           </div>
           
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <motion.div 
+              className="space-y-8"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <motion.div 
+                className="flex items-start gap-4"
+                whileHover={{ x: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div 
+                  className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0"
+                >
                   <FaMobile className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Plataforma móvil</h3>
+                  <h3 
+                    className="text-xl font-semibold text-gray-900 mb-2"
+                  >
+                    Plataforma móvil
+                  </h3>
                   <p className="text-gray-600">Acceso rápido y fácil desde cualquier dispositivo móvil</p>
                 </div>
-              </div>
+              </motion.div>
               
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <motion.div 
+                className="flex items-start gap-4"
+                whileHover={{ x: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div 
+                  className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0"
+                  
+                >
                   <FaUsers className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Comunidad universitaria</h3>
+                  <h3 
+                    className="text-xl font-semibold text-gray-900 mb-2"
+                    
+                  >
+                    Comunidad universitaria
+                  </h3>
                   <p className="text-gray-600">Conecta solo con estudiantes de tu universidad</p>
                 </div>
-              </div>
+              </motion.div>
               
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <motion.div 
+                className="flex items-start gap-4"
+                whileHover={{ x: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div 
+                  className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0"
+                  
+                >
                   <FaStar className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Calidad garantizada</h3>
+                  <h3 
+                    className="text-xl font-semibold text-gray-900 mb-2"
+                    
+                  >
+                    Calidad garantizada
+                  </h3>
                   <p className="text-gray-600">Perfil de vendedor para que sepas a quién le estás comprando</p>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
             
-            <div className="relative">
+            <motion.div 
+              className="relative"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-orange-300/10 rounded-3xl blur-xl"></div>
-              <div className="relative bg-white rounded-3xl p-8 shadow-2xl">
+              <motion.div 
+                className="relative bg-white rounded-3xl p-8 shadow-2xl"
+                whileHover={{ 
+                  scale: 1.05,
+                  rotateY: 5,
+                  transition: { duration: 0.3 }
+                }}
+              >
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div 
+                    className="flex items-center gap-3"
+                    
+                  >
+                    <div 
+                      className="w-3 h-3 bg-green-500 rounded-full"
+                      
+                    ></div>
                     <span className="text-sm text-gray-600">En línea</span>
                   </div>
-                  <h4 className="text-lg font-semibold text-gray-900">Mercampus App</h4>
+                  <h4 
+                    className="text-lg font-semibold text-gray-900"
+                    
+                  >
+                    Mercampus App
+                  </h4>
                   <p className="text-gray-600 text-sm">Descubre productos y servicios cerca de ti</p>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -193,37 +335,121 @@ const InfoPage = () => {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300">
+            <motion.div 
+              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.05,
+                rotateY: 5,
+                transition: { duration: 0.3 }
+              }}
+            >
+              <div 
+                className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300"
+                
+                transition={{ duration: 0.3}}
+              >
                 <FaHamburger className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Alimentos</h3>
+              <motion.h3 
+                className="text-lg font-semibold text-gray-900 mb-2"
+                whileHover={{ color: "#ea580c" }}
+                transition={{ duration: 0.2 }}
+              >
+                Alimentos
+              </motion.h3>
               <p className="text-sm text-gray-600">Snacks, postres y más</p>
-            </div>
+            </motion.div>
             
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300">
+            <motion.div 
+              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.05,
+                rotateY: 5,
+                transition: { duration: 0.3 }
+              }}
+            >
+              <div 
+                className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300"
+                
+                transition={{ duration: 0.3 }}
+              >
                 <FaBook className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Servicios</h3>
+              <motion.h3 
+                className="text-lg font-semibold text-gray-900 mb-2"
+                whileHover={{ color: "#ea580c" }}
+                transition={{ duration: 0.2 }}
+              >
+                Servicios
+              </motion.h3>
               <p className="text-sm text-gray-600">Tutorías y asesorías</p>
-            </div>
+            </motion.div>
             
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300">
+            <motion.div 
+              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.05,
+                rotateY: 5,
+                transition: { duration: 0.3 }
+              }}
+            >
+              <div 
+                className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300"
+                
+                transition={{ duration: 0.3 }}
+              >
                 <FaHome className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Vida universitaria</h3>
+              <motion.h3 
+                className="text-lg font-semibold text-gray-900 mb-2"
+                whileHover={{ color: "#ea580c" }}
+                transition={{ duration: 0.2 }}
+              >
+                Vida universitaria
+              </motion.h3>
               <p className="text-sm text-gray-600">Roommates y artículos</p>
-            </div>
+            </motion.div>
             
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300">
+            <motion.div 
+              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.05,
+                rotateY: 5,
+                transition: { duration: 0.3 }
+              }}
+            >
+              <div 
+                className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-orange-200 transition-colors duration-300"
+                
+                transition={{ duration: 0.3 }}
+              >
                 <FaTicketAlt className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Eventos</h3>
+              <motion.h3 
+                className="text-lg font-semibold text-gray-900 mb-2"
+                whileHover={{ color: "#ea580c" }}
+                transition={{ duration: 0.2 }}
+              >
+                Eventos
+              </motion.h3>
               <p className="text-sm text-gray-600">Experiencias únicas</p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -244,15 +470,29 @@ const InfoPage = () => {
           </div>
           
           <div className="grid md:grid-cols-2 gap-16">
-            <div className="space-y-8">
-              <h3 className="text-3xl font-bold text-gray-900 mb-8">Para compradores</h3>
+            <div 
+              className="space-y-8"
+            >
+              <h3 
+                className="text-3xl font-bold text-gray-900 mb-8"
+              >
+                Para compradores
+              </h3>
               <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                <div 
+                  className="flex items-start gap-4"
+                >
+                  <div 
+                    className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1"
+                  >
                     <FaCheckCircle className="w-4 h-4 text-orange-600" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Acceso rápido desde el celular</h4>
+                    <h4 
+                      className="text-lg font-semibold text-gray-900 mb-2"
+                    >
+                      Acceso rápido desde el celular
+                    </h4>
                     <p className="text-gray-600">Navega y encuentra lo que buscas en segundos</p>
                   </div>
                 </div>
@@ -267,12 +507,20 @@ const InfoPage = () => {
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                <div 
+                  className="flex items-start gap-4"
+                >
+                  <div 
+                    className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1"
+                  >
                     <FaCheckCircle className="w-4 h-4 text-orange-600" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Contacto directo y confiable</h4>
+                    <h4 
+                      className="text-lg font-semibold text-gray-900 mb-2"
+                    >
+                      Contacto directo y confiable
+                    </h4>
                     <p className="text-gray-600">Comunícate directamente con vendedores verificados</p>
                   </div>
                 </div>
@@ -440,18 +688,36 @@ const InfoPage = () => {
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
         <div className="mx-auto max-w-6xl px-6 text-center relative">
           <div className="flex items-center justify-center gap-6 mb-8 flex-wrap">
-            <h2 className="text-4xl sm:text-5xl font-bold text-white">
+            <motion.h2 
+              className="text-4xl sm:text-5xl font-bold text-white"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
               Sé parte de Mercampus
-            </h2>
-            <Image 
-              src="/ardilla.png" 
-              alt="Ardilla mascota de Mercampus" 
-              width={200} 
-              height={200}
-              className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48"
-              quality={100}
-              priority
-            />
+            </motion.h2>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                scale: 1.1, 
+                rotate: [0, -5, 5, 0],
+                transition: { duration: 0.5 }
+              }}
+            >
+              <Image 
+                src="/ardilla.png" 
+                alt="Ardilla mascota de Mercampus" 
+                width={200} 
+                height={200}
+                className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48"
+                quality={100}
+                priority
+              />
+            </motion.div>
           </div>
           <p className="text-xl text-orange-100 mb-12 max-w-3xl mx-auto">
             Únete y empieza a conectar hoy con estudiantes de tu universidad
