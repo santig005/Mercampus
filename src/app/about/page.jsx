@@ -149,7 +149,7 @@ const InfoPage = () => {
                 <FaSearch className="w-8 h-8 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Búsqueda ineficiente</h3>
-              <p className="text-gray-600 leading-relaxed">"No encuentro lo que busco en el campus de manera rápida y organizada."</p>
+              <p className="text-gray-600 leading-relaxed">&quot;No encuentro lo que busco en el campus de manera rápida y organizada.&quot;</p>
             </motion.div>
             
             <motion.div 
@@ -168,7 +168,7 @@ const InfoPage = () => {
                 <FaClock className="w-8 h-8 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Pérdida de tiempo</h3>
-              <p className="text-gray-600 leading-relaxed">"No tengo tiempo para estar ofreciendo mis productos por WhatsApp."</p>
+              <p className="text-gray-600 leading-relaxed">&quot;No tengo tiempo para estar ofreciendo mis productos por WhatsApp.&quot;</p>
             </motion.div>
             
             <motion.div 
@@ -187,7 +187,7 @@ const InfoPage = () => {
                 <FaShieldAlt className="w-8 h-8 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Falta de confianza</h3>
-              <p className="text-gray-600 leading-relaxed">"Falta un espacio confiable y organizado para comprar y vender."</p>
+              <p className="text-gray-600 leading-relaxed">&quot;Falta un espacio confiable y organizado para comprar y vender.&quot;</p>
             </motion.div>
           </div>
         </div>
@@ -631,7 +631,7 @@ const InfoPage = () => {
                   <p className="text-sm text-gray-600">Estudiante de Ingeniería</p>
                 </div>
               </div>
-              <p className="text-gray-700 leading-relaxed italic">"Con Mercampus encontré a mi roommate ideal en 2 días. La plataforma es súper fácil de usar y confiable."</p>
+              <p className="text-gray-700 leading-relaxed italic">&quot;Con Mercampus encontré a mi roommate ideal en 2 días. La plataforma es súper fácil de usar y confiable.&quot;</p>
             </div>
             
             <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl">
@@ -644,7 +644,7 @@ const InfoPage = () => {
                   <p className="text-sm text-gray-600">Vendedor de postres</p>
                 </div>
               </div>
-              <p className="text-gray-700 leading-relaxed italic">"Pude vender mis postres en toda la U sin usar 10 grupos de WhatsApp. Mercampus me dio la visibilidad que necesitaba."</p>
+              <p className="text-gray-700 leading-relaxed italic">&quot;Pude vender mis postres en toda la U sin usar 10 grupos de WhatsApp. Mercampus me dio la visibilidad que necesitaba.&quot;</p>
             </div>
           </div>
         </div>
@@ -659,7 +659,7 @@ const InfoPage = () => {
             </h2>
             <div className="max-w-4xl mx-auto">
               <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed mb-8">
-                "Más de 10 millones de estudiantes en LATAM tienen esta necesidad. Mercampus está aquí para transformar la forma en que nos conectamos dentro del campus."
+                &quot;Más de 10 millones de estudiantes en LATAM tienen esta necesidad. Mercampus está aquí para transformar la forma en que nos conectamos dentro del campus.&quot;
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-8 text-center">
                 <div>
