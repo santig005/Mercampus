@@ -12,7 +12,7 @@ import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import SellerModal from '@/components/seller/index/SellerModal';
-import ProductGrid from '@/components/products/ProductGrid';
+import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '../products/share/ShareButton';
 import { parseIfJSON } from '@/utils/utilFn';
@@ -141,10 +141,10 @@ export default function SellerPage({ id }) {
                         {schedules && <TableSchema schedules={schedules} />}
                       </div>
                       <h2 className='card-title px-6 mb-2'>
-                        ¡Antojate de algo mas de este vendedor!
+                        ¡Conoce todos los productos de este vendedor!
                       </h2>
                       <div className='px-2'>
-                        <ProductGrid sellerIdParam={seller._id} />
+                        <SellerProductsBySection sellerId={seller._id} />
                       </div>
                     </div>
                   </div>

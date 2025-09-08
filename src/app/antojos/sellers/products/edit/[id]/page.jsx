@@ -12,7 +12,7 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
-import { categories } from '@/utils/resources/categories';
+import { getCategoriesBySection } from '@/utils/resources/categories';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
 
@@ -20,9 +20,11 @@ export default function EditPsroductPage({ params }) {
   const { id } = params;
   const [product, setProduct] = useState({
     images: [],
+    section: 'antojos',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
   const router = useRouter();
   const { seller, loading: sellerLoading } = useSeller();
   const { checkedSeller } = useCheckSeller(
@@ -56,7 +58,18 @@ export default function EditPsroductPage({ params }) {
     if (checkedSeller) {
       fetchProduct();
     }
-  }, [id, router, seller?._id, checkedSeller, sellerLoading]);
+  }, [id, router, seller, checkedSeller, sellerLoading]);
+
+  // Cargar categorías basadas en la sección del producto
+  useEffect(() => {
+    const loadCategories = async () => {
+      if (product.section) {
+        const categoriesData = await getCategoriesBySection(product.section);
+        setCategories(categoriesData);
+      }
+    };
+    loadCategories();
+  }, [product.section]);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -120,6 +133,35 @@ export default function EditPsroductPage({ params }) {
                 name='name'
                 required
               />
+
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Sección
+                </label>
+                <Select
+                  name='section'
+                  options={[
+                    { value: 'antojos', label: 'Antojos (Productos alimenticios)' },
+                    { value: 'marketplace', label: 'Marketplace (Productos no alimenticios)' }
+                  ]}
+                  value={{ 
+                    value: product.section || 'antojos', 
+                    label: (product.section || 'antojos') === 'antojos' 
+                      ? 'Antojos (Productos alimenticios)' 
+                      : 'Marketplace (Productos no alimenticios)' 
+                  }}
+                  onChange={(selectedOption) => {
+                    setProduct({
+                      ...product,
+                      section: selectedOption.value,
+                      category: [] // Limpiar categorías al cambiar sección
+                    });
+                  }}
+                  className='basic-multi-select w-full'
+                  classNamePrefix='Selecciona'
+                  isSearchable={false}
+                />
+              </div>
 
               <InputFields
                 title='Precio'

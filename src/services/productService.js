@@ -8,7 +8,7 @@ export const getProducts = async (
   university,
   limit,
   offset,
-  
+  section = 'antojos'
 ) => {
   const queryParams = new URLSearchParams();
 
@@ -18,13 +18,19 @@ export const getProducts = async (
   if (university) queryParams.append('university', university);
   if (limit) queryParams.append('limit', limit);
   if (offset) queryParams.append('offset', offset);
+  if (section) queryParams.append('section', section);
   
-
   return await fetchAPI(`/products?${queryParams.toString()}`);
 };
 
-export const getSellerProducts = async sellerId => {
-  return await fetchAPI(`/products/seller/${sellerId}`);
+export const getSellerProducts = async (sellerId, section = '') => {
+  const queryParams = new URLSearchParams();
+  if (section) queryParams.append('section', section);
+  
+  const queryString = queryParams.toString();
+  const url = `/products/seller/${sellerId}${queryString ? `?${queryString}` : ''}`;
+  
+  return await fetchAPI(url);
 };
 
 export const getProductById = async id => {
