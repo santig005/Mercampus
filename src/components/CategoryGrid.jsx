@@ -2,16 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { categoriesList } from '@/utils/categoriesList';
+import { marketplaceCategoriesList } from '@/utils/marketplaceCategoriesList';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocalStorage } from '@/utils/hooks/useLocalStorage';
 
-export default function CategoryGrid() {
+export default function CategoryGrid({ section = 'antojos' }) {
   const [activeCategory, setActiveCategory] = useLocalStorage(
-    'category',
+    `category_${section}`,
     'Todos'
   );
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Obtener la lista de categorías según la sección
+  const currentCategoriesList = section === 'marketplace' ? marketplaceCategoriesList : categoriesList;
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -23,7 +27,7 @@ export default function CategoryGrid() {
       params.set('category', activeCategory);
       router.replace(`?${params.toString()}`);
     }
-  }, []);
+  }, [section]);
 
   const handleChangeCategory = category => {
     setActiveCategory(category);
@@ -40,7 +44,7 @@ export default function CategoryGrid() {
 
   return (
     <div className='flex gap-2 overflow-x-auto whitespace-nowrap py-2 hide-scrollbar px-2'>
-      {categoriesList.map(category => (
+      {currentCategoriesList.map(category => (
         <button
           key={category.name}
           className={`btn hover:text-primary hover:bg-primary/25 hover:border-primary ${

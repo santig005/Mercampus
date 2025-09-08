@@ -1,5 +1,7 @@
-import { categories } from '@/utils/resources/categories';
+import { antojosCategories } from '@/utils/resources/categories';
+import { marketplaceCategories } from '@/utils/resources/marketplaceCategories';
 import mongoose from 'mongoose';
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -27,10 +29,25 @@ const productSchema = new mongoose.Schema(
       type: [String], // URLs de las imágenes almacenadas en Cloudinary
       required: true,
     },
+    section: {
+      type: String,
+      required: true,
+      default: 'antojos',
+      enum: ['antojos', 'marketplace']
+    },
     category: {
       type: [String],
       required: true,
-      enum: categories, // Example categories
+      validate: {
+        validator: function(categories) {
+          // Validar que las categorías pertenezcan a la sección correcta
+          const validCategories = this.section === 'marketplace' 
+            ? marketplaceCategories 
+            : antojosCategories;
+          return categories.every(cat => validCategories.includes(cat));
+        },
+        message: 'Las categorías deben pertenecer a la sección del producto'
+      }
     },
     stock:{
       type: Boolean,

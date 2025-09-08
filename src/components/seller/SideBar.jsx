@@ -7,6 +7,8 @@ import { useSeller } from '@/context/SellerContext';
 import {
   MdFastfood,
   MdOutlineFastfood,
+  MdShoppingBag,
+  MdOutlineShoppingBag,
   MdLiveHelp,
   MdOutlineLiveHelp,
   MdEmojiPeople,
@@ -54,6 +56,14 @@ const SideBar = ({ userId }) => {
               goto='/antojos'
               iconActive={<MdFastfood className='size-5' />}
               iconInactive={<MdOutlineFastfood className='size-5' />}
+            />
+          </li>
+          <li>
+            <SidebarBtn
+              text='Marketplace'
+              goto='/marketplace'
+              iconActive={<MdShoppingBag className='size-5' />}
+              iconInactive={<MdOutlineShoppingBag className='size-5' />}
             />
           </li>
           <li className='menu p-0'>

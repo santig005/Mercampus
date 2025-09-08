@@ -10,7 +10,7 @@ import { useUniversity } from '@/context/UniversityContext';
 import SellerCardAV from '@/components/seller/index/SellerCardAV';
 import { useAuth } from '@clerk/nextjs';
 
-export default function SellerGrid() {
+export default function SellerGrid({ section = 'antojos' }) {
   const [sellers, setSellers] = useState([]);
   const {dbUser} = useSeller();
   const {university} = useUniversity();
@@ -19,15 +19,16 @@ export default function SellerGrid() {
   useEffect(() => {
     async function fetchSellers() {
       try {
-        const data = await getSellers(university);
+        const data = await getSellers(university, section);
         setSellers(data.sellers);
       } catch (error) {
         console.error('Error fetching sellers:', error);
+        setSellers([]);
       }
     }
 
     fetchSellers();
-  }, [university]);
+  }, [university, section]);
 
   const handleSellerApproval = async (isOn, sellerId) => {
     try {

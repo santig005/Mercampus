@@ -17,7 +17,7 @@ import {
   TbShare2,
 } from 'react-icons/tb';
 
-const ProductPage = ({ id }) => {
+const ProductPage = ({ id, section = 'antojos' }) => {
   const [product, setProduct] = useState(null);
   const [seller, setSeller] = useState({});
   const [schedules, setSchedules] = useState([]);
@@ -57,7 +57,7 @@ const ProductPage = ({ id }) => {
   const handleProtectedContact = (e) => {
     e.preventDefault();
     if (!isLoaded || !user) {
-      const currentUrl = `/antojos/${product?._id}`;
+      const currentUrl = `/${section}/${product?._id}`;
       router.push(`/auth/login?redirectTo=${encodeURIComponent(currentUrl)}`);
       return;
     }
@@ -86,7 +86,7 @@ const ProductPage = ({ id }) => {
                         className='btn btn-circle'
                         onClick={() => {
                           //document.getElementById('product_modal').close();
-                          router.push('/antojos');
+                          router.push(`/${section}`);
                         }}
                       >
                         <TbChevronLeft className='icon' />

@@ -2,7 +2,7 @@
 import { uploadImages } from '@/services/uploadImages';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Categories } from '@/utils/resources/categories';
+import { getCategoriesBySection } from '@/utils/resources/categories';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
@@ -23,6 +23,7 @@ const AddProduct = () => {
     price: '',
     description: '',
     images: [],
+    section: 'antojos', // Por defecto antojos
   });
 
   const [categories, setCategories] = useState([]); // State for storing categories
@@ -36,14 +37,14 @@ const AddProduct = () => {
     label: category,
   }));
 
-  // Once the seller context is done loading, check if we have a valid seller
+  // Cargar categorías según la sección seleccionada
   useEffect(() => {
     const loadCategories = async () => {
-      const categoriesData = await Categories(); // Await the result
-      setCategories(categoriesData); // Update state with fetched categories
+      const categoriesData = await getCategoriesBySection(formData.section);
+      setCategories(categoriesData);
     };
     loadCategories();
-  }, []);
+  }, [formData.section]);
 
   if (!checkedSeller) return <Loading />;
 
@@ -56,7 +57,6 @@ const AddProduct = () => {
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
-
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
@@ -70,6 +70,7 @@ const AddProduct = () => {
     // Prepare product data
     const data = {
       name: formData.name,
+      section: formData.section,
       category: formData.category,
       price: formData.price,
       description: formData.description,
@@ -163,6 +164,31 @@ const AddProduct = () => {
                   name='name'
                   required
                 />
+                
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    Sección
+                  </label>
+                  <Select
+                    name='section'
+                    options={[
+                      { value: 'antojos', label: 'Antojos (Productos alimenticios)' },
+                      { value: 'marketplace', label: 'Marketplace (Productos no alimenticios)' }
+                    ]}
+                    value={{ value: formData.section, label: formData.section === 'antojos' ? 'Antojos (Productos alimenticios)' : 'Marketplace (Productos no alimenticios)' }}
+                    onChange={(selectedOption) => {
+                      setFormData({
+                        ...formData,
+                        section: selectedOption.value,
+                        category: [] // Limpiar categorías al cambiar sección
+                      });
+                    }}
+                    className='basic-multi-select w-full'
+                    classNamePrefix='Selecciona'
+                    isSearchable={false}
+                  />
+                </div>
+                
                 <div>
                   <label>Categoría</label>
                   <Select

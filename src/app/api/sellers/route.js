@@ -12,16 +12,41 @@ export async function GET(req) {
     await connectDB();
     const url = new URL(req.url);
     const university = url.searchParams.get('university') || '';
+    const section = url.searchParams.get('section') || '';
 
     // Get all sellers
     var sellers = await Seller.find();
-    if
-    (university) {
+    if (university) {
       sellers = sellers.filter((seller) => seller.university === university);
+    }
+
+    // Si se especifica una sección, filtrar vendedores que tengan productos en esa sección
+    if (section) {
+      const { Product } = await import('@/utils/models/productSchema');
+      
+      // Obtener IDs de vendedores que tengan productos en la sección especificada
+      const sellersWithProducts = await Product.distinct('sellerId', { section: section });
+      
+      // Si no hay productos en la sección, verificar si hay productos sin sección
+      if (sellersWithProducts.length === 0 && section === 'antojos') {
+        const sellersWithoutSection = await Product.distinct('sellerId', { section: { $exists: false } });
+        // Usar estos IDs si no hay productos con sección específica
+        if (sellersWithoutSection.length > 0) {
+          sellersWithProducts.push(...sellersWithoutSection);
+        }
+      }
+      
+      // Filtrar sellers para incluir solo los que tienen productos en la sección
+      sellers = sellers.filter(seller => {
+        const sellerIdString = seller._id.toString();
+        const isIncluded = sellersWithProducts.some(id => id.toString() === sellerIdString);
+        return isIncluded;
+      });
     }
     if (!sellers || sellers.length === 0) {
       return NextResponse.json({ message: 'Sellers not found' }, { status: 404 });
     }
+    
     const populatedSellers = await Promise.all(
       sellers.map(async seller => {
       const schedules = await Schedule.find({ sellerId: seller._id });
@@ -40,6 +65,7 @@ export async function GET(req) {
       }));
       return { ...seller, schedules: transformedSchedules };
     });
+    
     return NextResponse.json({sellers:transformedSellers} , { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: 'Error fetching sellers', error: error.message }, { status: 500 });
