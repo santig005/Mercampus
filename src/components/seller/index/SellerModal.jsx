@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '@/components/products/share/ShareButton';
-import ProductGrid from '@/components/products/ProductGrid';
+import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { parseIfJSON } from '@/utils/utilFn';
 
 export default function SellerModal({ seller, set }) {
@@ -115,10 +115,10 @@ export default function SellerModal({ seller, set }) {
                       </div>
                       <div className=''>
                         <h2 className='card-title px-6 mb-2'>
-                          ¡Antojate de algo mas de este vendedor!
+                          ¡Conoce todos los productos de este vendedor!
                         </h2>
                         <div className='px-2'>
-                          <ProductGrid sellerIdParam={seller._id} />
+                          <SellerProductsBySection sellerId={seller._id} />
                         </div>
                       </div>
                     </div>

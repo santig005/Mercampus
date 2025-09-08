@@ -127,32 +127,63 @@ export default function EditProductsPage() {
           />
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4'>
-          {products?.map(product => (
-            <div
-              key={product._id}
-              className='bg-white drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
-            >
-              <div onClick={() => handleProductClick(product._id)}>
-                <ProductCardAV
-                  product={product}
-                  toggleSwitch={() =>
-                    handleAvailabilityToggle(product._id, product.availability)
-                  }
-                />
-              </div>
-              <div className='flex justify-between'>
-                <p>Disponibilidad</p>
-                <ToggleSwitch
-                  isOn={product.availability}
-                  onToggle={() =>
-                    handleAvailabilityToggle(product._id, product.availability)
-                  }
-                />
+        {/* Productos agrupados por sección */}
+        {(() => {
+          // Agrupar productos por sección
+          const productsBySection = products?.reduce((acc, product) => {
+            const section = product.section || 'antojos';
+            if (!acc[section]) {
+              acc[section] = [];
+            }
+            acc[section].push(product);
+            return acc;
+          }, {});
+
+          // Ordenar secciones para que antojos vaya primero
+          const sortedSections = Object.entries(productsBySection || {}).sort(([a], [b]) => {
+            if (a === 'antojos') return -1;
+            if (b === 'antojos') return 1;
+            return a.localeCompare(b);
+          });
+
+          return sortedSections.map(([section, sectionProducts]) => (
+            <div key={section} className='mt-6'>
+              <h3 className='text-xl font-bold mb-4 text-gray-800'>
+                {section === 'antojos' ? (
+                  <>🍕 Antojos ({sectionProducts.length} productos)</>
+                ) : (
+                  <>🛍️ Marketplace ({sectionProducts.length} productos)</>
+                )}
+              </h3>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                {sectionProducts.map(product => (
+                  <div
+                    key={product._id}
+                    className='bg-white drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
+                  >
+                    <div onClick={() => handleProductClick(product._id)}>
+                      <ProductCardAV
+                        product={product}
+                        toggleSwitch={() =>
+                          handleAvailabilityToggle(product._id, product.availability)
+                        }
+                      />
+                    </div>
+                    <div className='flex justify-between'>
+                      <p>Disponibilidad</p>
+                      <ToggleSwitch
+                        isOn={product.availability}
+                        onToggle={() =>
+                          handleAvailabilityToggle(product._id, product.availability)
+                        }
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          ));
+        })()}
       </div>
     </div>
   );

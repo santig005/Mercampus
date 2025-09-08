@@ -1,10 +1,12 @@
 import { fetchAPI } from './api';
 import { fetchAPIToken } from './apiToken';	
 
-export const getSellers = async (university) => {
+export const getSellers = async (university, section = '') => {
   const queryParams = new URLSearchParams();
 
-  if (university) queryParams.append('university', university); 
+  if (university) queryParams.append('university', university);
+  if (section) queryParams.append('section', section);
+  
   return await fetchAPI(`/sellers?${queryParams.toString()}`);
 };
 

@@ -8,7 +8,7 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useSearchParams } from 'next/navigation';
 import { useUniversity } from '@/context/UniversityContext';
 
-export default function ProductGrid({ sellerIdParam = '' }) {
+export default function ProductGrid({ sellerIdParam = '', section = 'antojos' }) {
   const [products, setProducts] = useState([]);
   const [parent] = useAutoAnimate();
   const containerRef = useRef(null);
@@ -24,10 +24,15 @@ export default function ProductGrid({ sellerIdParam = '' }) {
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
-    const { products } = await getProducts(product, category, sellerId,university);
-    setProducts(products);
+    try {
+      const { products } = await getProducts(product, category, sellerId, university, undefined, undefined, section);
+      setProducts(products);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      setProducts([]);
+    }
     setLoading(false);
-  }, [product, category, sellerId,university]);
+  }, [product, category, sellerId, university, section]);
 
   useEffect(() => {
     loadProducts();

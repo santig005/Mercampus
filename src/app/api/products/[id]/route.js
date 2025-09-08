@@ -65,9 +65,21 @@ export async function PUT(req, { params }) {
 
     // 2) haz el update
     const data = await req.json();
+    
+    // Validar que la sección sea válida si se está actualizando
+    if (data.section && !['antojos', 'marketplace'].includes(data.section)) {
+      return NextResponse.json(
+        { message: 'Sección inválida. Debe ser "antojos" o "marketplace"' },
+        { status: 400 }
+      );
+    }
+    
     const updated = await Product.findByIdAndUpdate(params.id, data, { new: true });
     if (!updated) {
-      throw new AppError("Producto no encontrado al actualizar.", 404);
+      return NextResponse.json(
+        { message: "Producto no encontrado al actualizar." },
+        { status: 404 }
+      );
     }
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
