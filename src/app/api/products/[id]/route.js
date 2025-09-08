@@ -3,11 +3,6 @@ import { NextResponse } from 'next/server';
 import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
-import { verifyOwnershipAndGetSellerId } from '@/utils/lib/auth';
-import Cookies from 'cookies'
-import jwt from "jsonwebtoken";
-import { clerkClient } from "@clerk/nextjs/server";
-import { getUserFromToken } from '@/utils/lib/clerkUser';
 
 export async function GET(req, { params }) {
   try{
