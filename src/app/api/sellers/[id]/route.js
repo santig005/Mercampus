@@ -4,8 +4,6 @@ import { Seller } from "@/utils/models/sellerSchema2";
 import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
-import { verifySellerId,verifySellerEmail } from "@/utils/lib/auth";
-import { auth,clerkClient } from "@clerk/nextjs/server";
 
 
 

@@ -8,6 +8,7 @@ import ShareButton from '@/components/products/share/ShareButton';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import {
   TbBrandWhatsapp,
   TbChevronLeft,
@@ -24,6 +25,7 @@ const ProductPage = ({ id }) => {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
+  const { user, isLoaded } = useUser();
 
   useEffect(() => {
     fetchProduct(id);
@@ -50,6 +52,17 @@ const ProductPage = ({ id }) => {
 
   const handleShowModal = () => {
     document.getElementById('my_modal_1_product').showModal();
+  };
+
+  const handleProtectedContact = (e) => {
+    e.preventDefault();
+    if (!isLoaded || !user) {
+      const currentUrl = `/antojos/${product?._id}`;
+      router.push(`/auth/login?redirectTo=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+    const url = e.currentTarget.getAttribute('data-url');
+    if (url) window.open(url, '_blank');
   };
 
   return (
@@ -145,8 +158,8 @@ const ProductPage = ({ id }) => {
                   <div className='py-4'>
                     <a
                       className='btn btn-primary w-full'
-                      target='_blank'
-                      href={`https://wa.me/+57${encodeURIComponent(
+                      href={'#'}
+                      data-url={`https://wa.me/+57${encodeURIComponent(
                         seller?.phoneNumber || ''
                       )}?text=${encodeURIComponent(
                         `Hola ${
@@ -155,6 +168,7 @@ const ProductPage = ({ id }) => {
                           product.name
                         }. Podrías decirme dónde te encuentras?`
                       )}`}
+                      onClick={handleProtectedContact}
                       aria-label={`Contactar a ${
                         seller?.businessName || 'el vendedor'
                       } por WhatsApp`}
