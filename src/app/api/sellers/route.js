@@ -44,7 +44,7 @@ export async function GET(req) {
       });
     }
     if (!sellers || sellers.length === 0) {
-      return NextResponse.json({ message: 'Sellers not found' }, { status: 404 });
+      return NextResponse.json({ sellers: [] }, { status: 200 });
     }
     
     const populatedSellers = await Promise.all(

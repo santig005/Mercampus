@@ -343,14 +343,6 @@ export default function SignUpForm() {
         </div>
         <div className='h-full relative bg-[#393939]'>
           <div className='bg-white rounded-t-3xl h-max w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
-            <p className='my-4 bg-yellow-300/40 text-yellow-700 flex gap-4 p-4 rounded-md justify-center items-center'>
-              <div className=''>
-                <IoIosWarning className='text-2xl animate-pulse' />
-              </div>
-              <span className='font-semibold'>
-                Este paso solo es necesario si quieres ser vendor/vendedora
-              </span>
-            </p>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
