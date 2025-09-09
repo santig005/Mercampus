@@ -55,7 +55,11 @@ export async function GET(req) {
       .lean();
 
     if (!sellers || sellers.length === 0) {
-      return NextResponse.json({ message: 'No se encontraron vendedores' }, { status: 404 });
+      return NextResponse.json({ 
+        sellers: [],
+        total: 0,
+        message: 'No se encontraron vendedores'
+      }, { status: 200 });
     }
     
     // Poblar con horarios para cada vendedor

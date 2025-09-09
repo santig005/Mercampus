@@ -4,7 +4,6 @@ import { UniversityProvider } from '@/context/UniversityContext';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
 import { esMX } from '@clerk/localizations';
 import Analytics from '@/utils/analytics';
-import AdSense from '@/components/ads/adsense';
 
 import React from 'react';
 import '../../public/css/main.css';
@@ -26,7 +25,15 @@ export const metadata = {
     'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
   metadataBase: new URL('https://mercampus.vercel.app/'),
   icons: {
-    favicon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
   openGraph: {
@@ -38,9 +45,9 @@ export const metadata = {
     url: 'https://mercampus.vercel.app/',
     images: [
       {
-        url: '/icon512_maskable.png',
-        width: 78,
-        height: 82,
+        url: '/android-chrome-512x512.png',
+        width: 512,
+        height: 512,
         alt: 'Mercampus',
       },
     ],
@@ -58,7 +65,6 @@ export default function RootLayout({ children }) {
     >
       <html lang='es' className={`${montserrat.className} hide-scrollbar`}>
         <head>
-          <AdSense />
         </head>
         <body className='bg-primary'>
           <UniversityProvider>
