@@ -1,6 +1,6 @@
 'use client';
-import React, { useEffect } from 'react';
-import { SignOutButton } from '@clerk/nextjs';
+import React, { useEffect, useState } from 'react';
+import { SignOutButton, useUser } from '@clerk/nextjs';
 import SidebarBtn from '@/components/header/SidebarBtn';
 import { useSeller } from '@/context/SellerContext';
 
@@ -13,7 +13,9 @@ import {
   MdOutlineLiveHelp,
   MdEmojiPeople,
   MdInfo,
-  MdOutlineInfo
+  MdOutlineInfo,
+  MdAdminPanelSettings,
+  MdOutlineAdminPanelSettings
 } from 'react-icons/md';
 
 import {
@@ -39,7 +41,23 @@ import {
 } from 'react-icons/fa6';
 
 const SideBar = ({ userId }) => {
-  const { seller, loading: sellerLoading } = useSeller();
+  const { seller, dbUser, loading: sellerLoading } = useSeller();
+  const { user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if(dbUser?.role === 'admin') {
+      setIsAdmin(true);
+    } else {
+      setIsAdmin(false);
+    }
+    console.log('🔍 SideBar - isAdmin actualizado:', isAdmin);
+    console.log('🔍 SellerContext - Estado actual:', {
+      seller: seller,
+      dbUser: dbUser,
+      isAdmin: isAdmin,
+      loading: sellerLoading
+    });
+  }, [dbUser]);
 
   return (
     <div className='drawer-side'>
@@ -83,7 +101,7 @@ const SideBar = ({ userId }) => {
                 </li>
                 {
                   <>
-                    {!seller && (
+                    {(seller === "None" || seller === false) && (
                       <li>
                         <SidebarBtn
                           text='Quiero ser vendedor'
@@ -93,7 +111,7 @@ const SideBar = ({ userId }) => {
                         />
                       </li>
                     )}
-                    {seller && !seller?.approved && (
+                    {seller !== "None" && seller && !seller?.approved && (
                       <li>
                         <SidebarBtn
                           text='Solicitud en proceso'
@@ -146,6 +164,26 @@ const SideBar = ({ userId }) => {
                       goto='/antojos/sellers/schedules'
                       iconActive={<BsCalendarCheckFill className='size-5' />}
                       iconInactive={<BsCalendarCheck className='size-5' />}
+                    />
+                  </li>
+                </ul>
+              </details>
+            </li>
+          )}
+          {isAdmin && (
+            <li className='menu p-0'>
+              <details open>
+                <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
+                  <MdAdminPanelSettings className='size-5' />
+                  Administración
+                </summary>
+                <ul className='flex flex-col gap-2'>
+                  <li>
+                    <SidebarBtn
+                      text='Gestionar vendedores'
+                      goto='/admin/sellers'
+                      iconActive={<MdAdminPanelSettings className='size-5' />}
+                      iconInactive={<MdOutlineAdminPanelSettings className='size-5' />}
                     />
                   </li>
                 </ul>

@@ -11,7 +11,7 @@ import { IoClose } from 'react-icons/io5';
 import ForgotPassword from '@/components/auth/ForgotPassword';
 import Link from 'next/link';
 
-export default function SignInForm({ redirectTo = '/' }) {
+export default function SignInForm({ redirectTo = '' }) {
   const router = useRouter();
   const { isLoaded, signIn, setActive } = useSignIn();
   const [email, setEmail] = useState('');
@@ -68,7 +68,7 @@ export default function SignInForm({ redirectTo = '/' }) {
       // and redirect the user
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.push(redirectTo || '/');
+        router.push(redirectTo || '');
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.

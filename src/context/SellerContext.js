@@ -188,7 +188,7 @@ export const useCheckSeller = (sellerAllowed,routeIfNot) => {
           }
         }
         else{
-          if (seller) {
+          if (seller!="None") {
             if (seller.approved) {
               router.push("/antojos/sellers/profile/edit");
             }
@@ -202,4 +202,3 @@ export const useCheckSeller = (sellerAllowed,routeIfNot) => {
   }, [dbUser, seller, sellerLoading, router, sellerAllowed, routeIfNot]);
   return {checkedSeller:checked};
 };
-
