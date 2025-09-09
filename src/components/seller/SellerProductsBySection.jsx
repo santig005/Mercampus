@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { getSellerProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
+import ProductModalHandler from '@/components/products/ProductModalHandler';
 
 export default function SellerProductsBySection({ sellerId }) {
   const [products, setProducts] = useState([]);
@@ -61,25 +62,33 @@ export default function SellerProductsBySection({ sellerId }) {
   });
 
   return (
-    <div className='space-y-6'>
-      {sortedSections.map(([section, sectionProducts]) => (
-        <div key={section}>
-          <h3 className='text-lg font-bold mb-3 text-gray-800 px-6'>
-            {section === 'antojos' ? (
-              <>🍕 Antojos ({sectionProducts.length} productos)</>
-            ) : (
-              <>🛍️ Marketplace ({sectionProducts.length} productos)</>
-            )}
-          </h3>
-          <div className='space-y-3 px-2'>
-            {sectionProducts.map(product => (
-              <div key={product._id} className='w-full'>
-                <ProductCard product={product} />
+    <ProductModalHandler>
+      {showModal => (
+        <div className='space-y-6'>
+          {sortedSections.map(([section, sectionProducts]) => (
+            <div key={section}>
+              <h3 className='text-lg font-bold mb-3 text-gray-800 px-6'>
+                {section === 'antojos' ? (
+                  <>🍕 Antojos ({sectionProducts.length} productos)</>
+                ) : (
+                  <>🛍️ Marketplace ({sectionProducts.length} productos)</>
+                )}
+              </h3>
+              <div className='space-y-3 px-2'>
+                {sectionProducts.map(product => (
+                  <div
+                    key={product._id}
+                    className='w-full'
+                    onClick={() => showModal(product, 'secondary')}
+                  >
+                    <ProductCard product={product} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+    </ProductModalHandler>
   );
 }
