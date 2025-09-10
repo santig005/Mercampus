@@ -1,6 +1,5 @@
-
 export const universities = [
-  'Universidad Eafit',
+  'Universidad EAFIT',
   'Universidad EIA',
   // Agrega más universidades según sea necesario
 ];
