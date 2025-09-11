@@ -61,7 +61,7 @@ export default function SellerPage({ id }) {
     e.preventDefault();
     if (!isLoaded || !user) {
       const currentUrl = `/antojos/sellers/${seller?._id}`;
-      router.push(`/auth/login?redirectTo=${encodeURIComponent(currentUrl)}`);
+      router.push(`/auth/register?redirectTo=${encodeURIComponent(currentUrl)}`);
       return;
     }
     const url = e.currentTarget.getAttribute('data-url');
