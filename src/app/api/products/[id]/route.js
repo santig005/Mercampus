@@ -1,6 +1,7 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { Product } from '@/utils/models/productSchema';
+import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
 
