@@ -6,13 +6,11 @@ import TableSchema from '@/components/seller/index/table/TableSchema';
 import SellerModal from '@/components/seller/index/SellerModal';
 import ShareButton from '@/components/products/share/ShareButton';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
 import {
   TbBrandWhatsapp,
   TbChevronLeft,
-  TbHeart,
   TbLoader,
   TbShare2,
 } from 'react-icons/tb';
@@ -25,7 +23,6 @@ const ProductPage = ({ id, section = 'antojos' }) => {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
-  const { user, isLoaded } = useUser();
 
   useEffect(() => {
     fetchProduct(id);
@@ -52,17 +49,6 @@ const ProductPage = ({ id, section = 'antojos' }) => {
 
   const handleShowModal = () => {
     document.getElementById('my_modal_1_product').showModal();
-  };
-
-  const handleProtectedContact = (e) => {
-    e.preventDefault();
-    if (!isLoaded || !user) {
-      const currentUrl = `/${section}/${product?._id}`;
-      router.push(`/auth/register?redirectTo=${encodeURIComponent(currentUrl)}`);
-      return;
-    }
-    const url = e.currentTarget.getAttribute('data-url');
-    if (url) window.open(url, '_blank');
   };
 
   return (
@@ -158,8 +144,8 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                   <div className='py-4'>
                     <a
                       className='btn btn-primary w-full'
-                      href={'#'}
-                      data-url={`https://wa.me/+57${encodeURIComponent(
+                      target='_blank'
+                      href={`https://wa.me/+57${encodeURIComponent(
                         seller?.phoneNumber || ''
                       )}?text=${encodeURIComponent(
                         `Hola ${
@@ -168,7 +154,6 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                           product.name
                         }. Podrías decirme dónde te encuentras?`
                       )}`}
-                      onClick={handleProtectedContact}
                       aria-label={`Contactar a ${
                         seller?.businessName || 'el vendedor'
                       } por WhatsApp`}

@@ -14,8 +14,6 @@ import ShareButton from './share/ShareButton';
 import SellerModal from '@/components/seller/index/SellerModal';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
-import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 
 function ProductModal({ product, theKey }) {
   const [name, setName] = useState('');
@@ -26,8 +24,6 @@ function ProductModal({ product, theKey }) {
   const [seller, setSeller] = useState({});
   const [schedules, setSchedules] = useState([]);
   const [sellerModalId, setSellerModalId] = useState(null);
-  const { user, isLoaded } = useUser();
-  const router = useRouter();
 
   useEffect(() => {
     if (product) {
@@ -52,17 +48,6 @@ function ProductModal({ product, theKey }) {
 
   const handleShowModal = () => {
     document.getElementById('my_modal_1_product').showModal();
-  };
-
-  const handleProtectedContact = (e) => {
-    e.preventDefault();
-    if (!isLoaded || !user) {
-      const currentUrl = `/antojos/${product?._id}`;
-      router.push(`/auth/register?redirectTo=${encodeURIComponent(currentUrl)}`);
-      return;
-    }
-    const url = e.currentTarget.getAttribute('data-url');
-    if (url) window.open(url, '_blank');
   };
 
   return (
@@ -140,8 +125,8 @@ function ProductModal({ product, theKey }) {
                 <div className='pt-2'>
                   <a
                     className='btn btn-primary w-full'
-                    href={'#'}
-                    data-url={`https://wa.me/+57${encodeURIComponent(
+                    target='_blank'
+                    href={`https://wa.me/+57${encodeURIComponent(
                       seller?.phoneNumber || ''
                     )}?text=${encodeURIComponent(
                       `Hola ${
@@ -151,8 +136,7 @@ function ProductModal({ product, theKey }) {
                     aria-label={`Contactar a ${
                       seller?.businessName || 'el vendedor'
                     } por WhatsApp`}
-                    onClick={(e) => {
-                      handleProtectedContact(e);
+                    onClick={() => {
                       sendGAEvent('event', 'click_whatsapp_product', {
                         action: 'Clicked WhatsApp Link',
                         product_name: name,

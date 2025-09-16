@@ -16,7 +16,6 @@ import SellerProductsBySection from '@/components/seller/SellerProductsBySection
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '../products/share/ShareButton';
 import { parseIfJSON } from '@/utils/utilFn';
-import { useUser } from '@clerk/nextjs';
 
 export default function SellerPage({ id }) {
   const [seller, setSeller] = useState(null);
@@ -26,7 +25,6 @@ export default function SellerPage({ id }) {
   const [sellerModalId, setSellerModalId] = useState(null);
 
   const router = useRouter();
-  const { user, isLoaded } = useUser();
 
   useEffect(() => {
     if (!id) return;
@@ -55,17 +53,6 @@ export default function SellerPage({ id }) {
 
   const handleShowModal = () => {
     document.getElementById('my_modal_1_seller').showModal();
-  };
-
-  const handleProtectedContact = (e) => {
-    e.preventDefault();
-    if (!isLoaded || !user) {
-      const currentUrl = `/antojos/sellers/${seller?._id}`;
-      router.push(`/auth/register?redirectTo=${encodeURIComponent(currentUrl)}`);
-      return;
-    }
-    const url = e.currentTarget.getAttribute('data-url');
-    if (url) window.open(url, '_blank');
   };
 
   if (!seller) {
@@ -156,11 +143,11 @@ export default function SellerPage({ id }) {
                     <div className='flex flex-col justify-between w-full'>
                       <div className='join w-full'>
                         <a
-                          href={'#'}
-                          data-url={`https://www.instagram.com/_u/${seller.instagramUser}`}
+                          href={`https://www.instagram.com/_u/${seller.instagramUser}`}
                           className='btn btn-primary border-none join-item w-1/2'
-                          onClick={(e) => {
-                            handleProtectedContact(e);
+                          target='_blank'
+                          referrerPolicy='no-referrer'
+                          onClick={() => {
                             sendGAEvent('event', 'click_instagram', {
                               action: 'Clicked Instagram Link',
                               seller_name: seller.businessName,
@@ -172,11 +159,11 @@ export default function SellerPage({ id }) {
                           <TbBrandInstagram className='icon' /> Instagram
                         </a>
                         <a
-                          href={'#'}
-                          data-url={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                          href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
                           className='btn btn-primary join-item w-1/2'
-                          onClick={(e) => {
-                            handleProtectedContact(e);
+                          target='_blank'
+                          referrerPolicy='no-referrer'
+                          onClick={() => {
                             sendGAEvent('event', 'click_whatsapp_seller', {
                               action: 'Clicked WhatsApp Link',
                               seller_name: seller.businessName,
