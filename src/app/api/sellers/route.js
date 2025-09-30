@@ -118,7 +118,10 @@ export async function POST(req) {
         await newSeller.save();
         usuario.sellerId = newSeller._id;
         usuario.role = 'seller';
-        usuario.save();
+        if (!usuario.roles.includes('seller')) {
+          usuario.roles.push('seller');
+        }
+        await usuario.save();
       } catch (error) {
         console.log(error);
       }

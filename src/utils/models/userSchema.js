@@ -21,6 +21,10 @@ const userSchema = new Schema(
       default: 'buyer',
       enum: ['buyer', 'seller','admin'],
     },
+    roles: {
+      type: [String],
+      default: ['buyer'],
+    },
     imageProfile: {
       type: String,
       default: '',
