@@ -22,7 +22,7 @@ export const metadata = {
     default: 'Mercampus',
   },
   description:
-    'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
+    'Plataforma creada por y para la comunidad universitaria. Conecta con estudiantes, descubre productos y servicios, haz crecer tu emprendimiento en el campus.',
   metadataBase: new URL('https://mercampus.vercel.app/'),
   icons: {
     favicon: '/favicon.ico',
@@ -32,7 +32,7 @@ export const metadata = {
     type: 'website',
     title: 'Mercampus',
     description:
-      'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
+      'Plataforma creada por y para la comunidad universitaria. Conecta con estudiantes, descubre productos y servicios, haz crecer tu emprendimiento en el campus.',
     siteName: 'Mercampus',
     url: 'https://mercampus.vercel.app/',
     images: [
