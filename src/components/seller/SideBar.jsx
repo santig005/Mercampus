@@ -45,16 +45,13 @@ const SideBar = ({ userId }) => {
   const { user } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
-    if(dbUser?.role === 'admin') {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
-    console.log('🔍 SideBar - isAdmin actualizado:', isAdmin);
+    const hasAdminRole = dbUser?.roles?.includes('admin') || dbUser?.role === 'admin';
+    setIsAdmin(hasAdminRole);
+    console.log('🔍 SideBar - isAdmin actualizado:', hasAdminRole);
     console.log('🔍 SellerContext - Estado actual:', {
       seller: seller,
       dbUser: dbUser,
-      isAdmin: isAdmin,
+      isAdmin: hasAdminRole,
       loading: sellerLoading
     });
   }, [dbUser]);
