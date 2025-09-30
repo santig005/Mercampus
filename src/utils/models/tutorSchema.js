@@ -1,6 +1,10 @@
 import { Schema, models, model } from "mongoose";
 
 const TutorSchema = new Schema({
+  tutorName: {
+    type: String,
+    required: true,
+  },
   user: {
     type: Schema.Types.ObjectId,
     ref: "User",
