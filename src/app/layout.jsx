@@ -25,15 +25,7 @@ export const metadata = {
     'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
   metadataBase: new URL('https://mercampus.vercel.app/'),
   icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    favicon: '/favicon.ico',
   },
   manifest: '/manifest.json',
   openGraph: {
