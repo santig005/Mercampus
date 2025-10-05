@@ -15,7 +15,9 @@ import {
   MdInfo,
   MdOutlineInfo,
   MdAdminPanelSettings,
-  MdOutlineAdminPanelSettings
+  MdOutlineAdminPanelSettings,
+  MdSchool,
+  MdOutlineSchool,
 } from 'react-icons/md';
 
 import {
@@ -35,25 +37,28 @@ import {
 } from 'react-icons/bs';
 
 import {
+  FaHouseUser,
   FaPersonWalkingArrowLoopLeft,
   FaPersonWalkingDashedLineArrowRight,
   FaPersonWalkingLuggage,
 } from 'react-icons/fa6';
+import Link from 'next/link';
 
 const SideBar = ({ userId }) => {
   const { seller, dbUser, loading: sellerLoading } = useSeller();
   const { user } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isTutor, setIsTutor] = useState(false);
+  const [isLandlord, setIsLandlord] = useState(false);
+
   useEffect(() => {
-    const hasAdminRole = dbUser?.roles?.includes('admin') || dbUser?.role === 'admin';
+    // Solo procedemos si dbUser no es nulo
+    const hasAdminRole = dbUser.roles?.includes('admin') || dbUser.role === 'admin';
+    const hasTutorRole = dbUser.roles?.includes('tutor');
+    const hasLandlordRole = dbUser.roles?.includes('landlord');
     setIsAdmin(hasAdminRole);
-    console.log('🔍 SideBar - isAdmin actualizado:', hasAdminRole);
-    console.log('🔍 SellerContext - Estado actual:', {
-      seller: seller,
-      dbUser: dbUser,
-      isAdmin: hasAdminRole,
-      loading: sellerLoading
-    });
+    setIsTutor(hasTutorRole);
+    setIsLandlord(hasLandlordRole);
   }, [dbUser]);
 
   return (
@@ -123,12 +128,68 @@ const SideBar = ({ userId }) => {
               </ul>
             </details>
           </li>
+           <li className='menu p-0'>
+            <details open>
+              <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
+                <FaHouseUser className='size-5' />
+                Arriendos
+              </summary>
+              <ul className='flex flex-col gap-2'>
+                <li>
+                  <SidebarBtn
+                    text='Ver Arriendos'
+                    goto='/landlords'
+                    iconActive={<BsPeopleFill className='size-5' />}
+                    iconInactive={<BsPeople className='size-5' />}
+                  />
+                </li>
+                {!isLandlord && (
+                  <li>
+                    <SidebarBtn
+                      text='Quiero ser arrendador'
+                      goto='/landlords/register'
+                      iconActive={<BsPersonFillAdd className='size-5' />}
+                      iconInactive={<BsPersonAdd className='size-5' />}
+                    />
+                  </li>
+                )}
+              </ul>
+            </details>
+          </li>
+          <li className='menu p-0'>
+            <details open>
+              <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
+                <MdSchool className='size-5' />
+                Tutorias
+              </summary>
+              <ul className='flex flex-col gap-2'>
+                <li>
+                  <SidebarBtn
+                    text='Ver Tutores'
+                    goto='/tutors'
+                    iconActive={<BsPeopleFill className='size-5' />}
+                    iconInactive={<BsPeople className='size-5' />}
+                  />
+                </li>
+                {!isTutor && (
+                  <li>
+                    <SidebarBtn
+                      text='Quiero ser tutor'
+                      goto='/tutors/register'
+                      iconActive={<BsPersonFillAdd className='size-5' />}
+                      iconInactive={<BsPersonAdd className='size-5' />}
+                    />
+                  </li>
+                )}
+              </ul>
+            </details>
+          </li>
           {userId && seller?.approved && (
             <li className='menu p-0'>
               <details open>
                 <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
                   <BsBuildingFillGear className='size-5' />
-                  Gestionar
+                  Gestionar Vendedor
                 </summary>
                 <ul className='flex flex-col gap-2'>
                   <li>
@@ -161,6 +222,46 @@ const SideBar = ({ userId }) => {
                       goto='/antojos/sellers/schedules'
                       iconActive={<BsCalendarCheckFill className='size-5' />}
                       iconInactive={<BsCalendarCheck className='size-5' />}
+                    />
+                  </li>
+                </ul>
+              </details>
+            </li>
+          )}
+          {userId && isLandlord && (
+            <li className='menu p-0'>
+              <details open>
+                <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
+                  <BsBuildingFillGear className='size-5' />
+                  Gestionar Arriendos
+                </summary>
+                <ul className='flex flex-col gap-2'>
+                  <li>
+                    <SidebarBtn
+                      text='Agregar arriendo'
+                      goto='/rooms/add'
+                      iconActive={<BsBagPlusFill className='size-5' />}
+                      iconInactive={<BsBagPlus className='size-5' />}
+                    />
+                  </li>
+                </ul>
+              </details>
+            </li>
+          )}
+           {userId && isTutor && (
+            <li className='menu p-0'>
+              <details open>
+                <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
+                  <BsBuildingFillGear className='size-5' />
+                  Gestionar Tutorias
+                </summary>
+                <ul className='flex flex-col gap-2'>
+                   <li>
+                    <SidebarBtn
+                      text='Editar mi perfil'
+                      goto='/tutors/edit'
+                      iconActive={<BsPersonFillGear className='size-5' />}
+                      iconInactive={<BsPersonGear className='size-5' />}
                     />
                   </li>
                 </ul>
@@ -222,11 +323,13 @@ const SideBar = ({ userId }) => {
             </li>
           ) : (
             <li>
-              <SignOutButton className='btn'>
-                <p>
-                  <FaPersonWalkingArrowLoopLeft className='size-5' />
-                  Cerrar Sesión
-                </p>
+              <SignOutButton>
+                <Link href="/" className='btn'>
+                  <p>
+                    <FaPersonWalkingArrowLoopLeft className='size-5' />
+                    Cerrar Sesión
+                  </p>
+                </Link>
               </SignOutButton>
             </li>
           )}

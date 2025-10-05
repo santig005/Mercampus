@@ -1,59 +1,153 @@
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import InputFields from '@/components/auth/register/InputFields';
+import ImageGrid from '@/components/general/ImageGrid';
+import Loading from '@/components/general/Loading';
+import { useUser } from '@clerk/nextjs';
 
-export default function RegisterLandlordPage() {
+const RegisterLandlord = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    photo: "",
-    description: "",
-    phoneNumber: "",
+  const { isSignedIn, isLoaded } = useUser();
+  
+  const [landlordData, setLandlordData] = useState({
+    name: '',
+    description: '',
+    phoneNumber: '',
+    images: [],
   });
+  const [loading, setLoading] = useState(false);
+  const [errorCode, setErrorCode] = useState('');
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/auth/login?redirect_url=' + window.location.pathname);
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  if (!isLoaded || !isSignedIn) {
+    return <Loading />;
+  }
+
+  const handleChange = e => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    let newValue = value;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch("/api/landlords", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          // Placeholder for user ID from session
-          user: "60d0fe4f5311236168a109cb", // Example ObjectId
-        }),
+    if (name === 'phoneNumber') {
+      newValue = value.replace(/\D/g, '').slice(0, 10);
+    }
+
+    if (name) {
+      setLandlordData({
+        ...landlordData,
+        [name]: newValue,
       });
-
-      if (res.ok) {
-        alert("¡Registro de arrendador exitoso!");
-        router.push("/landlords");
-      } else {
-        const error = await res.json();
-        alert(`Error al registrar: ${error.error}`);
-      }
-    } catch (error) {
-      console.error("Failed to register landlord", error);
-      alert("Ocurrió un error en el servidor.");
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', maxWidth: '400px', margin: 'auto' }}>
-      <h1>Registro de Arrendador</h1>
-      <label>URL de la Foto</label>
-      <input name="photo" value={formData.photo} onChange={handleChange} placeholder="https://example.com/photo.jpg" />
-      
-      <label>Descripción</label>
-      <textarea name="description" value={formData.description} onChange={handleChange} required />
+  const handleImagesUpdate = updatedImages => {
+    setLandlordData({ ...landlordData, images: updatedImages });
+  };
 
-      <label>Teléfono</label>
-      <input name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
-      
-      <button type="submit" style={{ marginTop: '20px' }}>Registrarse</button>
-    </form>
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/landlords', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(landlordData),
+      });
+
+      if (response.ok) {
+        router.push('/landlords');
+      } else {
+        const errorData = await response.json();
+        console.error('Error:', errorData.message);
+        setErrorCode(errorData.message);
+      }
+    } catch (error) {
+      console.error('Network Error:', error);
+      setErrorCode('Network Error. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className='h-[836px] relative'>
+      <div className='h-1/4 sticky top-0 left-0'>
+        <div
+          id='register-bg'
+          className='bg-[#393939] h-full flex flex-col justify-center items-center overflow-hidden'
+        >
+          <h2 className='text-2xl font-semibold text-white'>
+            Regístrate como Arrendador
+          </h2>
+          <p className='text-white'>
+            Por favor completa tu información personal
+          </p>
+        </div>
+      </div>
+      <div className='h-3/4'>
+        <div className='relative bg-[#393939]'>
+          <div className='bg-white rounded-t-3xl h-max w-full px-6 pt-6 pb-16'>
+            <form onSubmit={handleSubmit}>
+              <div className='flex flex-col gap-7'>
+                <InputFields
+                  title='Tu Nombre'
+                  type='text'
+                  placeholder='Ej: María Rodríguez'
+                  value={landlordData.name}
+                  onChange={handleChange}
+                  name='name'
+                  required
+                />
+                <InputFields
+                  title='Preséntate'
+                  type='textarea'
+                  placeholder='Ej: Mi nombre es María y tengo habitaciones disponibles en el barrio X y el barrio Y.'
+                  value={landlordData.description}
+                  onChange={handleChange}
+                  name='description'
+                  required
+                />
+                <InputFields
+                  title='Teléfono de Contacto'
+                  type='tel'
+                  placeholder='Número de teléfono'
+                  value={landlordData.phoneNumber}
+                  onChange={handleChange}
+                  name='phoneNumber'
+                  required
+                />
+                <ImageGrid
+                  initialImages={landlordData.images}
+                  onUpdateImages={handleImagesUpdate}
+                  nameFolder='landlordimages'
+                  title='Sube una foto tuya'
+                  maxImages={1}
+                />
+                <button
+                  type='submit'
+                  className='btn btn-primary w-full'
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className='loading loading-infinity loading-lg'></span>
+                  ) : (
+                    'Finalizar Registro'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default RegisterLandlord;

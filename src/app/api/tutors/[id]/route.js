@@ -1,73 +1,31 @@
-import { NextResponse } from "next/server";
-import connectDB from "@/utils/connectDB";
-import Tutor from "@/utils/models/tutorSchema";
-// import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/utils/connectDB';
+import Tutor from '@/utils/models/tutorSchema';
+import User from '@/utils/models/userSchema';
+import { currentUser } from '@clerk/nextjs/server';
 
-export async function GET(request, { params }) {
+export async function DELETE(req, { params }) {
   try {
     await connectDB();
-    const tutor = await Tutor.findById(params.id).populate("user", "name email");
-    if (!tutor) {
-      return NextResponse.json({ error: "Tutor not found" }, { status: 404 });
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    return NextResponse.json(tutor);
+    const email = user.emailAddresses[0].emailAddress;
+    const { id } = params;
+    const tutor = await Tutor.findById(id);
+    if (!tutor) {
+      return NextResponse.json({ error: 'Tutor not found' }, { status: 404 });
+    }
+    const dbUser = await User.findOne({ email: email });
+    if (tutor.userId.toString() !== dbUser._id.toString()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    await Tutor.findByIdAndDelete(id);
+    await User.findOneAndUpdate({ email: email }, { $pull: { roles: 'tutor' } });
+    return NextResponse.json({ message: 'Tutor deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
-
-export async function PUT(request, { params }) {
-  // const { userId } = getAuth(request);
-  // if (!userId) {
-  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  // }
-
-  try {
-    await connectDB();
-    const tutor = await Tutor.findById(params.id);
-
-    if (!tutor) {
-      return NextResponse.json({ error: "Tutor not found" }, { status: 404 });
-    }
-
-    // if (tutor.user.toString() !== userId) {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
-
-    const body = await request.json();
-    const updatedTutor = await Tutor.findByIdAndUpdate(params.id, body, { new: true });
-
-    return NextResponse.json(updatedTutor);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
-
-export async function DELETE(request, { params }) {
-  // const { userId } = getAuth(request);
-  // if (!userId) {
-  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  // }
-
-  try {
-    await connectDB();
-    const tutor = await Tutor.findById(params.id);
-
-    if (!tutor) {
-      return NextResponse.json({ error: "Tutor not found" }, { status: 404 });
-    }
-
-    // if (tutor.user.toString() !== userId) {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
-
-    await Tutor.findByIdAndDelete(params.id);
-
-    return NextResponse.json({ message: "Tutor deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: 'An error occurred while deleting the tutor' }, { status: 500 });
   }
 }
