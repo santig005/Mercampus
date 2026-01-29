@@ -56,17 +56,17 @@ const LandingPage = () => {
           <p className="text-xl mt-4">
             Descubre productos, ofrece tus servicios y conecta con estudiantes en segundos.
           </p>
-          <div className="flex justify-center gap-8 mt-8">
-            <div className="w-1/3 p-4 border rounded-lg">
+          <div className="flex flex-col md:flex-row justify-center gap-8 mt-8">
+            <div className="w-full md:w-1/3 p-4 border rounded-lg">
               <h3 className="text-xl font-semibold mb-2">Comprar y descubrir</h3>
               <p>Encuentra antojos, servicios y artículos del campus en un solo lugar.</p>
             </div>
-            <div className="w-1/3 p-4 border rounded-lg">
+            <div className="w-full md:w-1/3 p-4 border rounded-lg">
               <h3 className="text-xl font-semibold mb-2">Vender y promocionar</h3>
               <p>Publica lo que ofreces y gana visibilidad sin depender de grupos.</p>
             </div>
-            <div className="w-1/3 p-4 border rounded-lg">
-              <h3 className="text-xl font-semibold mb-2">Conectar seguro</h3>
+            <div className="w-full md:w-1/3 p-4 border rounded-lg">
+              <h3 className="text-xl font-semibold mb-2">Conectar con seguridad</h3>
               <p>Contacta vendedores verificados y coordina tus compras con confianza.</p>
             </div>
           </div>
