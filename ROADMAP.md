@@ -59,7 +59,7 @@ juniors saben montar un loop de verificación.
 todavía, y es donde aprendes cómo se desvía el agente — información que después
 metes en CLAUDE.md.
 
-### [ ] T-01 · Arreglar el CI que siempre falla
+### [x] T-01 · Arreglar el CI que siempre falla
 **Por qué:** `.github/workflows/ci.yml` corre `npm run test`, script que no
 existe. Todo PR nace en rojo, así que nadie mira el CI.
 **Hecho cuando:** el workflow pasa en verde sobre `develop` sin cambios de
@@ -143,6 +143,14 @@ del email está comentado. Es un vector de spam directo a la base.
 se protege y valida; índice único en `email` restaurado con migración previa de
 duplicados en `scripts/`.
 **Modelo:** `sonnet` · **Nocturno:** no (implica decidir si se borra la ruta)
+
+### [ ] T-11b · Sacar `NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT` del bundle del cliente
+**Por qué:** una clave privada con prefijo `NEXT_PUBLIC_` la inyecta Next
+en el bundle del navegador. Cualquiera con DevTools la ve.
+**Hecho cuando:** la variable se renombra sin el prefijo (`IMAGEKIT_PRIVATE_KEY`),
+se mueve a un Server Action o route handler donde se necesite, y el
+build confirma que no aparece en ningún chunk del cliente.
+**Modelo:** `sonnet` · **Nocturno:** no
 
 ### [ ] T-12 · Rol de admin en los claims de Clerk
 **Por qué:** hoy se resuelve con un `Map` en memoria y un `setInterval` a nivel
@@ -270,6 +278,11 @@ eliminados; e2e confirma que nada cambió visualmente.
 `allowedIPs.js` y `favoriteSchema.js` — este último además usa
 `module.exports = mongoose.model(...)` sin el guard `mongoose.models ||`, así
 que reventaría con `OverwriteModelError` si alguien lo importara.
+**Adelantado en T-01:** `src/app/api/categories/route.js` y
+`src/utils/models/categorySchema.js` ya se eliminaron. Nadie los importaba y las
+categorías salen de `utils/resources/categories.js` y `utils/categoriesList.js`;
+además el endpoint era el único con un `GET()` sin argumentos, así que Next lo
+prerenderizaba en el build y lo rompía.
 **Hecho cuando:** eliminados, con la búsqueda de referencias documentada en el
 PR; `knip` o similar añadido al CI para que no vuelva a acumularse.
 **Modelo:** `sonnet` · **Nocturno:** sí
