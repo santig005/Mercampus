@@ -144,6 +144,14 @@ se protege y valida; índice único en `email` restaurado con migración previa 
 duplicados en `scripts/`.
 **Modelo:** `sonnet` · **Nocturno:** no (implica decidir si se borra la ruta)
 
+### [ ] T-11b · Sacar `NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT` del bundle del cliente
+**Por qué:** una clave privada con prefijo `NEXT_PUBLIC_` la inyecta Next
+en el bundle del navegador. Cualquiera con DevTools la ve.
+**Hecho cuando:** la variable se renombra sin el prefijo (`IMAGEKIT_PRIVATE_KEY`),
+se mueve a un Server Action o route handler donde se necesite, y el
+build confirma que no aparece en ningún chunk del cliente.
+**Modelo:** `sonnet` · **Nocturno:** no
+
 ### [ ] T-12 · Rol de admin en los claims de Clerk
 **Por qué:** hoy se resuelve con un `Map` en memoria y un `setInterval` a nivel
 de módulo dentro de una ruta. En serverless es caché por instancia y un
