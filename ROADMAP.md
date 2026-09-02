@@ -67,11 +67,13 @@ código; corre lint y build; usa `npm ci` en vez de `npm install`; Node 20+.
 **Alcance:** `.github/workflows/ci.yml`, `package.json`.
 **Modelo:** `sonnet` · **Nocturno:** no (aún no hay arnés)
 
-### [ ] T-02 · Vitest + primer test real
+### [x] T-02 · Vitest + primer test real
 **Por qué:** cero tests. Se necesita al menos un caso que falle si se rompe algo.
 **Hecho cuando:** `npm run test` corre Vitest; hay tests para `utilFn.js` y para
 la validación de categorías por sección del `productSchema`; el CI los ejecuta.
-**Alcance:** `vitest.config.js`, `tests/unit/`, `package.json`.
+**Alcance:** `vitest.config.mjs` (`.mjs` como el resto de configs del repo,
+si no Vite avisa de ESM cargado como CommonJS), `tests/unit/`, `package.json`,
+workflow de CI.
 **Modelo:** `sonnet` · **Nocturno:** no
 
 ### [ ] T-03 · Base de datos de prueba y seed
@@ -185,6 +187,15 @@ archivo. La decisión queda escrita en el PR.
 (`api/products/[id]` DELETE).
 **Hecho cuando:** un helper de respuesta de error único; logger con niveles que
 no imprime en test; cero `console.log` fuera de `scripts/`.
+**Modelo:** `sonnet` · **Nocturno:** sí
+
+### [ ] T-15b · Corregir formato de moneda y teléfono
+**Por qué:** `priceFormat` usa `en-US` con `currency: 'USD'` en un
+marketplace colombiano (`1500 → '$1,500'` en vez de `'$1.500'`).
+`formatPhone` rompe con indicativo de país.
+**Hecho cuando:** `priceFormat` usa `es-CO` con `currency: 'COP'`;
+`formatPhone` maneja correctamente el prefijo `+57`; los tests
+de T-02 actualizados para reflejar el comportamiento correcto.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ---
