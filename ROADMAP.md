@@ -59,7 +59,7 @@ juniors saben montar un loop de verificación.
 todavía, y es donde aprendes cómo se desvía el agente — información que después
 metes en CLAUDE.md.
 
-### [ ] T-01 · Arreglar el CI que siempre falla
+### [x] T-01 · Arreglar el CI que siempre falla
 **Por qué:** `.github/workflows/ci.yml` corre `npm run test`, script que no
 existe. Todo PR nace en rojo, así que nadie mira el CI.
 **Hecho cuando:** el workflow pasa en verde sobre `develop` sin cambios de
@@ -270,6 +270,11 @@ eliminados; e2e confirma que nada cambió visualmente.
 `allowedIPs.js` y `favoriteSchema.js` — este último además usa
 `module.exports = mongoose.model(...)` sin el guard `mongoose.models ||`, así
 que reventaría con `OverwriteModelError` si alguien lo importara.
+**Adelantado en T-01:** `src/app/api/categories/route.js` y
+`src/utils/models/categorySchema.js` ya se eliminaron. Nadie los importaba y las
+categorías salen de `utils/resources/categories.js` y `utils/categoriesList.js`;
+además el endpoint era el único con un `GET()` sin argumentos, así que Next lo
+prerenderizaba en el build y lo rompía.
 **Hecho cuando:** eliminados, con la búsqueda de referencias documentada en el
 PR; `knip` o similar añadido al CI para que no vuelva a acumularse.
 **Modelo:** `sonnet` · **Nocturno:** sí

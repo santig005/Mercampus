@@ -5,24 +5,38 @@ on:
     branches:
       - main
       - develop
+  push:
+    branches:
+      - main
+      - develop
 
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run ESLint
         run: npm run lint
 
-      - name: Run tests
-        run: npm run test
+      # Los SDK de ImageKit se instancian a nivel de modulo en
+      # src/utils/imagekit.js, asi que `next build` falla al recolectar los
+      # route handlers si estas variables no existen. Son valores falsos a
+      # proposito: en build los modulos solo se cargan, nunca se ejecutan.
+      # No van como secrets porque los secrets no llegan a los PR desde forks.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_IMAGEKIT_KEY: public_ci_placeholder
+          NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT: private_ci_placeholder
+          NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT: https://ik.imagekit.io/ci-placeholder
