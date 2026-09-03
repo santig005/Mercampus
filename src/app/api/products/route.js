@@ -17,12 +17,6 @@ export async function GET(req) {
   const university = url.searchParams.get('university') || '';
   const section = url.searchParams.get('section') || 'antojos';
 
-  // Actualizar productos sin sección para que tengan section: 'antojos'
-  await Product.updateMany(
-    { section: { $exists: false } },
-    { $set: { section: 'antojos' } }
-  );
-
   let filter = {};
 
   if (sellerId) {

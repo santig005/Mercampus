@@ -14,7 +14,8 @@
     "test": "vitest run",
     "verify": "node scripts/verify.mjs",
     "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
-    "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs"
+    "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs",
+    "migrate:product-section": "node --import ./scripts/register-alias.mjs ./scripts/migrate-product-section.mjs"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
