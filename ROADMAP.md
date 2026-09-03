@@ -267,11 +267,14 @@ sencillo porque es lo que pide el criterio; el compuesto merece medirse con
 datos reales antes de añadirlo.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-22 · Matar el N+1 de horarios
+### [x] T-22 · Matar el N+1 de horarios
 **Por qué:** un `Schedule.find()` por cada producto y por cada vendedor. Con 50
 productos son 51 consultas.
 **Hecho cuando:** una sola consulta con `$in` (o un `$lookup`) y agrupación en
 memoria; test que cuenta las queries emitidas.
+**Queda uno sin tocar:** `api/sellers/admin/route.js` tiene el mismo patron,
+pero esa ruta la reescribe T-12 entera (el Map en memoria y el setInterval). El
+helper `src/utils/lib/schedules.ts` ya esta listo para usarse alli.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [ ] T-23 · Paginación de verdad
