@@ -8,6 +8,8 @@
 
 # testing
 /coverage
+# binarios de mongod que descarga mongodb-memory-server (ver ci.yml)
+/.mongodb-binaries
 
 # next.js
 /.next/

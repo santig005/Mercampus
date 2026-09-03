@@ -76,7 +76,7 @@ si no Vite avisa de ESM cargado como CommonJS), `tests/unit/`, `package.json`,
 workflow de CI.
 **Modelo:** `sonnet` · **Nocturno:** no
 
-### [ ] T-03 · Base de datos de prueba y seed
+### [x] T-03 · Base de datos de prueba y seed
 **Por qué:** no hay forma de correr la app sin la Mongo de producción. Un agente
 no puede probar nada.
 **Hecho cuando:** `mongodb-memory-server` para tests; `scripts/seed.js` que crea
@@ -157,6 +157,8 @@ duplicados en `scripts/`.
 ### [ ] T-11b · Sacar `NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT` del bundle del cliente
 **Por qué:** una clave privada con prefijo `NEXT_PUBLIC_` la inyecta Next
 en el bundle del navegador. Cualquiera con DevTools la ve.
+**Hay dos, no una:** `NEXT_PUBLIC_CLOUDINARY_API_SECRET` tiene el mismo problema
+(`src/utils/cloudinary.js`). Encontrada al escribir `.env.example` en T-03.
 **Hecho cuando:** la variable se renombra sin el prefijo (`IMAGEKIT_PRIVATE_KEY`),
 se mueve a un Server Action o route handler donde se necesite, y el
 build confirma que no aparece en ningún chunk del cliente.
