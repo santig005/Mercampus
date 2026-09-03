@@ -245,11 +245,14 @@ de T-02 actualizados para reflejar el comportamiento correcto.
 Casi toda esta fase es apta para el nocturno: criterios inequívocos y tests que
 atrapan el error.
 
-### [ ] T-20 · Sacar la migración del handler de lectura
+### [x] T-20 · Sacar la migración del handler de lectura
 **Por qué:** `GET /api/products` corre `updateMany({section: {$exists: false}})`
 en **cada** request. Una migración de una sola vez lleva un año ejecutándose en
 cada carga de página.
 **Hecho cuando:** la migración vive en `scripts/`, el handler solo lee.
+**Pendiente de ejecutar:** el script existe (`npm run migrate:product-section`)
+pero nadie lo ha corrido contra la base real. Exige `--yes` porque escribe. Al
+contrario que el seed, esta migración sí está pensada para producción.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [ ] T-21 · Índices
