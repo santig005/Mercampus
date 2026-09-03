@@ -443,6 +443,28 @@ cancelación. Lectura sobre `Order`, sin escribir nada nuevo.
 **Depende de:** T-40
 **Modelo:** `sonnet` · **Nocturno:** sí
 
+### [ ] T-46 · Internacionalización (español e inglés)
+**Por qué:** todo el copy está incrustado en español dentro de los componentes.
+En una universidad con estudiantes de intercambio, el inglés amplía el público —
+y para el portafolio demuestra manejo de rutas por locale y de contenido
+dinámico, que es lo que hace difícil de verdad esta tarea.
+**Ojo con el tamaño:** hay copy en más de 40 componentes. Hacerlo de una vez
+produce un diff imposible de revisar y se salta el límite de ~15 archivos.
+**Hecho cuando (v1, solo el andamiaje):** `next-intl` configurado con rutas
+`/[locale]/`; middleware que negocia el locale y convive con `clerkMiddleware`;
+Clerk cambia de `esMX` a `enUS` según el locale; los diccionarios en
+`messages/{es,en}.json`; **una sola pantalla** migrada como prueba, y el e2e
+recorriéndola en los dos idiomas.
+**Después, una tarea por zona:** listado, detalle de producto, perfil de
+vendedor, formularios, panel de vendedor. Cada una con su PR.
+**Lo que no resuelve:** el contenido que escriben los vendedores (nombres y
+descripciones de producto) seguirá en el idioma en que lo escribieron. Traducirlo
+es otra decisión de producto, no de i18n.
+**Depende de:** T-04, que da la red para comprobar que no se rompe nada visual
+**Modelo:** `opusplan` — la negociación de locale junto al middleware de Clerk
+tiene trampa
+**Nocturno:** no
+
 ### [ ] T-45 · Reseñas
 **Hecho cuando:** calificación por pedido completado (no por producto suelto,
 para evitar reseñas falsas), promedio en la tarjeta del vendedor, moderación
