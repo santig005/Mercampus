@@ -60,4 +60,22 @@ test.describe('recorrido publico', () => {
 
     await shot(page, '04-perfil-vendedor');
   });
+
+  test('el listado de vendedores muestra las tarjetas de negocio', async ({ page }) => {
+    // Única pantalla pública que renderiza SellerCard (via SellerGrid). El
+    // detalle de producto y el perfil de vendedor no la usan.
+    await page.goto('/antojos/sellers/list');
+
+    await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
+    await expect(page.getByText('De la plancha a tu clase').first()).toBeVisible();
+
+    // El vendedor pendiente no sale en esta vista, pero el filtro vive en
+    // SellerGrid.jsx (cliente), no en GET /api/sellers: la API sigue
+    // devolviendo todos los vendedores sin filtrar por `approved`. Cualquiera
+    // que llame la API directo (no por esta página) los ve. Ver la nota en el
+    // ROADMAP.
+    await expect(page.getByText('Postres Laura')).toHaveCount(0);
+
+    await shot(page, '05-listado-vendedores');
+  });
 });
