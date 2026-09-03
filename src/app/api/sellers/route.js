@@ -5,6 +5,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { User } from '@/utils/models/userSchema';
 import { currentUser } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
+import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 
 export async function GET(req) {
   try {
@@ -55,24 +56,17 @@ export async function GET(req) {
       return NextResponse.json({ sellers: [] }, { status: 200 });
     }
 
-    const populatedSellers = await Promise.all(
-      sellers.map(async seller => {
-        const schedules = await Schedule.find({ sellerId: seller._id });
-        schedules.sort((a, b) => {
-          if (a.day !== b.day) return a.day - b.day;
-          return a.startTime.localeCompare(b.startTime);
-        });
-        return { ...seller.toObject(), schedules };
-      })
+    // Una sola consulta para todos los vendedores, en vez de una por vendedor.
+    const schedulesBySeller = await getSchedulesBySeller(
+      sellers.map(seller => seller._id)
     );
 
-    const transformedSellers = populatedSellers.map(seller => {
-      const transformedSchedules = seller.schedules.map(schedule => ({
-        ...schedule.toObject(),
-        day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
-      }));
-      return { ...seller, schedules: transformedSchedules };
-    });
+    const transformedSellers = sellers.map(seller => ({
+      ...seller.toObject(),
+      schedules: withDayNames(
+        schedulesBySeller.get(seller._id.toString()) ?? []
+      ),
+    }));
 
     return NextResponse.json({ sellers: transformedSellers }, { status: 200 });
   } catch (error) {

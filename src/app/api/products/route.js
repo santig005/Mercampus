@@ -5,6 +5,7 @@ import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
+import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 import { Seller } from '@/utils/models/sellerSchema2';
 
 export async function GET(req) {
@@ -56,24 +57,18 @@ export async function GET(req) {
 }
 
 const getPopulatedProducts = async approvedProducts => {
-  const populatedProducts = await Promise.all(
-    approvedProducts.map(async product => {
-      const schedules = await Schedule.find({ sellerId: product.sellerId._id });
-      schedules.sort((a, b) =>
-        a.day !== b.day ? a.day - b.day : a.startTime.localeCompare(b.startTime)
-      );
-
-      return {
-        ...product.toObject(),
-        schedules: schedules.map(schedule => ({
-          ...schedule.toObject(),
-          day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
-        })),
-      };
-    })
+  // Una sola consulta para todos los vendedores del listado, en vez de una por
+  // producto.
+  const schedulesBySeller = await getSchedulesBySeller(
+    approvedProducts.map(product => product.sellerId._id)
   );
 
-  return populatedProducts;
+  return approvedProducts.map(product => ({
+    ...product.toObject(),
+    schedules: withDayNames(
+      schedulesBySeller.get(product.sellerId._id.toString()) ?? []
+    ),
+  }));
 };
 
 export async function POST(req) {
