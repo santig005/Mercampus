@@ -1,24 +1,27 @@
 import { connectDB } from '@/utils/connectDB';
-import {Pqrs} from "@/utils/models/pqrsSchema";
+import { Pqrs } from '@/utils/models/pqrsSchema';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { createPqrsSchema } from '@/lib/validators/pqrs';
+import { invalidPayload } from '@/lib/api-response';
 
-
-export async function POST(req,) {
+export async function POST(req) {
   await connectDB();
   try {
-    const body=await req.json();
-    const { email, description, type } = body;
-    try{
-      const newPqrs = new Pqrs(body);
-      await newPqrs.save();
+    const parsed = createPqrsSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
     }
-    catch(error){
-      logger.debug(error);
-    }
-    
-    return NextResponse.json( { status: 201 });
+
+    const newPqrs = new Pqrs(parsed.data);
+    await newPqrs.save();
+
+    return NextResponse.json({ message: 'PQRS creada correctamente.' }, { status: 201 });
   } catch (error) {
-    return NextResponse.error(new Error('Error al crear la PQRS'), { status: 500 });
+    logger.error('Error al crear la PQRS', error);
+    return NextResponse.json(
+      { message: 'Error al crear la PQRS.' },
+      { status: 500 }
+    );
   }
 }
