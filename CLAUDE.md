@@ -24,7 +24,9 @@ Se prioriza corrección, seguridad y calidad del código sobre nuevas funciones.
 5. **No borres código que no entiendas.** Si algo parece muerto, confírmalo con
    una búsqueda de referencias y déjalo anotado en el PR.
 6. **Secretos:** jamás en el código, jamás en logs, jamás en tests.
-
+7. **Confirma que un archivo se usa antes de diseñar alrededor de él.**
+   Si algo bloquea el build o parece importante, busca sus importadores
+   en todo src/ antes de proponer arreglarlo. Podría ser código muerto.
 ## Comandos
 
 ```bash

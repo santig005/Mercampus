@@ -29,6 +29,9 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Run unit tests
+        run: npm run test
+
       # Los SDK de ImageKit se instancian a nivel de modulo en
       # src/utils/imagekit.js, asi que `next build` falla al recolectar los
       # route handlers si estas variables no existen. Son valores falsos a
