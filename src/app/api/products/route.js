@@ -6,17 +6,24 @@ import { User } from '@/utils/models/userSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
+import {
+  createProductSchema,
+  productQuerySchema,
+} from '@/lib/validators/product';
+import { invalidPayload } from '@/lib/validators/respond';
 import { Seller } from '@/utils/models/sellerSchema2';
 
 export async function GET(req) {
   await connectDB();
 
   const url = new URL(req.url);
-  const product = url.searchParams.get('product') || '';
-  const category = url.searchParams.get('category') || '';
-  const sellerId = url.searchParams.get('sellerId') || '';
-  const university = url.searchParams.get('university') || '';
-  const section = url.searchParams.get('section') || 'antojos';
+  const parsedQuery = productQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams)
+  );
+  if (!parsedQuery.success) {
+    return invalidPayload(parsedQuery.error);
+  }
+  const { product, category, sellerId, university, section } = parsedQuery.data;
 
   let filter = {};
 
@@ -93,23 +100,14 @@ export async function POST(req) {
           { status: 403 }
         );
       }
-      const body = await req.json();
-
-      // Asegurar que el campo section esté presente
-      if (!body.section) {
-        body.section = 'antojos'; // Valor por defecto
+      const parsed = createProductSchema.safeParse(await req.json());
+      if (!parsed.success) {
+        return invalidPayload(parsed.error);
       }
 
-      // Validar que la sección sea válida
-      if (!['antojos', 'marketplace'].includes(body.section)) {
-        return NextResponse.json(
-          { message: 'Sección inválida. Debe ser "antojos" o "marketplace"' },
-          { status: 400 }
-        );
-      }
-
-      body.sellerId = seller._id;
-      const newProduct = new Product(body);
+      // sellerId sale de la sesión, nunca del cuerpo: el schema descarta lo que
+      // no declara, así que el cliente no puede colarlo.
+      const newProduct = new Product({ ...parsed.data, sellerId: seller._id });
       try {
         await newProduct.save();
       } catch (error) {

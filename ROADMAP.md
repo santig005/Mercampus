@@ -202,13 +202,30 @@ intervalo que nunca se limpia.
 `/admin/*` y `/api/**/admin`; el `Map` y el `setInterval` desaparecen.
 **Modelo:** `opus` · **Nocturno:** no
 
-### [ ] T-13 · Validación con Zod en todos los bordes
+### [~] T-13 · Validación con Zod en todos los bordes
 **Por qué:** `new Product(body)` acepta lo que mande el cliente. Los query params
 tampoco se validan.
 **Hecho cuando:** un schema Zod por endpoint en `src/lib/validators/`; los
 handlers devuelven 400 con detalle de campos; tests de payload inválido.
+**Hecho ya:** `src/lib/validators/` con los schemas de producto y vendedor y el
+helper de respuesta 400. Cubiertos `POST /api/products`, `PUT /api/products/[id]`,
+`PUT /api/sellers/[id]` y los query params de `GET /api/products`. Zod descarta
+lo que no declara, asi que se cierra ademas la asignacion masiva: el cliente ya
+no puede mandar `sellerId` ni `approved` en el cuerpo.
+**Falta (T-13b):** `POST /api/sellers`, `POST /api/register` (que depende de la
+decision de T-11), horarios, pqrs y usuarios. Se parte para no pasarse del
+limite de ~15 archivos por PR.
 **Modelo:** `sonnet` — repetitivo y con criterio claro
 **Nocturno:** sí
+
+### [ ] T-13b · Terminar la validación con Zod
+**Por qué:** T-13 cubrió productos y vendedores. El resto de endpoints sigue
+aceptando lo que mande el cliente.
+**Hecho cuando:** schemas para `POST /api/sellers`, horarios, pqrs y usuarios,
+con sus tests de payload inválido. `POST /api/register` va aparte porque su
+existencia la decide T-11.
+**Depende de:** T-13
+**Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [ ] T-14 · Endpoints muertos y rotos
 **Por qué:** el PUT y DELETE de `api/sellers/route.js` usan `req.query`, que no

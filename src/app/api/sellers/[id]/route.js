@@ -5,6 +5,8 @@ import {
   verifySellerEmail,
   verifySellerId,
 } from "@/utils/lib/auth";
+import { updateSellerSchema } from "@/lib/validators/seller";
+import { invalidPayload } from "@/lib/validators/respond";
 import { Seller } from "@/utils/models/sellerSchema2";
 import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
@@ -86,7 +88,11 @@ export async function PUT(req, { params }) {
       const email = await getEmailFromToken();
 
       await connectDB();
-      const data = await req.json();
+      const parsed = updateSellerSchema.safeParse(await req.json());
+      if (!parsed.success) {
+        return invalidPayload(parsed.error);
+      }
+      const data = parsed.data;
       let seller;
       if (params.id.includes('@')) {
           await verifySellerEmail(params.id, email);

@@ -1,6 +1,8 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { AppError } from '@/utils/lib/errors';
+import { updateProductSchema } from '@/lib/validators/product';
+import { invalidPayload } from '@/lib/validators/respond';
 import {
   getEmailFromToken,
   verifyOwnershipAndGetSellerId,
@@ -65,17 +67,14 @@ export async function PUT(req, { params }) {
     const email = await getEmailFromToken();
     await verifyOwnershipAndGetSellerId(params.id, email);
 
-    const data = await req.json();
-    
-    // Validar que la sección sea válida si se está actualizando
-    if (data.section && !['antojos', 'marketplace'].includes(data.section)) {
-      return NextResponse.json(
-        { message: 'Sección inválida. Debe ser "antojos" o "marketplace"' },
-        { status: 400 }
-      );
+    const parsed = updateProductSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
     }
-    
-    const updated = await Product.findByIdAndUpdate(params.id, data, { new: true });
+
+    const updated = await Product.findByIdAndUpdate(params.id, parsed.data, {
+      new: true,
+    });
     if (!updated) {
       return NextResponse.json(
         { message: "Producto no encontrado al actualizar." },
