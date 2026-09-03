@@ -13,8 +13,11 @@ Se prioriza corrección, seguridad y calidad del código sobre nuevas funciones.
 
 ## Reglas duras
 
-1. **Nunca hagas push a `main` ni a `develop`.** Trabaja siempre en
-   `agent/<id-tarea>` y abre PR hacia `develop`.
+1. **Nunca hagas push ni merge a `main` ni a `develop`.** El trabajo del agente
+   se integra en `agent/develop`. Saca `agent/<id-tarea>` desde `agent/develop`,
+   abre el PR hacia `agent/develop` y mergéalo tú mismo **solo** con el check
+   `quality` en verde: nunca en rojo ni pendiente. La promoción
+   `agent/develop → develop` la revisa y mergea un humano.
 2. **Una tarea del ROADMAP por ejecución.** No agrupes. Un PR pequeño y
    revisable vale más que uno grande y correcto.
 3. **Si no puedes verificar el cambio, no lo hagas.** Cada PR debe pasar
@@ -27,6 +30,7 @@ Se prioriza corrección, seguridad y calidad del código sobre nuevas funciones.
 7. **Confirma que un archivo se usa antes de diseñar alrededor de él.**
    Si algo bloquea el build o parece importante, busca sus importadores
    en todo src/ antes de proponer arreglarlo. Podría ser código muerto.
+
 ## Comandos
 
 ```bash

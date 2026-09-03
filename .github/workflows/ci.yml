@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - develop
+      - agent/develop
   push:
     branches:
       - main
       - develop
+      - agent/develop
 
 jobs:
   quality:
