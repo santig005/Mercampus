@@ -6,6 +6,7 @@ import { User } from '@/utils/models/userSchema';
 import { currentUser } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
+import { logger } from '@/lib/logger';
 
 export async function GET(req) {
   try {
@@ -85,16 +86,16 @@ export async function POST(req) {
     const user = await currentUser();
     if (user) {
       const email = user.emailAddresses[0].emailAddress;
-      console.log('email', email);
+      logger.debug('email', email);
       let tempUserId = '';
       var usuario;
       try {
         usuario = await User.findOne({ email: email });
-        console.log('usuario', usuario);
+        logger.debug('usuario', usuario);
         const userId = usuario._id;
         tempUserId = userId;
       } catch (error) {
-        console.log('Error al buscar el usuario:', error.message);
+        logger.debug('Error al buscar el usuario:', error.message);
       }
 
       // Obtener los datos del cuerpo de la solicitud
@@ -103,7 +104,7 @@ export async function POST(req) {
         body.userId = tempUserId;
         body.clerkId = user.id;
       } catch (error) {
-        console.log(error);
+        logger.debug(error);
       }
 
       // Create a new seller using the Seller model
@@ -114,7 +115,7 @@ export async function POST(req) {
         usuario.role = 'seller';
         usuario.save();
       } catch (error) {
-        console.log(error);
+        logger.debug(error);
       }
 
       // Return a successful response

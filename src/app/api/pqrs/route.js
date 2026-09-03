@@ -1,6 +1,7 @@
 import { connectDB } from '@/utils/connectDB';
 import {Pqrs} from "@/utils/models/pqrsSchema";
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 
 export async function POST(req,) {
@@ -13,7 +14,7 @@ export async function POST(req,) {
       await newPqrs.save();
     }
     catch(error){
-      console.log(error);
+      logger.debug(error);
     }
     
     return NextResponse.json( { status: 201 });

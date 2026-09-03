@@ -2,6 +2,7 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { createOrUpdateUser, deleteUser } from "@/utils/lib/createUser";
+import { logger } from '@/lib/logger';
 
 export async function POST(req) {
   // You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
@@ -43,7 +44,7 @@ export async function POST(req) {
       "svix-signature": svix_signature,
     });
   } catch (err) {
-    console.error("Error verifying webhook:", err);
+    logger.error("Error verifying webhook:", err);
     return new Response("Error occured", {
       status: 400,
     });
@@ -53,8 +54,8 @@ export async function POST(req) {
   // For this guide, you simply log the payload to the console
   const { id } = evt?.data;
   const eventType = evt?.type;
-  // console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
-  // console.log("Webhook body:", body);
+  // logger.debug(`Webhook with and ID of ${id} and type of ${eventType}`);
+  // logger.debug("Webhook body:", body);
 
   if (eventType === "user.created" || eventType === "user.updated") {
     const { id, first_name, last_name, email_addresses, image_url } = evt?.data;
@@ -68,7 +69,7 @@ export async function POST(req) {
       );
       return new Response("User is created or updated", { status: 200 });
     } catch (err) {
-      console.error("Error creating user:", err);
+      logger.error("Error creating user:", err);
       return new Response("Error occured", {
         status: 400,
       });
@@ -81,7 +82,7 @@ export async function POST(req) {
       await deleteUser(id);
       return new Response("User is deleted", { status: 200 });
     } catch (err) {
-      console.error("Error deleting user:", err);
+      logger.error("Error deleting user:", err);
       return new Response("Error occured", {
         status: 400,
       });

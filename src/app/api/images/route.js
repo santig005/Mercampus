@@ -1,6 +1,7 @@
 import { getImageKit } from '@/utils/imagekit';
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
+import { logger } from '@/lib/logger';
 
 export async function POST(req) {
   try {
@@ -42,7 +43,7 @@ export async function POST(req) {
 export async function DELETE(req) {
   try {
     const { fileId } = await req.json(); // Ahora usamos `fileId` correctamente
-    console.log('fileIdapi', fileId);
+    logger.debug('fileIdapi', fileId);
     if (!fileId) {
       return NextResponse.json(
         { error: 'Missing fileId parameter' },
