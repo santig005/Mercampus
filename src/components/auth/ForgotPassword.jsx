@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useRef, useState } from 'react';
 import { useAuth, useSignIn } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -165,7 +166,7 @@ export default function ForgotPassword({ setForgotPassword }) {
           setActive({ session: result.createdSessionId });
           setError('');
         } else {
-          console.log(result);
+          logger.debug(result);
         }
       })
       .catch(err => {

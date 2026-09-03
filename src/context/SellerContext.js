@@ -1,5 +1,6 @@
 // SellerContext.js
 "use client";
+import { logger } from '@/lib/logger';
 import { createContext, useContext, useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { getUserWithSellerByEmail } from "@/services/userService";
@@ -44,7 +45,7 @@ export const SellerProvider = ({ children }) => {
           setSeller(false);
         }
       } catch (error) {
-        console.error("Error fetching seller:", error);
+        logger.error("Error fetching seller:", error);
         setSeller(false);
       } finally {
         setLoading(false);
@@ -112,7 +113,7 @@ export const SellerProvider = ({ children }) => {
           setSeller(false);
         }
       } catch (error) {
-        console.error("Error fetching seller:", error);
+        logger.error("Error fetching seller:", error);
         setSeller(false);
       } finally {
         setLoading(false);

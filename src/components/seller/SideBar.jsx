@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { SignOutButton, useUser } from '@clerk/nextjs';
 import SidebarBtn from '@/components/header/SidebarBtn';
@@ -50,8 +51,8 @@ const SideBar = ({ userId }) => {
     } else {
       setIsAdmin(false);
     }
-    console.log('🔍 SideBar - isAdmin actualizado:', isAdmin);
-    console.log('🔍 SellerContext - Estado actual:', {
+    logger.debug('🔍 SideBar - isAdmin actualizado:', isAdmin);
+    logger.debug('🔍 SellerContext - Estado actual:', {
       seller: seller,
       dbUser: dbUser,
       isAdmin: isAdmin,

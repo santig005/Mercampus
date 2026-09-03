@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import { TbShare2, TbBrandWhatsapp, TbLink, TbLinkPlus } from 'react-icons/tb';
 import { useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
@@ -55,7 +56,7 @@ export default function ShareButton({ data, type }) {
         }, 2500);
       })
       .catch((error) => {
-        console.error('Error al copiar el enlace:', error);
+        logger.error('Error al copiar el enlace:', error);
       });
   };
 

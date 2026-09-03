@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect, useState } from 'react';
 import {
@@ -36,7 +37,7 @@ export default function SellerPage({ id }) {
         const data = await response.json();
 
         if (data.error) {
-          console.error('Error fetching seller:', data.error);
+          logger.error('Error fetching seller:', data.error);
           return;
         }
 
@@ -44,7 +45,7 @@ export default function SellerPage({ id }) {
         setSchedules(data.seller.schedules);
         setImages([data.seller.logo]);
       } catch (error) {
-        console.error('Error fetching seller:', error);
+        logger.error('Error fetching seller:', error);
       }
       setLoading(false);
     }

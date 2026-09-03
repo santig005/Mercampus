@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { formatPhone, formatValue, parseIfJSON } from '@/utils/utilFn';
 import Flag from '@public/images/Flag_of_Colombia.svg';
@@ -31,7 +32,7 @@ export default function InputFields({
     // Formatea el número con comas y símbolo de dólar
     const formattedValue = formatValue(numericValue);
 
-    // console.log(numericValue.toString());
+    // logger.debug(numericValue.toString());
 
     setDisplayPrice(formattedValue);
     onChange({ target: { name: 'price', value: numericValue.toString() } });
