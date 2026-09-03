@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
