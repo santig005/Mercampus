@@ -12,6 +12,7 @@
     "lint": "next lint",
     "test": "vitest run",
     "verify": "node scripts/verify.mjs",
+    "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
     "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs"
   },
   "dependencies": {
@@ -41,6 +42,7 @@
     "svix": "^1.36.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/react": "^18.3.5",
     "daisyui": "^4.12.10",
     "eslint": "^8",
