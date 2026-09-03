@@ -7,17 +7,6 @@
 
 import { spawn } from 'node:child_process';
 
-// Los SDK de ImageKit se instancian a nivel de módulo en src/utils/imagekit.js,
-// así que `next build` revienta al recolectar los route handlers si estas
-// variables no existen. Son valores falsos a propósito: en build esos módulos
-// solo se cargan, nunca se ejecutan. Si el entorno ya trae valores reales,
-// mandan los reales.
-const PLACEHOLDER_ENV = {
-  NEXT_PUBLIC_IMAGEKIT_KEY: 'public_ci_placeholder',
-  NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT: 'private_ci_placeholder',
-  NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT: 'https://ik.imagekit.io/ci-placeholder',
-};
-
 const STEPS = [
   { name: 'lint', command: 'npm run lint' },
   // Solo rompe por archivos muertos. Las dependencias sin usar son de T-35 y
@@ -29,13 +18,6 @@ const STEPS = [
 ];
 
 const env = { ...process.env };
-const injected = [];
-for (const [key, value] of Object.entries(PLACEHOLDER_ENV)) {
-  if (!env[key]) {
-    env[key] = value;
-    injected.push(key);
-  }
-}
 
 const runStep = step =>
   new Promise(resolve => {
@@ -49,10 +31,6 @@ const runStep = step =>
       resolve({ ...step, code: code ?? 1, ms: Date.now() - startedAt })
     );
   });
-
-if (injected.length > 0) {
-  console.log(`verify: usando placeholders para ${injected.join(', ')}`);
-}
 
 const results = [];
 for (const step of STEPS) {

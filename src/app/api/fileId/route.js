@@ -1,4 +1,4 @@
-import imagekit from '@/utils/imagekit';
+import { getImageKit } from '@/utils/imagekit';
 import { NextResponse } from 'next/server';
 
 export async function GET(req) {
@@ -18,7 +18,7 @@ export async function GET(req) {
     const fileName = urlParts[urlParts.length - 1]; // Última parte de la URL
 
     // Buscar la imagen por nombre
-    const files = await imagekit.listFiles({ name: fileName });
+    const files = await getImageKit().listFiles({ name: fileName });
 
     if (!files.length) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });

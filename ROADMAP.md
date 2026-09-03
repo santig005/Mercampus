@@ -184,14 +184,22 @@ se protege y valida; índice único en `email` restaurado con migración previa 
 duplicados en `scripts/`.
 **Modelo:** `sonnet` · **Nocturno:** no (implica decidir si se borra la ruta)
 
-### [ ] T-11b · Sacar `NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT` del bundle del cliente
-**Por qué:** una clave privada con prefijo `NEXT_PUBLIC_` la inyecta Next
-en el bundle del navegador. Cualquiera con DevTools la ve.
-**Hay dos, no una:** `NEXT_PUBLIC_CLOUDINARY_API_SECRET` tiene el mismo problema
-(`src/utils/cloudinary.js`). Encontrada al escribir `.env.example` en T-03.
-**Hecho cuando:** la variable se renombra sin el prefijo (`IMAGEKIT_PRIVATE_KEY`),
-se mueve a un Server Action o route handler donde se necesite, y el
-build confirma que no aparece en ningún chunk del cliente.
+### [x] T-11b · Quitar el prefijo NEXT_PUBLIC_ a las claves de imágenes
+**Por qué:** las claves de ImageKit y Cloudinary llevaban prefijo
+`NEXT_PUBLIC_`, que es el que Next inyecta en el bundle del navegador.
+**Corrección importante:** durante T-03 y T-05 se afirmó aquí que la clave era
+visible desde DevTools. **Era falso.** Se comprobó descargando los 24 chunks que
+sirve mercampus.vercel.app y buscando los valores reales: cero coincidencias,
+con la publishable de Clerk apareciendo como control de que la búsqueda
+funcionaba. El código que lee esas variables solo lo importan route handlers, así
+que nunca llegaba al cliente. No hubo que rotar ninguna clave.
+**Lo que sí era cierto:** el nombre invitaba al accidente. Bastaba que alguien
+importara `utils/imagekit.js` desde un componente `'use client'` para publicar la
+clave en el siguiente deploy, sin ningún aviso.
+**Hecho:** las seis variables renombradas sin prefijo, los SDK instanciados de
+forma perezosa (lo que además elimina los placeholders que el CI arrastraba desde
+T-01, porque el build ya no necesita valores), y un test que falla si vuelve a
+aparecer una `NEXT_PUBLIC_*` con SECRET o PRIVATE en el nombre.
 **Modelo:** `sonnet` · **Nocturno:** no
 
 ### [ ] T-12 · Rol de admin en los claims de Clerk
@@ -443,6 +451,13 @@ cancelación. Lectura sobre `Order`, sin escribir nada nuevo.
 **Depende de:** T-40
 **Modelo:** `sonnet` · **Nocturno:** sí
 
+### [ ] T-45 · Reseñas
+**Hecho cuando:** calificación por pedido completado (no por producto suelto,
+para evitar reseñas falsas), promedio en la tarjeta del vendedor, moderación
+básica.
+**Depende de:** T-40
+**Modelo:** `opusplan` · **Nocturno:** no
+
 ### [ ] T-46 · Internacionalización (español e inglés)
 **Por qué:** todo el copy está incrustado en español dentro de los componentes.
 En una universidad con estudiantes de intercambio, el inglés amplía el público —
@@ -464,13 +479,6 @@ es otra decisión de producto, no de i18n.
 **Modelo:** `opusplan` — la negociación de locale junto al middleware de Clerk
 tiene trampa
 **Nocturno:** no
-
-### [ ] T-45 · Reseñas
-**Hecho cuando:** calificación por pedido completado (no por producto suelto,
-para evitar reseñas falsas), promedio en la tarjeta del vendedor, moderación
-básica.
-**Depende de:** T-40
-**Modelo:** `opusplan` · **Nocturno:** no
 
 ---
 

@@ -74,11 +74,6 @@ try {
     E2E_PORT: String(PORT),
     E2E_PRODUCT_ID: summary.ids.approvedProduct,
     E2E_SELLER_ID: summary.ids.approvedSeller,
-    NEXT_PUBLIC_IMAGEKIT_KEY: baseEnv.NEXT_PUBLIC_IMAGEKIT_KEY || 'public_ci_placeholder',
-    NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT:
-      baseEnv.NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT || 'private_ci_placeholder',
-    NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT:
-      baseEnv.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/ci-placeholder',
   };
 
   console.log('\n──── build ────');
