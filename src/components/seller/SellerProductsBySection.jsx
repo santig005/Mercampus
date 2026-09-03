@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { getSellerProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
@@ -16,7 +17,7 @@ export default function SellerProductsBySection({ sellerId }) {
         const response = await getSellerProducts(sellerId);
         setProducts(response.products || []);
       } catch (error) {
-        console.error('Error fetching seller products:', error);
+        logger.error('Error fetching seller products:', error);
         setProducts([]);
       } finally {
         setLoading(false);

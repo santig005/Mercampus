@@ -266,10 +266,15 @@ frontend, así que `errorResponse` solo se usa donde la forma ya coincide.
 Unificarlo del todo va con T-32, cuando las mutaciones pasen a Server Actions.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-15c · Logger en componentes y contexto
+### [x] T-15c · Logger en componentes y contexto
 **Por qué:** quedan 29 `console.*` en `src/components/` y `src/context/`.
 **Hecho cuando:** migradas al logger; el test que guarda `src/app/api` se amplía
 para cubrir estas carpetas.
+**Ojo:** son componentes de cliente, así que el logger corre también en el
+navegador. Next sustituye `process.env.X` por undefined en el bundle del
+cliente, de modo que `LOG_LEVEL` no aplica allí y el nivel lo decide
+`NODE_ENV`. Verificado con el e2e, que carga esos componentes en un Chromium
+de verdad.
 **Depende de:** T-15
 **Modelo:** `sonnet` · **Nocturno:** sí
 

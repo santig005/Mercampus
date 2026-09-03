@@ -1,9 +1,9 @@
+import { logger } from '@/lib/logger';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from '@/lib/logger';
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
@@ -59,10 +59,11 @@ describe('logger', () => {
   });
 });
 
-describe('sin console.* en la capa de API', () => {
-  it('ningun route handler usa console directamente', () => {
-    const conConsole = walk('src/app/api')
-      .filter(file => /\.(js|ts)$/.test(file))
+describe('sin console.* en las zonas ya migradas', () => {
+  it('ni los handlers ni los componentes usan console directamente', () => {
+    const conConsole = ['src/app/api', 'src/components', 'src/context']
+      .flatMap(walk)
+      .filter(file => /\.(js|jsx|ts|tsx)$/.test(file))
       .filter(file => /console\.(log|error|warn|info)\s*\(/.test(readFileSync(file, 'utf8')));
 
     expect(conConsole).toEqual([]);

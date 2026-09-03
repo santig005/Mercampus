@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import { getSellers } from '@/services/sellerService';
 import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';
@@ -22,7 +23,7 @@ export default function SellerGrid({ section = 'antojos' }) {
         const data = await getSellers(university, section);
         setSellers(data.sellers);
       } catch (error) {
-        console.error('Error fetching sellers:', error);
+        logger.error('Error fetching sellers:', error);
         setSellers([]);
       }
     }
@@ -48,7 +49,7 @@ export default function SellerGrid({ section = 'antojos' }) {
         );
       }
     } catch (error) {
-      console.error('Error updating seller:', error);
+      logger.error('Error updating seller:', error);
     }
   };
 
