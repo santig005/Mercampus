@@ -10,10 +10,14 @@ import mongoose from 'mongoose';
 
 let server;
 
+// Devuelve la URI exacta con la que conecto. Los tests que cargan codigo de la
+// app tienen que poner esa misma cadena en MONGO_URI: si connectDB llama a
+// mongoose.connect() con una URI distinta a la ya activa, Mongoose lanza.
 export async function startTestDb() {
   server = await MongoMemoryServer.create();
-  await mongoose.connect(server.getUri());
-  return mongoose.connection;
+  const uri = server.getUri();
+  await mongoose.connect(uri);
+  return uri;
 }
 
 export async function stopTestDb() {
