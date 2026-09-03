@@ -246,12 +246,39 @@ archivo. La decisión queda escrita en el PR.
 **Modelo:** `opusplan` — hay una decisión de producto de por medio
 **Nocturno:** no
 
-### [ ] T-15 · Errores tipados y logger
-**Por qué:** 169 `console.log` en el código, mensajes de error inconsistentes,
+### [~] T-15 · Errores tipados y logger
+**Por qué:** `console.log` por todas partes, mensajes de error inconsistentes,
 `AppError` usado en un sitio donde ni siquiera está importado
-(`api/products/[id]` DELETE).
+(`api/products/[id]` DELETE, arreglado en T-10).
+**Ojo con la cifra:** eran 169; tras los borrados de T-34 quedaban **104**,
+repartidas en unos 43 archivos. Por eso se parte.
 **Hecho cuando:** un helper de respuesta de error único; logger con niveles que
 no imprime en test; cero `console.log` fuera de `scripts/`.
+**Hecho ya:** `src/lib/logger.ts` (niveles, silencioso en test, contexto como
+objeto aparte) y `src/lib/api-response.ts`, que unifica `invalidPayload` y
+`errorResponse` y **nunca devuelve al cliente el mensaje de un 500**. Migrada la
+capa de API entera: 34 llamadas en 12 archivos, con un test que impide que
+vuelva a colarse un `console.*` ahí.
+**Falta:** las otras 70 llamadas, en T-15c y T-15d.
+**Sobre unificar los cuerpos de error:** los handlers devuelven unas veces
+`{ error }` y otras `{ message }`. Cambiarlo altera el contrato que consume el
+frontend, así que `errorResponse` solo se usa donde la forma ya coincide.
+Unificarlo del todo va con T-32, cuando las mutaciones pasen a Server Actions.
+**Modelo:** `sonnet` · **Nocturno:** sí
+
+### [ ] T-15c · Logger en componentes y contexto
+**Por qué:** quedan 29 `console.*` en `src/components/` y `src/context/`.
+**Hecho cuando:** migradas al logger; el test que guarda `src/app/api` se amplía
+para cubrir estas carpetas.
+**Depende de:** T-15
+**Modelo:** `sonnet` · **Nocturno:** sí
+
+### [ ] T-15d · Logger en servicios, utilidades y páginas
+**Por qué:** quedan 41 `console.*` en `src/services/`, `src/utils/` y las páginas
+de `src/app/` que no son API.
+**Hecho cuando:** migradas al logger; el guardián cubre ya todo `src/`, de modo
+que el criterio de T-15 (cero `console.log` fuera de `scripts/`) queda cerrado.
+**Depende de:** T-15
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [ ] T-15b · Corregir formato de moneda y teléfono

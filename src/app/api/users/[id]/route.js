@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
 import { User } from "@/utils/models/userSchema";
+import { logger } from '@/lib/logger';
 export async function GET(req, { params }) {
     try {
         connectDB();
@@ -18,7 +19,7 @@ export async function GET(req, { params }) {
         
       }
     catch (error) {
-        console.log(params);
+        logger.debug(params);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

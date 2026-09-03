@@ -1,6 +1,7 @@
 // pages/api/user-with-seller/[email].js
 import { NextResponse } from "next/server";
 import { getUserWithSellerByEmail } from "@/services/server/userService";
+import { logger } from '@/lib/logger';
 
 export async function GET(req, { params }) {
   try {
@@ -10,7 +11,7 @@ export async function GET(req, { params }) {
       }
     return NextResponse.json({ user, seller }, { status: 200 });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

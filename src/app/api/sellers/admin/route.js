@@ -5,6 +5,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { User } from '@/utils/models/userSchema';
 import { currentUser } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
+import { logger } from '@/lib/logger';
 
 // Cache en memoria para roles de usuario (evita consultas repetidas a BD)
 const userRoleCache = new Map();
@@ -40,7 +41,7 @@ export async function GET(req) {
         }
       }
     } catch (error) {
-      console.log('Error verificando rol de admin:', error);
+      logger.debug('Error verificando rol de admin:', error);
       return NextResponse.json({ message: 'Error de autenticación' }, { status: 401 });
     }
 
@@ -90,7 +91,7 @@ export async function GET(req) {
     }, { status: 200 });
 
   } catch (error) {
-    console.error('Error en endpoint admin de sellers:', error);
+    logger.error('Error en endpoint admin de sellers:', error);
     return NextResponse.json({ 
       message: 'Error interno del servidor', 
       error: error.message 

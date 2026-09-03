@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCloudinary } from '@/utils/cloudinary';
+import { logger } from '@/lib/logger';
 
 export async function POST(req) {
   try {
@@ -29,7 +30,7 @@ export async function POST(req) {
     return NextResponse.json({ url: result.secure_url }, { status: 200 });
 
   } catch (error) {
-    console.error('Error al subir a Cloudinary:', error);
+    logger.error('Error al subir a Cloudinary:', error);
     return NextResponse.json({ error: 'Error al subir la imagen' }, { status: 500 });
   }
 }
@@ -52,7 +53,7 @@ export async function DELETE(req) {
     return NextResponse.json({ message: 'Imagen eliminada exitosamente' }, { status: 200 });
 
   } catch (error) {
-    console.error('Error al eliminar de Cloudinary:', error);
+    logger.error('Error al eliminar de Cloudinary:', error);
     return NextResponse.json({ error: 'Error al eliminar la imagen' }, { status: 500 });
   }
 }

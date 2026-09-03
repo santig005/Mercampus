@@ -2,7 +2,7 @@ import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { AppError } from '@/utils/lib/errors';
 import { updateProductSchema } from '@/lib/validators/product';
-import { invalidPayload } from '@/lib/validators/respond';
+import { invalidPayload } from '@/lib/api-response';
 import {
   getEmailFromToken,
   verifyOwnershipAndGetSellerId,
@@ -11,12 +11,13 @@ import { Product } from '@/utils/models/productSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
+import { logger } from '@/lib/logger';
 
 export async function GET(req, { params }) {
   try{
     await connectDB();
   }catch(error){
-    console.log(error)
+    logger.debug(error)
   }
   
 
@@ -50,7 +51,7 @@ export async function GET(req, { params }) {
     return NextResponse.json({ ...product.toObject(), schedules}, { status: 200 });
 
   } catch (error) {
-    console.log(error);
+    logger.debug(error);
     return NextResponse.json(
       { message: 'Error getting product', error: error.message },
       { status: 500 }
@@ -83,7 +84,7 @@ export async function PUT(req, { params }) {
     }
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
-    console.error("Error en PUT /api/products/:id", err);
+    logger.error("Error en PUT /api/products/:id", err);
     return NextResponse.json(
       { error: err.message || "Error interno" },
       { status: err.status || 500 }
@@ -104,7 +105,7 @@ export async function DELETE(req, { params }) {
     }
     return NextResponse.json({ message: "Producto eliminado" }, { status: 200 });
   } catch (err) {
-    console.error("Error en DELETE /api/products/:id", err);
+    logger.error("Error en DELETE /api/products/:id", err);
     return NextResponse.json(
       { error: err.message || "Error interno" },
       { status: err.status || 500 }

@@ -6,28 +6,29 @@ import {
   verifySellerId,
 } from "@/utils/lib/auth";
 import { updateSellerSchema } from "@/lib/validators/seller";
-import { invalidPayload } from "@/lib/validators/respond";
+import { invalidPayload } from "@/lib/api-response";
 import { Seller } from "@/utils/models/sellerSchema2";
 import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
+import { logger } from '@/lib/logger';
 
 
 
 function extractAuthHeader(req) {
   let auth = req.headers.get("authorization");
-  console.log("authHeader dentro");
-  console.log(auth);
+  logger.debug("authHeader dentro");
+  logger.debug(auth);
   if (!auth) {
     const sc = req.headers.get("x-vercel-sc-headers");
-    console.log("scHeader dentro");
-    console.log(sc);
+    logger.debug("scHeader dentro");
+    logger.debug(sc);
     if (sc) {
       try {
-        console.log("scHeader dentro try");
+        logger.debug("scHeader dentro try");
         const obj = JSON.parse(sc);
-        console.log("scHeader dentro try parseado");
-        console.log(obj);
+        logger.debug("scHeader dentro try parseado");
+        logger.debug(obj);
         auth = obj.Authorization || obj.authorization;
       } catch {}
     }
@@ -75,7 +76,7 @@ export async function GET(req, { params }) {
     
         return NextResponse.json({ seller: populatedSeller }, { status: 200 });
       } catch (error) {
-        console.error(error);
+        logger.error(error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 }
@@ -115,7 +116,7 @@ export async function PUT(req, { params }) {
   }  catch (error) {
     const status = error?.status || 500;
     const message = error?.message || "Error interno del servidor";
-    console.error("[PUT /api/sellers/:id]", message);
+    logger.error("[PUT /api/sellers/:id]", message);
     return NextResponse.json({ error: message }, { status });
   }
 }

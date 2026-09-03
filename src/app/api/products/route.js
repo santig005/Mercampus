@@ -10,8 +10,9 @@ import {
   createProductSchema,
   productQuerySchema,
 } from '@/lib/validators/product';
-import { invalidPayload } from '@/lib/validators/respond';
+import { invalidPayload } from '@/lib/api-response';
 import { Seller } from '@/utils/models/sellerSchema2';
+import { logger } from '@/lib/logger';
 
 export async function GET(req) {
   await connectDB();
@@ -92,7 +93,7 @@ export async function POST(req) {
       if (!tempUserId) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
       }
-      console.log('el id del usuario es ', tempUserId);
+      logger.debug('el id del usuario es ', tempUserId);
       const seller = await Seller.findOne({ userId: tempUserId });
       if (!seller) {
         return NextResponse.json(
@@ -111,7 +112,7 @@ export async function POST(req) {
       try {
         await newProduct.save();
       } catch (error) {
-        console.log('error al guardar el producto', error);
+        logger.debug('error al guardar el producto', error);
         return NextResponse.json(
           { message: 'Error al guardar el producto', error: error.message },
           { status: 500 }
