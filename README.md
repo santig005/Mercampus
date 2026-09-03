@@ -1,5 +1,43 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Desarrollo local
+
+```bash
+cp .env.example .env     # y rellena los valores
+npm ci
+npm run dev
+```
+
+### Datos de prueba
+
+`npm run seed` llena la base con 3 usuarios, 2 vendedores (uno aprobado y uno
+pendiente), 6 productos repartidos entre `antojos` y `marketplace`, y horarios
+para ambos vendedores. Es idempotente: borra las colecciones que siembra antes
+de insertar, así que correrlo dos veces no duplica nada.
+
+```bash
+npm run seed
+```
+
+Por eso mismo **nunca lo apuntes a producción**. El script se niega a correr si
+`NODE_ENV=production`, y si `MONGO_URI` no apunta a localhost exige un `--yes`
+explícito:
+
+```bash
+npm run seed -- --yes      # solo contra un cluster de desarrollo
+```
+
+### Verificación
+
+```bash
+npm run verify   # lint + test + build, la misma puerta que corre el CI
+npm run test     # solo los tests unitarios y de integración
+```
+
+Los tests de integración levantan un MongoDB en memoria
+(`mongodb-memory-server`), así que no necesitan base de datos ni conexión de
+red. La primera ejecución descarga el binario de mongod y tarda más.
+
 ## Getting Started
 
 First, run the development server:
