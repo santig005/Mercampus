@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { connectDB } from '../connectDB';
 import { User } from '../models/userSchema';
 
@@ -27,7 +28,7 @@ export const createOrUpdateUser = async (
     );
     return user;
   } catch (error) {
-    console.log('Error creating user:', error);
+    logger.error('Error creating user:', error);
   }
 };
 
@@ -36,6 +37,6 @@ export const deleteUser = async (id: string) => {
     await connectDB();
     await User.findOneAndDelete({ clerkId: id });
   } catch (error) {
-    console.log('Error deleting user:', error);
+    logger.error('Error deleting user:', error);
   }
 };

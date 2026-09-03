@@ -112,7 +112,7 @@ export async function POST(req) {
       try {
         await newProduct.save();
       } catch (error) {
-        logger.debug('error al guardar el producto', error);
+        logger.error('error al guardar el producto', error);
         return NextResponse.json(
           { message: 'Error al guardar el producto', error: error.message },
           { status: 500 }

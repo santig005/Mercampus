@@ -24,22 +24,45 @@ const shouldLog = (level: Level) => WEIGHT[level] >= WEIGHT[configuredLevel()];
 // vaya a un agregador de logs (T-60).
 type Context = Record<string, unknown>;
 
-const emit = (level: Exclude<Level, 'silent'>, message: string, context?: Context) => {
+/**
+ * Acepta cualquier valor y lo deja como objeto.
+ *
+ * Los sitios que venian de `console.log('algo', valor)` pasan errores, strings o
+ * numeros, no objetos. En vez de obligar a envolverlos a mano en ~70 llamadas,
+ * se normaliza aqui: el log sigue saliendo estructurado y los `catch (error)`
+ * —que en TS son `unknown`— no necesitan casts.
+ */
+function normalize(context: unknown): Context | undefined {
+  if (context === undefined || context === null) return undefined;
+
+  if (context instanceof Error) {
+    return { error: context.message, stack: context.stack };
+  }
+
+  if (typeof context === 'object' && !Array.isArray(context)) {
+    return context as Context;
+  }
+
+  return { detail: context };
+}
+
+const emit = (level: Exclude<Level, 'silent'>, message: string, context?: unknown) => {
   if (!shouldLog(level)) return;
 
   const line = `[${level}] ${message}`;
   const target = level === 'error' || level === 'warn' ? console.error : console.log;
+  const normalized = normalize(context);
 
-  if (context) {
-    target(line, context);
+  if (normalized) {
+    target(line, normalized);
   } else {
     target(line);
   }
 };
 
 export const logger = {
-  debug: (message: string, context?: Context) => emit('debug', message, context),
-  info: (message: string, context?: Context) => emit('info', message, context),
-  warn: (message: string, context?: Context) => emit('warn', message, context),
-  error: (message: string, context?: Context) => emit('error', message, context),
+  debug: (message: string, context?: unknown) => emit('debug', message, context),
+  info: (message: string, context?: unknown) => emit('info', message, context),
+  warn: (message: string, context?: unknown) => emit('warn', message, context),
+  error: (message: string, context?: unknown) => emit('error', message, context),
 };

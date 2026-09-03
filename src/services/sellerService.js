@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { fetchAPI } from './api';
 import { fetchAPIToken } from './apiToken';	
 
@@ -19,7 +20,7 @@ export const getSellerByEmail = async email => {
     const result= await fetchAPI(`/sellers/${email}`);
     return result?.seller ? result : {seller: null};
   } catch (error) {
-    console.error('Error fetching seller by email:', error);
+    logger.error('Error fetching seller by email:', error);
   }
 };
 

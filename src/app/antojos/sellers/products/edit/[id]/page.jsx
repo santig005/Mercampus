@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import {
   deleteProduct,
@@ -49,7 +50,7 @@ export default function EditPsroductPage({ params }) {
           }
         } catch (error) {
           setError('Error al cargar los detalles del producto.');
-          console.error(error);
+          logger.error(error);
         } finally {
           setLoading(false);
         }
@@ -78,7 +79,7 @@ export default function EditPsroductPage({ params }) {
       router.push('/antojos/sellers/products/edit');
     } catch (error) {
       setError('Error al actualizar el producto.');
-      console.error(error);
+      logger.error(error);
     }
   };
 
@@ -98,7 +99,7 @@ export default function EditPsroductPage({ params }) {
       router.push('/antojos/sellers/products/edit');
     } catch (error) {
       setError('Error al eliminar el producto.');
-      console.error(error);
+      logger.error(error);
     }
   };
 

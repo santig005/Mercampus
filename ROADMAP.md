@@ -278,11 +278,16 @@ de verdad.
 **Depende de:** T-15
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-15d · Logger en servicios, utilidades y páginas
+### [x] T-15d · Logger en servicios, utilidades y páginas
 **Por qué:** quedan 41 `console.*` en `src/services/`, `src/utils/` y las páginas
 de `src/app/` que no son API.
 **Hecho cuando:** migradas al logger; el guardián cubre ya todo `src/`, de modo
 que el criterio de T-15 (cero `console.log` fuera de `scripts/`) queda cerrado.
+**Hecho:** 41 llamadas migradas en 16 archivos. El guardián ahora recorre todo
+`src/` (no solo las carpetas ya migradas) y además cuenta como fallo un
+`console.log` **comentado**: se encontraron y eliminaron tres restos de
+depuración así. El logger normaliza el contexto (Error, string, número u
+objeto) para que un `catch (error)` en TypeScript no necesite casts.
 **Depende de:** T-15
 **Modelo:** `sonnet` · **Nocturno:** sí
 

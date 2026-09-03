@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
-import { logger } from '@/lib/logger';
 import Carousel from '@/components/Carousel';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
 import React, { memo, useEffect, useState } from 'react';
@@ -44,7 +43,6 @@ function ProductModal({ product, theKey }) {
         product_id: product._id,
       });
     }
-    // logger.debug(product);
   }, [product]);
 
   const handleShowModal = () => {

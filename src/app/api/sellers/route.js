@@ -95,7 +95,7 @@ export async function POST(req) {
         const userId = usuario._id;
         tempUserId = userId;
       } catch (error) {
-        logger.debug('Error al buscar el usuario:', error.message);
+        logger.error('Error al buscar el usuario:', error.message);
       }
 
       // Obtener los datos del cuerpo de la solicitud

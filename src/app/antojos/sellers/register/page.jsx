@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InputFields from '@/components/auth/register/InputFields';
@@ -56,7 +57,7 @@ const RegisterSeller = () => {
 
     sellerData.logo = sellerData?.images[0];
     sellerData.description = JSON.stringify(sellerData.description);
-    // console.log(sellerData);
+    // logger.debug(sellerData);
 
     try {
       const response = await fetch('/api/sellers', {
@@ -73,11 +74,11 @@ const RegisterSeller = () => {
         router.push('/antojos/sellers/approving');
       } else {
         const errorData = await response.json();
-        console.error('Error:', errorData.message);
+        logger.error('Error:', errorData.message);
         setErrorCode(errorData.message);
       }
     } catch (error) {
-      console.error('Network Error:', error);
+      logger.error('Network Error:', error);
       setErrorCode('Network Error. Please try again.');
     }
     setLoading(false);

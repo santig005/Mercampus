@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { connectDB } from "@/utils/connectDB";
 import { User } from "@/utils/models/userSchema";
 import mongoose from 'mongoose';
@@ -8,7 +9,7 @@ async function populateSellerIdInUsers() {
   try {
     // Conectar a la base de datos
     await connectDB();
-    console.log('Conexión a la base de datos establecida');
+    logger.debug('Conexión a la base de datos establecida');
 
     // Obtener todos los documentos Seller
     const sellers = await Seller.find({});
@@ -19,19 +20,19 @@ async function populateSellerIdInUsers() {
       if (user) {
         user.sellerId = seller._id;
         await user.save();
-        console.log(`Usuario ${user.email} actualizado con sellerId: ${seller._id}`);
+        logger.debug(`Usuario ${user.email} actualizado con sellerId: ${seller._id}`);
       } else {
-        console.log(`No se encontró usuario para el seller ${seller._id}`);
+        logger.debug(`No se encontró usuario para el seller ${seller._id}`);
       }
     }
 
-    console.log('Migración completada con éxito');
+    logger.debug('Migración completada con éxito');
   } catch (error) {
-    console.error('Error durante la migración:', error);
+    logger.error('Error durante la migración:', error);
   } finally {
     // Cerrar la conexión a la base de datos
     mongoose.connection.close();
-    console.log('Conexión a la base de datos cerrada');
+    logger.debug('Conexión a la base de datos cerrada');
   }
 }
 
@@ -54,7 +55,7 @@ export const getUserWithSellerByEmail = async (email) => {
 
         return { user: userObj, seller };
       } catch (error) {
-        console.error(error);
+        logger.error(error);
         return { error: error.message };
       }
   };
