@@ -169,6 +169,18 @@ agujero era exclusivamente la verificacion de propiedad comentada.
 **Modelo:** `opus` — bug sutil de seguridad, aquí no se ahorra
 **Nocturno:** no
 
+### [ ] T-10b · Autorización en `POST /api/schedules`
+**Por qué:** encontrado en T-13b. La ruta reemplaza (borra e inserta) el
+horario completo de cualquier `sellerId` que venga en el cuerpo, sin comprobar
+que quien llama sea el dueño de ese vendedor. Cualquiera con sesión puede
+vaciar o reescribir el horario de un negocio ajeno.
+**Hecho cuando:** usa `getEmailFromToken` + `verifySellerId` (los mismos
+helpers de T-10) antes de tocar la base; tests 401/403/200 iguales a los de
+T-10.
+**Depende de:** T-10
+**Modelo:** `opus` — mismo tipo de bug que T-10
+**Nocturno:** no
+
 ### [ ] T-11 · Cerrar `POST /api/register`
 **Por qué:** crea usuarios sin autenticación ni validación, y el `unique: true`
 del email está comentado. Es un vector de spam directo a la base.
@@ -226,12 +238,36 @@ limite de ~15 archivos por PR.
 **Modelo:** `sonnet` — repetitivo y con criterio claro
 **Nocturno:** sí
 
-### [ ] T-13b · Terminar la validación con Zod
+### [x] T-13b · Terminar la validación con Zod
 **Por qué:** T-13 cubrió productos y vendedores. El resto de endpoints sigue
 aceptando lo que mande el cliente.
 **Hecho cuando:** schemas para `POST /api/sellers`, horarios, pqrs y usuarios,
 con sus tests de payload inválido. `POST /api/register` va aparte porque su
 existencia la decide T-11.
+**Corrección:** no existe ningún endpoint de mutación de usuarios aparte de
+`POST /api/register` (que queda fuera, como dice el propio criterio) y del
+webhook de Clerk, que ya verifica su firma con svix y no necesita Zod además.
+"Usuarios" no tenía nada que cubrir.
+**Hecho:** `src/lib/validators/schedule.ts` y `src/lib/validators/pqrs.ts`
+nuevos; `createSellerSchema` de T-13 por fin se conecta. Cubiertos
+`POST /api/sellers`, `POST /api/schedules` y `POST /api/pqrs`.
+**Dos bugs encontrados y arreglados, necesarios para que los tests fueran
+honestos:**
+- `POST /api/sellers` y `POST /api/pqrs` envolvían el guardado en
+  `try { ... } catch { logger.debug(error) }` y devolvían éxito **pase lo que
+  pase**. Un fallo real de Mongoose (o el usuario sin `User` asociado, que es
+  justo el caso que rompe el webhook según T-05) quedaba silenciado y el
+  cliente recibía 201/"creado" sin que se hubiera creado nada.
+- `POST /api/pqrs` hacía `NextResponse.json({ status: 201 })` **sin segundo
+  argumento**: el `status` quedaba como un campo cualquiera del cuerpo, y el
+  código HTTP real era 200 siempre.
+- En `POST /api/schedules`, un `day` que no coincidiera exactamente con
+  `daysES` hacía que `indexOf` devolviera `-1` y el horario se guardara con
+  `day: 0`, en silencio. Ahora se rechaza con 400 antes de llegar ahí.
+**Hallazgo sin arreglar, anotado para otra tarea:** `POST /api/schedules` no
+comprueba que quien llama sea dueño del `sellerId` que manda — cualquiera con
+sesión puede borrar y reemplazar el horario de cualquier vendedor. Es del mismo
+tipo que T-10, pero en una ruta que T-10 no tocó. Candidata: T-10b.
 **Depende de:** T-13
 **Modelo:** `sonnet` · **Nocturno:** sí
 
@@ -239,6 +275,10 @@ existencia la decide T-11.
 **Por qué:** el PUT y DELETE de `api/sellers/route.js` usan `req.query`, que no
 existe en App Router: nunca funcionaron. `api/sellers/availability` está
 comentado entero, así que la disponibilidad automática por horario no funciona.
+**Otro candidato, visto en T-13b:** `GET /api/schedules` filtra por
+`req.sellerid` (un campo que no existe en `NextRequest`, así que siempre es
+`undefined`). Nada del frontend lo llama — `Schedule.jsx` solo usa el `POST`.
+`GET /api/schedules/[id]` es la ruta que sí funciona y sí se usa.
 **Hecho cuando:** los handlers muertos se eliminan; se decide si la
 disponibilidad automática se restaura como cron de Vercel (y entonces
 `allowedIPs.js` se reemplaza por un `CRON_SECRET`) o se elimina junto con el

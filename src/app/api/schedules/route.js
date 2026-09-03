@@ -5,6 +5,8 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { currentUser } from '@clerk/nextjs/server';
 import { User } from '@/utils/models/userSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
+import { replaceSchedulesSchema } from '@/lib/validators/schedule';
+import { invalidPayload } from '@/lib/api-response';
 
 
 export async function GET(req) {
@@ -27,17 +29,14 @@ export async function POST(req) {
   await connectDB();
 
   try {
-    const { sellerId, schedules } = await req.json();
-
-    // Data validation
-    if (!sellerId || !schedules || !Array.isArray(schedules)) {
-      return NextResponse.json(
-      { message: 'Invalid data: sellerId and an array of schedules are required.' },
-      { status: 400 }
-      );
+    const parsed = replaceSchedulesSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
     }
+    const { sellerId, schedules } = parsed.data;
 
-    // Create new schedules
+    // day ya viene validado contra daysES, asi que indexOf no puede dar -1
+    // (que antes guardaba day: 0 en silencio).
     const newSchedules = schedules.map((schedule) => ({
       sellerId,
       startTime: schedule.startTime,

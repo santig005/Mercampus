@@ -7,6 +7,8 @@ import { currentUser } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 import { logger } from '@/lib/logger';
+import { createSellerSchema } from '@/lib/validators/seller';
+import { invalidPayload } from '@/lib/api-response';
 
 export async function GET(req) {
   try {
@@ -81,51 +83,42 @@ export async function GET(req) {
 // POST method to handle seller registration
 export async function POST(req) {
   try {
-    // Connect to the database
     await connectDB();
     const user = await currentUser();
-    if (user) {
-      const email = user.emailAddresses[0].emailAddress;
-      logger.debug('email', email);
-      let tempUserId = '';
-      var usuario;
-      try {
-        usuario = await User.findOne({ email: email });
-        logger.debug('usuario', usuario);
-        const userId = usuario._id;
-        tempUserId = userId;
-      } catch (error) {
-        logger.error('Error al buscar el usuario:', error.message);
-      }
+    if (!user) {
+      return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
+    }
 
-      // Obtener los datos del cuerpo de la solicitud
-      const body = await req.json();
-      try {
-        body.userId = tempUserId;
-        body.clerkId = user.id;
-      } catch (error) {
-        logger.debug(error);
-      }
-
-      // Create a new seller using the Seller model
-      try {
-        const newSeller = new Seller(body);
-        await newSeller.save();
-        usuario.sellerId = newSeller._id;
-        usuario.role = 'seller';
-        usuario.save();
-      } catch (error) {
-        logger.debug(error);
-      }
-
-      // Return a successful response
+    const email = user.emailAddresses[0].emailAddress;
+    const usuario = await User.findOne({ email });
+    if (!usuario) {
+      // El webhook de Clerk deberia haber creado este User antes de que la
+      // sesion llegue aqui; ver el hallazgo de T-05 sobre createOrUpdateUser.
       return NextResponse.json(
-        { message: 'Seller created successfully' },
-        { status: 201 }
+        { message: 'No se encontró un usuario para esta sesión.' },
+        { status: 404 }
       );
     }
+
+    const parsed = createSellerSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
+    }
+
+    // userId sale de la sesión, nunca del cuerpo.
+    const newSeller = new Seller({ ...parsed.data, userId: usuario._id });
+    await newSeller.save();
+
+    usuario.sellerId = newSeller._id;
+    usuario.role = 'seller';
+    await usuario.save();
+
+    return NextResponse.json(
+      { message: 'Seller created successfully', seller: newSeller },
+      { status: 201 }
+    );
   } catch (error) {
-    // Handle errors and return a response with the message
+    logger.error('Error creating seller', error);
     return NextResponse.json(
       { message: 'Error creating seller', error: error.message },
       { status: 500 }
