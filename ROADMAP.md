@@ -125,7 +125,7 @@ importadores y es de T-30.
 **Modelo:** `opusplan` — decidir qué migrar primero es ambiguo
 **Nocturno:** no
 
-### [~] T-06 · Script `verify` y protección de ramas
+### [x] T-06 · Script `verify` y protección de ramas
 **Por qué:** el agente necesita un solo comando que diga sí o no.
 **Hecho cuando:** `npm run verify` = lint + typecheck + test + build;
 `develop` y `main` protegidas exigiendo el check de CI en verde antes de merge.
@@ -133,9 +133,11 @@ importadores y es de T-30.
 primer fallo e inyecta los placeholders de ImageKit que el build necesita. El
 workflow llama a `npm run verify` en vez de definir los pasos por su cuenta, así
 que local y CI no pueden divergir.
-**Falta:** proteger `develop` y `main` en GitHub exigiendo el check `quality`.
-Es configuración del repo, no código, y la hace un humano. `typecheck` ya entro
-en el runner con T-05.
+**Protección aplicada** en `develop` y `main`: exigen el check `quality`, con
+`enforce_admins: true` — sin eso la regla 1 no ataría al agente, que actúa con
+permisos de admin. Sin revisiones requeridas: con un solo autor bloquearían al
+dueño sin aportar nada. Para quitarla:
+`gh api -X DELETE repos/santig005/Mercampus/branches/<rama>/protection`.
 **Depende de:** T-01, T-02, T-05
 **Modelo:** `sonnet` · **Nocturno:** no
 
