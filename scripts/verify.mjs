@@ -4,8 +4,6 @@
 // Correr los pasos por separado invita a recortarlos por criterio propio
 // ("este PR no toca código, me salto el build"), que es justo como se cuelan
 // los fallos. Aquí el alcance no es negociable: o pasan todos, o falla.
-//
-// Falta `typecheck`, que entra con T-05.
 
 import { spawn } from 'node:child_process';
 
@@ -22,6 +20,7 @@ const PLACEHOLDER_ENV = {
 
 const STEPS = [
   { name: 'lint', command: 'npm run lint' },
+  { name: 'typecheck', command: 'npm run typecheck' },
   { name: 'test', command: 'npm run test' },
   { name: 'build', command: 'npm run build' },
 ];

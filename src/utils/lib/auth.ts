@@ -29,7 +29,10 @@ async function getEmailFromToken() {
  * Verifica que el usuario autenticado sea el vendedor propietario
  * del producto dado, y devuelve el sellerId.
  */
-export const verifyOwnershipAndGetSellerId = async (productId,email) => {
+export const verifyOwnershipAndGetSellerId = async (
+  productId: string,
+  email: string
+) => {
   const { user, seller, error } = await getUserWithSellerByEmail(email);
   console.log("user, seller, error");
   console.log(user);
@@ -69,7 +72,7 @@ export const verifyOwnershipAndGetSellerId = async (productId,email) => {
  * Verifica si el usuario autenticado (o admin) puede acceder
  * al seller con _id = sellerId. Devuelve { user, seller } si OK.
  */
-export const verifySellerId = async (sellerId,email) => {
+export const verifySellerId = async (sellerId: string, email: string) => {
   const { user, seller, error } = await getUserWithSellerByEmail(email);
   if (error) {
     throw new AppError("Error interno obteniendo datos de usuario.", 500);
@@ -92,7 +95,7 @@ export const verifySellerId = async (sellerId,email) => {
 
   return { user, seller };
 };
-export const verifySellerEmail = async (sellerEmail) => {
+export const verifySellerEmail = async (sellerEmail: string) => {
   const email = await getEmailFromToken();
   if (email !== sellerEmail) {
     throw new AppError("No tienes permiso para modificar este vendedor.", 403);

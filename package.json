@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "verify": "node scripts/verify.mjs",
     "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.1",
     "@types/react": "^18.3.5",
     "daisyui": "^4.12.10",
     "eslint": "^8",
@@ -50,6 +52,7 @@
     "mongodb-memory-server": "^11.2.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   }
 }

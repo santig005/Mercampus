@@ -1,12 +1,15 @@
-import { User } from "../models/userSchema";
-import { connectDB } from "../connectDB";
+import { connectDB } from '../connectDB';
+import { User } from '../models/userSchema';
+
+// Forma del payload que manda el webhook de Clerk.
+type ClerkEmailAddress = { email_address: string };
 
 export const createOrUpdateUser = async (
-  id,
-  first_name,
-  last_name,
-  email_addresses,
-  image_url
+  id: string,
+  first_name: string,
+  last_name: string,
+  email_addresses: ClerkEmailAddress[],
+  image_url: string
 ) => {
   try {
     await connectDB();
@@ -22,14 +25,13 @@ export const createOrUpdateUser = async (
       },
       { new: true, upsert: true }
     );
-    // console.log(user); revisar los datos q envia
     return user;
   } catch (error) {
     console.log('Error creating user:', error);
   }
 };
 
-export const deleteUser = async (id) => {
+export const deleteUser = async (id: string) => {
   try {
     await connectDB();
     await User.findOneAndDelete({ clerkId: id });

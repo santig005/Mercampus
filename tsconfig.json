@@ -1,0 +1,59 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "allowJs": true,
+    // allowJs deja convivir .js y .ts; checkJs queda en false a proposito.
+    // Con checkJs activado tsc revisaria los ~200 archivos JS del repo de golpe
+    // y `npm run typecheck` naceria en rojo, que es justo el problema que T-01
+    // arreglo en el CI. La migracion va archivo a archivo: solo lo que ya es
+    // .ts se comprueba.
+    "checkJs": false,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@public/*": [
+        "./public/*"
+      ]
+    }
+  },
+  // .next/types/** queda fuera a proposito. Son los validadores de ruta que
+  // genera Next: bajo strict se quejan de cada pagina .jsx sin tipar, y ademas
+  // solo existen despues de un build, asi que en CI (donde typecheck corre
+  // antes) ni estarian. Entraran cuando las paginas sean .tsx.
+  // El JS entra en el programa pero no se comprueba (checkJs: false). Sin esto,
+  // un .ts que importa un .js lo ve como modulo sin tipos y falla con TS7016
+  // bajo strict. Incluyendolo, tsc infiere los tipos del JS sin exigirle nada.
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
+}

@@ -12,7 +12,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const SRC = new URL('../src/', import.meta.url);
-const CANDIDATE_SUFFIXES = ['', '.js', '.mjs', '/index.js'];
+const CANDIDATE_SUFFIXES = ['', '.ts', '.js', '.mjs', '/index.js'];
 
 export function resolve(specifier, context, nextResolve) {
   if (!specifier.startsWith('@/')) {
@@ -28,7 +28,14 @@ export function resolve(specifier, context, nextResolve) {
       // CommonJS, falle y los reparse (MODULE_TYPELESS_PACKAGE_JSON). Todo
       // src/ es ESM. La alternativa sería "type": "module" en package.json,
       // que cambiaría la interpretación de todos los .js del repo.
-      return { url: candidate.href, format: 'module', shortCircuit: true };
+      // Declarar el formato evita que Node intente parsear estos archivos como
+      // CommonJS, falle y los reparse (MODULE_TYPELESS_PACKAGE_JSON). Los .ts
+      // los quita de tipos el propio Node (22.18+); de ahi el formato distinto.
+      return {
+        url: candidate.href,
+        format: candidate.href.endsWith('.ts') ? 'module-typescript' : 'module',
+        shortCircuit: true,
+      };
     }
   }
 

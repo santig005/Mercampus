@@ -105,14 +105,23 @@ forks, asi que alli el job se salta.
 **Depende de:** T-03
 **Modelo:** `sonnet` · **Nocturno:** no
 
-### [ ] T-05 · TypeScript incremental
+### [x] T-05 · TypeScript incremental
 **Por qué:** todo es JS sin tipos; el agente no tiene red de seguridad al
 refactorizar y `npm run typecheck` es el chequeo más barato que existe.
 **Hecho cuando:** `tsconfig.json` con `allowJs: true` y `strict: true`;
 `npm run typecheck` pasa y queda añadido a `scripts/verify.mjs`; los modelos de
 Mongoose y `src/lib/` migrados a `.ts`. El resto migra tarea por tarea, no de
 golpe.
-**Alcance:** `tsconfig.json`, `src/models/`, `src/lib/`.
+**Sin migrar a proposito:** `favoriteSchema.js` (0 importadores, lo borra T-34) y
+`clerkUser.js` (0 importadores; al pasarlo a `.ts` afloran cuatro `err.status`
+sobre un `Error`, que no tiene esa propiedad, y una opcion `type` inexistente en
+`verifyToken` de Clerk — arreglarlo es reescribir autenticacion, T-10/T-12).
+**Ojo con Node:** los scripts de `scripts/` importan los modelos, ahora `.ts`.
+Node les quita los tipos solo desde la 22.18, asi que el CI y `engines` suben a
+Node 22. Con Node 20 se rompen `npm run seed` y `npm run test:e2e`.
+**Alcance:** `tsconfig.json`, `src/utils/models/`, `src/utils/lib/`. Los archivos
+se migran en su sitio: mover `utils/models` a `models/` tocaria a sus ~20
+importadores y es de T-30.
 **Modelo:** `opusplan` — decidir qué migrar primero es ambiguo
 **Nocturno:** no
 
@@ -124,9 +133,9 @@ golpe.
 primer fallo e inyecta los placeholders de ImageKit que el build necesita. El
 workflow llama a `npm run verify` en vez de definir los pasos por su cuenta, así
 que local y CI no pueden divergir.
-**Falta:** añadir `typecheck` al runner (entra con T-05), y proteger `develop` y
-`main` en GitHub exigiendo el check `quality` — eso es configuración del repo,
-no código, y la hace un humano.
+**Falta:** proteger `develop` y `main` en GitHub exigiendo el check `quality`.
+Es configuración del repo, no código, y la hace un humano. `typecheck` ya entro
+en el runner con T-05.
 **Depende de:** T-01, T-02, T-05
 **Modelo:** `sonnet` · **Nocturno:** no
 
@@ -157,7 +166,14 @@ de verdad; `getEmailFromToken` corregido (falta `await` en `auth()` y
 ### [ ] T-11 · Cerrar `POST /api/register`
 **Por qué:** crea usuarios sin autenticación ni validación, y el `unique: true`
 del email está comentado. Es un vector de spam directo a la base.
-**Hecho cuando:** o se elimina la ruta (el webhook de Clerk ya crea usuarios) o
+**El webhook NO crea usuarios.** Verificado en T-05 contra Mongo en memoria:
+`createOrUpdateUser` hace `findOneAndUpdate({ clerkId }, ..., { upsert: true })`
+pero `clerkId` no existe en `userSchema`, asi que Mongoose lanza
+`StrictModeError: Path "clerkId" is not in schema` y no se crea nada. El
+`try/catch` se lo traga y devuelve `undefined`. Es decir: la premisa de "el
+webhook ya crea usuarios" es falsa, y hay que arreglar eso antes de decidir si
+se borra `/api/register`.
+**Hecho cuando:** o se elimina la ruta (una vez el webhook funcione de verdad) o
 se protege y valida; índice único en `email` restaurado con migración previa de
 duplicados en `scripts/`.
 **Modelo:** `sonnet` · **Nocturno:** no (implica decidir si se borra la ruta)
@@ -312,6 +328,8 @@ que reventaría con `OverwriteModelError` si alguien lo importara.
 categorías salen de `utils/resources/categories.js` y `utils/categoriesList.js`;
 además el endpoint era el único con un `GET()` sin argumentos, así que Next lo
 prerenderizaba en el build y lo rompía.
+**Candidato nuevo:** `src/utils/lib/clerkUser.js`, 0 importadores. Encontrado en
+T-05, donde ademas se vio que no compila bajo TS.
 **Hecho cuando:** eliminados, con la búsqueda de referencias documentada en el
 PR; `knip` o similar añadido al CI para que no vuelva a acumularse.
 **Modelo:** `sonnet` · **Nocturno:** sí
