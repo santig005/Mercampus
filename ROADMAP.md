@@ -101,16 +101,24 @@ artefacto del run.
 **Por qué:** todo es JS sin tipos; el agente no tiene red de seguridad al
 refactorizar y `npm run typecheck` es el chequeo más barato que existe.
 **Hecho cuando:** `tsconfig.json` con `allowJs: true` y `strict: true`;
-`npm run typecheck` pasa; los modelos de Mongoose y `src/lib/` migrados a `.ts`.
-El resto migra tarea por tarea, no de golpe.
+`npm run typecheck` pasa y queda añadido a `scripts/verify.mjs`; los modelos de
+Mongoose y `src/lib/` migrados a `.ts`. El resto migra tarea por tarea, no de
+golpe.
 **Alcance:** `tsconfig.json`, `src/models/`, `src/lib/`.
 **Modelo:** `opusplan` — decidir qué migrar primero es ambiguo
 **Nocturno:** no
 
-### [ ] T-06 · Script `verify` y protección de ramas
+### [~] T-06 · Script `verify` y protección de ramas
 **Por qué:** el agente necesita un solo comando que diga sí o no.
 **Hecho cuando:** `npm run verify` = lint + typecheck + test + build;
 `develop` y `main` protegidas exigiendo el check de CI en verde antes de merge.
+**Hecho ya:** `scripts/verify.mjs` corre lint + test + build, se planta en el
+primer fallo e inyecta los placeholders de ImageKit que el build necesita. El
+workflow llama a `npm run verify` en vez de definir los pasos por su cuenta, así
+que local y CI no pueden divergir.
+**Falta:** añadir `typecheck` al runner (entra con T-05), y proteger `develop` y
+`main` en GitHub exigiendo el check `quality` — eso es configuración del repo,
+no código, y la hace un humano.
 **Depende de:** T-01, T-02, T-05
 **Modelo:** `sonnet` · **Nocturno:** no
 

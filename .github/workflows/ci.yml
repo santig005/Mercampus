@@ -28,20 +28,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Run unit tests
-        run: npm run test
-
-      # Los SDK de ImageKit se instancian a nivel de modulo en
-      # src/utils/imagekit.js, asi que `next build` falla al recolectar los
-      # route handlers si estas variables no existen. Son valores falsos a
-      # proposito: en build los modulos solo se cargan, nunca se ejecutan.
-      # No van como secrets porque los secrets no llegan a los PR desde forks.
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_IMAGEKIT_KEY: public_ci_placeholder
-          NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT: private_ci_placeholder
-          NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT: https://ik.imagekit.io/ci-placeholder
+      # Misma puerta que en local: scripts/verify.mjs corre lint, test y build,
+      # e inyecta los placeholders de ImageKit que el build necesita. Definir
+      # aqui los pasos por separado los dejaria divergir de los de local.
+      - name: Verify (lint + test + build)
+        run: npm run verify
