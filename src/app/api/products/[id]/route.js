@@ -1,5 +1,10 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
+import { AppError } from '@/utils/lib/errors';
+import {
+  getEmailFromToken,
+  verifyOwnershipAndGetSellerId,
+} from '@/utils/lib/auth';
 import { Product } from '@/utils/models/productSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
@@ -53,18 +58,13 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    console.log("→ PUT /api/products/:id, arrancando auth...");
-    //const { userId, email } = await getUserFromToken(req);
-    //console.log("✔️ Sesión válida para userId:", userId, "email:", email);
-
-    // 3) Verifica que el usuario autenticado sea el vendedor propietario del producto dado, y devuelve el sellerId.
-    
     await connectDB();
-    // 1) valida auth + ownership
-    
-    //7await verifyOwnershipAndGetSellerId(params.id,email);
 
-    // 2) haz el update
+    // Identidad y propiedad antes de tocar nada. Lanzan AppError con su status:
+    // 401 sin sesión, 403 si el producto es de otro vendedor.
+    const email = await getEmailFromToken();
+    await verifyOwnershipAndGetSellerId(params.id, email);
+
     const data = await req.json();
     
     // Validar que la sección sea válida si se está actualizando
@@ -95,10 +95,10 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     await connectDB();
-    // 1) valida auth + ownership
-    //await verifyOwnershipAndGetSellerId(params.id);
 
-    // 2) haz el delete
+    const email = await getEmailFromToken();
+    await verifyOwnershipAndGetSellerId(params.id, email);
+
     const deleted = await Product.findByIdAndDelete(params.id);
     if (!deleted) {
       throw new AppError("Producto no encontrado al eliminar.", 404);

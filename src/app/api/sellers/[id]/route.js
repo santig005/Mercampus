@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
+import {
+  getEmailFromToken,
+  verifySellerEmail,
+  verifySellerId,
+} from "@/utils/lib/auth";
 import { Seller } from "@/utils/models/sellerSchema2";
 import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
@@ -74,30 +79,17 @@ export async function GET(req, { params }) {
 }
 export async function PUT(req, { params }) {
   try {
-       /* console.log("voy a extraer");
-        const { userId } = await auth();
-        console.log("userId");
-        console.log(userId);
-        
-        if (!userId) {
-          //throw new AppError("No autenticado.", 401);
-          return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-        }
-        const client=clerkClient();
-        
-        const user = await client.users.getUser(userId);
-        const email = user.emailAddresses?.[0]?.emailAddress;
-        if (!email) {
-          //throw new AppError("No se encontró email en Clerk.", 500);
-          return NextResponse.json({ error: "No se encontró email en Clerk." }, { status: 500 });
-        }
-    
-      console.log('Cookies recibidas:', req.headers); */
+      await connectDB();
+
+      // Identidad primero: 401 sin sesión. Despues propiedad, segun la ruta
+      // identifique al vendedor por email o por id.
+      const email = await getEmailFromToken();
+
       await connectDB();
       const data = await req.json();
       let seller;
       if (params.id.includes('@')) {
-          //verifySellerEmail(params.id,email);
+          await verifySellerEmail(params.id, email);
           const userDb = await User.findOne({ email: params.id });
 
           if (!userDb) {
@@ -105,7 +97,7 @@ export async function PUT(req, { params }) {
           }
           seller = await Seller.findOneAndUpdate({ userId: userDb._id }, data, { new: true });
       } else {
-          ///await verifySellerId(params.id,email);
+          await verifySellerId(params.id, email);
           seller = await Seller.findByIdAndUpdate(params.id, data, { new: true });
       }
 

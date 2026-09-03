@@ -152,7 +152,7 @@ Esto es lo que arreglarías primero si el proyecto estuviera vivo. Como es
 portafolio, es la sección que mejor se cuenta en una entrevista — razón de más
 para hacerla tú.
 
-### [ ] T-10 · Restaurar la autorización en mutaciones (crítico)
+### [x] T-10 · Restaurar la autorización en mutaciones (crítico)
 **Por qué:** en `api/products/[id]` (PUT, DELETE) y `api/sellers/[id]` (PUT) la
 verificación de propiedad está **comentada**. Cualquiera con un `fetch` edita o
 borra productos ajenos y modifica perfiles de vendedor.
@@ -160,7 +160,11 @@ borra productos ajenos y modifica perfiles de vendedor.
 de verdad; `getEmailFromToken` corregido (falta `await` en `auth()` y
 `clerkClient()`); tests que comprueban 401 sin sesión, 403 con sesión ajena y
 200 con el dueño.
-**Alcance:** `src/app/api/products/[id]/route.js`, `src/app/api/sellers/[id]/route.js`, `src/utils/lib/auth.js`.
+**Matiz sobre el `await`:** sin el, `userId` sale `undefined` y la comprobacion
+`if (!userId)` salta siempre, o sea que la ruta responde 401 a todo el mundo.
+Fallaba **cerrado**, no abierto: era un bug de funcionalidad, no el agujero. El
+agujero era exclusivamente la verificacion de propiedad comentada.
+**Alcance:** `src/app/api/products/[id]/route.js`, `src/app/api/sellers/[id]/route.js`, `src/utils/lib/auth.ts`.
 **Depende de:** T-02
 **Modelo:** `opus` — bug sutil de seguridad, aquí no se ahorra
 **Nocturno:** no
