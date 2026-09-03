@@ -68,6 +68,11 @@ const productSchema = new Schema(
   }
 );
 
+// El listado filtra siempre por section y, cuando se pide un vendedor, por
+// sellerId. Sin indices ambos eran collection scan.
+productSchema.index({ sellerId: 1 });
+productSchema.index({ section: 1 });
+
 export type ProductDoc = InferSchemaType<typeof productSchema>;
 
 export const Product: Model<ProductDoc> =

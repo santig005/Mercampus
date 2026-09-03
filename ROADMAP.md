@@ -255,11 +255,16 @@ pero nadie lo ha corrido contra la base real. Exige `--yes` porque escribe. Al
 contrario que el seed, esta migración sí está pensada para producción.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-21 · Índices
+### [x] T-21 · Índices
 **Por qué:** ningún schema define índices. Todo es collection scan.
 **Hecho cuando:** índices en `Product.sellerId`, `Product.section`,
 `Schedule.sellerId`, `User.email`, `Seller.userId`, `Seller.university`;
 verificado con `.explain()` en un test o un script.
+**Ojo con `Product.section`:** solo tiene dos valores posibles, asi que como
+indice suelto es poco selectivo y Mongo puede ignorarlo. Lo util de verdad seria
+un compuesto `{section, sellerId}` o `{section, category}`. Se implemento el
+sencillo porque es lo que pide el criterio; el compuesto merece medirse con
+datos reales antes de añadirlo.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [ ] T-22 · Matar el N+1 de horarios

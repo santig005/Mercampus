@@ -39,6 +39,11 @@ const userSchema = new Schema(
   }
 );
 
+// El email es la clave con la que se busca al usuario en cada verificacion de
+// autorizacion. Sin unique: eso llega con T-11, que antes tiene que migrar los
+// duplicados que ya existen.
+userSchema.index({ email: 1 });
+
 export type UserDoc = InferSchemaType<typeof userSchema>;
 
 export const User: Model<UserDoc> =
