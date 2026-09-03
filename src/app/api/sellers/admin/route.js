@@ -41,7 +41,7 @@ export async function GET(req) {
         }
       }
     } catch (error) {
-      logger.debug('Error verificando rol de admin:', error);
+      logger.error('Error verificando rol de admin:', error);
       return NextResponse.json({ message: 'Error de autenticación' }, { status: 401 });
     }
 

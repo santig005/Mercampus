@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { getSellerProducts, updateProduct } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
@@ -35,7 +36,7 @@ export default function EditProductsPage() {
           const response = await getSellerProducts(seller._id);
           setProducts(response.products);
         } catch (error) {
-          console.error('Error fetching products:', error);
+          logger.error('Error fetching products:', error);
         } finally {
           setIsLoading(false);
         }
@@ -59,8 +60,8 @@ export default function EditProductsPage() {
         )
       );
       const token = await getToken({ skipCache: true});
-      console.log("etngo token");
-      console.log(token);
+      logger.debug("etngo token");
+      logger.debug(token);
       const updatedProduct = await updateProduct(id, {
         availability: !currentAvailability
       },token);
@@ -75,7 +76,7 @@ export default function EditProductsPage() {
         );
       }
     } catch (error) {
-      console.error('Error updating availability:', error);
+      logger.error('Error updating availability:', error);
     }
   };
   const handleSellerAvailability = async () => {
@@ -92,7 +93,7 @@ export default function EditProductsPage() {
         setSeller({ ...seller, availability: !sellerAvailability });
       }
     } catch (error) {
-      console.error('Error updating seller availability:', error);
+      logger.error('Error updating seller availability:', error);
     }
   };
 

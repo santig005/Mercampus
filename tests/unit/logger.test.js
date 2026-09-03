@@ -59,13 +59,62 @@ describe('logger', () => {
   });
 });
 
-describe('sin console.* en las zonas ya migradas', () => {
-  it('ni los handlers ni los componentes usan console directamente', () => {
-    const conConsole = ['src/app/api', 'src/components', 'src/context']
-      .flatMap(walk)
+describe('sin console.* en src', () => {
+  it('ningun archivo de src usa console directamente', () => {
+    // Deliberadamente estricto: casa tambien dentro de comentarios, para que no
+    // se acumulen `// console.log(...)` de depuracion. El unico permitido es el
+    // propio logger, que es quien llama a console de verdad.
+    const conConsole = walk('src')
       .filter(file => /\.(js|jsx|ts|tsx)$/.test(file))
+      .filter(file => !file.endsWith(join('lib', 'logger.ts')))
       .filter(file => /console\.(log|error|warn|info)\s*\(/.test(readFileSync(file, 'utf8')));
 
     expect(conConsole).toEqual([]);
+  });
+
+  it('scripts/ si puede usar console: son herramientas de linea de comandos', () => {
+    const conConsole = walk('scripts').filter(file =>
+      /console\.(log|error)\s*\(/.test(readFileSync(file, 'utf8'))
+    );
+
+    expect(conConsole.length).toBeGreaterThan(0);
+  });
+});
+
+describe('normalizacion del contexto', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.LOG_LEVEL;
+  });
+
+  it('convierte un Error en mensaje y stack', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    process.env.LOG_LEVEL = 'error';
+
+    logger.error('fallo al guardar', new Error('conexión rechazada'));
+
+    const [, context] = spy.mock.calls[0];
+    expect(context.error).toBe('conexión rechazada');
+    expect(context.stack).toContain('Error: conexión rechazada');
+  });
+
+  it('envuelve los valores que no son objeto', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    process.env.LOG_LEVEL = 'error';
+
+    // Los sitios que venian de console.log('algo', valor) pasan strings y
+    // numeros, no objetos.
+    logger.error('id procesado', 'abc123');
+
+    expect(spy.mock.calls[0][1]).toEqual({ detail: 'abc123' });
+  });
+
+  it('deja pasar los objetos tal cual', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    process.env.LOG_LEVEL = 'error';
+
+    logger.error('rechazado', { status: 403, sellerId: 'xyz' });
+
+    expect(spy.mock.calls[0][1]).toEqual({ status: 403, sellerId: 'xyz' });
   });
 });

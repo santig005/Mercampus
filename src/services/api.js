@@ -1,10 +1,11 @@
 'use server'; //
+import { logger } from '@/lib/logger';
 
 // src/services/api.js
 const API_BASE_URL = process.env.NEXT_PUBLIC_URL + '/api';
 /* 
 export const fetchAPI = async (endpoint, options = {}) => {
-  console.log('petición a:', `${API_BASE_URL}${endpoint}`);
+  logger.debug('petición a:', `${API_BASE_URL}${endpoint}`);
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       credentials: "include",
@@ -15,23 +16,23 @@ export const fetchAPI = async (endpoint, options = {}) => {
       ...options,
     });
 
-    //console.log(response);
+    //logger.debug(response);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
 
     const data = await response.json();
 
-    // console.log('API Fetch Data:', data);
+    // logger.debug('API Fetch Data:', data);
 
     return data;
   } catch (error) {
-    console.error('API Fetch Error:', error);
+    logger.error('API Fetch Error:', error);
   }
 };
  */
 export const fetchAPI = async (endpoint, options = {}) => {
-  console.log('petición a:', `${API_BASE_URL}${endpoint}`);
+  logger.debug('petición a:', `${API_BASE_URL}${endpoint}`);
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       credentials: "include",
@@ -57,7 +58,7 @@ export const fetchAPI = async (endpoint, options = {}) => {
       return await response.text(); // fallback
     }
   } catch (error) {
-    console.error('API Fetch Error:', error);
+    logger.error('API Fetch Error:', error);
     throw error; // si lo quieres propagar
   }
 };
