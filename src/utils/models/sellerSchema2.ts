@@ -1,6 +1,8 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, type InferSchemaType, type Model } from 'mongoose';
+
 import { universities } from '@/utils/resources/universities';
-const sellerSchema = new mongoose.Schema(
+
+const sellerSchema = new Schema(
   {
     businessName: {
       type: String,
@@ -29,7 +31,7 @@ const sellerSchema = new mongoose.Schema(
       required: true,
     },
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
@@ -48,6 +50,10 @@ const sellerSchema = new mongoose.Schema(
   }
 );
 
-export const Seller =
-  mongoose.models.Seller || mongoose.model('Seller', sellerSchema);
+export type SellerDoc = InferSchemaType<typeof sellerSchema>;
+
+export const Seller: Model<SellerDoc> =
+  (mongoose.models.Seller as Model<SellerDoc>) ||
+  mongoose.model<SellerDoc>('Seller', sellerSchema);
+
 export default Seller;
