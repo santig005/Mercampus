@@ -158,6 +158,15 @@ export async function seedDatabase() {
     approvedSellers: 1,
     products: products.length,
     schedules: schedules.length,
+    // Los ids los usa el e2e para navegar directo. Solo los del vendedor
+    // aprobado aparecen en el listado publico.
+    ids: {
+      approvedSeller: approvedSeller._id.toString(),
+      pendingSeller: pendingSeller._id.toString(),
+      approvedProduct: products
+        .find(product => product.sellerId.equals(approvedSeller._id))
+        ._id.toString(),
+    },
   };
 }
 

@@ -45,3 +45,54 @@ jobs:
       # aqui los pasos por separado los dejaria divergir de los de local.
       - name: Verify (lint + test + build)
         run: npm run verify
+
+  # El e2e necesita claves REALES de Clerk: su middleware valida contra los
+  # servidores de Clerk y con claves falsas devuelve 400 en todas las rutas, asi
+  # que ni las publicas responden. CLERK_SECRET_KEY es un secreto de verdad, y
+  # los secretos no llegan a los PR desde forks.
+  #
+  # Por eso el job esta apagado por defecto. Para encenderlo:
+  #   gh variable set E2E_ENABLED --body true
+  #   gh variable set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY --body pk_test_...
+  #   gh secret   set CLERK_SECRET_KEY
+  e2e:
+    if: vars.E2E_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    env:
+      MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.mongodb-binaries
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache MongoDB binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: mongodb-binaries-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e
+        run: npm run test:e2e
+
+      # Las capturas son la evidencia visual: se suben pase o falle el recorrido.
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-e2e
+          path: test-results/
+          retention-days: 14

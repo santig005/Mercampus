@@ -86,14 +86,22 @@ no puede probar nada.
 **Ojo:** el seed apunta a un cluster de desarrollo, NUNCA a producción.
 **Modelo:** `sonnet` · **Nocturno:** no
 
-### [ ] T-04 · Playwright + capturas como evidencia
+### [~] T-04 · Playwright + capturas como evidencia
 **Por qué:** es la respuesta a "que el agente vea la página". Sin esto no hay
 verificación visual automática.
 **Hecho cuando:** `npm run test:e2e` levanta la app con datos de seed y recorre
 home → listado de antojos → detalle de producto → perfil de vendedor; guarda un
 screenshot por pantalla en `test-results/`; el workflow sube esas capturas como
 artefacto del run.
-**Alcance:** `playwright.config.js`, `tests/e2e/`, workflow de CI.
+**Hecho ya:** `npm run test:e2e` levanta Mongo en memoria, siembra, compila y
+recorre las cuatro pantallas con una captura de cada una en `test-results/`.
+El job de CI existe y sube las capturas como artefacto.
+**Falta:** encender el job. El e2e necesita claves **reales** de Clerk — su
+middleware valida contra los servidores de Clerk y con claves falsas devuelve
+400 en todas las rutas, incluidas las publicas. Hace falta poner
+`E2E_ENABLED=true`, la publishable key como variable y `CLERK_SECRET_KEY` como
+secreto del repositorio. Eso lo hace un humano.
+**Alcance:** `playwright.config.js`, `tests/e2e/`, `scripts/e2e.mjs`, workflow de CI.
 **Depende de:** T-03
 **Modelo:** `sonnet` · **Nocturno:** no
 
