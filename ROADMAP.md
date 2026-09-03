@@ -429,11 +429,32 @@ se eliminan.
 **Depende de:** T-30, T-10
 **Modelo:** `opusplan` · **Nocturno:** no
 
-### [ ] T-33 · Deduplicar componentes
+### [x] T-33 · Deduplicar componentes
 **Por qué:** `ProductCard`/`ProductCardAV` difieren en 32 líneas,
 `SellerCard`/`SellerCardAV` en 10, `TableSche`/`TableSchema` en 63.
-**Hecho cuando:** un componente por concepto con prop `variant`; los duplicados
-eliminados; e2e confirma que nada cambió visualmente.
+**`TableSche`/`TableSchema` ya no aplicaba:** `TableSche.jsx` tenía 0
+importadores y se borró en T-34. Solo `TableSchema.jsx` sigue vivo, sin
+duplicado que fusionar.
+**Hecho:** `ProductCard` y `SellerCard` ahora aceptan `variant`
+(`'standalone'` por defecto, `'embedded'`); `ProductCardAV` y `SellerCardAV`
+eliminados y sus dos call sites (edición de productos, admin de vendedores)
+apuntan al componente único.
+**Límite real del e2e, y cómo se cubrió:** las cuatro pantallas originales del
+e2e no ejercitan la variante `'embedded'` de ninguno de los dos componentes —
+solo la usan la edición de productos y el panel de admin, rutas autenticadas
+que Playwright todavía no puede visitar (no hay sesión de Clerk simulada). Se
+añadió una quinta pantalla (`/antojos/sellers/list`) que sí ejercita
+`SellerCard` de verdad, y la lógica de className de las dos variantes se
+extrajo a `src/lib/card-variant.js` —un módulo sin JSX, aparte— con tests
+unitarios que si cubren `'embedded'`, verificados con mutación.
+**Hallazgo, sin arreglar:** al escribir la quinta pantalla se comprobó
+—primero mal, corregido después— que `GET /api/sellers` **no filtra por
+`approved`**: devuelve todos los vendedores. El listado público solo se ve
+limpio porque `SellerGrid.jsx` filtra en el cliente; quien llame la API
+directo ve también los pendientes de aprobación. No es tan grave como
+`T-10b` (no hay escritura de por medio, solo lectura de datos no sensibles),
+pero es la misma familia de problema: filtro de negocio que vive solo en el
+cliente.
 **Modelo:** `sonnet` · **Nocturno:** sí (el e2e con capturas es la red)
 
 ### [x] T-34 · Borrar lo muerto

@@ -11,7 +11,6 @@ import { updateSeller } from '@/services/sellerService';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useAuth } from '@clerk/nextjs';
-import ProductCardAV from '@/components/products/ProductCardAV';
 
 export default function EditProductsPage() {
   const [products, setProducts] = useState([]);
@@ -163,12 +162,7 @@ export default function EditProductsPage() {
                     className='bg-white drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
                   >
                     <div onClick={() => handleProductClick(product._id)}>
-                      <ProductCardAV
-                        product={product}
-                        toggleSwitch={() =>
-                          handleAvailabilityToggle(product._id, product.availability)
-                        }
-                      />
+                      <ProductCard product={product} variant='embedded' />
                     </div>
                     <div className='flex justify-between'>
                       <p>Disponibilidad</p>

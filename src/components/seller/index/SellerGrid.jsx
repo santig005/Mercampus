@@ -8,7 +8,6 @@ import { useSeller } from '@/context/SellerContext';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import { updateSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
-import SellerCardAV from '@/components/seller/index/SellerCardAV';
 import { useAuth } from '@clerk/nextjs';
 
 export default function SellerGrid({ section = 'antojos' }) {
@@ -86,7 +85,7 @@ export default function SellerGrid({ section = 'antojos' }) {
                   {sellers.map(seller => (
                     <div key={seller._id} className='bg-white shadow-md rounded-lg'>
                       <div className='w-full' onClick={() => showModal(seller)}>
-                        <SellerCardAV seller={seller} />
+                        <SellerCard seller={seller} variant='embedded' />
                       </div>
                       <div className='flex justify-between p-2 w-full'>
                         <p>Activo:</p>
