@@ -50,6 +50,11 @@ const sellerSchema = new Schema(
   }
 );
 
+// userId: para resolver el vendedor a partir del usuario autenticado.
+// university: el listado publico filtra por universidad.
+sellerSchema.index({ userId: 1 });
+sellerSchema.index({ university: 1 });
+
 export type SellerDoc = InferSchemaType<typeof sellerSchema>;
 
 export const Seller: Model<SellerDoc> =
