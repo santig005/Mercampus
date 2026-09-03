@@ -334,7 +334,7 @@ se eliminan.
 eliminados; e2e confirma que nada cambió visualmente.
 **Modelo:** `sonnet` · **Nocturno:** sí (el e2e con capturas es la red)
 
-### [ ] T-34 · Borrar lo muerto
+### [x] T-34 · Borrar lo muerto
 **Por qué:** `SellerContext2.js` no lo importa nadie (todos usan
 `SellerContext`); igual `RegisterSellerForm.jsx`, `pqrsService.js`,
 `allowedIPs.js` y `favoriteSchema.js` — este último además usa
@@ -349,6 +349,15 @@ prerenderizaba en el build y lo rompía.
 T-05, donde ademas se vio que no compila bajo TS.
 **Hecho cuando:** eliminados, con la búsqueda de referencias documentada en el
 PR; `knip` o similar añadido al CI para que no vuelva a acumularse.
+**Eliminados (10):** los cinco de la lista, mas `lib/clerkUser.js` (T-05) y
+cuatro que encontro knip: `TableSche.jsx`, `services/auth/server/seller.js`,
+`services/auth/server/user.js` y `utils/auth/client/seller.js`. Los dos ultimos
+ademas estaban rotos: importaban simbolos que su origen no exporta.
+**knip solo rompe por archivos muertos.** Las 9 dependencias sin usar que
+detecta son de **T-35** (next-auth, bcryptjs, jsonwebtoken, cookies y el
+proveedor de imagenes que se descarte) y los 10 exports sin usar son de
+**T-30**, cuando la capa de datos absorba los services. Quedan como avisos
+visibles en el log hasta que toque.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [ ] T-35 · Un solo proveedor de imágenes

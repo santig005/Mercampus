@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,route,not-found,error,loading}.{js,jsx,ts,tsx}",
+    "scripts/*.mjs",
+    "tests/**/*.test.js"
+  ],
+  "project": ["src/**/*.{js,jsx,ts,tsx}", "scripts/**/*.mjs", "tests/**/*.js"],
+  "rules": {
+    "files": "error",
+    "dependencies": "warn",
+    "unlisted": "warn",
+    "exports": "warn",
+    "types": "warn",
+    "duplicates": "warn",
+    "binaries": "warn",
+    "unresolved": "warn"
+  }
+}

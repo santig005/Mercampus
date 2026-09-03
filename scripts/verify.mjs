@@ -20,6 +20,9 @@ const PLACEHOLDER_ENV = {
 
 const STEPS = [
   { name: 'lint', command: 'npm run lint' },
+  // Solo rompe por archivos muertos. Las dependencias sin usar son de T-35 y
+  // los exports sin usar de T-30: quedan como avisos hasta que toque.
+  { name: 'deadcode', command: 'npx knip' },
   { name: 'typecheck', command: 'npm run typecheck' },
   { name: 'test', command: 'npm run test' },
   { name: 'build', command: 'npm run build' },
