@@ -5,11 +5,23 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 const session = vi.hoisted(() => ({ email: null }));
 
+// `POST /api/sellers` resuelve la sesión con currentUser(); `PUT
+// /api/sellers/[id]` lo hace con auth() + clerkClient(). Las tres salen del
+// mismo `session.email` para que un solo `session.email = OWNER` valga para
+// cualquiera de las dos rutas.
 vi.mock('@clerk/nextjs/server', () => ({
   currentUser: async () =>
     session.email
       ? { id: `user_${session.email}`, emailAddresses: [{ emailAddress: session.email }] }
       : null,
+  auth: async () => ({ userId: session.email ? `user_${session.email}` : null }),
+  clerkClient: async () => ({
+    users: {
+      getUser: async () => ({
+        emailAddresses: [{ emailAddress: session.email }],
+      }),
+    },
+  }),
 }));
 
 const BUYER = 'ana.restrepo@example.test'; // sin sellerId, role: buyer
@@ -22,7 +34,15 @@ const post = body =>
     headers: { 'content-type': 'application/json' },
   });
 
+const put = body =>
+  new Request('http://localhost/api', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+    headers: { 'content-type': 'application/json' },
+  });
+
 let sellersRoute;
+let sellerByIdRoute;
 let schedulesRoute;
 let pqrsRoute;
 let Seller;
@@ -36,6 +56,7 @@ let ids;
 beforeAll(async () => {
   process.env.MONGO_URI = await startTestDb();
   sellersRoute = await import('@/app/api/sellers/route.js');
+  sellerByIdRoute = await import('@/app/api/sellers/[id]/route.js');
   schedulesRoute = await import('@/app/api/schedules/route.js');
   pqrsRoute = await import('@/app/api/pqrs/route.js');
   ({ Seller } = await import('@/utils/models/sellerSchema2'));
@@ -77,7 +98,7 @@ describe('POST /api/sellers · validación y registro', () => {
     expect(body.fields.map(f => f.field)).toContain('businessName');
   });
 
-  it('400 si el teléfono no es numérico', async () => {
+  it('400 si el teléfono está incompleto', async () => {
     session.email = BUYER;
 
     const response = await sellersRoute.POST(
@@ -124,6 +145,84 @@ describe('POST /api/sellers · validación y registro', () => {
     const buyer = await User.findOne({ email: BUYER });
     expect(buyer.role).toBe('seller');
     expect(buyer.sellerId.toString()).toBe(seller._id.toString());
+  });
+});
+
+// T-13c. Los formularios mandan el teléfono como string y el schema pedía
+// `z.number()`, así que el alta de vendedor respondía 400 siempre. Estos casos
+// usan el payload que construyen las páginas de verdad, no uno escrito a mano
+// con un number: por eso los tests de T-13b no atraparon el bug.
+describe('teléfono del vendedor · el payload real del formulario', () => {
+  beforeEach(async () => {
+    ({ ids } = await seedDatabase());
+    session.email = null;
+  });
+
+  it('201 con el string de digitos que manda el alta de vendedor', async () => {
+    session.email = BUYER;
+
+    const response = await sellersRoute.POST(
+      post({ businessName: 'Postres Ana', phoneNumber: '3001234567' })
+    );
+
+    expect(response.status).toBe(201);
+    const { seller } = await response.json();
+
+    const created = await Seller.findById(seller._id);
+    expect(created.phoneNumber).toBe(3001234567);
+    expect(typeof created.phoneNumber).toBe('number');
+  });
+
+  it('descarta el indicativo de pais al crear', async () => {
+    session.email = BUYER;
+
+    const response = await sellersRoute.POST(
+      post({ businessName: 'Postres Ana', phoneNumber: '+57 300 123 4567' })
+    );
+
+    expect(response.status).toBe(201);
+    const { seller } = await response.json();
+    expect((await Seller.findById(seller._id)).phoneNumber).toBe(3001234567);
+  });
+
+  it('200 con el telefono ya formateado que manda la edicion de perfil', async () => {
+    session.email = OWNER;
+
+    const response = await sellerByIdRoute.PUT(
+      put({ phoneNumber: '(300) 765-4321' }),
+      { params: { id: ids.approvedSeller } }
+    );
+
+    expect(response.status).toBe(200);
+    const seller = await Seller.findById(ids.approvedSeller);
+    expect(seller.phoneNumber).toBe(3007654321);
+    expect(typeof seller.phoneNumber).toBe('number');
+  });
+
+  it('400 si el telefono no llega a 10 digitos, y no crea nada', async () => {
+    session.email = BUYER;
+    const antes = await Seller.countDocuments();
+
+    const response = await sellersRoute.POST(
+      post({ businessName: 'Postres Ana', phoneNumber: '300 12' })
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.fields.map(f => f.field)).toContain('phoneNumber');
+    expect(await Seller.countDocuments()).toBe(antes);
+  });
+
+  it('400 si el telefono empieza por cero', async () => {
+    // Se guarda como Number: '0300123456' se convertiria en 300123456 y
+    // perderia un digito sin que nadie se entere.
+    session.email = BUYER;
+
+    const response = await sellersRoute.POST(
+      post({ businessName: 'Postres Ana', phoneNumber: '0300123456' })
+    );
+
+    expect(response.status).toBe(400);
   });
 });
 

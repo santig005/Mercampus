@@ -235,6 +235,9 @@ no puede mandar `sellerId` ni `approved` en el cuerpo.
 **Falta (T-13b):** `POST /api/sellers`, `POST /api/register` (que depende de la
 decision de T-11), horarios, pqrs y usuarios. Se parte para no pasarse del
 limite de ~15 archivos por PR.
+**Estado tras T-13b y T-13c:** cubierto todo menos `POST /api/register`, que
+sigue bloqueado por la decision de T-11 (borrar la ruta o protegerla). Esta
+tarea queda `[~]` solo por eso.
 **Modelo:** `sonnet` — repetitivo y con criterio claro
 **Nocturno:** sí
 
@@ -271,7 +274,7 @@ tipo que T-10, pero en una ruta que T-10 no tocó. Candidata: T-10b.
 **Depende de:** T-13
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-13c · El teléfono del vendedor viaja como string
+### [x] T-13c · El teléfono del vendedor viaja como string
 **Por qué:** encontrado en T-15b. `createSellerSchema` y `updateSellerSchema`
 declaran `phoneNumber: z.number()`, pero el cliente siempre manda un string:
 - `sellers/register/page.jsx` guarda `value.replace(/\D/g, '').slice(0, 10)`,
@@ -293,6 +296,30 @@ Al unificar, extraer el normalizador de `utilFn.js` en vez de duplicarlo.
 arregla el formulario o se acepta el string con `z.coerce`, no las dos cosas — y
 hay un test de integración que manda **el payload real del formulario**, no uno
 escrito a mano.
+**Hecho:** el normalizador sale de `utilFn.js` a `src/lib/phone.ts`
+(`toNationalPhone` + `isNationalPhone`) y ahora lo usan los tres sitios que
+tocan un teléfono: `formatPhone` para mostrarlo, el schema de Zod para validarlo
+y el alta de vendedor para guardarlo. El campo pasa a normalizar-y-luego-validar
+(`union(string, number) → toNationalPhone → isNationalPhone → Number`), así que
+acepta lo que mandan los formularios de verdad —`'3001234567'`,
+`'(300) 123-4567'`, `'+57 300 123 4567'`— y a Mongoose le sigue llegando un
+`Number`.
+**Por qué se valida además que no empiece por cero:** el teléfono se guarda como
+`Number`, así que un `'0300123456'` se convertiría en `300123456` y perdería un
+dígito en silencio. Ahora se rechaza con 400.
+**Ojo con `.transform(Number)`:** ningún test de integración lo atrapa, porque
+Mongoose convierte el string por su cuenta al guardar. Se mantiene igualmente
+—el contrato del validador es entregar el dato con el tipo del modelo, no
+depender de una conversión implícita— y se fija con un test unitario sobre el
+schema, que sí cae si se quita.
+**Sigue sin normalizar:** `sellers/profile/edit/page.jsx` guarda el texto ya
+formateado en su estado. Funciona porque el schema lo normaliza, pero el estado
+del cliente y lo que hay en la base no coinciden hasta que se recarga. Se deja
+así a propósito: arreglarlo bien es que `InputFields` emita el valor limpio en
+su `onChange` en vez del evento crudo, y eso toca todos sus consumidores.
+**Deuda de fondo, no de esta tarea:** `phoneNumber` como `Number` es frágil
+—no admite ceros a la izquierda ni indicativo— y debería ser `string`. Cambiarlo
+implica migrar los datos, así que va con T-30.
 **Depende de:** T-13b
 **Modelo:** `sonnet` · **Nocturno:** sí
 
@@ -311,7 +338,7 @@ archivo. La decisión queda escrita en el PR.
 **Modelo:** `opusplan` — hay una decisión de producto de por medio
 **Nocturno:** no
 
-### [~] T-15 · Errores tipados y logger
+### [x] T-15 · Errores tipados y logger
 **Por qué:** `console.log` por todas partes, mensajes de error inconsistentes,
 `AppError` usado en un sitio donde ni siquiera está importado
 (`api/products/[id]` DELETE, arreglado en T-10).
@@ -324,7 +351,10 @@ objeto aparte) y `src/lib/api-response.ts`, que unifica `invalidPayload` y
 `errorResponse` y **nunca devuelve al cliente el mensaje de un 500**. Migrada la
 capa de API entera: 34 llamadas en 12 archivos, con un test que impide que
 vuelva a colarse un `console.*` ahí.
-**Falta:** las otras 70 llamadas, en T-15c y T-15d.
+**Cerrada en T-13c** (contabilidad, no código): las otras 70 llamadas las
+migraron T-15c y T-15d, y el criterio se cumple. Comprobado: los únicos
+`console.*` que quedan en `src/` son los dos que hay **dentro** de
+`src/lib/logger.ts`, que es donde deben estar. El guardián recorre todo `src/`.
 **Sobre unificar los cuerpos de error:** los handlers devuelven unas veces
 `{ error }` y otras `{ message }`. Cambiarlo altera el contrato que consume el
 frontend, así que `errorResponse` solo se usa donde la forma ya coincide.
