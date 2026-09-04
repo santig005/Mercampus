@@ -169,7 +169,7 @@ agujero era exclusivamente la verificacion de propiedad comentada.
 **Modelo:** `opus` — bug sutil de seguridad, aquí no se ahorra
 **Nocturno:** no
 
-### [ ] T-10b · Autorización en `POST /api/schedules`
+### [x] T-10b · Autorización en `POST /api/schedules`
 **Por qué:** encontrado en T-13b. La ruta reemplaza (borra e inserta) el
 horario completo de cualquier `sellerId` que venga en el cuerpo, sin comprobar
 que quien llama sea el dueño de ese vendedor. Cualquiera con sesión puede
@@ -177,6 +177,28 @@ vaciar o reescribir el horario de un negocio ajeno.
 **Hecho cuando:** usa `getEmailFromToken` + `verifySellerId` (los mismos
 helpers de T-10) antes de tocar la base; tests 401/403/200 iguales a los de
 T-10.
+**Hecho:** identidad primero (sin sesión no se llega ni a mirar el cuerpo) y
+propiedad después, que necesita el `sellerId` ya validado porque viene en el
+cuerpo. Seis tests en `autorizacion.test.js`, incluido el vaciado del horario
+ajeno, que es la forma más destructiva del bug. Con la mutación que quita
+`verifySellerId`, los tres casos de 403 devuelven 200 **y el horario del
+vendedor ajeno desaparece**: el agujero era real y queda demostrado.
+**Ojo con los tests de T-13b:** los cuatro casos de validación de esta ruta no
+iniciaban sesión (no hacía falta, no había autorización) y pasaron a fallar con
+401. Ahora entran como el dueño: son casos sobre el cuerpo, no sobre el acceso.
+**Imports muertos:** la ruta importaba `currentUser`, `User` y `Seller` sin usar
+ninguno (comprobado buscando cada identificador en el fichero). Se van; ningún
+`populate` dependía de que el modelo quedara registrado.
+**`errorResponse` gana un `bodyKey`:** el catch devolvía 500 a todo, así que un
+`AppError` de 401/403 salía como 500. Se reutiliza el helper de T-15 en vez de
+repetir la política de no filtrar el mensaje de un 500, pero con la clave
+`message`, que es la que lee el banner de `Schedule.jsx`. La unificación de
+formas sigue siendo de T-32.
+**Hallazgo sin arreglar:** el reemplazo es un `deleteMany` seguido de un
+`insertMany`, sin transacción. Si el insert falla, el vendedor se queda sin
+horario. Arreglarlo de verdad pide una transacción, y `mongodb-memory-server`
+corre en modo standalone (sin replica set), así que hoy no es verificable con
+el arnés que hay. Candidata para cuando se toque el arnés de base de datos.
 **Depende de:** T-10
 **Modelo:** `opus` — mismo tipo de bug que T-10
 **Nocturno:** no

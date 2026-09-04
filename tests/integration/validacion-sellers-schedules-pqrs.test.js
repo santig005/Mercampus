@@ -229,6 +229,10 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
 describe('POST /api/schedules · reemplazo de horario', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
+    // Desde T-10b la ruta exige sesión y propiedad. Estos casos son sobre la
+    // validación del cuerpo, así que entran ya como el dueño del vendedor; el
+    // 401 y el 403 se comprueban en `autorizacion.test.js`.
+    session.email = OWNER;
   });
 
   it('400 si sellerId no es un ObjectId', async () => {

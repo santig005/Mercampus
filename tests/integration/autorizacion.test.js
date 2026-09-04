@@ -39,10 +39,19 @@ const jsonRequest = body =>
     headers: { 'content-type': 'application/json' },
   });
 
+const postRequest = body =>
+  new Request('http://localhost/api', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'content-type': 'application/json' },
+  });
+
 let productRoute;
 let sellerRoute;
+let schedulesRoute;
 let Product;
 let Seller;
+let Schedule;
 let ids;
 
 describe('autorizacion en mutaciones', () => {
@@ -53,8 +62,10 @@ describe('autorizacion en mutaciones', () => {
 
     productRoute = await import('@/app/api/products/[id]/route.js');
     sellerRoute = await import('@/app/api/sellers/[id]/route.js');
+    schedulesRoute = await import('@/app/api/schedules/route.js');
     ({ Product } = await import('@/utils/models/productSchema'));
     ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Schedule } = await import('@/utils/models/scheduleSchema'));
   }, 120_000);
 
   afterAll(async () => {
@@ -193,6 +204,86 @@ describe('autorizacion en mutaciones', () => {
       );
 
       expect(response.status).toBe(403);
+    });
+  });
+
+  // T-10b. La ruta reemplaza (borra e inserta) el horario completo del
+  // sellerId que venga en el cuerpo, asi que sin comprobar propiedad
+  // cualquiera con sesion podia vaciar el horario de un negocio ajeno.
+  describe('POST /api/schedules', () => {
+    // El seed deja 3 franjas por vendedor.
+    const HORARIO_SEMBRADO = 3;
+
+    const reemplazo = sellerId =>
+      postRequest({
+        sellerId,
+        schedules: [{ day: 'Martes', startTime: '09:00', endTime: '13:00' }],
+      });
+
+    const vaciado = sellerId => postRequest({ sellerId, schedules: [] });
+
+    it('401 sin sesion, y el horario sigue intacto', async () => {
+      const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
+
+      expect(response.status).toBe(401);
+      expect(
+        await Schedule.countDocuments({ sellerId: ids.approvedSeller })
+      ).toBe(HORARIO_SEMBRADO);
+    });
+
+    it('403 con la sesion de otro vendedor, y el horario sigue intacto', async () => {
+      signInAs(OTHER_SELLER);
+
+      const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
+
+      expect(response.status).toBe(403);
+      expect(
+        await Schedule.countDocuments({ sellerId: ids.approvedSeller })
+      ).toBe(HORARIO_SEMBRADO);
+    });
+
+    it('403 con un comprador sin perfil de vendedor', async () => {
+      signInAs(BUYER);
+
+      const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
+
+      expect(response.status).toBe(403);
+      expect(
+        await Schedule.countDocuments({ sellerId: ids.approvedSeller })
+      ).toBe(HORARIO_SEMBRADO);
+    });
+
+    it('no deja vaciar el horario de un vendedor ajeno', async () => {
+      signInAs(OTHER_SELLER);
+
+      const response = await schedulesRoute.POST(vaciado(ids.approvedSeller));
+
+      expect(response.status).toBe(403);
+      expect(
+        await Schedule.countDocuments({ sellerId: ids.approvedSeller })
+      ).toBe(HORARIO_SEMBRADO);
+    });
+
+    it('200 con el dueño, y el horario se reemplaza', async () => {
+      signInAs(OWNER);
+
+      const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
+
+      expect(response.status).toBe(200);
+      const schedules = await Schedule.find({ sellerId: ids.approvedSeller });
+      expect(schedules).toHaveLength(1);
+      expect(schedules[0].day).toBe(2); // Martes
+      expect(schedules[0].startTime).toBe('09:00');
+    });
+
+    it('el dueño no toca el horario del otro vendedor', async () => {
+      signInAs(OWNER);
+
+      await schedulesRoute.POST(reemplazo(ids.approvedSeller));
+
+      expect(
+        await Schedule.countDocuments({ sellerId: ids.pendingSeller })
+      ).toBe(HORARIO_SEMBRADO);
     });
   });
 });
