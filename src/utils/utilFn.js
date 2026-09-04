@@ -1,12 +1,12 @@
+import { toNationalPhone } from '@/lib/phone';
+
 // Mercampus es un marketplace colombiano: los precios van en pesos y los
 // teléfonos en el formato nacional de 10 dígitos.
 const CURRENCY_LOCALE = 'es-CO';
 const CURRENCY = 'COP';
-const COUNTRY_CODE = '57';
-const NATIONAL_DIGITS = 10;
 
 // Ojo: `es-CO` separa el símbolo del importe con un espacio duro (U+00A0),
-// así que 1500 sale como '$ 1.500'. Es la forma canónica del locale.
+// así que 1500 sale como '$ 1.500'. Es la forma canónica del locale.
 // `maximumFractionDigits` va explicito a proposito: para COP su valor por
 // defecto depende de la version de ICU (0 en el runner del CI, 2 en el Node
 // 22.20 local), asi que sin fijarlo el mismo precio se ve distinto segun la
@@ -33,20 +33,12 @@ export const parseIfJSON = value => {
 
 export const formatValue = value => (value > 0 ? priceFormat(value) : '');
 
-// Deja el número en su forma nacional de 10 dígitos. Ningún número colombiano
-// nacional empieza por 57 (los móviles empiezan por 3 y los fijos por 60), así
-// que un 57 delante de más de 10 dígitos solo puede ser el indicativo de país
-// de un `+57` y sobra.
-const toNationalPhone = digits =>
-  (digits.length > NATIONAL_DIGITS && digits.startsWith(COUNTRY_CODE)
-    ? digits.slice(COUNTRY_CODE.length)
-    : digits
-  ).slice(0, NATIONAL_DIGITS);
-
 export const formatPhone = phone => {
   if (!phone) return ''; // Si phone es null/undefined, retorna vacío
 
-  const cleanPhone = toNationalPhone(phone.toString().replace(/\D/g, ''));
+  // El normalizador vive en `@/lib/phone` porque el schema de Zod valida el
+  // teléfono con el mismo criterio con el que se muestra aquí.
+  const cleanPhone = toNationalPhone(phone);
 
   if (cleanPhone.length > 6) {
     return `(${cleanPhone.slice(0, 3)}) ${cleanPhone.slice(

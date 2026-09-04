@@ -1,5 +1,6 @@
 'use client';
 import { logger } from '@/lib/logger';
+import { toNationalPhone } from '@/lib/phone';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InputFields from '@/components/auth/register/InputFields';
@@ -34,9 +35,12 @@ const RegisterSeller = () => {
 
     let newValue = type === 'checkbox' ? checked : value;
 
-    // Si el campo es "phone", limpiamos el número antes de guardarlo
+    // Si el campo es "phone", lo normalizamos antes de guardarlo. Recortar a
+    // los 10 primeros dígitos a secas convertía un `+57 300 123 4567` pegado
+    // en `5730012345`, un número de 10 dígitos que el servidor ya no puede
+    // distinguir de uno bueno.
     if (name === 'phoneNumber') {
-      newValue = value.replace(/\D/g, '').slice(0, 10); // Solo números, máx. 10 dígitos
+      newValue = toNationalPhone(value);
     }
 
     if (name) {
