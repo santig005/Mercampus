@@ -3,10 +3,7 @@ import { NextResponse } from 'next/server';
 import { AppError } from '@/utils/lib/errors';
 import { updateProductSchema } from '@/lib/validators/product';
 import { invalidPayload } from '@/lib/api-response';
-import {
-  getEmailFromToken,
-  verifyOwnershipAndGetSellerId,
-} from '@/utils/lib/auth';
+import { verifyOwnershipAndGetSellerId } from '@/utils/lib/auth';
 import { Product } from '@/utils/models/productSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
@@ -65,8 +62,7 @@ export async function PUT(req, { params }) {
 
     // Identidad y propiedad antes de tocar nada. Lanzan AppError con su status:
     // 401 sin sesión, 403 si el producto es de otro vendedor.
-    const email = await getEmailFromToken();
-    await verifyOwnershipAndGetSellerId(params.id, email);
+    await verifyOwnershipAndGetSellerId(params.id);
 
     const parsed = updateProductSchema.safeParse(await req.json());
     if (!parsed.success) {
@@ -96,8 +92,7 @@ export async function DELETE(req, { params }) {
   try {
     await connectDB();
 
-    const email = await getEmailFromToken();
-    await verifyOwnershipAndGetSellerId(params.id, email);
+    await verifyOwnershipAndGetSellerId(params.id);
 
     const deleted = await Product.findByIdAndDelete(params.id);
     if (!deleted) {

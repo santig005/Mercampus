@@ -280,7 +280,7 @@ tumba 5 de los 8 tests.
 no hay nada que rellenar. Si algún día lo hubiera, el script va en `scripts/`.
 **Modelo:** `opus` · **Nocturno:** no (nace de una discusión de diseño)
 
-### [ ] T-12c · Resolver la identidad por `clerkId` y quitar la vuelta por email
+### [x] T-12c · Resolver la identidad por `clerkId` en el servidor
 **Por qué:** con T-12b el `clerkId` ya está en la base, pero nadie lo usa
 todavía. Hoy cada mutación hace `auth()` → llamada de red a Clerk para traducir
 el id a un email → `User.findOne({ email }).populate('sellerId')`. Con el
@@ -307,9 +307,56 @@ se reducen a una consulta por `clerkId`; las 4 rutas que usan la primera y las 3
 que usan `currentUser()` pasan al mismo camino; `/api/users/user-with-seller/`
 borrada; tests 401/403/200 iguales a los de T-10 pero sin mockear
 `clerkClient()`, porque ya no hace falta.
-**Ojo con el alcance:** toca ~12 archivos. Si al abrirlo se pasa de 15, se parte
-en "helpers + rutas" y "SellerContext + borrar la ruta pública".
+**Partida, como avisaba el alcance.** Al abrirla se veía que la parte de cliente
+(SellerContext + borrar la ruta pública) arrastraba media docena de archivos más
+y se solapa con T-30/T-31. Esta tarea se queda con **el servidor**; el cliente va
+en T-12d.
+**Hecho:** `getEmailFromToken` ya no existe. En su lugar `getClerkUserId()` (el
+id que ya viene en el token, sin red) y `getAuthenticatedUser()` (una consulta
+indexada por `clerkId`, con `select` de lo justo y **sin `populate`**, porque
+`User` ya guarda su `sellerId`). Los tres helpers de propiedad dejan de recibir
+el email. Migradas las 4 rutas de `getEmailFromToken` y 2 de las 3 de
+`currentUser()`.
+**`sellers/admin` se queda fuera a propósito:** su `currentUser()` está metido
+dentro del `Map` en memoria y el `setInterval` que T-12 va a borrar. Tocarlo a
+medias haría más difícil T-12, no más fácil.
+**Bug encontrado y arreglado de camino, en `POST /api/products`:** todo el
+cuerpo del handler vivía dentro de un `if (clerkUser)` **sin `else`**, así que
+una petición sin sesión salía sin devolver ninguna `Response`. Comprobado
+llamando al handler antes de tocarlo: devolvía `undefined`, o sea un error del
+framework en vez de un 401. Además `user._id` sobre un usuario inexistente
+reventaba con TypeError antes de comprobar si era vendedor. La ruta no tenía
+ningún test; ahora tiene 401/403/201.
+**Lo que se simplifica de verdad:** `PUT /api/sellers/[id]` por email ya no
+vuelve a buscar el `User` (si el email es el de la sesión, el vendedor es el que
+esa sesión ya referencia), y `POST /api/products` ya no busca el `Seller` por
+`userId` aparte. Los mocks de los tests pasan de simular `auth()` +
+`clerkClient()` + `currentUser()` a simular solo `auth()`: buena señal de que
+hay menos superficie.
+**Cinco mutaciones**, cada una con su diff: quitar la comparación de propiedad
+del producto (caen 2), la del vendedor (caen 4), el 401 de `getClerkUserId`
+(caen 4), el chequeo de vendedor de productos (cae 1) y su 401 (cae 1).
 **Depende de:** T-12b
+**Modelo:** `opus` · **Nocturno:** no
+
+### [ ] T-12d · Borrar la ruta pública por email y sacar `SellerContext` del cliente
+**Por qué:** `GET /api/users/user-with-seller/[email]` **no tiene ninguna
+autenticación**. Comprobado llamando al handler sin sesión contra Mongo en
+memoria: responde 200 con el documento completo del usuario (`_id`, nombre,
+apellido, email, rol, fechas) y el del vendedor. Es un oráculo de enumeración de
+cuentas: cualquiera prueba un email y sabe si está registrado y con qué rol. El
+middleware no la cubre — solo protege rutas de página, nunca `/api`.
+**Por qué existe:** solo para que `SellerContext` pregunte "¿soy vendedor?"
+desde el cliente, que es exactamente el `fetch` a la propia API que este ROADMAP
+quiere eliminar. Con T-12c la respuesta ya se puede dar en el servidor sin
+consultar nada por email.
+**Hecho cuando:** la ruta y `getUserWithSellerByEmail` desaparecen;
+`SellerContext` recibe el usuario y el vendedor desde el servidor en vez de
+pedirlos por fetch; un test comprueba que la ruta ya no existe.
+**Ojo:** se solapa con T-30/T-31 (capa de datos y Server Components). Si al
+abrirla se ve que la forma correcta es hacerlo dentro de T-31, anótalo y
+fusiónalas en vez de hacer el trabajo dos veces.
+**Depende de:** T-12c
 **Modelo:** `opus` · **Nocturno:** no
 
 ### [ ] T-12 · Rol de admin en los claims de Clerk

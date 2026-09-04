@@ -5,32 +5,36 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 // Sesion de Clerk simulada. vi.hoisted porque vi.mock se eleva por encima de
 // todo lo demas y necesita leer este objeto.
-const session = vi.hoisted(() => ({ userId: null, email: null }));
+//
+// Desde T-12c solo hace falta `auth()`: la identidad se resuelve con el
+// clerkId que ya trae el token. Antes habia que simular ademas clerkClient(),
+// porque cada mutacion le pedia el email a la Backend API de Clerk.
+const session = vi.hoisted(() => ({ userId: null }));
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
-  clerkClient: async () => ({
-    users: {
-      getUser: async () => ({
-        emailAddresses: [{ emailAddress: session.email }],
-      }),
-    },
-  }),
 }));
 
-const signInAs = email => {
-  session.userId = `user_${email}`;
-  session.email = email;
+const signInAs = usuario => {
+  session.userId = usuario.clerkId;
 };
 const signOut = () => {
   session.userId = null;
-  session.email = null;
 };
 
 // Del seed.
-const OWNER = 'carlos.mesa@example.test'; // dueño del vendedor aprobado
-const OTHER_SELLER = 'laura.gomez@example.test'; // otro vendedor
-const BUYER = 'ana.restrepo@example.test'; // usuario sin perfil de vendedor
+const OWNER = {
+  clerkId: 'user_seed_carlos',
+  email: 'carlos.mesa@example.test',
+}; // dueño del vendedor aprobado
+const OTHER_SELLER = {
+  clerkId: 'user_seed_laura',
+  email: 'laura.gomez@example.test',
+}; // otro vendedor
+const BUYER = {
+  clerkId: 'user_seed_ana',
+  email: 'ana.restrepo@example.test',
+}; // usuario sin perfil de vendedor
 
 const jsonRequest = body =>
   new Request('http://localhost/api', {
@@ -49,6 +53,7 @@ const postRequest = body =>
 let productRoute;
 let sellerRoute;
 let schedulesRoute;
+let productsRoute;
 let Product;
 let Seller;
 let Schedule;
@@ -63,6 +68,7 @@ describe('autorizacion en mutaciones', () => {
     productRoute = await import('@/app/api/products/[id]/route.js');
     sellerRoute = await import('@/app/api/sellers/[id]/route.js');
     schedulesRoute = await import('@/app/api/schedules/route.js');
+    productsRoute = await import('@/app/api/products/route.js');
     ({ Product } = await import('@/utils/models/productSchema'));
     ({ Seller } = await import('@/utils/models/sellerSchema2'));
     ({ Schedule } = await import('@/utils/models/scheduleSchema'));
@@ -200,10 +206,69 @@ describe('autorizacion en mutaciones', () => {
 
       const response = await sellerRoute.PUT(
         jsonRequest({ businessName: 'Robado' }),
-        { params: { id: OWNER } }
+        { params: { id: OWNER.email } }
       );
 
       expect(response.status).toBe(403);
+    });
+
+    it('200 al editarse a sí mismo por email', async () => {
+      signInAs(OWNER);
+
+      const response = await sellerRoute.PUT(
+        jsonRequest({ slogan: 'Con mi propio email' }),
+        { params: { id: OWNER.email } }
+      );
+
+      expect(response.status).toBe(200);
+      expect((await Seller.findById(ids.approvedSeller)).slogan).toBe(
+        'Con mi propio email'
+      );
+    });
+  });
+
+  // T-12c. Esta ruta no tenía ningún test y hacía dos cosas mal: el cuerpo
+  // entero vivía dentro de un `if (clerkUser)` sin `else`, así que una
+  // petición sin sesión salía del handler **sin devolver ninguna Response**
+  // (comprobado llamándolo: devolvía `undefined`, o sea un error del framework
+  // en vez de un 401); y `user._id` sobre un usuario inexistente en Mongo
+  // reventaba con TypeError antes de llegar a la comprobación de vendedor.
+  describe('POST /api/products', () => {
+    const productoValido = {
+      name: 'Arepa nueva',
+      price: 5000,
+      description: 'Recién hecha',
+      images: ['https://img.test/arepa.png'],
+      category: ['Panadería'],
+    };
+
+    it('401 sin sesion, y no crea el producto', async () => {
+      const antes = await Product.countDocuments();
+
+      const response = await productsRoute.POST(postRequest(productoValido));
+
+      expect(response.status).toBe(401);
+      expect(await Product.countDocuments()).toBe(antes);
+    });
+
+    it('403 con un comprador sin perfil de vendedor', async () => {
+      signInAs(BUYER);
+      const antes = await Product.countDocuments();
+
+      const response = await productsRoute.POST(postRequest(productoValido));
+
+      expect(response.status).toBe(403);
+      expect(await Product.countDocuments()).toBe(antes);
+    });
+
+    it('201 con un vendedor, y el producto queda a su nombre', async () => {
+      signInAs(OWNER);
+
+      const response = await productsRoute.POST(postRequest(productoValido));
+
+      expect(response.status).toBe(201);
+      const creado = await Product.findOne({ name: 'Arepa nueva' });
+      expect(creado.sellerId.toString()).toBe(ids.approvedSeller);
     });
   });
 

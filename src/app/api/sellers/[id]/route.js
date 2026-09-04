@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/utils/connectDB";
 import {
-  getEmailFromToken,
+  getClerkUserId,
   verifySellerEmail,
   verifySellerId,
 } from "@/utils/lib/auth";
@@ -84,11 +84,11 @@ export async function PUT(req, { params }) {
   try {
       await connectDB();
 
-      // Identidad primero: 401 sin sesión. Despues propiedad, segun la ruta
-      // identifique al vendedor por email o por id.
-      const email = await getEmailFromToken();
+      // Identidad primero, para que una petición sin sesión reciba 401 y no el
+      // 400 de un cuerpo mal formado. La propiedad se comprueba abajo, que es
+      // donde ya se sabe por qué se identifica al vendedor.
+      await getClerkUserId();
 
-      await connectDB();
       const parsed = updateSellerSchema.safeParse(await req.json());
       if (!parsed.success) {
         return invalidPayload(parsed.error);
@@ -96,15 +96,15 @@ export async function PUT(req, { params }) {
       const data = parsed.data;
       let seller;
       if (params.id.includes('@')) {
-          await verifySellerEmail(params.id, email);
-          const userDb = await User.findOne({ email: params.id });
-
-          if (!userDb) {
-              return NextResponse.json({ error: "User not found" }, { status: 404 });
-          }
-          seller = await Seller.findOneAndUpdate({ userId: userDb._id }, data, { new: true });
+          // Identifica al vendedor por el email de su dueño. Si el email es el
+          // de la sesión, el vendedor es el que el propio User ya referencia:
+          // no hace falta volver a buscarlo.
+          const user = await verifySellerEmail(params.id);
+          seller = user.sellerId
+            ? await Seller.findByIdAndUpdate(user.sellerId, data, { new: true })
+            : null;
       } else {
-          await verifySellerId(params.id, email);
+          await verifySellerId(params.id);
           seller = await Seller.findByIdAndUpdate(params.id, data, { new: true });
       }
 

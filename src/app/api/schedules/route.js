@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { replaceSchedulesSchema } from '@/lib/validators/schedule';
 import { errorResponse, invalidPayload } from '@/lib/api-response';
-import { getEmailFromToken, verifySellerId } from '@/utils/lib/auth';
+import { getClerkUserId, verifySellerId } from '@/utils/lib/auth';
 
 
 export async function GET(req) {
@@ -31,7 +31,7 @@ export async function POST(req) {
     // propiedad, que necesita el sellerId ya validado porque viene en el
     // cuerpo. Sin esto la ruta borraba y reescribía el horario de cualquier
     // vendedor con solo mandar su id.
-    const email = await getEmailFromToken();
+    await getClerkUserId();
 
     const parsed = replaceSchedulesSchema.safeParse(await req.json());
     if (!parsed.success) {
@@ -39,7 +39,7 @@ export async function POST(req) {
     }
     const { sellerId, schedules } = parsed.data;
 
-    await verifySellerId(sellerId, email);
+    await verifySellerId(sellerId);
 
     // day ya viene validado contra daysES, asi que indexOf no puede dar -1
     // (que antes guardaba day: 0 en silencio).

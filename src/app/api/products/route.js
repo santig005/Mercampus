@@ -1,6 +1,6 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
@@ -11,7 +11,10 @@ import {
   productQuerySchema,
 } from '@/lib/validators/product';
 import { invalidPayload } from '@/lib/api-response';
-import { Seller } from '@/utils/models/sellerSchema2';
+// No se usa por nombre, pero el import registra el modelo en Mongoose y el
+// populate({ model: 'Seller' }) del GET lo necesita registrado. Si se borra,
+// el listado revienta con MissingSchemaError.
+import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
 import { logger } from '@/lib/logger';
 
 export async function GET(req) {
@@ -82,49 +85,44 @@ const getPopulatedProducts = async approvedProducts => {
 export async function POST(req) {
   try {
     await connectDB();
-    const clerkUser = await currentUser();
-    if (clerkUser) {
-      const email = clerkUser.emailAddresses[0].emailAddress;
-      let tempUserId = '';
-      const user = await User.findOne({ email: email });
-      const userId = user._id;
-      tempUserId = userId;
+    // Antes esto era `if (clerkUser) { ... }` sin `else`: una petición sin
+    // sesión salía del handler sin devolver ninguna Response, así que no daba
+    // 401 sino un error del framework. Y `user._id` sobre un usuario que no
+    // existía en Mongo reventaba con TypeError.
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
+      return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
+    }
 
-      if (!tempUserId) {
-        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-      }
-      logger.debug('el id del usuario es ', tempUserId);
-      const seller = await Seller.findOne({ userId: tempUserId });
-      if (!seller) {
-        return NextResponse.json(
-          { mensaje: 'El usuario no es un vendedor' },
-          { status: 403 }
-        );
-      }
-      const parsed = createProductSchema.safeParse(await req.json());
-      if (!parsed.success) {
-        return invalidPayload(parsed.error);
-      }
-
-      // sellerId sale de la sesión, nunca del cuerpo: el schema descarta lo que
-      // no declara, así que el cliente no puede colarlo.
-      const newProduct = new Product({ ...parsed.data, sellerId: seller._id });
-      try {
-        await newProduct.save();
-      } catch (error) {
-        logger.error('error al guardar el producto', error);
-        return NextResponse.json(
-          { message: 'Error al guardar el producto', error: error.message },
-          { status: 500 }
-        );
-      }
-
+    // El User ya guarda a qué vendedor pertenece: sobra buscar el Seller por
+    // userId aparte.
+    const user = await User.findOne({ clerkId }).select('sellerId').lean();
+    if (!user?.sellerId) {
       return NextResponse.json(
-        { message: 'Product created successfully' },
-        { status: 201 }
+        { mensaje: 'El usuario no es un vendedor' },
+        { status: 403 }
       );
     }
+
+    const parsed = createProductSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
+    }
+
+    // sellerId sale de la sesión, nunca del cuerpo: el schema descarta lo que
+    // no declara, así que el cliente no puede colarlo.
+    const newProduct = new Product({
+      ...parsed.data,
+      sellerId: user.sellerId,
+    });
+    await newProduct.save();
+
+    return NextResponse.json(
+      { message: 'Product created successfully' },
+      { status: 201 }
+    );
   } catch (error) {
+    logger.error('Error creating product', error);
     return NextResponse.json(
       { message: 'Error creating product', error: error.message },
       { status: 500 }

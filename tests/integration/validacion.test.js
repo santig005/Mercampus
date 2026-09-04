@@ -3,24 +3,15 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { seedDatabase } from '../../scripts/seed.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
-const session = vi.hoisted(() => ({ userId: null, email: null }));
+const session = vi.hoisted(() => ({ userId: null }));
 
+// Desde T-12c la identidad es el clerkId del token: no hay que simular ni
+// clerkClient() ni currentUser().
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
-  clerkClient: async () => ({
-    users: {
-      getUser: async () => ({
-        emailAddresses: [{ emailAddress: session.email }],
-      }),
-    },
-  }),
-  currentUser: async () =>
-    session.email
-      ? { id: session.userId, emailAddresses: [{ emailAddress: session.email }] }
-      : null,
 }));
 
-const OWNER = 'carlos.mesa@example.test';
+const OWNER = 'user_seed_carlos'; // del seed: dueño del vendedor aprobado
 
 const put = body =>
   new Request('http://localhost/api', {
@@ -50,8 +41,7 @@ describe('validacion en el borde', () => {
 
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
-    session.userId = `user_${OWNER}`;
-    session.email = OWNER;
+    session.userId = OWNER;
   });
 
   it('400 con el detalle del campo cuando el tipo no cuadra', async () => {
