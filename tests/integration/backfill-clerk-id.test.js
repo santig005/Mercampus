@@ -12,8 +12,18 @@ vi.mock('@clerk/nextjs/server', () => ({
 let User;
 let sellersRoute;
 
-/** Clerk de mentira: un mapa de email a los ids que tendria esa cuenta. */
-const clerkCon = mapa => async email => mapa[email] ?? [];
+/** Clerk de mentira: la lista de cuentas que devolveria la API. */
+const clerkCon =
+  (...cuentas) =>
+  async () =>
+    cuentas;
+
+const cuenta = (id, email, extra = {}) => ({
+  id,
+  emails: [email],
+  nombre: 'Ana',
+  ...extra,
+});
 
 const crearUsuario = (email, extra = {}) =>
   User.create({ name: 'Alguien', email, ...extra });
@@ -37,119 +47,126 @@ describe('backfill de clerkId', () => {
   it('no escribe nada sin --apply', async () => {
     await crearUsuario('ana@example.test');
 
-    const { pendientes, resumen } = await backfillClerkIds({
-      buscarClerkIdsPorEmail: clerkCon({ 'ana@example.test': ['user_ana'] }),
+    const informe = await backfillClerkIds({
+      listarUsuariosDeClerk: clerkCon(cuenta('user_ana', 'ana@example.test')),
       apply: false,
     });
 
-    expect(pendientes).toBe(1);
-    expect(resumen).toEqual({ rellenado: 1 });
-    // El ensayo informa de lo que haria, pero la base sigue igual.
-    expect((await User.findOne({ email: 'ana@example.test' })).clerkId).toBeUndefined();
+    expect(informe.pendientes).toBe(1);
+    expect(informe.resumen).toEqual({ enlazado: 1 });
+    expect((await User.findOne({})).clerkId).toBeUndefined();
   });
 
-  it('rellena el clerkId con --apply', async () => {
+  it('enlaza la cuenta con su usuario con --apply', async () => {
     await crearUsuario('ana@example.test');
 
-    await backfillClerkIds({
-      buscarClerkIdsPorEmail: clerkCon({ 'ana@example.test': ['user_ana'] }),
+    const informe = await backfillClerkIds({
+      listarUsuariosDeClerk: clerkCon(cuenta('user_ana', 'ana@example.test')),
       apply: true,
     });
 
-    expect((await User.findOne({ email: 'ana@example.test' })).clerkId).toBe(
-      'user_ana'
-    );
+    expect(informe.pendientes).toBe(1); // uno enlazado en esta pasada
+    expect((await User.findOne({})).clerkId).toBe('user_ana');
   });
 
-  it('no toca a quien ya lo tiene', async () => {
-    await crearUsuario('ana@example.test', { clerkId: 'user_ya_estaba' });
-
-    const { pendientes } = await backfillClerkIds({
-      buscarClerkIdsPorEmail: clerkCon({ 'ana@example.test': ['user_otro'] }),
-      apply: true,
-    });
-
-    expect(pendientes).toBe(0);
-    expect((await User.findOne({ email: 'ana@example.test' })).clerkId).toBe(
-      'user_ya_estaba'
-    );
-  });
-
-  it('es idempotente: correrlo dos veces da lo mismo', async () => {
+  it('es idempotente: la segunda pasada no deja nada pendiente', async () => {
     await crearUsuario('ana@example.test');
-    const buscarClerkIdsPorEmail = clerkCon({ 'ana@example.test': ['user_ana'] });
+    const listarUsuariosDeClerk = clerkCon(cuenta('user_ana', 'ana@example.test'));
 
-    await backfillClerkIds({ buscarClerkIdsPorEmail, apply: true });
-    const segunda = await backfillClerkIds({ buscarClerkIdsPorEmail, apply: true });
+    await backfillClerkIds({ listarUsuariosDeClerk, apply: true });
+    const segunda = await backfillClerkIds({ listarUsuariosDeClerk, apply: true });
 
     expect(segunda.pendientes).toBe(0);
+    expect(segunda.resumen).toEqual({ 'ya-enlazado': 1 });
     expect(await User.countDocuments({ clerkId: 'user_ana' })).toBe(1);
   });
 
-  it('informa de quien no existe en Clerk, sin inventarse nada', async () => {
-    await crearUsuario('fantasma@example.test');
+  it('con el email duplicado se queda con el que tiene perfil de vendedor', async () => {
+    // El caso real de producción: la misma persona dos veces, una copia con
+    // vendedor y otra vacía, porque el viejo POST /api/register creaba usuarios
+    // sin autenticación y el unique del email sigue comentado (T-11).
+    const vacio = await crearUsuario('ana@example.test');
+    const conVendedor = await crearUsuario('ana@example.test', {
+      role: 'seller',
+      sellerId: '507f1f77bcf86cd799439011',
+    });
 
-    const { resumen } = await backfillClerkIds({
-      buscarClerkIdsPorEmail: clerkCon({}),
+    const informe = await backfillClerkIds({
+      listarUsuariosDeClerk: clerkCon(cuenta('user_ana', 'ana@example.test')),
       apply: true,
     });
 
-    expect(resumen).toEqual({ 'sin-cuenta-en-clerk': 1 });
-    expect((await User.findOne({})).clerkId).toBeUndefined();
+    expect(informe.resumen).toEqual({ 'enlazado-con-desempate': 1 });
+    expect((await User.findById(conVendedor._id)).clerkId).toBe('user_ana');
+    expect((await User.findById(vacio._id)).clerkId).toBeUndefined();
   });
 
-  it('no decide por su cuenta cuando el email tiene varias cuentas en Clerk', async () => {
-    await crearUsuario('duplicado@example.test');
-
-    const { resumen } = await backfillClerkIds({
-      buscarClerkIdsPorEmail: clerkCon({
-        'duplicado@example.test': ['user_uno', 'user_dos'],
-      }),
+  it('crea el usuario si la cuenta de Clerk no tiene ninguno', async () => {
+    const informe = await backfillClerkIds({
+      listarUsuariosDeClerk: clerkCon(cuenta('user_nuevo', 'nuevo@example.test')),
       apply: true,
     });
 
-    expect(resumen).toEqual({ 'varias-cuentas-en-clerk': 1 });
-    expect((await User.findOne({})).clerkId).toBeUndefined();
+    expect(informe.resumen).toEqual({ creado: 1 });
+    const creado = await User.findOne({ clerkId: 'user_nuevo' });
+    expect(creado.email).toBe('nuevo@example.test');
+    expect(creado.role).toBe('buyer');
   });
 
-  it('no revienta el índice unique si el clerkId ya es de otro documento', async () => {
-    // Pasa si el mismo email quedó duplicado en Mongo: el unique del email
-    // sigue comentado (T-11).
-    await crearUsuario('ana@example.test', { clerkId: 'user_ana' });
+  it('no toca ni cuenta como pendientes los documentos sin cuenta en Clerk', async () => {
+    // 65 de estos hay en producción. No estan bloqueados: sin cuenta en Clerk
+    // no pueden ni iniciar sesion, asi que no son trabajo de esta migracion.
+    await crearUsuario('fantasma1@example.test');
+    await crearUsuario('fantasma2@example.test');
     await crearUsuario('ana@example.test');
 
-    const { resumen } = await backfillClerkIds({
-      buscarClerkIdsPorEmail: clerkCon({ 'ana@example.test': ['user_ana'] }),
+    const informe = await backfillClerkIds({
+      listarUsuariosDeClerk: clerkCon(cuenta('user_ana', 'ana@example.test')),
       apply: true,
     });
 
-    expect(resumen).toEqual({ 'clerkId-ya-usado-por-otro': 1 });
-    expect(await User.countDocuments({ clerkId: 'user_ana' })).toBe(1);
+    expect(informe.huerfanos).toBe(2);
+    expect(informe.pendientes).toBe(1); // solo la cuenta de Clerk
+    expect((await User.findOne({ email: 'fantasma1@example.test' })).clerkId).toBeUndefined();
+  });
+
+  it('no roba el usuario de otra cuenta ya enlazada', async () => {
+    // Si el documento ya tiene otro clerkId es otra persona: pisarlo mezclaria
+    // dos cuentas y ademas reventaria el indice unique.
+    await crearUsuario('compartido@example.test', { clerkId: 'user_primero' });
+
+    const informe = await backfillClerkIds({
+      listarUsuariosDeClerk: clerkCon(cuenta('user_segundo', 'compartido@example.test')),
+      apply: true,
+    });
+
+    expect(informe.resumen).toEqual({ creado: 1 });
+    expect((await User.findOne({ clerkId: 'user_primero' })).email).toBe(
+      'compartido@example.test'
+    );
+    expect(await User.countDocuments({ clerkId: 'user_segundo' })).toBe(1);
   });
 
   it('deja al usuario pudiendo operar otra vez', async () => {
-    // El caso completo: un usuario de antes de T-12b esta bloqueado, se corre
-    // el backfill, y vuelve a poder registrarse como vendedor.
+    // El recorrido entero: bloqueado como estaria en produccion, backfill, y
+    // vuelve a poder registrarse como vendedor.
     await crearUsuario('ana@example.test');
     session.userId = 'user_ana';
 
-    const alta = body =>
+    const alta = () =>
       new Request('http://localhost/api', {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: JSON.stringify({ businessName: 'Postres Ana', phoneNumber: 3001234567 }),
         headers: { 'content-type': 'application/json' },
       });
-    const payload = { businessName: 'Postres Ana', phoneNumber: 3001234567 };
 
-    const antes = await sellersRoute.POST(alta(payload));
-    expect(antes.status).toBe(404); // no hay ningun User con ese clerkId
+    expect((await sellersRoute.POST(alta())).status).toBe(404);
 
     await backfillClerkIds({
-      buscarClerkIdsPorEmail: clerkCon({ 'ana@example.test': ['user_ana'] }),
+      listarUsuariosDeClerk: clerkCon(cuenta('user_ana', 'ana@example.test')),
       apply: true,
     });
 
-    const despues = await sellersRoute.POST(alta(payload));
-    expect(despues.status).toBe(201);
+    expect((await sellersRoute.POST(alta())).status).toBe(201);
   });
 });

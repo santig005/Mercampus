@@ -362,21 +362,33 @@ POST /api/sellers     -> 404 {"message":"No se encontró un usuario para esta se
 Y **el webhook no lo arregla solo**: `user.created` no se vuelve a disparar para
 una cuenta que ya existe, así que el bloqueo sería permanente.
 **Hecho:** `scripts/backfill-clerk-id.mjs` (`npm run migrate:clerk-id`).
-Empareja por email contra Clerk —la clave frágil que justamente se abandona,
-pero aquí se usa una sola vez y a mano—, **no escribe nada sin `--apply`**, es
-idempotente, y no decide por su cuenta en los casos raros: si el email no existe
-en Clerk, si tiene varias cuentas, o si el `clerkId` ya es de otro documento, lo
-informa y lo deja para una persona. Ese último caso importa porque `clerkId` es
-`unique` y el `unique` del email sigue comentado (T-11).
-**Ocho tests**, incluido el recorrido entero: usuario bloqueado con 404 → se
-corre el backfill → vuelve a poder registrarse como vendedor con 201. Cuatro
-mutaciones comprobadas con su diff (ignorar `--apply`, quitar el caso ambiguo,
-quitar el del id ya ocupado, quitar el filtro de pendientes).
+**Recorre Clerk, no Mongo** (T-12f). Clerk es la fuente de verdad de la
+identidad y cada cuenta tiene exactamente un id, así que por construcción no hay
+ambigüedad. La primera versión iba al revés —recorrer Mongo y preguntar por
+email— y por eso el informe se llenaba de casos que parecían trabajo manual sin
+serlo.
+**Medido contra la base real (ensayo, sin escribir):**
+
+```
+Cuentas en Clerk: 11
+Resumen: {"enlazado-con-desempate":3,"enlazado":8}
+Documentos sin cuenta en Clerk: 65 (no pueden iniciar sesión)
+```
+
+Es decir: **11 de 11 se resuelven solas, cero casos manuales.** Los 3 desempates
+son la misma persona duplicada en Mongo —una copia con perfil de vendedor y otra
+vacía, restos del viejo `POST /api/register`— y se resuelven con una regla
+escrita: gana la que tiene `sellerId`, y a igualdad la más antigua. Los 65
+huérfanos **no están bloqueados**: sin cuenta en Clerk no pueden ni iniciar
+sesión, así que no son trabajo de esta migración sino de T-11. La primera versión
+los contaba como problema y era ruido.
+**Ocho tests**, incluido el desempate real de producción y el recorrido entero:
+usuario bloqueado con 404 → backfill → 201.
 **Cómo correrlo el día de la promoción:**
 1. `npm run migrate:clerk-id` — ensayo, no escribe. Revisa el listado.
-2. Resuelve a mano los que salgan marcados.
-3. `npm run migrate:clerk-id -- --apply`.
-4. Comprueba que el resumen no deja pendientes y promueve.
+2. `npm run migrate:clerk-id -- --apply`.
+3. `npm run migrate:clerk-id -- --check` — **sale con código 1 si queda alguien
+   sin enlazar.** Esta es la puerta: si pasa en verde, se puede promover.
 **Depende de:** T-12b, T-12c
 **Modelo:** `opus` · **Nocturno:** no
 
