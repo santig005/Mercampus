@@ -1,4 +1,3 @@
-import { logger } from '@/lib/logger';
 import { connectDB } from '../connectDB';
 import { User } from '../models/userSchema';
 
@@ -12,31 +11,32 @@ export const createOrUpdateUser = async (
   email_addresses: ClerkEmailAddress[],
   image_url: string
 ) => {
-  try {
-    await connectDB();
-    const user = await User.findOneAndUpdate(
-      { clerkId: id },
-      {
-        $set: {
-          name: first_name,
-          lastName: last_name,
-          email: email_addresses[0].email_address,
-          imageProfile: image_url,
-        },
-      },
-      { new: true, upsert: true }
-    );
-    return user;
-  } catch (error) {
-    logger.error('Error creating user:', error);
+  await connectDB();
+
+  // Clerk permite registrarse sin nombre, pero `name` es obligatorio en el
+  // schema. Sin este respaldo el documento entraría con `name: null`.
+  const email = email_addresses?.[0]?.email_address;
+  if (!email) {
+    throw new Error('El evento de Clerk no trae ningún email.');
   }
+
+  // El upsert copia `clerkId` del filtro al documento nuevo, así que el
+  // usuario queda creado ya con su id de Clerk.
+  return User.findOneAndUpdate(
+    { clerkId: id },
+    {
+      $set: {
+        name: first_name || email.split('@')[0],
+        lastName: last_name || '',
+        email,
+        imageProfile: image_url || '',
+      },
+    },
+    { new: true, upsert: true, runValidators: true }
+  );
 };
 
 export const deleteUser = async (id: string) => {
-  try {
-    await connectDB();
-    await User.findOneAndDelete({ clerkId: id });
-  } catch (error) {
-    logger.error('Error deleting user:', error);
-  }
+  await connectDB();
+  return User.findOneAndDelete({ clerkId: id });
 };

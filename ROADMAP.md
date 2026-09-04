@@ -213,6 +213,10 @@ pero `clerkId` no existe en `userSchema`, asi que Mongoose lanza
 `try/catch` se lo traga y devuelve `undefined`. Es decir: la premisa de "el
 webhook ya crea usuarios" es falsa, y hay que arreglar eso antes de decidir si
 se borra `/api/register`.
+**Actualización (T-12b): el webhook ya crea usuarios de verdad.** Se añadió
+`clerkId` al schema y hay ocho tests sobre el endpoint con firma svix. Así que
+el bloqueo desaparece: esta tarea ya puede decidir si `/api/register` se borra,
+y la respuesta por defecto debería ser sí, porque el alta la hace Clerk.
 **Hecho cuando:** o se elimina la ruta (una vez el webhook funcione de verdad) o
 se protege y valida; índice único en `email` restaurado con migración previa de
 duplicados en `scripts/`.
@@ -235,6 +239,78 @@ forma perezosa (lo que además elimina los placeholders que el CI arrastraba des
 T-01, porque el build ya no necesita valores), y un test que falla si vuelve a
 aparecer una `NEXT_PUBLIC_*` con SECRET o PRIVATE en el nombre.
 **Modelo:** `sonnet` · **Nocturno:** no
+
+### [x] T-12b · Unir Clerk con Mongo por `clerkId`
+**Por qué:** la aplicación une la sesión de Clerk con el usuario de Mongo **por
+email**, que es la peor columna posible para unir: el usuario lo cambia en
+Clerk y se rompe el vínculo, no es único en la base (el `unique` sigue
+comentado, T-11), y obtenerlo cuesta una llamada de red a la Backend API de
+Clerk en cada mutación (`clerkClient().users.getUser()` dentro de
+`getEmailFromToken`).
+**La causa era una sola línea que faltaba.** El webhook siempre buscó por
+`clerkId` — `findOneAndUpdate({ clerkId: id }, ..., { upsert: true })`— pero el
+campo no estaba declarado en `userSchema`. Comprobado llamando a la función
+contra Mongo en memoria antes de tocar nada:
+
+```
+createOrUpdateUser devolvio: undefined
+usuarios en la base: 0
+sin try/catch lanzo: StrictModeError |
+  Path "clerkId" is not in schema, strict mode is `true`, and upsert is `true`.
+```
+
+O sea: no es que "por clerkId no diera". El diseño era correcto y llevaba años
+fallando en silencio por un campo que faltaba y un `catch` que se tragaba el
+error. De ahí salió todo lo demás: como el webhook no creaba usuarios, se
+resolvió la identidad por email, y de ahí la llamada de red por petición y la
+ruta pública `/api/users/user-with-seller/[email]`.
+**Hecho:** `clerkId` en `userSchema` (`unique` + `sparse`); `createOrUpdateUser`
+deja de tragarse el error, así que un evento que falla devuelve 400 y Clerk lo
+reintenta en vez de darlo por entregado; respaldo para `name` porque Clerk
+permite registrarse sin nombre y el campo es obligatorio en el schema; el seed
+siembra `clerkId` para que las pruebas se parezcan a producción.
+**Ocho tests sobre el endpoint entero**, con firma svix de verdad: alta,
+actualización sin duplicar, cambio de email conservando el documento (que es
+justo lo que el email no puede garantizar), dos cuentas de Clerk con el mismo
+email como dos documentos, alta sin nombre, borrado, firma inválida → 400 sin
+tocar la base, y evento sin email → 400 en vez del 200 mentiroso de antes.
+**Mutación clave:** quitar `clerkId` del schema —el estado histórico exacto—
+tumba 5 de los 8 tests.
+**Sin migración de datos a propósito:** no hay usuarios en producción, así que
+no hay nada que rellenar. Si algún día lo hubiera, el script va en `scripts/`.
+**Modelo:** `opus` · **Nocturno:** no (nace de una discusión de diseño)
+
+### [ ] T-12c · Resolver la identidad por `clerkId` y quitar la vuelta por email
+**Por qué:** con T-12b el `clerkId` ya está en la base, pero nadie lo usa
+todavía. Hoy cada mutación hace `auth()` → llamada de red a Clerk para traducir
+el id a un email → `User.findOne({ email }).populate('sellerId')`. Con el
+`clerkId` eso es **una consulta indexada y cero llamadas de red**:
+
+```js
+const { userId } = await auth();
+const user = await User.findOne({ clerkId: userId }).select('sellerId role');
+```
+
+`User` ya guarda `sellerId`, así que la comprobación de propiedad es comparar
+dos ids: sobra el `populate` y sobra `getUserWithSellerByEmail`.
+**Hallazgo que se cierra con esto:** `GET /api/users/user-with-seller/[email]`
+**no tiene ninguna autenticación**. Comprobado llamando al handler sin sesión
+contra Mongo en memoria: responde 200 con el documento completo del usuario
+(`_id`, nombre, apellido, email, rol, fechas) y el del vendedor. Es un oráculo
+de enumeración de cuentas: cualquiera prueba un email y sabe si está registrado
+y con qué rol. El middleware no la cubre — solo protege rutas de página. Existe
+únicamente para que `SellerContext` pregunte "¿soy vendedor?" desde el cliente,
+que es el `fetch` a la propia API que este ROADMAP quiere eliminar. Con la
+identidad resuelta en el servidor, la ruta se borra.
+**Hecho cuando:** `getEmailFromToken` y `getUserWithSellerByEmail` desaparecen o
+se reducen a una consulta por `clerkId`; las 4 rutas que usan la primera y las 3
+que usan `currentUser()` pasan al mismo camino; `/api/users/user-with-seller/`
+borrada; tests 401/403/200 iguales a los de T-10 pero sin mockear
+`clerkClient()`, porque ya no hace falta.
+**Ojo con el alcance:** toca ~12 archivos. Si al abrirlo se pasa de 15, se parte
+en "helpers + rutas" y "SellerContext + borrar la ruta pública".
+**Depende de:** T-12b
+**Modelo:** `opus` · **Nocturno:** no
 
 ### [ ] T-12 · Rol de admin en los claims de Clerk
 **Por qué:** hoy se resuelve con un `Map` en memoria y un `setInterval` a nivel

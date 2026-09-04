@@ -2,6 +2,19 @@ import mongoose, { Schema, type InferSchemaType, type Model } from 'mongoose';
 
 const userSchema = new Schema(
   {
+    // Id del usuario en Clerk (`user_...`). Es la clave con la que Clerk y
+    // Mongo se unen: inmutable, a diferencia del email, y disponible sin salir
+    // a la API de Clerk porque `auth()` ya la devuelve.
+    //
+    // El webhook siempre buscó por aquí, pero el campo no existía en el schema,
+    // así que Mongoose lanzaba StrictModeError en cada `user.created` y el
+    // try/catch se lo tragaba: no se creó nunca ningún usuario por esta vía.
+    clerkId: {
+      type: String,
+      required: false, // los usuarios anteriores al webhook no lo tienen
+      unique: true,
+      sparse: true, // necesario con unique para permitir varios sin el campo
+    },
     name: {
       type: String,
       required: true,
