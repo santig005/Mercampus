@@ -374,6 +374,13 @@ de 10 dígitos — ningún número nacional colombiano empieza por 57 (los móvi
 por 3, los fijos por 60), y la guarda evita comerse los tres primeros dígitos de
 un número de 10. Tres mutaciones comprobadas (volver a `en-US`/`USD`, quitar el
 descarte del indicativo, descartarlo sin la guarda) tumban un test cada una.
+**Ojo con ICU:** el `maximumFractionDigits` por defecto para COP **depende de la
+versión de ICU**. Sin fijarlo, `priceFormat(1500.5)` daba `'$ 1.500,5'` en local
+(Node 22.20) y `'$ 1.501'` en el runner del CI — el primer intento pasó en local
+y tumbó `quality`. Ahora va explícito a 0, que es lo correcto (no circulan
+centavos de peso y el precio es entero en `productSchema`) y hace el formato
+independiente de la máquina. Si alguna vez hay que formatear moneda en otro
+sitio, no confíes en los defaults del locale: fíjalos.
 **Ojo con el e2e:** `recorrido.spec.js` afirmaba el precio como `'6,000'`, así
 que atrapó el cambio. Ahora afirma `/\$\s*6\.000/` y además que `'6,000'` no
 aparece.

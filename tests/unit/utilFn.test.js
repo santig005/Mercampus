@@ -21,11 +21,13 @@ describe('priceFormat', () => {
     expect(priceFormat(0)).toBe(`$${NBSP}0`);
   });
 
-  it('usa la coma como separador decimal cuando el precio tiene decimales', () => {
-    // Los precios son enteros en el schema, pero si llega un decimal se
-    // formatea con la convencion local, no con la anglosajona.
-    expect(priceFormat(1500.5)).toBe(`$${NBSP}1.500,5`);
-    expect(priceFormat(1500.567)).toBe(`$${NBSP}1.500,57`);
+  it('redondea a pesos enteros', () => {
+    // El precio es entero en el schema, y no circulan centavos de peso. El
+    // maximo de decimales va fijado en la funcion porque su valor por defecto
+    // para COP cambia con la version de ICU: sin fijarlo, 1500.5 sale
+    // '$ 1.501' en el CI y '$ 1.500,5' en Node 22.20.
+    expect(priceFormat(1500.5)).toBe(`$${NBSP}1.501`);
+    expect(priceFormat(1500.567)).toBe(`$${NBSP}1.501`);
   });
 
   it('no usa el formato anglosajon', () => {
