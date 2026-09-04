@@ -3,29 +3,18 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { seedDatabase } from '../../scripts/seed.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
-const session = vi.hoisted(() => ({ email: null }));
+const session = vi.hoisted(() => ({ userId: null }));
 
-// `POST /api/sellers` resuelve la sesión con currentUser(); `PUT
-// /api/sellers/[id]` lo hace con auth() + clerkClient(). Las tres salen del
-// mismo `session.email` para que un solo `session.email = OWNER` valga para
-// cualquiera de las dos rutas.
+// Desde T-12c todas las rutas resuelven la identidad igual: el clerkId que
+// devuelve auth(). Ya no hay que simular currentUser() ni clerkClient(),
+// porque nadie le pide el email a la Backend API de Clerk.
 vi.mock('@clerk/nextjs/server', () => ({
-  currentUser: async () =>
-    session.email
-      ? { id: `user_${session.email}`, emailAddresses: [{ emailAddress: session.email }] }
-      : null,
-  auth: async () => ({ userId: session.email ? `user_${session.email}` : null }),
-  clerkClient: async () => ({
-    users: {
-      getUser: async () => ({
-        emailAddresses: [{ emailAddress: session.email }],
-      }),
-    },
-  }),
+  auth: async () => ({ userId: session.userId }),
 }));
 
-const BUYER = 'ana.restrepo@example.test'; // sin sellerId, role: buyer
-const OWNER = 'carlos.mesa@example.test'; // ya es vendedor
+// Del seed.
+const BUYER = 'user_seed_ana'; // sin sellerId, role: buyer
+const OWNER = 'user_seed_carlos'; // ya es vendedor
 
 const post = body =>
   new Request('http://localhost/api', {
@@ -72,7 +61,7 @@ afterAll(async () => {
 describe('POST /api/sellers · validación y registro', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
-    session.email = null;
+    session.userId = null;
   });
 
   it('401 sin sesión', async () => {
@@ -81,7 +70,7 @@ describe('POST /api/sellers · validación y registro', () => {
   });
 
   it('404 si la sesión no tiene un User asociado', async () => {
-    session.email = 'nadie@example.test';
+    session.userId = 'user_que_no_existe_en_mongo';
 
     const response = await sellersRoute.POST(post({ businessName: 'Nuevo negocio' }));
 
@@ -89,7 +78,7 @@ describe('POST /api/sellers · validación y registro', () => {
   });
 
   it('400 si falta el nombre del negocio', async () => {
-    session.email = BUYER;
+    session.userId = BUYER;
 
     const response = await sellersRoute.POST(post({ phoneNumber: 3000000000 }));
 
@@ -99,7 +88,7 @@ describe('POST /api/sellers · validación y registro', () => {
   });
 
   it('400 si el teléfono está incompleto', async () => {
-    session.email = BUYER;
+    session.userId = BUYER;
 
     const response = await sellersRoute.POST(
       post({ businessName: 'Arepas Ana', phoneNumber: '300-000' })
@@ -109,7 +98,7 @@ describe('POST /api/sellers · validación y registro', () => {
   });
 
   it('no deja que el cliente se autoapruebe al crearse', async () => {
-    session.email = BUYER;
+    session.userId = BUYER;
 
     const response = await sellersRoute.POST(
       post({
@@ -125,7 +114,7 @@ describe('POST /api/sellers · validación y registro', () => {
   });
 
   it('201 con un payload válido: crea el Seller y actualiza el User', async () => {
-    session.email = BUYER;
+    session.userId = BUYER;
 
     const response = await sellersRoute.POST(
       post({
@@ -142,7 +131,7 @@ describe('POST /api/sellers · validación y registro', () => {
     expect(created.businessName).toBe('Postres Ana');
     expect(created.university).toBe('Universidad Nacional');
 
-    const buyer = await User.findOne({ email: BUYER });
+    const buyer = await User.findOne({ clerkId: BUYER });
     expect(buyer.role).toBe('seller');
     expect(buyer.sellerId.toString()).toBe(seller._id.toString());
   });
@@ -155,11 +144,11 @@ describe('POST /api/sellers · validación y registro', () => {
 describe('teléfono del vendedor · el payload real del formulario', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
-    session.email = null;
+    session.userId = null;
   });
 
   it('201 con el string de digitos que manda el alta de vendedor', async () => {
-    session.email = BUYER;
+    session.userId = BUYER;
 
     const response = await sellersRoute.POST(
       post({ businessName: 'Postres Ana', phoneNumber: '3001234567' })
@@ -174,7 +163,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
   });
 
   it('descarta el indicativo de pais al crear', async () => {
-    session.email = BUYER;
+    session.userId = BUYER;
 
     const response = await sellersRoute.POST(
       post({ businessName: 'Postres Ana', phoneNumber: '+57 300 123 4567' })
@@ -186,7 +175,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
   });
 
   it('200 con el telefono ya formateado que manda la edicion de perfil', async () => {
-    session.email = OWNER;
+    session.userId = OWNER;
 
     const response = await sellerByIdRoute.PUT(
       put({ phoneNumber: '(300) 765-4321' }),
@@ -200,7 +189,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
   });
 
   it('400 si el telefono no llega a 10 digitos, y no crea nada', async () => {
-    session.email = BUYER;
+    session.userId = BUYER;
     const antes = await Seller.countDocuments();
 
     const response = await sellersRoute.POST(
@@ -216,7 +205,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
   it('400 si el telefono empieza por cero', async () => {
     // Se guarda como Number: '0300123456' se convertiria en 300123456 y
     // perderia un digito sin que nadie se entere.
-    session.email = BUYER;
+    session.userId = BUYER;
 
     const response = await sellersRoute.POST(
       post({ businessName: 'Postres Ana', phoneNumber: '0300123456' })
@@ -232,7 +221,7 @@ describe('POST /api/schedules · reemplazo de horario', () => {
     // Desde T-10b la ruta exige sesión y propiedad. Estos casos son sobre la
     // validación del cuerpo, así que entran ya como el dueño del vendedor; el
     // 401 y el 403 se comprueban en `autorizacion.test.js`.
-    session.email = OWNER;
+    session.userId = OWNER;
   });
 
   it('400 si sellerId no es un ObjectId', async () => {

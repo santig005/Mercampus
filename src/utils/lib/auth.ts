@@ -1,51 +1,60 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 
-import { getUserWithSellerByEmail } from '@/services/server/userService';
+import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
 import { Product } from '@/utils/models/productSchema';
+import { User } from '@/utils/models/userSchema';
 
 /**
- * Email del usuario autenticado, a partir de la sesion de Clerk.
+ * Id del usuario en Clerk (`user_...`).
  *
- * `auth()` y `clerkClient()` devuelven promesas. Sin el await, `userId` salia
- * undefined y la comprobacion de sesion pasaba siempre: cualquier peticion se
- * daba por autenticada.
+ * `auth()` lo resuelve con el token que ya trae la peticion: no sale a la red.
+ * Antes esto era `getEmailFromToken`, que ademas pedia el usuario completo a la
+ * Backend API de Clerk solo para traducir el id a un email, y despues buscaba
+ * en Mongo por ese email. El email es mutable y ni siquiera es unico en la
+ * base (T-11), asi que era mala clave de union; `clerkId` no cambia nunca.
  */
-export async function getEmailFromToken(): Promise<string> {
+export async function getClerkUserId(): Promise<string> {
   const { userId } = await auth();
 
   if (!userId) {
     throw new AppError('No autenticado.', 401);
   }
 
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  const email = user.emailAddresses?.[0]?.emailAddress;
-
-  if (!email) {
-    throw new AppError('No se encontró email en Clerk.', 500);
-  }
-
-  return email;
+  return userId;
 }
 
 /**
- * Comprueba que el email autenticado sea el del vendedor propietario del
- * producto. Devuelve el sellerId del producto.
+ * El `User` de Mongo de la sesion actual, en una sola consulta indexada.
+ *
+ * Trae `sellerId` directamente en vez de poblarlo: `User` ya guarda a que
+ * vendedor pertenece, asi que comprobar propiedad es comparar dos ids.
  */
-export const verifyOwnershipAndGetSellerId = async (
-  productId: string,
-  email: string
-) => {
-  const { user, seller, error } = await getUserWithSellerByEmail(email);
+export async function getAuthenticatedUser() {
+  const clerkId = await getClerkUserId();
 
-  if (error) {
-    throw new AppError('Error interno obteniendo datos de usuario.', 500);
-  }
+  await connectDB();
+  const user = await User.findOne({ clerkId })
+    .select('email role sellerId')
+    .lean();
+
   if (!user) {
+    // Hay sesion en Clerk pero no hay usuario en la base. Con el webhook
+    // arreglado (T-12b) esto solo pasa si el evento se perdio.
     throw new AppError('No eres usuario registrado.', 403);
   }
-  if (!seller) {
+
+  return user;
+}
+
+/**
+ * Comprueba que el usuario autenticado sea el dueño del producto. Devuelve el
+ * sellerId del producto.
+ */
+export const verifyOwnershipAndGetSellerId = async (productId: string) => {
+  const user = await getAuthenticatedUser();
+
+  if (!user.sellerId) {
     throw new AppError('No eres vendedor registrado.', 403);
   }
 
@@ -55,7 +64,7 @@ export const verifyOwnershipAndGetSellerId = async (
   }
 
   const prodSellerId = product.sellerId?.toString();
-  if (prodSellerId !== seller._id.toString()) {
+  if (prodSellerId !== user.sellerId.toString()) {
     throw new AppError('No tienes permiso para modificar este producto.', 403);
   }
 
@@ -64,40 +73,31 @@ export const verifyOwnershipAndGetSellerId = async (
 
 /**
  * Comprueba que el usuario autenticado sea el dueño del vendedor indicado, o
- * un admin. Devuelve { user, seller }.
+ * un admin. Devuelve el usuario.
  */
-export const verifySellerId = async (sellerId: string, email: string) => {
-  const { user, seller, error } = await getUserWithSellerByEmail(email);
-
-  if (error) {
-    throw new AppError('Error interno obteniendo datos de usuario.', 500);
-  }
-  if (!user) {
-    throw new AppError('Usuario no encontrado.', 403);
-  }
-  if (!seller) {
-    throw new AppError('Vendedor no encontrado.', 403);
-  }
+export const verifySellerId = async (sellerId: string) => {
+  const user = await getAuthenticatedUser();
 
   const isAdmin = user.role === 'admin';
-  const isOwner = seller._id.toString() === sellerId;
+  const isOwner = user.sellerId?.toString() === sellerId;
 
   if (!isAdmin && !isOwner) {
     throw new AppError('No autorizado para este vendedor.', 403);
   }
 
-  return { user, seller };
+  return user;
 };
 
 /**
  * Variante para las rutas que identifican al vendedor por email en vez de por
- * id. Recibe el email autenticado en lugar de volver a pedirselo a Clerk.
+ * id. Sin excepcion para admin, igual que antes.
  */
-export const verifySellerEmail = async (
-  sellerEmail: string,
-  authenticatedEmail: string
-) => {
-  if (sellerEmail !== authenticatedEmail) {
+export const verifySellerEmail = async (sellerEmail: string) => {
+  const user = await getAuthenticatedUser();
+
+  if (user.email !== sellerEmail) {
     throw new AppError('No tienes permiso para modificar este vendedor.', 403);
   }
+
+  return user;
 };

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { User } from '@/utils/models/userSchema';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 import { logger } from '@/lib/logger';
@@ -84,16 +84,17 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     await connectDB();
-    const user = await currentUser();
-    if (!user) {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
       return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
     }
 
-    const email = user.emailAddresses[0].emailAddress;
-    const usuario = await User.findOne({ email });
+    // Por clerkId, no por email: no hace falta pedirle el usuario a la API de
+    // Clerk solo para traducir el id, y el email ni es estable ni es único.
+    const usuario = await User.findOne({ clerkId });
     if (!usuario) {
-      // El webhook de Clerk deberia haber creado este User antes de que la
-      // sesion llegue aqui; ver el hallazgo de T-05 sobre createOrUpdateUser.
+      // El webhook de Clerk crea este User (T-12b); si falta, es que su evento
+      // se perdió.
       return NextResponse.json(
         { message: 'No se encontró un usuario para esta sesión.' },
         { status: 404 }
