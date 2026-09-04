@@ -8,8 +8,15 @@ Manténlo corto: se lee en cada ejecución y cuesta tokens.
 Marketplace de comida entre estudiantes universitarios (Colombia). Next.js 14
 App Router + MongoDB (Mongoose) + Clerk para autenticación. Desplegado en Vercel.
 
-El proyecto está en modo **rehabilitación**: no hay usuarios en producción.
-Se prioriza corrección, seguridad y calidad del código sobre nuevas funciones.
+El proyecto está en modo **rehabilitación**: se prioriza corrección, seguridad y
+calidad del código sobre nuevas funciones.
+
+**Corrección importante (T-12f): aquí decía "no hay usuarios en producción" y es
+falso.** Medido contra la base real: **54 vendedores, 79 documentos de usuario y
+11 cuentas de Clerk**, y los nombres coinciden con los que sirve
+mercampus.vercel.app. Además, **el `.env` local apunta a esa misma base de
+producción**, no a un cluster de desarrollo: `npm run seed` la borraría entera
+(por eso exige `--yes` fuera de localhost — no le quites esa guarda).
 
 ## Reglas duras
 
@@ -30,6 +37,13 @@ Se prioriza corrección, seguridad y calidad del código sobre nuevas funciones.
 7. **Confirma que un archivo se usa antes de diseñar alrededor de él.**
    Si algo bloquea el build o parece importante, busca sus importadores
    en todo src/ antes de proponer arreglarlo. Podría ser código muerto.
+8. **Pregúntate siempre qué pasa con los datos que ya existen.** Un cambio puede
+   estar perfecto para los datos nuevos y dejar fuera a todos los que ya
+   estaban. Si tocas la forma de un documento, un índice, o la clave con la que
+   se identifica a alguien: mídelo contra la base real (solo lectura), escribe
+   la migración en `scripts/` con ensayo por defecto, y déjala anotada como
+   requisito para promover a `develop`. Pasó en T-12c: el código era correcto y
+   habría bloqueado a las 11 cuentas reales.
 
 ## Comandos
 
