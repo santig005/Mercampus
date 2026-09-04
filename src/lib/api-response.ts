@@ -22,8 +22,17 @@ export const invalidPayload = (error: ZodError) =>
  * Toma el status de AppError cuando lo hay, registra el error una sola vez, y
  * nunca devuelve al cliente el mensaje de un 500: los errores internos llevan
  * rutas, nombres de coleccion y a veces fragmentos de la consulta.
+ *
+ * `bodyKey` existe porque los handlers no coinciden en la forma del cuerpo:
+ * unos devuelven `{ error }` y otros `{ message }`, y cambiarla rompe al
+ * frontend que ya la lee. Se unifica en T-32; mientras tanto cada ruta declara
+ * la suya en vez de repetir la politica de no filtrar el mensaje de un 500.
  */
-export function errorResponse(error: unknown, context: string) {
+export function errorResponse(
+  error: unknown,
+  context: string,
+  { bodyKey = 'error' }: { bodyKey?: 'error' | 'message' } = {}
+) {
   const status =
     typeof error === 'object' && error !== null && 'status' in error
       ? Number((error as { status: unknown }).status) || 500
@@ -35,7 +44,7 @@ export function errorResponse(error: unknown, context: string) {
   logger.error(context, { status, message });
 
   return NextResponse.json(
-    { error: status >= 500 ? 'Error interno del servidor' : message },
+    { [bodyKey]: status >= 500 ? 'Error interno del servidor' : message },
     { status }
   );
 }
