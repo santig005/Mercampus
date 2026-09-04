@@ -31,20 +31,26 @@ export async function seedDatabase() {
     User.deleteMany({}),
   ]);
 
+  // clerkId es la clave con la que el webhook une Clerk y Mongo. Los usuarios
+  // sembrados lo llevan para que las pruebas se parezcan a la realidad: en
+  // producción todo usuario nace de un evento `user.created` de Clerk.
   const [buyer, approvedOwner, pendingOwner] = await User.create([
     {
+      clerkId: 'user_seed_ana',
       name: 'Ana',
       lastName: 'Restrepo',
       email: 'ana.restrepo@example.test',
       role: 'buyer',
     },
     {
+      clerkId: 'user_seed_carlos',
       name: 'Carlos',
       lastName: 'Mesa',
       email: 'carlos.mesa@example.test',
       role: 'seller',
     },
     {
+      clerkId: 'user_seed_laura',
       name: 'Laura',
       lastName: 'Gómez',
       email: 'laura.gomez@example.test',
