@@ -45,7 +45,9 @@ test.describe('recorrido publico', () => {
     await page.goto(`/antojos/${PRODUCT_ID}`);
 
     await expect(page.getByText('Arepa de queso').first()).toBeVisible();
-    await expect(page.getByText('6,000').first()).toBeVisible();
+    // Precio en pesos colombianos: separador de miles con punto, no con coma.
+    await expect(page.getByText(/\$\s*6\.000/).first()).toBeVisible();
+    await expect(page.getByText('6,000')).toHaveCount(0);
 
     await shot(page, '03-detalle-producto');
   });

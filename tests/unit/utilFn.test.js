@@ -7,25 +7,37 @@ import {
   priceFormat,
 } from '@/utils/utilFn';
 
+// `es-CO` mete un espacio duro entre el simbolo y el importe. Se nombra aparte
+// para que los tests no dependan de un caracter invisible en el literal.
+const NBSP = ' ';
+
 describe('priceFormat', () => {
-  it('formatea con separador de miles y sin decimales', () => {
-    expect(priceFormat(1500)).toBe('$1,500');
-    expect(priceFormat(12000)).toBe('$12,000');
+  it('formatea en pesos colombianos: punto de miles y sin decimales', () => {
+    expect(priceFormat(1500)).toBe(`$${NBSP}1.500`);
+    expect(priceFormat(12000)).toBe(`$${NBSP}12.000`);
   });
 
   it('formatea el cero', () => {
-    expect(priceFormat(0)).toBe('$0');
+    expect(priceFormat(0)).toBe(`$${NBSP}0`);
   });
 
-  it('conserva hasta dos decimales cuando el precio los tiene', () => {
-    expect(priceFormat(1500.5)).toBe('$1,500.5');
-    expect(priceFormat(1500.567)).toBe('$1,500.57');
+  it('usa la coma como separador decimal cuando el precio tiene decimales', () => {
+    // Los precios son enteros en el schema, pero si llega un decimal se
+    // formatea con la convencion local, no con la anglosajona.
+    expect(priceFormat(1500.5)).toBe(`$${NBSP}1.500,5`);
+    expect(priceFormat(1500.567)).toBe(`$${NBSP}1.500,57`);
+  });
+
+  it('no usa el formato anglosajon', () => {
+    expect(priceFormat(1500)).not.toBe('$1,500');
+    expect(priceFormat(1500)).not.toContain(',');
   });
 });
 
 describe('formatValue', () => {
   it('formatea los valores positivos igual que priceFormat', () => {
-    expect(formatValue(2500)).toBe('$2,500');
+    expect(formatValue(2500)).toBe(priceFormat(2500));
+    expect(formatValue(2500)).toBe(`$${NBSP}2.500`);
   });
 
   it('devuelve cadena vacia para cero y negativos', () => {
@@ -74,6 +86,19 @@ describe('formatPhone', () => {
   it('limpia los caracteres que no son digitos', () => {
     expect(formatPhone('300 123 4567')).toBe('(300) 123-4567');
     expect(formatPhone('300-123-4567')).toBe('(300) 123-4567');
+  });
+
+  it('descarta el indicativo de pais +57', () => {
+    expect(formatPhone('+573001234567')).toBe('(300) 123-4567');
+    expect(formatPhone('+57 300 123 4567')).toBe('(300) 123-4567');
+    expect(formatPhone('573001234567')).toBe('(300) 123-4567');
+    expect(formatPhone(573001234567)).toBe('(300) 123-4567');
+  });
+
+  it('no confunde con el indicativo un numero nacional de 10 digitos', () => {
+    // Ningun numero nacional empieza por 57, pero si llegara uno de 10 digitos
+    // se respeta entero: el 57 solo sobra cuando hay mas de 10.
+    expect(formatPhone('5730012345')).toBe('(573) 001-2345');
   });
 
   it('trunca a 10 digitos', () => {

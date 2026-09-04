@@ -271,6 +271,31 @@ tipo que T-10, pero en una ruta que T-10 no tocó. Candidata: T-10b.
 **Depende de:** T-13
 **Modelo:** `sonnet` · **Nocturno:** sí
 
+### [ ] T-13c · El teléfono del vendedor viaja como string
+**Por qué:** encontrado en T-15b. `createSellerSchema` y `updateSellerSchema`
+declaran `phoneNumber: z.number()`, pero el cliente siempre manda un string:
+- `sellers/register/page.jsx` guarda `value.replace(/\D/g, '').slice(0, 10)`,
+  que es un string de dígitos. Como el schema se conectó en T-13b, **el alta de
+  vendedor responde 400 siempre**.
+- `sellers/profile/edit/page.jsx` guarda `e.target.value` **sin limpiar**, y el
+  valor del input es el texto ya formateado: editar el teléfono manda
+  `"(300) 123-4567"` y el PUT responde 400.
+Los tests de integración de T-13b no lo atraparon porque mandan
+`phoneNumber: 3000000000` (number) a mano, no lo que manda el formulario.
+**Evidencia:** `createSellerSchema.safeParse({ businessName: 'Arepas Ana',
+phoneNumber: '3001234567' })` → `success: false`,
+`"Invalid input: expected number, received string"`. Con `3001234567` pasa.
+**Ojo con el `.slice(0, 10)` del register:** repite la lógica que T-15b arregló
+dentro de `formatPhone`, así que un `+57` pegado se guarda como `5730012345`.
+Al unificar, extraer el normalizador de `utilFn.js` en vez de duplicarlo.
+**Hecho cuando:** cliente y servidor coinciden en el tipo — Mongoose
+(`sellerSchema2.phoneNumber: Number`) y Zod ya están de acuerdo, así que se
+arregla el formulario o se acepta el string con `z.coerce`, no las dos cosas — y
+hay un test de integración que manda **el payload real del formulario**, no uno
+escrito a mano.
+**Depende de:** T-13b
+**Modelo:** `sonnet` · **Nocturno:** sí
+
 ### [ ] T-14 · Endpoints muertos y rotos
 **Por qué:** el PUT y DELETE de `api/sellers/route.js` usan `req.query`, que no
 existe en App Router: nunca funcionaron. `api/sellers/availability` está
@@ -331,13 +356,29 @@ objeto) para que un `catch (error)` en TypeScript no necesite casts.
 **Depende de:** T-15
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-15b · Corregir formato de moneda y teléfono
+### [x] T-15b · Corregir formato de moneda y teléfono
 **Por qué:** `priceFormat` usa `en-US` con `currency: 'USD'` en un
 marketplace colombiano (`1500 → '$1,500'` en vez de `'$1.500'`).
 `formatPhone` rompe con indicativo de país.
 **Hecho cuando:** `priceFormat` usa `es-CO` con `currency: 'COP'`;
 `formatPhone` maneja correctamente el prefijo `+57`; los tests
 de T-02 actualizados para reflejar el comportamiento correcto.
+**Corrección de la premisa:** el resultado de `es-CO` + `COP` **no** es
+`'$1.500'` sino `'$ 1.500'`: ICU separa el símbolo del importe con un
+espacio duro (U+00A0). Es la forma canónica del locale, así que se deja tal
+cual y los tests la afirman con la constante `NBSP` en vez de con un carácter
+invisible en el literal.
+**Hecho:** `priceFormat` y `formatValue` (que ahora delega en el primero) en
+`es-CO`/`COP`; `formatPhone` descarta el indicativo `57` solo cuando quedan más
+de 10 dígitos — ningún número nacional colombiano empieza por 57 (los móviles
+por 3, los fijos por 60), y la guarda evita comerse los tres primeros dígitos de
+un número de 10. Tres mutaciones comprobadas (volver a `en-US`/`USD`, quitar el
+descarte del indicativo, descartarlo sin la guarda) tumban un test cada una.
+**Ojo con el e2e:** `recorrido.spec.js` afirmaba el precio como `'6,000'`, así
+que atrapó el cambio. Ahora afirma `/\$\s*6\.000/` y además que `'6,000'` no
+aparece.
+**Hallazgo sin arreglar, ver T-13c:** el teléfono llega al servidor como string
+y `createSellerSchema` pide `number`.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ---

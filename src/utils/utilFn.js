@@ -1,15 +1,20 @@
-export const priceFormat = price => {
-  let formattedValue = '';
+// Mercampus es un marketplace colombiano: los precios van en pesos y los
+// teléfonos en el formato nacional de 10 dígitos.
+const CURRENCY_LOCALE = 'es-CO';
+const CURRENCY = 'COP';
+const COUNTRY_CODE = '57';
+const NATIONAL_DIGITS = 10;
 
-  formattedValue = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    useGrouping: true,
-  }).format(price);
+// Ojo: `es-CO` separa el símbolo del importe con un espacio duro (U+00A0),
+// así que 1500 sale como '$ 1.500'. Es la forma canónica del locale.
+const currencyFormatter = new Intl.NumberFormat(CURRENCY_LOCALE, {
+  style: 'currency',
+  currency: CURRENCY,
+  minimumFractionDigits: 0,
+  useGrouping: true,
+});
 
-  return formattedValue;
-};
+export const priceFormat = price => currencyFormatter.format(price);
 
 export const parseIfJSON = value => {
   if (typeof value !== 'string') return value;
@@ -20,21 +25,22 @@ export const parseIfJSON = value => {
   }
 };
 
-export const formatValue = value => {
-  return value > 0
-    ? new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        useGrouping: true,
-      }).format(value)
-    : '';
-};
+export const formatValue = value => (value > 0 ? priceFormat(value) : '');
+
+// Deja el número en su forma nacional de 10 dígitos. Ningún número colombiano
+// nacional empieza por 57 (los móviles empiezan por 3 y los fijos por 60), así
+// que un 57 delante de más de 10 dígitos solo puede ser el indicativo de país
+// de un `+57` y sobra.
+const toNationalPhone = digits =>
+  (digits.length > NATIONAL_DIGITS && digits.startsWith(COUNTRY_CODE)
+    ? digits.slice(COUNTRY_CODE.length)
+    : digits
+  ).slice(0, NATIONAL_DIGITS);
 
 export const formatPhone = phone => {
   if (!phone) return ''; // Si phone es null/undefined, retorna vacío
 
-  let cleanPhone = phone.toString().replace(/\D/g, '').slice(0, 10); // Solo números y máximo 10 dígitos
+  const cleanPhone = toNationalPhone(phone.toString().replace(/\D/g, ''));
 
   if (cleanPhone.length > 6) {
     return `(${cleanPhone.slice(0, 3)}) ${cleanPhone.slice(
