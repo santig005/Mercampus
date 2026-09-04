@@ -276,8 +276,11 @@ email como dos documentos, alta sin nombre, borrado, firma inválida → 400 sin
 tocar la base, y evento sin email → 400 en vez del 200 mentiroso de antes.
 **Mutación clave:** quitar `clerkId` del schema —el estado histórico exacto—
 tumba 5 de los 8 tests.
-**Sin migración de datos a propósito:** no hay usuarios en producción, así que
-no hay nada que rellenar. Si algún día lo hubiera, el script va en `scripts/`.
+**Corrección: aquí se escribió "sin migración de datos a propósito, no hay
+usuarios en producción". Eso se apoyaba en lo que dice CLAUDE.md, no en
+evidencia, y da igual: aunque no haya usuarios *activos*, cualquier documento
+`User` que ya exista en la base se queda sin `clerkId`, y desde T-12c eso lo
+deja sin poder mutar nada.** La migración es obligatoria y va en T-12e.
 **Modelo:** `opus` · **Nocturno:** no (nace de una discusión de diseño)
 
 ### [x] T-12c · Resolver la identidad por `clerkId` en el servidor
@@ -337,6 +340,44 @@ hay menos superficie.
 del producto (caen 2), la del vendedor (caen 4), el 401 de `getClerkUserId`
 (caen 4), el chequeo de vendedor de productos (cae 1) y su 401 (cae 1).
 **Depende de:** T-12b
+**Modelo:** `opus` · **Nocturno:** no
+
+### [x] T-12e · Rellenar `clerkId` en los usuarios que ya existen
+> **BLOQUEA LA PROMOCIÓN `agent/develop → develop`.** El código está listo y
+> probado, pero **la migración hay que correrla contra la base real antes de
+> promover**. Si se promueve sin ella, todo usuario que ya exista queda sin
+> poder editar nada.
+
+**Por qué:** hasta T-12b el campo `clerkId` no existía en el schema, así que
+ningún usuario lo tiene. Desde T-12c la identidad se resuelve por ahí. Medido
+llamando a los handlers con un usuario sin `clerkId` y una sesión de Clerk
+válida:
+
+```
+usuarios sin clerkId: 3
+PUT /api/sellers/[id] -> 403 {"error":"No eres usuario registrado."}
+POST /api/sellers     -> 404 {"message":"No se encontró un usuario para esta sesión."}
+```
+
+Y **el webhook no lo arregla solo**: `user.created` no se vuelve a disparar para
+una cuenta que ya existe, así que el bloqueo sería permanente.
+**Hecho:** `scripts/backfill-clerk-id.mjs` (`npm run migrate:clerk-id`).
+Empareja por email contra Clerk —la clave frágil que justamente se abandona,
+pero aquí se usa una sola vez y a mano—, **no escribe nada sin `--apply`**, es
+idempotente, y no decide por su cuenta en los casos raros: si el email no existe
+en Clerk, si tiene varias cuentas, o si el `clerkId` ya es de otro documento, lo
+informa y lo deja para una persona. Ese último caso importa porque `clerkId` es
+`unique` y el `unique` del email sigue comentado (T-11).
+**Ocho tests**, incluido el recorrido entero: usuario bloqueado con 404 → se
+corre el backfill → vuelve a poder registrarse como vendedor con 201. Cuatro
+mutaciones comprobadas con su diff (ignorar `--apply`, quitar el caso ambiguo,
+quitar el del id ya ocupado, quitar el filtro de pendientes).
+**Cómo correrlo el día de la promoción:**
+1. `npm run migrate:clerk-id` — ensayo, no escribe. Revisa el listado.
+2. Resuelve a mano los que salgan marcados.
+3. `npm run migrate:clerk-id -- --apply`.
+4. Comprueba que el resumen no deja pendientes y promueve.
+**Depende de:** T-12b, T-12c
 **Modelo:** `opus` · **Nocturno:** no
 
 ### [ ] T-12d · Borrar la ruta pública por email y sacar `SellerContext` del cliente

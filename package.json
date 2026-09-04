@@ -16,7 +16,8 @@
     "verify": "node scripts/verify.mjs",
     "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
     "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs",
-    "migrate:product-section": "node --import ./scripts/register-alias.mjs ./scripts/migrate-product-section.mjs"
+    "migrate:product-section": "node --import ./scripts/register-alias.mjs ./scripts/migrate-product-section.mjs",
+    "migrate:clerk-id": "node --import ./scripts/register-alias.mjs ./scripts/backfill-clerk-id.mjs"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
