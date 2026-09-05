@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { backfillClerkIds } from '../../scripts/backfill-clerk-id.mjs';
+import {
+  backfillClerkIds,
+  comprobarInstancia,
+} from '../../scripts/backfill-clerk-id.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
 const session = vi.hoisted(() => ({ userId: null }));
@@ -168,5 +171,51 @@ describe('backfill de clerkId', () => {
     });
 
     expect((await sellersRoute.POST(alta())).status).toBe(201);
+  });
+});
+
+describe('guarda de instancia', () => {
+  const desarrollo = async () => ({ id: 'ins_dev', environment_type: 'development' });
+  const produccion = async () => ({ id: 'ins_prod', environment_type: 'production' });
+
+  it('se planta si las claves son de una instancia de desarrollo', async () => {
+    await expect(
+      comprobarInstancia({ describirInstancia: desarrollo })
+    ).rejects.toThrow(/no es la de producción|"development"/);
+  });
+
+  it('deja pasar si se pide explícitamente', async () => {
+    const instancia = await comprobarInstancia({
+      describirInstancia: desarrollo,
+      permitirDesarrollo: true,
+    });
+    expect(instancia.id).toBe('ins_dev');
+  });
+
+  it('deja pasar una instancia de producción', async () => {
+    expect(
+      (await comprobarInstancia({ describirInstancia: produccion })).id
+    ).toBe('ins_prod');
+  });
+
+  it('se planta si la base ya está enlazada a otra instancia', async () => {
+    await crearUsuario('ana@example.test', { clerkId: 'user_de_otra_instancia' });
+
+    await expect(
+      comprobarInstancia({
+        describirInstancia: produccion,
+        comprobarClerkId: async () => false, // esta instancia no lo conoce
+      })
+    ).rejects.toThrow(/otra instancia/);
+  });
+
+  it('no se planta si los enlaces existentes son de esta instancia', async () => {
+    await crearUsuario('ana@example.test', { clerkId: 'user_de_esta' });
+
+    const instancia = await comprobarInstancia({
+      describirInstancia: produccion,
+      comprobarClerkId: async () => true,
+    });
+    expect(instancia.id).toBe('ins_prod');
   });
 });

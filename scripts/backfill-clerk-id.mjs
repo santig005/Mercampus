@@ -47,6 +47,52 @@ const elegirDocumento = documentos =>
     return new Date(a.createdAt ?? 0) - new Date(b.createdAt ?? 0);
   })[0];
 
+/**
+ * Se planta antes de escribir si las claves no son de la instancia correcta.
+ *
+ * Hace falta porque un `clerkId` solo significa algo dentro de su instancia.
+ * Mercampus tiene más de una, y las claves del `.env` —y las del entorno
+ * Production de Vercel— son de una instancia de **desarrollo** con 11 cuentas,
+ * mientras que la de producción tiene ~70. Enlazar con las claves equivocadas
+ * escribiría ids que ninguna sesión real va a presentar nunca, y como `clerkId`
+ * es `unique`, dejaría el hueco ocupado con basura.
+ */
+export async function comprobarInstancia({
+  describirInstancia,
+  comprobarClerkId,
+  permitirDesarrollo = false,
+}) {
+  const instancia = await describirInstancia();
+
+  if (instancia.environment_type !== 'production' && !permitirDesarrollo) {
+    throw new Error(
+      `La instancia de Clerk es "${instancia.environment_type}" (${instancia.id}).\n` +
+        'Enlazar usuarios reales con ids de una instancia que no es la de producción\n' +
+        'los dejaría con un clerkId que ninguna sesión va a presentar. Usa las claves\n' +
+        'de la instancia correcta, o pasa --permitir-desarrollo si sabes lo que haces.'
+    );
+  }
+
+  // Si la base ya tiene enlaces, tienen que ser de esta misma instancia. Si no,
+  // es que se corrió antes con otras claves y mezclar dos instancias es peor
+  // que no haber empezado.
+  const yaEnlazado = await User.findOne({ clerkId: { $exists: true, $ne: null } })
+    .select('clerkId')
+    .lean();
+
+  if (yaEnlazado && comprobarClerkId) {
+    const perteneceAEsta = await comprobarClerkId(yaEnlazado.clerkId);
+    if (!perteneceAEsta) {
+      throw new Error(
+        `La base ya tiene usuarios enlazados a otra instancia de Clerk (por ejemplo ${yaEnlazado.clerkId}).\n` +
+          'Corriendo esto se mezclarían dos instancias. Averigua cuál es la buena antes de seguir.'
+      );
+    }
+  }
+
+  return instancia;
+}
+
 export async function backfillClerkIds({ listarUsuariosDeClerk, apply = false }) {
   const cuentas = await listarUsuariosDeClerk();
   const resultados = [];
@@ -170,9 +216,44 @@ async function main() {
     return cuentas;
   };
 
+  // Llamadas directas a la Backend API: no hay CLI oficial de Clerk (`@clerk/cli`
+  // no existe en npm) y el SDK de Node está deprecado, así que para lo que no
+  // cubre el SDK se usa fetch con el secreto en la cabecera.
+  const apiClerk = async ruta => {
+    const r = await fetch('https://api.clerk.com/v1' + ruta, {
+      headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
+    });
+    return { ok: r.ok, datos: r.ok ? await r.json() : null };
+  };
+
+  const describirInstancia = async () => {
+    const { ok, datos } = await apiClerk('/instance');
+    if (!ok) throw new Error('No se pudo consultar la instancia de Clerk.');
+    return datos;
+  };
+  const comprobarClerkId = async id => (await apiClerk(`/users/${id}`)).ok;
+
   await mongoose.connect(process.env.MONGO_URI);
 
   try {
+    // El ensayo y el --check sirven para diagnosticar, así que avisan en vez de
+    // plantarse. El --apply sí se planta: es el que deja marca en la base.
+    let instanciaMal = null;
+    try {
+      const instancia = await comprobarInstancia({
+        describirInstancia,
+        comprobarClerkId,
+        permitirDesarrollo: process.argv.includes('--permitir-desarrollo'),
+      });
+      console.log(
+        `\nInstancia de Clerk: ${instancia.id} (${instancia.environment_type})`
+      );
+    } catch (error) {
+      instanciaMal = error;
+      if (apply) throw error;
+      console.log(`\n⚠  ${error.message}\n`);
+    }
+
     const informe = await backfillClerkIds({ listarUsuariosDeClerk, apply });
 
     console.log(`\nCuentas en Clerk: ${informe.cuentasDeClerk}`);
@@ -187,7 +268,10 @@ async function main() {
     );
 
     if (check) {
-      if (informe.pendientes > 0) {
+      if (instanciaMal) {
+        console.error('\nFALLA: las claves de Clerk no son las de producción.');
+        process.exitCode = 1;
+      } else if (informe.pendientes > 0) {
         console.error(
           `\nFALLA: ${informe.pendientes} cuenta(s) de Clerk sin enlazar.` +
             ' Corre --apply antes de promover, o se quedan sin poder editar nada.'
