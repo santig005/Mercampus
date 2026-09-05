@@ -221,10 +221,19 @@ se borra `/api/register`.
 `clerkId` al schema y hay ocho tests sobre el endpoint con firma svix. Así que
 el bloqueo desaparece: esta tarea ya puede decidir si `/api/register` se borra,
 y la respuesta por defecto debería ser sí, porque el alta la hace Clerk.
-**Hecho cuando:** o se elimina la ruta (una vez el webhook funcione de verdad) o
-se protege y valida; índice único en `email` restaurado con migración previa de
-duplicados en `scripts/`.
-**Modelo:** `sonnet` · **Nocturno:** no (implica decidir si se borra la ruta)
+**Decisión tomada (T-64): se borra.** Con el webhook apuntado a la instancia de
+desarrollo (que es donde corre el sitio, ver T-64), `/api/register` es
+puramente redundante — y es la ruta que lleva causando cada bug de `clerkId`
+faltante de esta serie de tareas (T-12b en adelante). No hay razón para
+conservarla ni protegida.
+**Hecho cuando:** la ruta y `SignUpForm.jsx: createUserDb()` (la llamada que la
+usa) desaparecen; el alta de usuario depende únicamente del webhook; test que
+confirma que `/api/register` ya no existe (404). El índice único en `email`
+sigue pendiente aparte — necesita migrar los duplicados que ya hay en Mongo, y
+no es parte de borrar la ruta.
+**Depende de:** que el webhook esté configurado en la instancia que sirve el
+sitio (parte de T-64).
+**Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [x] T-11b · Quitar el prefijo NEXT_PUBLIC_ a las claves de imágenes
 **Por qué:** las claves de ImageKit y Cloudinary llevaban prefijo
@@ -937,16 +946,17 @@ pero **contienen el mismo valor**, así que la separación es aparente.
 1. **Cualquier deployment de preview escribe en la base de producción.** El
    preview de `agent/develop` incluido. No hay red de seguridad de datos entre lo
    que prueba el agente y lo que ven los usuarios.
-2. **Producción corre sobre una instancia de _desarrollo_ de Clerk**
-   (`*.clerk.accounts.dev`, claves `pk_test_`/`sk_test_`). Las instancias de
-   desarrollo de Clerk no están pensadas para datos reales ni garantizan
-   retención de usuarios.
+2. **El sitio corre sobre la instancia de _desarrollo_ de Clerk, y así se queda
+   a propósito (T-64).** La de producción existe y sus usuarios están intactos,
+   pero depende de un dominio (`mercampus.com`) que el equipo decidió no
+   renovar. No es una tarea pendiente, es la decisión tomada.
 3. `npm run seed` con el `.env` actual borraría la base de producción. La guarda
    de `--yes` fuera de localhost es lo único que lo impide: no la quites.
 
-**Hecho cuando:** hay un cluster de Mongo aparte para preview/desarrollo y una
-instancia de producción de Clerk; el `.env` de trabajo apunta al de desarrollo;
-y el `.env.example` documenta cuál es cuál.
+**Hecho cuando:** hay un cluster de Mongo aparte para preview/desarrollo; el
+`.env` de trabajo apunta a ese; y el `.env.example` documenta cuál es cuál.
+**Ya no aplica** la mitad de Clerk de esta tarea (una instancia de producción
+aparte): ver T-64. El punto 1 (Mongo) sigue siendo el riesgo real y pendiente.
 **Modelo:** `opusplan` · **Nocturno:** no (infraestructura y coste)
 
 ### [x] T-12h · Guarda de instancia en el backfill
@@ -985,39 +995,98 @@ devuelve 1, y los usuarios siguen con **0** `clerkId`. Cinco tests nuevos.
 **De paso:** `npm run migrate:clerk-id` no cargaba `.env` (fallo al empaquetarlo
 en T-12e). A `npm run seed` **no** se le añade `--env-file` a propósito: que no
 cargue sola la URI de producción es una protección, no un olvido.
-**No hay CLI de Clerk:** `@clerk/cli` no existe en npm y el SDK de Node está
-deprecado. Para lo que el SDK no cubre se llama a la Backend API con `fetch`.
+**Corrección (T-64): sí hay CLI de Clerk — `npm install -g clerk`.** Lo que no
+existe es el paquete `@clerk/cli`; el real se llama `clerk` a secas. Se instaló
+con `winget`, que reportó éxito pero no escribió nada (la cuenta no es
+administradora y el MSI necesita elevación); funcionó el ZIP portátil
+descargado directo. `clerk users list --instance prod`, `clerk env pull`,
+`clerk config pull` reemplazan buena parte de las llamadas a mano con `fetch`
+de este PR — quien retome T-64/T-63 debería usar el CLI en vez de repetir eso.
 **Modelo:** `opus` · **Nocturno:** no
 
-### [ ] T-64 · Apuntar la aplicación a la instancia correcta de Clerk
-**Corrección (T-12h): la pregunta no es "dónde están las cuentas que faltan".
-Las cuentas están.** Están en la instancia de **producción** de Clerk (~70,
-vistas en su panel), y el sitio desplegado autentica contra la de **desarrollo**
-(11). Lo que antes escribí aquí —que 65 personas ya no podían entrar— salía de
-haber medido la instancia equivocada.
-**Por qué:** en Mongo hay **76 emails únicos**, que encajan con las ~70 cuentas
-de la instancia de producción, no con las 11 de la de desarrollo. Y el registro
-(`SignUpForm.jsx`) solo llama a `/api/register` **después** de
-`completeSignUp.status === 'complete'`, así que cada usuario de Mongo completó
-su verificación en Clerk. Encaja.
-**Otro dato del backup:** ninguno de los 79 documentos tiene `imageProfile`, lo
-que confirma que **el webhook nunca creó a nadie** (el bug de T-12b) y que todos
-entraron por `/api/register`. Tampoco hay ráfagas de inserción masiva: son altas
-de una en una a lo largo de 2025, o sea personas reales.
-**Lo que hay que averiguar:** por qué el entorno Production de Vercel tiene
-claves `sk_test_`/`pk_test_`. O se cambiaron en algún momento, o nunca se
-pusieron las de producción. Mientras siga así, **quien se registre en el sitio
-entra en la instancia de desarrollo**, y las ~70 cuentas de la de producción no
-pueden iniciar sesión.
-**Hecho cuando:** el entorno Production de Vercel usa las claves de la instancia
-de producción de Clerk (`sk_live_`/`pk_live_`), verificado porque
-`GET /v1/instance` responde `environment_type: "production"`; el webhook apunta
-a esa instancia (`WEBHOOK_SECRET` es por instancia, hay que rehacerlo); y
-`npm run migrate:clerk-id -- --check` pasa en verde, que ya comprueba justo eso.
-**Ojo con el orden:** hasta que esto no esté, **no se corre el backfill con
-`--apply`** — la guarda de T-12h lo impide, y por eso existe.
-**Depende de:** T-63
+### [x] T-64 · Apuntar la aplicación a la instancia correcta de Clerk — INTENTADO Y REVERTIDO
+**Corrección (T-12h): la pregunta no era "dónde están las cuentas que faltan".
+Las cuentas estaban.** Estaban en la instancia de **producción** de Clerk (70,
+confirmadas una a una con `clerk users list --instance prod`, coinciden 100%
+con los 76 emails únicos de Mongo). El sitio desplegado autenticaba contra la
+de **desarrollo** (11 cuentas).
+**Se intentó el cambio completo** (backfill `--apply` contra producción,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`/`CLERK_SECRET_KEY` de Production a
+`pk_live_`/`sk_live_`, webhook nuevo en la instancia de producción, redeploy) y
+**tumbó el sitio en producción**: `clerk.mercampus.com` (el Frontend API de esa
+instancia) no resuelve, porque está atado al dominio `mercampus.com`, que
+**expiró en enero de 2026** y el equipo decidió no renovarlo (sin retorno que
+justifique el gasto). Sin ese dominio, ninguna instancia de producción de Clerk
+puede cargar en el navegador — **no es un problema de configuración, es que la
+instancia de producción no tiene dónde vivir.**
+**Revertido de inmediato:** claves de Production devueltas a las de desarrollo,
+redeploy, sitio verificado en 200 con `sacred-shrew-44.clerk.accounts.dev`
+cargando bien.
+**Investigado y descartado:** usar el propio `*.clerk.accounts.dev` de Clerk
+como dominio de producción. Confirmado con la documentación oficial de
+Clerk — *"Production instances require that you associate a production
+domain... You will need to have a domain you own"* — es exclusivo de
+instancias `development`, Clerk lo bloquea técnicamente, no es negociable.
+**Decisión del equipo, con el dato que la sustenta:** lo más probable es no
+tener dominio propio en 1-3 años. La actividad real de usuarios (últimos
+registros y último login de un estudiante/vendedor real, no del equipo) se
+detuvo en seco el **2025-09-30**; el único acceso posterior fue del equipo
+(2025-10-23, 2026-01-26). Con ese dato, **se decide quedar corriendo sobre la
+instancia de desarrollo indefinidamente** en vez de perseguir un dominio.
+Sigue T-64b para la parte de datos que esto deja pendiente.
 **Modelo:** `opus` · **Nocturno:** no
+
+### [ ] T-64b · Recuperación de cuenta para los usuarios de la instancia vieja
+**Por qué:** de los 79 `User` en Mongo, **63 solo existen en la instancia de
+producción** de Clerk (7 más están en ambas — el equipo probando). Como Clerk
+no comparte usuarios entre instancias, esas 63 personas no pueden iniciar
+sesión con su cuenta de siempre: si se registran de nuevo en desarrollo, Clerk
+les da un `clerkId` nuevo que no es el que ya está en su `User` de Mongo (que
+apunta a la instancia de producción), así que el webhook les crea un `User`
+**nuevo y vacío** — entran como comprador sin su tienda ni sus productos, que
+siguen existiendo pero huérfanos.
+**Por qué no se resuelve dentro del webhook:** cruzar por email en el momento
+de la escritura es exactamente la fragilidad que T-12c quitó (el email es
+mutable y, con el `unique` aún comentado en T-11, ni siquiera único). Con un
+puñado de personas a lo largo de 1-3 años, no hace falta automatizarlo — y
+automatizarlo sería la clase de "migración de datos en caliente" que la regla 4
+de CLAUDE.md pide evitar.
+**Bien tratado, esto es reversible en las dos direcciones:** el Backend API de
+Clerk **no depende del dominio** — funcionó sin problema durante todo el
+incidente de T-64. Los usuarios que nunca se reclamen mantienen su `clerkId`
+de producción tal cual (ya se les puso en T-12h/T-12f), listo por si algún día
+se recupera un dominio. Solo hace falta re-mapear a quien sí se reclame.
+**Hecho cuando:** un script (`scripts/reclaim-account.mjs`, junto a
+`backfill-clerk-id.mjs`) que, dado el `clerkId` nuevo de alguien que se acaba
+de registrar y su email, busca su `User`/`Seller` viejo entre el snapshot de
+las 70 cuentas de producción, y si hay coincidencia exacta de email, actualiza
+el `clerkId` del `User` viejo al nuevo (conservando `sellerId`, `role`, y todo
+lo demás) en vez de dejar el `User` nuevo y vacío que creó el webhook. Ensayo
+por defecto, `--apply` explícito, igual que el resto de `scripts/`. Tests con
+Mongo en memoria: caso feliz, caso sin coincidencia (no toca nada), caso con
+el `clerkId` nuevo ya usado por otro documento.
+**Fuera de alcance a propósito:** una pantalla de autoservicio ("recupera tu
+cuenta") no vale la pena para el volumen esperado. Si esto se vuelve frecuente,
+reconsiderar.
+**Depende de:** T-64
+**Modelo:** `opus` · **Nocturno:** no
+
+### [x] T-64c · Google login — ya estaba armado y ya funciona
+**Hallazgo, no trabajo:** `ProvidersButton.jsx` ya existe, ya está importado en
+`SignInForm.jsx`/`SignUpForm.jsx`, y ya usa `signIn.authenticateWithRedirect`
+con `oauth_google` y `oauth_microsoft`. En la instancia de desarrollo, Google
+está `enabled: true` con credenciales propias ya configuradas (no las
+compartidas de Clerk) — alguien del equipo lo dejó listo hace tiempo.
+Verificado sirviendo en `mercampus.vercel.app/auth/login` ahora mismo.
+**Por qué nunca se vio funcionar:** hasta este cambio, el sitio corría con las
+claves correctas de todos modos (las de desarrollo, sin querer), así que esto
+ya funcionaba; simplemente nadie lo probó después de que el dominio de
+producción se rompiera y quedara la duda.
+**No hay tarea que hacer aquí.** Dejado documentado para que nadie vuelva a
+preguntarse si Google login "es cosa de producción" — no lo es, en Clerk
+`development` viene con credenciales propias o compartidas sin configurar
+nada, y `production` es lo que exige credenciales propias verificadas por
+Google.
 
 ### [ ] T-62 · Deuda del agente
 **Por qué:** el pipeline nocturno también genera deuda: PRs abandonados, ramas
