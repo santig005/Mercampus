@@ -84,6 +84,10 @@ no puede probar nada.
 `npm run seed` documentado en el README; `.env.example` creado.
 **Alcance:** `scripts/seed.js`, `tests/setup.js`, `.env.example`.
 **Ojo:** el seed apunta a un cluster de desarrollo, NUNCA a producción.
+**Corrección (T-12g): eso es un deseo, no un hecho.** El `MONGO_URI` del `.env`
+apunta hoy **a producción**, así que `npm run seed` la borraría entera. Lo único
+que lo impide es la guarda que exige `--yes` fuera de localhost. No la quites, y
+mira T-63 para arreglar la causa.
 **Modelo:** `sonnet` · **Nocturno:** no
 
 ### [x] T-04 · Playwright + capturas como evidencia
@@ -375,7 +379,13 @@ Resumen: {"enlazado-con-desempate":3,"enlazado":8}
 Documentos sin cuenta en Clerk: 65 (no pueden iniciar sesión)
 ```
 
-Es decir: **11 de 11 se resuelven solas, cero casos manuales.** Los 3 desempates
+Es decir: **11 de 11 se resuelven solas, cero casos manuales.**
+**Matiz importante (T-12g): esas 11 son todas las cuentas que existen en Clerk,
+pero en Mongo hay 76 emails únicos.** Las otras 65 personas no tienen cuenta y
+por tanto **ya hoy no pueden iniciar sesión, antes de cualquier cambio nuestro**.
+El backfill no las arregla ni las rompe: no hay `clerkId` que asignarles. Eso es
+T-64, y no bloquea la promoción.
+Los 3 desempates
 son la misma persona duplicada en Mongo —una copia con perfil de vendedor y otra
 vacía, restos del viejo `POST /api/register`— y se resuelven con una regla
 escrita: gana la que tiene `sellerId`, y a igualdad la más antigua. Los 65
@@ -906,6 +916,61 @@ y una alerta cuando la tasa de error del deploy supere un umbral.
 **Hecho cuando:** Lighthouse CI en cada PR con umbrales que rompen el build;
 navegación por teclado y contraste revisados en las pantallas principales.
 **Modelo:** `sonnet` · **Nocturno:** sí
+
+### [ ] T-63 · Separar los entornos (base de datos y Clerk)
+> **El riesgo estructural más grande del proyecto ahora mismo.** No lo puede
+> hacer un agente: son decisiones de infraestructura y cuestan dinero.
+
+**Medido con el CLI de Vercel y contra los servicios reales (T-12g):**
+
+| | Production | Preview | Development |
+|---|---|---|---|
+| `MONGO_URI` | `cluster0.fibip…/mercampus_products` | **el mismo cluster, la misma base, el mismo usuario** | el mismo |
+| Clerk | `sacred-shrew-44.clerk.accounts.dev` | **la misma instancia** (`CLERK_SECRET_KEY` idéntica) | la misma |
+
+Vercel tiene dos entradas separadas de `CLERK_SECRET_KEY` y
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (una para Preview, otra para Production),
+pero **contienen el mismo valor**, así que la separación es aparente.
+
+**Qué implica, en concreto:**
+1. **Cualquier deployment de preview escribe en la base de producción.** El
+   preview de `agent/develop` incluido. No hay red de seguridad de datos entre lo
+   que prueba el agente y lo que ven los usuarios.
+2. **Producción corre sobre una instancia de _desarrollo_ de Clerk**
+   (`*.clerk.accounts.dev`, claves `pk_test_`/`sk_test_`). Las instancias de
+   desarrollo de Clerk no están pensadas para datos reales ni garantizan
+   retención de usuarios.
+3. `npm run seed` con el `.env` actual borraría la base de producción. La guarda
+   de `--yes` fuera de localhost es lo único que lo impide: no la quites.
+
+**Hecho cuando:** hay un cluster de Mongo aparte para preview/desarrollo y una
+instancia de producción de Clerk; el `.env` de trabajo apunta al de desarrollo;
+y el `.env.example` documenta cuál es cuál.
+**Modelo:** `opusplan` · **Nocturno:** no (infraestructura y coste)
+
+### [ ] T-64 · Las cuentas de Clerk que faltan
+**Por qué:** en Mongo hay **76 emails únicos** y en Clerk **11 cuentas**. No es
+un problema de paginación: `totalCount` y `users.getCount()` también dicen 11.
+**Lo que descarta que sea un fallo de nuestro código:** el registro
+(`SignUpForm.jsx`) solo llama a `/api/register` **después** de
+`completeSignUp.status === 'complete'`, es decir, tras verificar el email en
+Clerk. Así que las 76 personas tuvieron cuenta verificada en su momento.
+**Lo que sí sabemos:** ninguno de los 79 documentos tiene `imageProfile`, lo que
+confirma que **el webhook nunca creó a nadie** (era el bug de T-12b) y que todos
+entraron por `/api/register`. Tampoco hay ráfagas de inserción masiva: son altas
+de una en una a lo largo de 2025, o sea personas reales.
+**Hipótesis principal, sin confirmar:** la instancia es de desarrollo y Clerk no
+garantiza la retención de sus usuarios. **No lo he podido probar desde la API**;
+se confirma mirando el dashboard de esa instancia o preguntando a Clerk.
+**Ojo con lo que NO arregla el backfill:** T-12e/T-12f enlazan a las 11 cuentas
+que existen. A las otras 65 personas no hay `clerkId` que asignarles: **ya hoy,
+antes de cualquier cambio nuestro, no pueden iniciar sesión.** Recuperarlas pasa
+por que se registren de nuevo o por invitarlas desde Clerk, no por una
+migración.
+**Hecho cuando:** se sabe por qué desaparecieron y se decide qué hacer con esas
+65 personas y sus 44 negocios.
+**Depende de:** T-63
+**Modelo:** `opus` · **Nocturno:** no
 
 ### [ ] T-62 · Deuda del agente
 **Por qué:** el pipeline nocturno también genera deuda: PRs abandonados, ramas

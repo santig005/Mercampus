@@ -18,6 +18,12 @@ mercampus.vercel.app. Además, **el `.env` local apunta a esa misma base de
 producción**, no a un cluster de desarrollo: `npm run seed` la borraría entera
 (por eso exige `--yes` fuera de localhost — no le quites esa guarda).
 
+**Y no hay separación de entornos (T-12g):** Production, Preview y Development
+comparten **la misma base de Mongo** y **la misma instancia de Clerk**, que
+además es de desarrollo (`*.clerk.accounts.dev`, claves `pk_test_`/`sk_test_`).
+O sea: los deployments de preview escriben en producción. Antes de tocar datos,
+haz `npm run backup:db` (vuelca a `backups/`, que está ignorado). Ver T-63.
+
 ## Reglas duras
 
 1. **Nunca hagas push ni merge a `main` ni a `develop`.** El trabajo del agente
