@@ -42,3 +42,8 @@ next-env.d.ts
 # playwright
 /test-results
 /playwright-report
+
+# copias de seguridad de la base: datos reales de personas, nunca al repo
+/backups
+
+.env*
