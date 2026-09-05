@@ -379,12 +379,13 @@ Resumen: {"enlazado-con-desempate":3,"enlazado":8}
 Documentos sin cuenta en Clerk: 65 (no pueden iniciar sesión)
 ```
 
-Es decir: **11 de 11 se resuelven solas, cero casos manuales.**
-**Matiz importante (T-12g): esas 11 son todas las cuentas que existen en Clerk,
-pero en Mongo hay 76 emails únicos.** Las otras 65 personas no tienen cuenta y
-por tanto **ya hoy no pueden iniciar sesión, antes de cualquier cambio nuestro**.
-El backfill no las arregla ni las rompe: no hay `clerkId` que asignarles. Eso es
-T-64, y no bloquea la promoción.
+Es decir: 11 de 11 se resuelven solas, cero casos manuales.
+**CORRECCIÓN GRAVE (T-12h): ese ensayo se hizo contra la instancia equivocada.**
+Las claves del `.env` —y las del entorno Production de Vercel— son de una
+instancia de **desarrollo** con 11 cuentas; la de producción tiene ~70. Correrlo
+con `--apply` habría escrito ids de desarrollo sobre usuarios reales. Desde
+T-12h el script se planta antes de escribir. **No corras esto hasta cerrar
+T-64.**
 Los 3 desempates
 son la misma persona duplicada en Mongo —una copia con perfil de vendedor y otra
 vacía, restos del viejo `POST /api/register`— y se resuelven con una regla
@@ -948,27 +949,73 @@ instancia de producción de Clerk; el `.env` de trabajo apunta al de desarrollo;
 y el `.env.example` documenta cuál es cuál.
 **Modelo:** `opusplan` · **Nocturno:** no (infraestructura y coste)
 
-### [ ] T-64 · Las cuentas de Clerk que faltan
-**Por qué:** en Mongo hay **76 emails únicos** y en Clerk **11 cuentas**. No es
-un problema de paginación: `totalCount` y `users.getCount()` también dicen 11.
-**Lo que descarta que sea un fallo de nuestro código:** el registro
+### [x] T-12h · Guarda de instancia en el backfill
+> **Corrige un error mío que habría dañado datos reales.** En T-12f di el
+> backfill por listo diciendo "11 de 11 se resuelven solas". Esas 11 son las de
+> una instancia de **desarrollo**. La de producción tiene ~70 cuentas.
+
+**Por qué:** un `clerkId` solo significa algo dentro de su instancia. Correr el
+backfill con las claves del `.env` habría escrito ids de la instancia de
+desarrollo sobre usuarios reales: ids que ninguna sesión va a presentar nunca y
+que, al ser `clerkId` un campo `unique`, dejan el hueco ocupado con basura y
+obligan a limpiarlo antes de poder enlazar bien.
+**Lo que confirma que las claves son las equivocadas** (`GET /v1/instance` con
+el secreto del `.env`, que es **el mismo** que tiene Vercel en Production):
+
+```
+environment_type: "development"
+id: ins_2mH0ZTsikZ8SSYtT1h3WhwJB5Cd
+users count: 11
+```
+
+Y `GET /v1/domains` sobre esa instancia lista **dos** dominios: el suyo
+(`sacred-shrew-44.clerk.accounts.dev`) y `mercampus.vercel.app`, este último
+apuntando a un frontend distinto (`pleased-gobbler-74.clerk.accounts.dev`,
+creado 2026-01-28). Es decir, **hay más de una instancia en juego** y el sitio
+desplegado carga la de desarrollo: la única clave que aparece en el HTML de
+`mercampus.vercel.app/auth/login` es la `pk_test_` de `sacred-shrew-44`.
+**Hecho:** `comprobarInstancia()` se ejecuta antes de nada y (a) rechaza una
+instancia que no sea `production` salvo `--permitir-desarrollo`, y (b) si la
+base ya tiene enlaces, comprueba contra Clerk que pertenezcan a **esta**
+instancia, para no mezclar dos. El ensayo y `--check` avisan en vez de plantarse
+—diagnosticar es justo para lo que sirven— pero `--apply` se planta antes de
+tocar la base, y `--check` sale con código 1.
+**Comprobado en real:** el ensayo contra producción imprime el aviso, `--check`
+devuelve 1, y los usuarios siguen con **0** `clerkId`. Cinco tests nuevos.
+**De paso:** `npm run migrate:clerk-id` no cargaba `.env` (fallo al empaquetarlo
+en T-12e). A `npm run seed` **no** se le añade `--env-file` a propósito: que no
+cargue sola la URI de producción es una protección, no un olvido.
+**No hay CLI de Clerk:** `@clerk/cli` no existe en npm y el SDK de Node está
+deprecado. Para lo que el SDK no cubre se llama a la Backend API con `fetch`.
+**Modelo:** `opus` · **Nocturno:** no
+
+### [ ] T-64 · Apuntar la aplicación a la instancia correcta de Clerk
+**Corrección (T-12h): la pregunta no es "dónde están las cuentas que faltan".
+Las cuentas están.** Están en la instancia de **producción** de Clerk (~70,
+vistas en su panel), y el sitio desplegado autentica contra la de **desarrollo**
+(11). Lo que antes escribí aquí —que 65 personas ya no podían entrar— salía de
+haber medido la instancia equivocada.
+**Por qué:** en Mongo hay **76 emails únicos**, que encajan con las ~70 cuentas
+de la instancia de producción, no con las 11 de la de desarrollo. Y el registro
 (`SignUpForm.jsx`) solo llama a `/api/register` **después** de
-`completeSignUp.status === 'complete'`, es decir, tras verificar el email en
-Clerk. Así que las 76 personas tuvieron cuenta verificada en su momento.
-**Lo que sí sabemos:** ninguno de los 79 documentos tiene `imageProfile`, lo que
-confirma que **el webhook nunca creó a nadie** (era el bug de T-12b) y que todos
+`completeSignUp.status === 'complete'`, así que cada usuario de Mongo completó
+su verificación en Clerk. Encaja.
+**Otro dato del backup:** ninguno de los 79 documentos tiene `imageProfile`, lo
+que confirma que **el webhook nunca creó a nadie** (el bug de T-12b) y que todos
 entraron por `/api/register`. Tampoco hay ráfagas de inserción masiva: son altas
 de una en una a lo largo de 2025, o sea personas reales.
-**Hipótesis principal, sin confirmar:** la instancia es de desarrollo y Clerk no
-garantiza la retención de sus usuarios. **No lo he podido probar desde la API**;
-se confirma mirando el dashboard de esa instancia o preguntando a Clerk.
-**Ojo con lo que NO arregla el backfill:** T-12e/T-12f enlazan a las 11 cuentas
-que existen. A las otras 65 personas no hay `clerkId` que asignarles: **ya hoy,
-antes de cualquier cambio nuestro, no pueden iniciar sesión.** Recuperarlas pasa
-por que se registren de nuevo o por invitarlas desde Clerk, no por una
-migración.
-**Hecho cuando:** se sabe por qué desaparecieron y se decide qué hacer con esas
-65 personas y sus 44 negocios.
+**Lo que hay que averiguar:** por qué el entorno Production de Vercel tiene
+claves `sk_test_`/`pk_test_`. O se cambiaron en algún momento, o nunca se
+pusieron las de producción. Mientras siga así, **quien se registre en el sitio
+entra en la instancia de desarrollo**, y las ~70 cuentas de la de producción no
+pueden iniciar sesión.
+**Hecho cuando:** el entorno Production de Vercel usa las claves de la instancia
+de producción de Clerk (`sk_live_`/`pk_live_`), verificado porque
+`GET /v1/instance` responde `environment_type: "production"`; el webhook apunta
+a esa instancia (`WEBHOOK_SECRET` es por instancia, hay que rehacerlo); y
+`npm run migrate:clerk-id -- --check` pasa en verde, que ya comprueba justo eso.
+**Ojo con el orden:** hasta que esto no esté, **no se corre el backfill con
+`--apply`** — la guarda de T-12h lo impide, y por eso existe.
 **Depende de:** T-63
 **Modelo:** `opus` · **Nocturno:** no
 

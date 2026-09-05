@@ -19,10 +19,15 @@ producción**, no a un cluster de desarrollo: `npm run seed` la borraría entera
 (por eso exige `--yes` fuera de localhost — no le quites esa guarda).
 
 **Y no hay separación de entornos (T-12g):** Production, Preview y Development
-comparten **la misma base de Mongo** y **la misma instancia de Clerk**, que
-además es de desarrollo (`*.clerk.accounts.dev`, claves `pk_test_`/`sk_test_`).
-O sea: los deployments de preview escriben en producción. Antes de tocar datos,
-haz `npm run backup:db` (vuelca a `backups/`, que está ignorado). Ver T-63.
+comparten **la misma base de Mongo** y **la misma instancia de Clerk**. Los
+deployments de preview escriben en producción. Antes de tocar datos, haz
+`npm run backup:db` (vuelca a `backups/`, que está ignorado). Ver T-63.
+
+**Ojo con Clerk (T-12h):** hay más de una instancia. Las claves del `.env` y las
+del entorno Production de Vercel son de una de **desarrollo** (11 cuentas); la
+de producción tiene ~70. Un `clerkId` solo vale dentro de su instancia, así que
+**antes de escribir cualquier `clerkId` comprueba con qué instancia hablas**:
+`GET https://api.clerk.com/v1/instance` devuelve `environment_type`. Ver T-64.
 
 ## Reglas duras
 
