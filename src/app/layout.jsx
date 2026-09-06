@@ -6,6 +6,7 @@ import { esMX, enUS } from '@clerk/localizations';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Analytics from '@/utils/analytics';
+import { getSellerContextData } from '@/utils/lib/auth';
 
 import React from 'react';
 import '../../public/css/main.css';
@@ -64,6 +65,8 @@ export default async function RootLayout({ children }) {
   const locale = await getLocale();
   const messages = await getMessages();
   const clerkLocalization = locale === 'en' ? enUS : esMX;
+  const { user: initialUser, seller: initialSeller } =
+    await getSellerContextData();
 
   return (
     <ClerkProvider
@@ -79,7 +82,7 @@ export default async function RootLayout({ children }) {
         <body className='bg-primary'>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <UniversityProvider>
-            <SellerProvider>
+            <SellerProvider initialUser={initialUser} initialSeller={initialSeller}>
               <AnimationProvider>
                 <ClerkLoading>
                   <div className='fixed top-0 left-0 z-50 w-full h-full bg-primary flex items-center justify-center'>
