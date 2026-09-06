@@ -3,14 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit",
+    "deadcode": "knip",
+    "test": "vitest run",
+    "verify": "node scripts/verify.mjs",
+    "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
+    "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs",
+    "migrate:product-section": "node --import ./scripts/register-alias.mjs ./scripts/migrate-product-section.mjs",
+    "migrate:clerk-id": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backfill-clerk-id.mjs",
+    "backup:db": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
@@ -36,15 +44,21 @@
     "react-intersection-observer": "9.13.1",
     "react-select": "^5.10.0",
     "sharp": "^0.33.5",
-    "svix": "^1.36.0"
+    "svix": "^1.36.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.1",
     "@types/react": "^18.3.5",
     "daisyui": "^4.12.10",
     "eslint": "^8",
     "eslint-config-next": "14.2.8",
+    "knip": "^6.34.0",
+    "mongodb-memory-server": "^11.2.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   }
 }

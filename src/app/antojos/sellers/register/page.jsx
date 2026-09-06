@@ -1,4 +1,6 @@
 'use client';
+import { logger } from '@/lib/logger';
+import { toNationalPhone } from '@/lib/phone';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InputFields from '@/components/auth/register/InputFields';
@@ -33,9 +35,12 @@ const RegisterSeller = () => {
 
     let newValue = type === 'checkbox' ? checked : value;
 
-    // Si el campo es "phone", limpiamos el número antes de guardarlo
+    // Si el campo es "phone", lo normalizamos antes de guardarlo. Recortar a
+    // los 10 primeros dígitos a secas convertía un `+57 300 123 4567` pegado
+    // en `5730012345`, un número de 10 dígitos que el servidor ya no puede
+    // distinguir de uno bueno.
     if (name === 'phoneNumber') {
-      newValue = value.replace(/\D/g, '').slice(0, 10); // Solo números, máx. 10 dígitos
+      newValue = toNationalPhone(value);
     }
 
     if (name) {
@@ -56,7 +61,7 @@ const RegisterSeller = () => {
 
     sellerData.logo = sellerData?.images[0];
     sellerData.description = JSON.stringify(sellerData.description);
-    // console.log(sellerData);
+    // logger.debug(sellerData);
 
     try {
       const response = await fetch('/api/sellers', {
@@ -73,11 +78,11 @@ const RegisterSeller = () => {
         router.push('/antojos/sellers/approving');
       } else {
         const errorData = await response.json();
-        console.error('Error:', errorData.message);
+        logger.error('Error:', errorData.message);
         setErrorCode(errorData.message);
       }
     } catch (error) {
-      console.error('Network Error:', error);
+      logger.error('Network Error:', error);
       setErrorCode('Network Error. Please try again.');
     }
     setLoading(false);

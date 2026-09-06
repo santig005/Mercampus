@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { updateSeller } from '@/services/sellerService';
 import InputFields from '@/components/auth/register/InputFields';
@@ -47,7 +48,7 @@ export default function EditSellerPage() {
       router.push('/');
     } catch (error) {
       setError('Error al actualizar el perfil del vendedor.');
-      console.error(error);
+      logger.error(error);
     }
   };
   const handleImagesUpdate = updatedImages => {
@@ -68,7 +69,7 @@ export default function EditSellerPage() {
         setSellerAvailability(!sellerAvailability);
       }
     } catch (error) {
-      console.error('Error updating seller availability:', error);
+      logger.error('Error updating seller availability:', error);
     }
   };
   if (!checkedSeller || !seller) return <Loading />;

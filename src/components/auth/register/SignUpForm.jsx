@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useSignUp } from '@clerk/nextjs';
@@ -81,7 +82,7 @@ export default function SignUpForm() {
         }),
       });
     } catch (err) {
-      console.error('Error creating user:', err.message);
+      logger.error('Error creating user:', err.message);
     }
   };
 
@@ -181,13 +182,13 @@ export default function SignUpForm() {
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
-        console.error(JSON.stringify(completeSignUp, null, 2));
+        logger.error(JSON.stringify(completeSignUp, null, 2));
       }
     } catch (err) {
       // See https://clerk.com/docs/custom-flows/error-handling
       // for more info on error handling
-      console.error('Error:', JSON.stringify(err, null, 2));
-      console.log(err);
+      logger.error('Error:', JSON.stringify(err, null, 2));
+      logger.debug(err);
       setErrorCode(
         passwordErrorMessages[
           JSON.stringify(err.errors[0].code, null, 2).replace(/['"]+/g, '')

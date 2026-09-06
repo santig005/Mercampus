@@ -8,13 +8,34 @@ Manténlo corto: se lee en cada ejecución y cuesta tokens.
 Marketplace de comida entre estudiantes universitarios (Colombia). Next.js 14
 App Router + MongoDB (Mongoose) + Clerk para autenticación. Desplegado en Vercel.
 
-El proyecto está en modo **rehabilitación**: no hay usuarios en producción.
-Se prioriza corrección, seguridad y calidad del código sobre nuevas funciones.
+El proyecto está en modo **rehabilitación**: se prioriza corrección, seguridad y
+calidad del código sobre nuevas funciones.
+
+**Corrección importante (T-12f): aquí decía "no hay usuarios en producción" y es
+falso.** Medido contra la base real: **54 vendedores, 79 documentos de usuario y
+11 cuentas de Clerk**, y los nombres coinciden con los que sirve
+mercampus.vercel.app. Además, **el `.env` local apunta a esa misma base de
+producción**, no a un cluster de desarrollo: `npm run seed` la borraría entera
+(por eso exige `--yes` fuera de localhost — no le quites esa guarda).
+
+**Y no hay separación de entornos (T-12g):** Production, Preview y Development
+comparten **la misma base de Mongo** y **la misma instancia de Clerk**. Los
+deployments de preview escriben en producción. Antes de tocar datos, haz
+`npm run backup:db` (vuelca a `backups/`, que está ignorado). Ver T-63.
+
+**Ojo con Clerk (T-12h):** hay más de una instancia. Las claves del `.env` y las
+del entorno Production de Vercel son de una de **desarrollo** (11 cuentas); la
+de producción tiene ~70. Un `clerkId` solo vale dentro de su instancia, así que
+**antes de escribir cualquier `clerkId` comprueba con qué instancia hablas**:
+`GET https://api.clerk.com/v1/instance` devuelve `environment_type`. Ver T-64.
 
 ## Reglas duras
 
-1. **Nunca hagas push a `main` ni a `develop`.** Trabaja siempre en
-   `agent/<id-tarea>` y abre PR hacia `develop`.
+1. **Nunca hagas push ni merge a `main` ni a `develop`.** El trabajo del agente
+   se integra en `agent/develop`. Saca `agent/<id-tarea>` desde `agent/develop`,
+   abre el PR hacia `agent/develop` y mergéalo tú mismo **solo** con el check
+   `quality` en verde: nunca en rojo ni pendiente. La promoción
+   `agent/develop → develop` la revisa y mergea un humano.
 2. **Una tarea del ROADMAP por ejecución.** No agrupes. Un PR pequeño y
    revisable vale más que uno grande y correcto.
 3. **Si no puedes verificar el cambio, no lo hagas.** Cada PR debe pasar
@@ -27,6 +48,14 @@ Se prioriza corrección, seguridad y calidad del código sobre nuevas funciones.
 7. **Confirma que un archivo se usa antes de diseñar alrededor de él.**
    Si algo bloquea el build o parece importante, busca sus importadores
    en todo src/ antes de proponer arreglarlo. Podría ser código muerto.
+8. **Pregúntate siempre qué pasa con los datos que ya existen.** Un cambio puede
+   estar perfecto para los datos nuevos y dejar fuera a todos los que ya
+   estaban. Si tocas la forma de un documento, un índice, o la clave con la que
+   se identifica a alguien: mídelo contra la base real (solo lectura), escribe
+   la migración en `scripts/` con ensayo por defecto, y déjala anotada como
+   requisito para promover a `develop`. Pasó en T-12c: el código era correcto y
+   habría bloqueado a las 11 cuentas reales.
+
 ## Comandos
 
 ```bash

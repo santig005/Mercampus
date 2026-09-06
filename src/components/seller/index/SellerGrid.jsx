@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import { getSellers } from '@/services/sellerService';
 import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';
@@ -7,7 +8,6 @@ import { useSeller } from '@/context/SellerContext';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import { updateSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
-import SellerCardAV from '@/components/seller/index/SellerCardAV';
 import { useAuth } from '@clerk/nextjs';
 
 export default function SellerGrid({ section = 'antojos' }) {
@@ -22,7 +22,7 @@ export default function SellerGrid({ section = 'antojos' }) {
         const data = await getSellers(university, section);
         setSellers(data.sellers);
       } catch (error) {
-        console.error('Error fetching sellers:', error);
+        logger.error('Error fetching sellers:', error);
         setSellers([]);
       }
     }
@@ -48,7 +48,7 @@ export default function SellerGrid({ section = 'antojos' }) {
         );
       }
     } catch (error) {
-      console.error('Error updating seller:', error);
+      logger.error('Error updating seller:', error);
     }
   };
 
@@ -85,7 +85,7 @@ export default function SellerGrid({ section = 'antojos' }) {
                   {sellers.map(seller => (
                     <div key={seller._id} className='bg-white shadow-md rounded-lg'>
                       <div className='w-full' onClick={() => showModal(seller)}>
-                        <SellerCardAV seller={seller} />
+                        <SellerCard seller={seller} variant='embedded' />
                       </div>
                       <div className='flex justify-between p-2 w-full'>
                         <p>Activo:</p>

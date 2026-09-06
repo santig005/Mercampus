@@ -1,27 +1,33 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
+import {
+  createProductSchema,
+  productQuerySchema,
+} from '@/lib/validators/product';
+import { invalidPayload } from '@/lib/api-response';
+// No se usa por nombre, pero el import registra el modelo en Mongoose y el
+// populate({ model: 'Seller' }) del GET lo necesita registrado. Si se borra,
+// el listado revienta con MissingSchemaError.
+import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
+import { logger } from '@/lib/logger';
 
 export async function GET(req) {
   await connectDB();
 
   const url = new URL(req.url);
-  const product = url.searchParams.get('product') || '';
-  const category = url.searchParams.get('category') || '';
-  const sellerId = url.searchParams.get('sellerId') || '';
-  const university = url.searchParams.get('university') || '';
-  const section = url.searchParams.get('section') || 'antojos';
-
-  // Actualizar productos sin sección para que tengan section: 'antojos'
-  await Product.updateMany(
-    { section: { $exists: false } },
-    { $set: { section: 'antojos' } }
+  const parsedQuery = productQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams)
   );
+  if (!parsedQuery.success) {
+    return invalidPayload(parsedQuery.error);
+  }
+  const { product, category, sellerId, university, section } = parsedQuery.data;
 
   let filter = {};
 
@@ -62,81 +68,61 @@ export async function GET(req) {
 }
 
 const getPopulatedProducts = async approvedProducts => {
-  const populatedProducts = await Promise.all(
-    approvedProducts.map(async product => {
-      const schedules = await Schedule.find({ sellerId: product.sellerId._id });
-      schedules.sort((a, b) =>
-        a.day !== b.day ? a.day - b.day : a.startTime.localeCompare(b.startTime)
-      );
-
-      return {
-        ...product.toObject(),
-        schedules: schedules.map(schedule => ({
-          ...schedule.toObject(),
-          day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
-        })),
-      };
-    })
+  // Una sola consulta para todos los vendedores del listado, en vez de una por
+  // producto.
+  const schedulesBySeller = await getSchedulesBySeller(
+    approvedProducts.map(product => product.sellerId._id)
   );
 
-  return populatedProducts;
+  return approvedProducts.map(product => ({
+    ...product.toObject(),
+    schedules: withDayNames(
+      schedulesBySeller.get(product.sellerId._id.toString()) ?? []
+    ),
+  }));
 };
 
 export async function POST(req) {
   try {
     await connectDB();
-    const clerkUser = await currentUser();
-    if (clerkUser) {
-      const email = clerkUser.emailAddresses[0].emailAddress;
-      let tempUserId = '';
-      const user = await User.findOne({ email: email });
-      const userId = user._id;
-      tempUserId = userId;
+    // Antes esto era `if (clerkUser) { ... }` sin `else`: una petición sin
+    // sesión salía del handler sin devolver ninguna Response, así que no daba
+    // 401 sino un error del framework. Y `user._id` sobre un usuario que no
+    // existía en Mongo reventaba con TypeError.
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
+      return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
+    }
 
-      if (!tempUserId) {
-        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-      }
-      console.log('el id del usuario es ', tempUserId);
-      const seller = await Seller.findOne({ userId: tempUserId });
-      if (!seller) {
-        return NextResponse.json(
-          { mensaje: 'El usuario no es un vendedor' },
-          { status: 403 }
-        );
-      }
-      const body = await req.json();
-
-      // Asegurar que el campo section esté presente
-      if (!body.section) {
-        body.section = 'antojos'; // Valor por defecto
-      }
-
-      // Validar que la sección sea válida
-      if (!['antojos', 'marketplace'].includes(body.section)) {
-        return NextResponse.json(
-          { message: 'Sección inválida. Debe ser "antojos" o "marketplace"' },
-          { status: 400 }
-        );
-      }
-
-      body.sellerId = seller._id;
-      const newProduct = new Product(body);
-      try {
-        await newProduct.save();
-      } catch (error) {
-        console.log('error al guardar el producto', error);
-        return NextResponse.json(
-          { message: 'Error al guardar el producto', error: error.message },
-          { status: 500 }
-        );
-      }
-
+    // El User ya guarda a qué vendedor pertenece: sobra buscar el Seller por
+    // userId aparte.
+    const user = await User.findOne({ clerkId }).select('sellerId').lean();
+    if (!user?.sellerId) {
       return NextResponse.json(
-        { message: 'Product created successfully' },
-        { status: 201 }
+        { mensaje: 'El usuario no es un vendedor' },
+        { status: 403 }
       );
     }
+
+    const parsed = createProductSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
+    }
+
+    // sellerId sale de la sesión, nunca del cuerpo: el schema descarta lo que
+    // no declara, así que el cliente no puede colarlo.
+    const newProduct = new Product({
+      ...parsed.data,
+      sellerId: user.sellerId,
+    });
+    await newProduct.save();
+
+    return NextResponse.json(
+      { message: 'Product created successfully' },
+      { status: 201 }
+    );
   } catch (error) {
+    logger.error('Error creating product', error);
     return NextResponse.json(
       { message: 'Error creating product', error: error.message },
       { status: 500 }

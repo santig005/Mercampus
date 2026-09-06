@@ -3,8 +3,12 @@ import { NextResponse } from 'next/server';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { User } from '@/utils/models/userSchema';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
+import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
+import { logger } from '@/lib/logger';
+import { createSellerSchema } from '@/lib/validators/seller';
+import { invalidPayload } from '@/lib/api-response';
 
 export async function GET(req) {
   try {
@@ -55,24 +59,17 @@ export async function GET(req) {
       return NextResponse.json({ sellers: [] }, { status: 200 });
     }
 
-    const populatedSellers = await Promise.all(
-      sellers.map(async seller => {
-        const schedules = await Schedule.find({ sellerId: seller._id });
-        schedules.sort((a, b) => {
-          if (a.day !== b.day) return a.day - b.day;
-          return a.startTime.localeCompare(b.startTime);
-        });
-        return { ...seller.toObject(), schedules };
-      })
+    // Una sola consulta para todos los vendedores, en vez de una por vendedor.
+    const schedulesBySeller = await getSchedulesBySeller(
+      sellers.map(seller => seller._id)
     );
 
-    const transformedSellers = populatedSellers.map(seller => {
-      const transformedSchedules = seller.schedules.map(schedule => ({
-        ...schedule.toObject(),
-        day: daysES[schedule.day - 1], // Map dayId to the corresponding day name
-      }));
-      return { ...seller, schedules: transformedSchedules };
-    });
+    const transformedSellers = sellers.map(seller => ({
+      ...seller.toObject(),
+      schedules: withDayNames(
+        schedulesBySeller.get(seller._id.toString()) ?? []
+      ),
+    }));
 
     return NextResponse.json({ sellers: transformedSellers }, { status: 200 });
   } catch (error) {
@@ -86,51 +83,43 @@ export async function GET(req) {
 // POST method to handle seller registration
 export async function POST(req) {
   try {
-    // Connect to the database
     await connectDB();
-    const user = await currentUser();
-    if (user) {
-      const email = user.emailAddresses[0].emailAddress;
-      console.log('email', email);
-      let tempUserId = '';
-      var usuario;
-      try {
-        usuario = await User.findOne({ email: email });
-        console.log('usuario', usuario);
-        const userId = usuario._id;
-        tempUserId = userId;
-      } catch (error) {
-        console.log('Error al buscar el usuario:', error.message);
-      }
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
+      return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
+    }
 
-      // Obtener los datos del cuerpo de la solicitud
-      const body = await req.json();
-      try {
-        body.userId = tempUserId;
-        body.clerkId = user.id;
-      } catch (error) {
-        console.log(error);
-      }
-
-      // Create a new seller using the Seller model
-      try {
-        const newSeller = new Seller(body);
-        await newSeller.save();
-        usuario.sellerId = newSeller._id;
-        usuario.role = 'seller';
-        usuario.save();
-      } catch (error) {
-        console.log(error);
-      }
-
-      // Return a successful response
+    // Por clerkId, no por email: no hace falta pedirle el usuario a la API de
+    // Clerk solo para traducir el id, y el email ni es estable ni es único.
+    const usuario = await User.findOne({ clerkId });
+    if (!usuario) {
+      // El webhook de Clerk crea este User (T-12b); si falta, es que su evento
+      // se perdió.
       return NextResponse.json(
-        { message: 'Seller created successfully' },
-        { status: 201 }
+        { message: 'No se encontró un usuario para esta sesión.' },
+        { status: 404 }
       );
     }
+
+    const parsed = createSellerSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
+    }
+
+    // userId sale de la sesión, nunca del cuerpo.
+    const newSeller = new Seller({ ...parsed.data, userId: usuario._id });
+    await newSeller.save();
+
+    usuario.sellerId = newSeller._id;
+    usuario.role = 'seller';
+    await usuario.save();
+
+    return NextResponse.json(
+      { message: 'Seller created successfully', seller: newSeller },
+      { status: 201 }
+    );
   } catch (error) {
-    // Handle errors and return a response with the message
+    logger.error('Error creating seller', error);
     return NextResponse.json(
       { message: 'Error creating seller', error: error.message },
       { status: 500 }

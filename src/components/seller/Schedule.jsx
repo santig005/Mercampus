@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import 'daisyui';
 import { daysOfWeekES } from '@/utils/resources/days';
 import { getSchedules } from '@/services/scheduleService';
@@ -37,7 +38,7 @@ const Schedule = () => {
           }));
           setSchedules(mappedSchedules);
         } catch (error) {
-          console.error('Error fetching schedules:', error);
+          logger.error('Error fetching schedules:', error);
         } finally {
           setIsLoadingSchedules(false);
         }
@@ -138,15 +139,15 @@ const Schedule = () => {
           body: JSON.stringify(payload),
         });
         if (response.ok) {
-          console.log('Schedules printed successfully');
+          logger.debug('Schedules printed successfully');
           router.push('/antojos');
         } else {
           const errorData = await response.json();
-          console.error('Error al guardar horarios:', errorData.message);
+          logger.error('Error al guardar horarios:', errorData.message);
           setErrorBanner(errorData.message);
         }
       } catch (error) {
-        console.error('Error al realizar la solicitud:', error);
+        logger.error('Error al realizar la solicitud:', error);
         setErrorBanner('Error al conectar con el servidor.');
       }
     }

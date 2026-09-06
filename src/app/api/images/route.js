@@ -1,6 +1,7 @@
-import imagekit from '@/utils/imagekit';
+import { getImageKit } from '@/utils/imagekit';
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
+import { logger } from '@/lib/logger';
 
 export async function POST(req) {
   try {
@@ -21,7 +22,7 @@ export async function POST(req) {
       .resize({ width: 800 }) // Resize width to 800px (adjust as needed)
       .toBuffer();
 
-    const response = await imagekit.upload({
+    const response = await getImageKit().upload({
       file: resizedBuffer, // Base64 string, file URL, or binary data
       fileName: file.name, // Optional file name
       folder: folder, // Optional folder path
@@ -42,7 +43,7 @@ export async function POST(req) {
 export async function DELETE(req) {
   try {
     const { fileId } = await req.json(); // Ahora usamos `fileId` correctamente
-    console.log('fileIdapi', fileId);
+    logger.debug('fileIdapi', fileId);
     if (!fileId) {
       return NextResponse.json(
         { error: 'Missing fileId parameter' },
@@ -50,7 +51,7 @@ export async function DELETE(req) {
       );
     }
 
-    await imagekit.deleteFile(fileId); // Eliminamos la imagen usando el `fileId`
+    await getImageKit().deleteFile(fileId); // Eliminamos la imagen usando el `fileId`
 
     return NextResponse.json(
       { message: 'File deleted successfully' },

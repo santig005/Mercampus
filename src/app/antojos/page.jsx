@@ -9,7 +9,6 @@ import React from 'react';
 
 const Antojos = () => {
   const { session } = useSession();
-  // console.log(session);
   return (
     <div className='flex flex-col gap-4'>
       <div className='flex flex-col gap-4'>

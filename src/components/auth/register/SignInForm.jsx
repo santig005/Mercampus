@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState } from 'react';
 import { useSignIn } from '@clerk/nextjs';
@@ -72,12 +73,12 @@ export default function SignInForm() {
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
-        console.error(JSON.stringify(signInAttempt, null, 2));
+        logger.error(JSON.stringify(signInAttempt, null, 2));
       }
     } catch (err) {
       // See https://clerk.com/docs/custom-flows/error-handling
       // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+      logger.error(JSON.stringify(err, null, 2));
       setErrorCode(
         passwordErrorMessages[
           JSON.stringify(err.errors[0].code, null, 2).replace(/['"]+/g, '')

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import React, { useState } from 'react';
 
 export default function ImageGrid({
@@ -39,7 +40,7 @@ export default function ImageGrid({
       setImages(updatedImages);
       onUpdateImages(updatedImages); // Update parent component
     } catch (error) {
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image:', error);
       alert('Hubo un problema al subir la imagen. Inténtalo de nuevo.');
     } finally {
       setLoading(false);
@@ -48,7 +49,7 @@ export default function ImageGrid({
 
   const handleRemoveImage = async (index) => {
     const imageUrl = images[index];
-    console.log('imageUrl', imageUrl);
+    logger.debug('imageUrl', imageUrl);
     try {
       // 1️⃣ Obtener el fileId a partir de la URL
       const responseFileId = await fetch(
@@ -56,7 +57,7 @@ export default function ImageGrid({
       );
       if (!responseFileId.ok) throw new Error('Error al obtener el fileId');
       const { fileId } = await responseFileId.json();
-      console.log('fileId', fileId);
+      logger.debug('fileId', fileId);
       // 2️⃣ Enviar petición para eliminar la imagen usando el fileId
       const responseDelete = await fetch('/api/images', {
         method: 'DELETE',
@@ -70,7 +71,7 @@ export default function ImageGrid({
       setImages(updatedImages);
       onUpdateImages(updatedImages);
     } catch (error) {
-      console.error('Error eliminando imagen:', error);
+      logger.error('Error eliminando imagen:', error);
       alert('Hubo un problema al eliminar la imagen.');
     }
   };
