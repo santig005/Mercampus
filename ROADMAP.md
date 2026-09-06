@@ -207,7 +207,7 @@ el arnés que hay. Candidata para cuando se toque el arnés de base de datos.
 **Modelo:** `opus` — mismo tipo de bug que T-10
 **Nocturno:** no
 
-### [ ] T-11 · Cerrar `POST /api/register`
+### [x] T-11 · Cerrar `POST /api/register`
 **Por qué:** crea usuarios sin autenticación ni validación, y el `unique: true`
 del email está comentado. Es un vector de spam directo a la base.
 **El webhook NO crea usuarios.** Verificado en T-05 contra Mongo en memoria:
@@ -233,6 +233,10 @@ sigue pendiente aparte — necesita migrar los duplicados que ya hay en Mongo, y
 no es parte de borrar la ruta.
 **Depende de:** que el webhook esté configurado en la instancia que sirve el
 sitio (parte de T-64).
+**Hecho:** borrados `src/app/api/register/route.js` y `createUserDb()` en
+`SignUpForm.jsx` junto con su llamada. Test que confirma que el módulo de la
+ruta ya no existe (`register-cerrado.test.js`) — sin `route.js`, Next responde
+404 de verdad, así que la ausencia del archivo es la prueba.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [x] T-11b · Quitar el prefijo NEXT_PUBLIC_ a las claves de imágenes
