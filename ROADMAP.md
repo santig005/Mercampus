@@ -1,911 +1,962 @@
 # ROADMAP — Mercampus
 
-Backlog ejecutable. El agente nocturno lee este archivo, escoge la **primera
-tarea sin marcar cuyas dependencias estén marcadas**, la implementa, y marca la
-casilla en el mismo PR.
+Executable backlog. The nightly agent reads this file, picks the **first
+unchecked task whose dependencies are checked**, implements it, and checks
+the box in the same PR.
 
-Estado: `[ ]` pendiente · `[~]` en progreso (rama abierta) · `[x]` hecho
+Status: `[ ]` pending · `[~]` in progress (branch open) · `[x]` done
 
-Cada tarea tiene:
+Each task has:
 
-- **Por qué** — qué duele hoy.
-- **Hecho cuando** — criterio verificable. Es el contrato.
-- **Modelo** — modelo sugerido (ver "Modelo y effort" abajo).
-- **Nocturno** — `sí` si el agente programado puede tomarla solo; `no` si
-  requiere sesión interactiva contigo.
+- **Why** — what hurts today.
+- **Done when** — verifiable criterion. This is the contract.
+- **Model** — suggested model (see "Model and effort" below).
+- **Nightly** — `yes` if the scheduled agent can take it on its own; `no` if
+  it needs an interactive session with you.
 
-Si una tarea resulta más grande de lo escrito, pártela en el archivo antes de
-ejecutarla.
+If a task turns out bigger than written, split it in the file before
+executing it.
 
 ---
 
-## Modelo y effort
+## Model and effort
 
-Dos perillas distintas:
+Two different dials:
 
-- **Modelo** = qué tan capaz. Sube de modelo cuando Claude tenía todo el
-  contexto, claramente lo intentó, y aun así se equivocó.
-- **Effort** = qué tan a fondo trabaja en el turno: cuántos archivos lee, cuánto
-  verifica, hasta dónde empuja antes de devolverte el control. Súbelo cuando el
-  error fue saltarse un archivo, no correr los tests o abandonar a medias.
+- **Model** = how capable. Bump the model when Claude had all the context,
+  clearly tried, and still got it wrong.
+- **Effort** = how thoroughly it works in the turn: how many files it reads,
+  how much it verifies, how far it pushes before handing control back. Bump
+  it when the mistake was skipping a file, not running the tests, or
+  abandoning something half-done.
 
-Usa el **effort por defecto** salvo que tengas razón para lo contrario.
+Use **default effort** unless you have a reason not to.
 
-| Alias | Cuándo |
+| Alias | When |
 |---|---|
-| `sonnet` | Trabajo rutinario y descriptible con precisión. El caballo de batalla aquí. |
-| `opusplan` | Opus para planear, Sonnet para ejecutar. Ideal para las tareas de arquitectura en sesión interactiva. |
-| `opus` | Bugs sutiles, seguridad, dominios nuevos. |
-| `fable` | Solo si Opus se estrella repetidamente en lo mismo. Es lo más caro por token. |
+| `sonnet` | Routine, precisely describable work. The workhorse here. |
+| `opusplan` | Opus to plan, Sonnet to execute. Ideal for architecture tasks in an interactive session. |
+| `opus` | Subtle bugs, security, new domains. |
+| `fable` | Only if Opus keeps failing at the same thing. The most expensive per token. |
 
-`opusplan` **no sirve en el workflow nocturno**: el modo plan solo existe en
-sesión interactiva, así que en automatización correría todo con Sonnet. Por eso
-el cron toma únicamente tareas marcadas `Nocturno: sí`.
+`opusplan` **doesn't work in the nightly workflow**: plan mode only exists in
+an interactive session, so in automation it would just run everything on
+Sonnet. That's why the cron only picks up tasks marked `Nightly: yes`.
 
-**El reparto:** lo mecánico y verificable lo hace el agente de madrugada; la
-arquitectura y la seguridad las haces tú con `opusplan` en la terminal. Esas son
-justo las que quieres entender a fondo — delegarlas te ahorra tiempo y te quita
-el aprendizaje, que es el objetivo del ejercicio.
-
----
-
-## Fase 0 — El arnés (bloquea todo lo demás)
-
-Sin esto, ningún agente puede verificar su trabajo y el resto del roadmap es
-código a ciegas. Es también la parte más vendible del portafolio: no muchos
-juniors saben montar un loop de verificación.
-
-**Toda la Fase 0 hazla tú en sesión interactiva.** No hay red de seguridad
-todavía, y es donde aprendes cómo se desvía el agente — información que después
-metes en CLAUDE.md.
-
-### [x] T-01 · Arreglar el CI que siempre falla
-**Por qué:** `.github/workflows/ci.yml` corre `npm run test`, script que no
-existe. Todo PR nace en rojo, así que nadie mira el CI.
-**Hecho cuando:** el workflow pasa en verde sobre `develop` sin cambios de
-código; corre lint y build; usa `npm ci` en vez de `npm install`; Node 20+.
-**Alcance:** `.github/workflows/ci.yml`, `package.json`.
-**Modelo:** `sonnet` · **Nocturno:** no (aún no hay arnés)
-
-### [x] T-02 · Vitest + primer test real
-**Por qué:** cero tests. Se necesita al menos un caso que falle si se rompe algo.
-**Hecho cuando:** `npm run test` corre Vitest; hay tests para `utilFn.js` y para
-la validación de categorías por sección del `productSchema`; el CI los ejecuta.
-**Alcance:** `vitest.config.mjs` (`.mjs` como el resto de configs del repo,
-si no Vite avisa de ESM cargado como CommonJS), `tests/unit/`, `package.json`,
-workflow de CI.
-**Modelo:** `sonnet` · **Nocturno:** no
-
-### [x] T-03 · Base de datos de prueba y seed
-**Por qué:** no hay forma de correr la app sin la Mongo de producción. Un agente
-no puede probar nada.
-**Hecho cuando:** `mongodb-memory-server` para tests; `scripts/seed.js` que crea
-3 usuarios, 2 vendedores (uno aprobado, uno no), 6 productos y horarios;
-`npm run seed` documentado en el README; `.env.example` creado.
-**Alcance:** `scripts/seed.js`, `tests/setup.js`, `.env.example`.
-**Ojo:** el seed apunta a un cluster de desarrollo, NUNCA a producción.
-**Corrección (T-12g): eso es un deseo, no un hecho.** El `MONGO_URI` del `.env`
-apunta hoy **a producción**, así que `npm run seed` la borraría entera. Lo único
-que lo impide es la guarda que exige `--yes` fuera de localhost. No la quites, y
-mira T-63 para arreglar la causa.
-**Modelo:** `sonnet` · **Nocturno:** no
-
-### [x] T-04 · Playwright + capturas como evidencia
-**Por qué:** es la respuesta a "que el agente vea la página". Sin esto no hay
-verificación visual automática.
-**Hecho cuando:** `npm run test:e2e` levanta la app con datos de seed y recorre
-home → listado de antojos → detalle de producto → perfil de vendedor; guarda un
-screenshot por pantalla en `test-results/`; el workflow sube esas capturas como
-artefacto del run.
-**Ojo:** el e2e necesita claves **reales** de Clerk. Su middleware valida contra
-los servidores de Clerk y con claves falsas devuelve 400 en todas las rutas,
-incluidas las publicas, asi que la app entera queda inalcanzable. El CI las toma
-de `vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `secrets.CLERK_SECRET_KEY`, y el
-job se activa con `vars.E2E_ENABLED`. Son claves de una instancia de
-**desarrollo**: unas de produccion no funcionarian, porque Clerk las ata al
-dominio registrado y rechaza `localhost`. Los secretos no llegan a los PR desde
-forks, asi que alli el job se salta.
-**Alcance:** `playwright.config.js`, `tests/e2e/`, `scripts/e2e.mjs`, workflow de CI.
-**Depende de:** T-03
-**Modelo:** `sonnet` · **Nocturno:** no
-
-### [x] T-05 · TypeScript incremental
-**Por qué:** todo es JS sin tipos; el agente no tiene red de seguridad al
-refactorizar y `npm run typecheck` es el chequeo más barato que existe.
-**Hecho cuando:** `tsconfig.json` con `allowJs: true` y `strict: true`;
-`npm run typecheck` pasa y queda añadido a `scripts/verify.mjs`; los modelos de
-Mongoose y `src/lib/` migrados a `.ts`. El resto migra tarea por tarea, no de
-golpe.
-**Sin migrar a proposito:** `favoriteSchema.js` (0 importadores, lo borra T-34) y
-`clerkUser.js` (0 importadores; al pasarlo a `.ts` afloran cuatro `err.status`
-sobre un `Error`, que no tiene esa propiedad, y una opcion `type` inexistente en
-`verifyToken` de Clerk — arreglarlo es reescribir autenticacion, T-10/T-12).
-**Ojo con Node:** los scripts de `scripts/` importan los modelos, ahora `.ts`.
-Node les quita los tipos solo desde la 22.18, asi que el CI y `engines` suben a
-Node 22. Con Node 20 se rompen `npm run seed` y `npm run test:e2e`.
-**Alcance:** `tsconfig.json`, `src/utils/models/`, `src/utils/lib/`. Los archivos
-se migran en su sitio: mover `utils/models` a `models/` tocaria a sus ~20
-importadores y es de T-30.
-**Modelo:** `opusplan` — decidir qué migrar primero es ambiguo
-**Nocturno:** no
-
-### [x] T-06 · Script `verify` y protección de ramas
-**Por qué:** el agente necesita un solo comando que diga sí o no.
-**Hecho cuando:** `npm run verify` = lint + typecheck + test + build;
-`develop` y `main` protegidas exigiendo el check de CI en verde antes de merge.
-**Hecho ya:** `scripts/verify.mjs` corre lint + test + build, se planta en el
-primer fallo e inyecta los placeholders de ImageKit que el build necesita. El
-workflow llama a `npm run verify` en vez de definir los pasos por su cuenta, así
-que local y CI no pueden divergir.
-**Protección aplicada** en `develop` y `main`: exigen el check `quality`, con
-`enforce_admins: true` — sin eso la regla 1 no ataría al agente, que actúa con
-permisos de admin. Sin revisiones requeridas: con un solo autor bloquearían al
-dueño sin aportar nada. Para quitarla:
-`gh api -X DELETE repos/santig005/Mercampus/branches/<rama>/protection`.
-**Depende de:** T-01, T-02, T-05
-**Modelo:** `sonnet` · **Nocturno:** no
-
-> **A partir de aquí puedes prender el cron.** Mergea `nightly-agent.yml` a la
-> rama por defecto solo cuando `npm run verify` pase en verde.
+**The split:** the scheduled agent does the mechanical, verifiable work;
+you do architecture and security with `opusplan` in the terminal. Those are
+exactly the ones you want to understand deeply — delegating them would save
+time but cost you the learning, which is the point of the exercise.
 
 ---
 
-## Fase 1 — Seguridad y corrección
+## Phase 0 — The harness (blocks everything else)
 
-Esto es lo que arreglarías primero si el proyecto estuviera vivo. Como es
-portafolio, es la sección que mejor se cuenta en una entrevista — razón de más
-para hacerla tú.
+Without this, no agent can verify its work and the rest of the roadmap is
+coding blind. It's also the most sellable part of the portfolio: not many
+juniors know how to set up a verification loop.
 
-### [x] T-10 · Restaurar la autorización en mutaciones (crítico)
-**Por qué:** en `api/products/[id]` (PUT, DELETE) y `api/sellers/[id]` (PUT) la
-verificación de propiedad está **comentada**. Cualquiera con un `fetch` edita o
-borra productos ajenos y modifica perfiles de vendedor.
-**Hecho cuando:** `verifyOwnershipAndGetSellerId` y `verifySellerId` se invocan
-de verdad; `getEmailFromToken` corregido (falta `await` en `auth()` y
-`clerkClient()`); tests que comprueban 401 sin sesión, 403 con sesión ajena y
-200 con el dueño.
-**Matiz sobre el `await`:** sin el, `userId` sale `undefined` y la comprobacion
-`if (!userId)` salta siempre, o sea que la ruta responde 401 a todo el mundo.
-Fallaba **cerrado**, no abierto: era un bug de funcionalidad, no el agujero. El
-agujero era exclusivamente la verificacion de propiedad comentada.
-**Alcance:** `src/app/api/products/[id]/route.js`, `src/app/api/sellers/[id]/route.js`, `src/utils/lib/auth.ts`.
-**Depende de:** T-02
-**Modelo:** `opus` — bug sutil de seguridad, aquí no se ahorra
-**Nocturno:** no
+**Do all of Phase 0 yourself, interactively.** There's no safety net yet,
+and this is where you learn how the agent goes off the rails — information
+you later feed into CLAUDE.md.
 
-### [x] T-10b · Autorización en `POST /api/schedules`
-**Por qué:** encontrado en T-13b. La ruta reemplaza (borra e inserta) el
-horario completo de cualquier `sellerId` que venga en el cuerpo, sin comprobar
-que quien llama sea el dueño de ese vendedor. Cualquiera con sesión puede
-vaciar o reescribir el horario de un negocio ajeno.
-**Hecho cuando:** usa `getEmailFromToken` + `verifySellerId` (los mismos
-helpers de T-10) antes de tocar la base; tests 401/403/200 iguales a los de
-T-10.
-**Hecho:** identidad primero (sin sesión no se llega ni a mirar el cuerpo) y
-propiedad después, que necesita el `sellerId` ya validado porque viene en el
-cuerpo. Seis tests en `autorizacion.test.js`, incluido el vaciado del horario
-ajeno, que es la forma más destructiva del bug. Con la mutación que quita
-`verifySellerId`, los tres casos de 403 devuelven 200 **y el horario del
-vendedor ajeno desaparece**: el agujero era real y queda demostrado.
-**Ojo con los tests de T-13b:** los cuatro casos de validación de esta ruta no
-iniciaban sesión (no hacía falta, no había autorización) y pasaron a fallar con
-401. Ahora entran como el dueño: son casos sobre el cuerpo, no sobre el acceso.
-**Imports muertos:** la ruta importaba `currentUser`, `User` y `Seller` sin usar
-ninguno (comprobado buscando cada identificador en el fichero). Se van; ningún
-`populate` dependía de que el modelo quedara registrado.
-**`errorResponse` gana un `bodyKey`:** el catch devolvía 500 a todo, así que un
-`AppError` de 401/403 salía como 500. Se reutiliza el helper de T-15 en vez de
-repetir la política de no filtrar el mensaje de un 500, pero con la clave
-`message`, que es la que lee el banner de `Schedule.jsx`. La unificación de
-formas sigue siendo de T-32.
-**Hallazgo sin arreglar:** el reemplazo es un `deleteMany` seguido de un
-`insertMany`, sin transacción. Si el insert falla, el vendedor se queda sin
-horario. Arreglarlo de verdad pide una transacción, y `mongodb-memory-server`
-corre en modo standalone (sin replica set), así que hoy no es verificable con
-el arnés que hay. Candidata para cuando se toque el arnés de base de datos.
-**Depende de:** T-10
-**Modelo:** `opus` — mismo tipo de bug que T-10
-**Nocturno:** no
+### [x] T-01 · Fix the CI that always fails
+**Why:** `.github/workflows/ci.yml` runs `npm run test`, a script that
+doesn't exist. Every PR is born red, so nobody looks at CI.
+**Done when:** the workflow passes green on `develop` with no code changes;
+runs lint and build; uses `npm ci` instead of `npm install`; Node 20+.
+**Scope:** `.github/workflows/ci.yml`, `package.json`.
+**Model:** `sonnet` · **Nightly:** no (no harness yet)
 
-### [x] T-11 · Cerrar `POST /api/register`
-**Por qué:** crea usuarios sin autenticación ni validación, y el `unique: true`
-del email está comentado. Es un vector de spam directo a la base.
-**El webhook NO crea usuarios.** Verificado en T-05 contra Mongo en memoria:
-`createOrUpdateUser` hace `findOneAndUpdate({ clerkId }, ..., { upsert: true })`
-pero `clerkId` no existe en `userSchema`, asi que Mongoose lanza
-`StrictModeError: Path "clerkId" is not in schema` y no se crea nada. El
-`try/catch` se lo traga y devuelve `undefined`. Es decir: la premisa de "el
-webhook ya crea usuarios" es falsa, y hay que arreglar eso antes de decidir si
-se borra `/api/register`.
-**Actualización (T-12b): el webhook ya crea usuarios de verdad.** Se añadió
-`clerkId` al schema y hay ocho tests sobre el endpoint con firma svix. Así que
-el bloqueo desaparece: esta tarea ya puede decidir si `/api/register` se borra,
-y la respuesta por defecto debería ser sí, porque el alta la hace Clerk.
-**Decisión tomada (T-64): se borra.** Con el webhook apuntado a la instancia de
-desarrollo (que es donde corre el sitio, ver T-64), `/api/register` es
-puramente redundante — y es la ruta que lleva causando cada bug de `clerkId`
-faltante de esta serie de tareas (T-12b en adelante). No hay razón para
-conservarla ni protegida.
-**Hecho cuando:** la ruta y `SignUpForm.jsx: createUserDb()` (la llamada que la
-usa) desaparecen; el alta de usuario depende únicamente del webhook; test que
-confirma que `/api/register` ya no existe (404). El índice único en `email`
-sigue pendiente aparte — necesita migrar los duplicados que ya hay en Mongo, y
-no es parte de borrar la ruta.
-**Depende de:** que el webhook esté configurado en la instancia que sirve el
-sitio (parte de T-64).
-**Hecho:** borrados `src/app/api/register/route.js` y `createUserDb()` en
-`SignUpForm.jsx` junto con su llamada. Test que confirma que el módulo de la
-ruta ya no existe (`register-cerrado.test.js`) — sin `route.js`, Next responde
-404 de verdad, así que la ausencia del archivo es la prueba.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-02 · Vitest + first real test
+**Why:** zero tests. Need at least one case that fails if something breaks.
+**Done when:** `npm run test` runs Vitest; there are tests for `utilFn.js`
+and for category validation by section in `productSchema`; CI runs them.
+**Scope:** `vitest.config.mjs` (`.mjs` like the rest of the repo's configs,
+otherwise Vite warns about ESM loaded as CommonJS), `tests/unit/`,
+`package.json`, CI workflow.
+**Model:** `sonnet` · **Nightly:** no
 
-### [x] T-11b · Quitar el prefijo NEXT_PUBLIC_ a las claves de imágenes
-**Por qué:** las claves de ImageKit y Cloudinary llevaban prefijo
-`NEXT_PUBLIC_`, que es el que Next inyecta en el bundle del navegador.
-**Corrección importante:** durante T-03 y T-05 se afirmó aquí que la clave era
-visible desde DevTools. **Era falso.** Se comprobó descargando los 24 chunks que
-sirve mercampus.vercel.app y buscando los valores reales: cero coincidencias,
-con la publishable de Clerk apareciendo como control de que la búsqueda
-funcionaba. El código que lee esas variables solo lo importan route handlers, así
-que nunca llegaba al cliente. No hubo que rotar ninguna clave.
-**Lo que sí era cierto:** el nombre invitaba al accidente. Bastaba que alguien
-importara `utils/imagekit.js` desde un componente `'use client'` para publicar la
-clave en el siguiente deploy, sin ningún aviso.
-**Hecho:** las seis variables renombradas sin prefijo, los SDK instanciados de
-forma perezosa (lo que además elimina los placeholders que el CI arrastraba desde
-T-01, porque el build ya no necesita valores), y un test que falla si vuelve a
-aparecer una `NEXT_PUBLIC_*` con SECRET o PRIVATE en el nombre.
-**Modelo:** `sonnet` · **Nocturno:** no
+### [x] T-03 · Test database and seed
+**Why:** no way to run the app without production Mongo. An agent can't
+test anything.
+**Done when:** `mongodb-memory-server` for tests; `scripts/seed.js` that
+creates 3 users, 2 sellers (one approved, one not), 6 products, and
+schedules; `npm run seed` documented in the README; `.env.example` created.
+**Scope:** `scripts/seed.js`, `tests/setup.js`, `.env.example`.
+**Heads up:** the seed points at a development cluster, NEVER at
+production.
+**Correction (T-12g): that's a wish, not a fact.** The `.env`'s
+`MONGO_URI` today points **at production**, so `npm run seed` would wipe it
+entirely. The only thing preventing that is the guard requiring `--yes`
+outside localhost. Don't remove it, and see T-63 to fix the root cause.
+**Model:** `sonnet` · **Nightly:** no
 
-### [x] T-12b · Unir Clerk con Mongo por `clerkId`
-**Por qué:** la aplicación une la sesión de Clerk con el usuario de Mongo **por
-email**, que es la peor columna posible para unir: el usuario lo cambia en
-Clerk y se rompe el vínculo, no es único en la base (el `unique` sigue
-comentado, T-11), y obtenerlo cuesta una llamada de red a la Backend API de
-Clerk en cada mutación (`clerkClient().users.getUser()` dentro de
+### [x] T-04 · Playwright + screenshots as evidence
+**Why:** this is the answer to "have the agent see the page." Without it
+there's no automated visual verification.
+**Done when:** `npm run test:e2e` starts the app with seeded data and walks
+through home → antojos listing → product detail → seller profile; saves one
+screenshot per screen to `test-results/`; the workflow uploads those
+screenshots as a run artifact.
+**Heads up:** e2e needs **real** Clerk keys. Its middleware validates
+against Clerk's servers and returns 400 on every route with fake keys,
+public ones included, so the whole app becomes unreachable. CI takes them
+from `vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and
+`secrets.CLERK_SECRET_KEY`, and the job is gated by `vars.E2E_ENABLED`.
+These are keys from a **development** instance: production keys wouldn't
+work, because Clerk ties them to the registered domain and rejects
+`localhost`. Secrets don't reach PRs from forks, so the job skips there.
+**Scope:** `playwright.config.js`, `tests/e2e/`, `scripts/e2e.mjs`, CI
+workflow.
+**Depends on:** T-03
+**Model:** `sonnet` · **Nightly:** no
+
+### [x] T-05 · Incremental TypeScript
+**Why:** everything is untyped JS; the agent has no safety net when
+refactoring, and `npm run typecheck` is the cheapest check there is.
+**Done when:** `tsconfig.json` with `allowJs: true` and `strict: true`;
+`npm run typecheck` passes and is added to `scripts/verify.mjs`; Mongoose
+models and `src/lib/` migrated to `.ts`. The rest migrates task by task,
+not all at once.
+**Deliberately not migrated:** `favoriteSchema.js` (0 importers, deleted by
+T-34) and `clerkUser.js` (0 importers; converting it to `.ts` surfaces four
+`err.status` accesses on an `Error`, which doesn't have that property, and
+a `type` option in Clerk's `verifyToken` that doesn't exist — fixing it
+means rewriting authentication, T-10/T-12).
+**Watch out with Node:** scripts in `scripts/` import the models, now
+`.ts`. Node only strips their types from 22.18 onward, so CI and `engines`
+bump to Node 22. On Node 20, `npm run seed` and `npm run test:e2e` break.
+**Scope:** `tsconfig.json`, `src/utils/models/`, `src/utils/lib/`. Files
+migrate in place: moving `utils/models` to `models/` would touch its ~20
+importers and is T-30's job.
+**Model:** `opusplan` — deciding what to migrate first is ambiguous
+**Nightly:** no
+
+### [x] T-06 · `verify` script and branch protection
+**Why:** the agent needs a single command that says yes or no.
+**Done when:** `npm run verify` = lint + typecheck + test + build;
+`develop` and `main` protected, requiring the CI check green before merge.
+**Already done:** `scripts/verify.mjs` runs lint + test + build, stops at
+the first failure, and injects the ImageKit placeholders the build needs.
+The workflow calls `npm run verify` instead of defining its own steps, so
+local and CI can't diverge.
+**Protection applied** on `develop` and `main`: require the `quality`
+check, with `enforce_admins: true` — without that, rule 1 wouldn't bind the
+agent, which acts with admin permissions. No required reviews: with a
+single author they'd just block the owner without adding anything. To
+remove it:
+`gh api -X DELETE repos/santig005/Mercampus/branches/<branch>/protection`.
+**Depends on:** T-01, T-02, T-05
+**Model:** `sonnet` · **Nightly:** no
+
+> **From here on you can turn on the cron.** Merge `nightly-agent.yml` to
+> the default branch only once `npm run verify` passes green.
+
+---
+
+## Phase 1 — Security and correctness
+
+This is what you'd fix first if the project were live. Since it's a
+portfolio piece, it's the section that tells the best story in an
+interview — all the more reason to do it yourself.
+
+### [x] T-10 · Restore authorization on mutations (critical)
+**Why:** in `api/products/[id]` (PUT, DELETE) and `api/sellers/[id]` (PUT)
+the ownership check is **commented out**. Anyone with a `fetch` can edit or
+delete someone else's products and modify seller profiles.
+**Done when:** `verifyOwnershipAndGetSellerId` and `verifySellerId` are
+actually invoked; `getEmailFromToken` fixed (missing `await` on `auth()`
+and `clerkClient()`); tests checking 401 with no session, 403 with someone
+else's session, and 200 with the owner.
+**Nuance about the `await`:** without it, `userId` comes out `undefined`
+and the `if (!userId)` check always trips, meaning the route responds 401
+to everyone. It failed **closed**, not open: it was a functionality bug,
+not the hole. The hole was exclusively the commented-out ownership check.
+**Scope:** `src/app/api/products/[id]/route.js`,
+`src/app/api/sellers/[id]/route.js`, `src/utils/lib/auth.ts`.
+**Depends on:** T-02
+**Model:** `opus` — subtle security bug, no corners cut here
+**Nightly:** no
+
+### [x] T-10b · Authorization on `POST /api/schedules`
+**Why:** found in T-13b. The route replaces (deletes and re-inserts) the
+full schedule of any `sellerId` sent in the body, without checking that the
+caller owns that seller. Anyone with a session can wipe or rewrite another
+business's schedule.
+**Done when:** uses `getEmailFromToken` + `verifySellerId` (the same
+helpers from T-10) before touching the database; 401/403/200 tests same as
+T-10's.
+**Done:** identity first (no session means the body isn't even looked at)
+and ownership second, which needs the `sellerId` already validated because
+it comes in the body. Six tests in `autorizacion.test.js`, including
+wiping someone else's schedule, the most destructive form of the bug. With
+the mutation that removes `verifySellerId`, the three 403 cases return 200
+**and the other seller's schedule disappears**: the hole was real and now
+it's demonstrated.
+**Watch out with T-13b's tests:** the four validation test cases on this
+route didn't sign in (no need — there was no authorization) and started
+failing with 401. Now they sign in as the owner: they're cases about the
+body, not about access.
+**Dead imports:** the route imported `currentUser`, `User`, and `Seller`
+without using any of them (checked by searching every identifier in the
+file). They're gone; no `populate` depended on the model staying
+registered.
+**`errorResponse` gains a `bodyKey`:** the catch returned 500 for
+everything, so a 401/403 `AppError` came out as 500. Reuses the helper
+from T-15 instead of repeating the "don't leak a 500's message" policy,
+but with the `message` key, which is what `Schedule.jsx`'s banner reads.
+Unifying the shapes is still T-32's job.
+**Finding, not fixed:** the replacement is a `deleteMany` followed by an
+`insertMany`, with no transaction. If the insert fails, the seller is left
+with no schedule. Fixing it properly needs a transaction, and
+`mongodb-memory-server` runs in standalone mode (no replica set), so it
+isn't verifiable today with the harness that exists. Candidate for when
+the database harness gets touched.
+**Depends on:** T-10
+**Model:** `opus` — same kind of bug as T-10
+**Nightly:** no
+
+### [x] T-11 · Close `POST /api/register`
+**Why:** creates users with no authentication or validation, and the
+email's `unique: true` is commented out. It's a direct spam vector into
+the database.
+**The webhook does NOT create users.** Verified in T-05 against in-memory
+Mongo: `createOrUpdateUser` does
+`findOneAndUpdate({ clerkId }, ..., { upsert: true })` but `clerkId`
+doesn't exist in `userSchema`, so Mongoose throws
+`StrictModeError: Path "clerkId" is not in schema` and nothing gets
+created. The `try/catch` swallows it and returns `undefined`. In other
+words: the premise "the webhook already creates users" is false, and that
+has to be fixed before deciding whether to delete `/api/register`.
+**Update (T-12b): the webhook now really does create users.** `clerkId`
+was added to the schema and there are eight tests on the endpoint with a
+svix signature. So the blocker is gone: this task can now decide whether
+`/api/register` gets deleted, and the default answer should be yes,
+because Clerk handles sign-up.
+**Decision made (T-64): delete it.** With the webhook pointed at the
+development instance (which is where the site runs, see T-64),
+`/api/register` is purely redundant — and it's the route that's been
+causing every missing-`clerkId` bug in this task series (T-12b onward).
+No reason to keep it, protected or not.
+**Done when:** the route and `SignUpForm.jsx`'s `createUserDb()` (the call
+that uses it) disappear; user sign-up depends solely on the webhook; a
+test confirms `/api/register` no longer exists (404). The unique index on
+`email` stays pending separately — it needs migrating the duplicates
+already in Mongo, and isn't part of deleting the route.
+**Depends on:** the webhook being configured on the instance serving the
+site (part of T-64).
+**Done:** deleted `src/app/api/register/route.js` and `createUserDb()` in
+`SignUpForm.jsx` along with its call. A test confirms the route's module
+no longer exists (`register-cerrado.test.js`) — without `route.js`, Next
+genuinely responds 404, so the file's absence is the proof.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-11b · Drop the NEXT_PUBLIC_ prefix from image keys
+**Why:** the ImageKit and Cloudinary keys carried the `NEXT_PUBLIC_`
+prefix, which is what Next injects into the browser bundle.
+**Important correction:** during T-03 and T-05 this file claimed the key
+was visible from DevTools. **That was false.** Verified by downloading all
+24 chunks served by mercampus.vercel.app and searching for the real
+values: zero matches, with Clerk's publishable key showing up as a control
+proving the search actually worked. The code reading those variables is
+only imported by route handlers, so it never reached the client. No key
+had to be rotated.
+**What was actually true:** the name invited an accident. It only took
+someone importing `utils/imagekit.js` from a `'use client'` component to
+publish the key in the next deploy, with no warning at all.
+**Done:** all six variables renamed without the prefix, the SDKs
+instantiated lazily (which also removes the placeholders CI had been
+carrying since T-01, because the build no longer needs any values), and a
+test that fails if a `NEXT_PUBLIC_*` with SECRET or PRIVATE in the name
+ever reappears.
+**Model:** `sonnet` · **Nightly:** no
+
+### [x] T-12b · Link Clerk to Mongo by `clerkId`
+**Why:** the app links the Clerk session to the Mongo user **by email**,
+the worst possible column to join on: the user can change it in Clerk and
+break the link, it isn't unique in the database (the `unique` is still
+commented out, T-11), and fetching it costs a network call to Clerk's
+Backend API on every mutation (`clerkClient().users.getUser()` inside
 `getEmailFromToken`).
-**La causa era una sola línea que faltaba.** El webhook siempre buscó por
-`clerkId` — `findOneAndUpdate({ clerkId: id }, ..., { upsert: true })`— pero el
-campo no estaba declarado en `userSchema`. Comprobado llamando a la función
-contra Mongo en memoria antes de tocar nada:
+**The cause was a single missing line.** The webhook always looked up by
+`clerkId` — `findOneAndUpdate({ clerkId: id }, ..., { upsert: true })` —
+but the field wasn't declared in `userSchema`. Verified by calling the
+function against in-memory Mongo before touching anything:
 
 ```
-createOrUpdateUser devolvio: undefined
-usuarios en la base: 0
-sin try/catch lanzo: StrictModeError |
+createOrUpdateUser returned: undefined
+users in the database: 0
+without try/catch it throws: StrictModeError |
   Path "clerkId" is not in schema, strict mode is `true`, and upsert is `true`.
 ```
 
-O sea: no es que "por clerkId no diera". El diseño era correcto y llevaba años
-fallando en silencio por un campo que faltaba y un `catch` que se tragaba el
-error. De ahí salió todo lo demás: como el webhook no creaba usuarios, se
-resolvió la identidad por email, y de ahí la llamada de red por petición y la
-ruta pública `/api/users/user-with-seller/[email]`.
-**Hecho:** `clerkId` en `userSchema` (`unique` + `sparse`); `createOrUpdateUser`
-deja de tragarse el error, así que un evento que falla devuelve 400 y Clerk lo
-reintenta en vez de darlo por entregado; respaldo para `name` porque Clerk
-permite registrarse sin nombre y el campo es obligatorio en el schema; el seed
-siembra `clerkId` para que las pruebas se parezcan a producción.
-**Ocho tests sobre el endpoint entero**, con firma svix de verdad: alta,
-actualización sin duplicar, cambio de email conservando el documento (que es
-justo lo que el email no puede garantizar), dos cuentas de Clerk con el mismo
-email como dos documentos, alta sin nombre, borrado, firma inválida → 400 sin
-tocar la base, y evento sin email → 400 en vez del 200 mentiroso de antes.
-**Mutación clave:** quitar `clerkId` del schema —el estado histórico exacto—
-tumba 5 de los 8 tests.
-**Corrección: aquí se escribió "sin migración de datos a propósito, no hay
-usuarios en producción". Eso se apoyaba en lo que dice CLAUDE.md, no en
-evidencia, y da igual: aunque no haya usuarios *activos*, cualquier documento
-`User` que ya exista en la base se queda sin `clerkId`, y desde T-12c eso lo
-deja sin poder mutar nada.** La migración es obligatoria y va en T-12e.
-**Modelo:** `opus` · **Nocturno:** no (nace de una discusión de diseño)
+In other words: it's not that "looking up by clerkId didn't work." The
+design was correct and had been silently failing for years because of a
+missing field and a `catch` that swallowed the error. Everything else
+followed from there: since the webhook wasn't creating users, identity got
+resolved by email, and from that came the per-request network call and the
+public route `/api/users/user-with-seller/[email]`.
+**Done:** `clerkId` on `userSchema` (`unique` + `sparse`);
+`createOrUpdateUser` stops swallowing the error, so an event that fails
+returns 400 and Clerk retries it instead of treating it as delivered; a
+fallback for `name` because Clerk allows signing up with no name and the
+field is required in the schema; the seed now seeds `clerkId` so tests
+resemble production.
+**Eight tests on the whole endpoint**, with a real svix signature:
+sign-up, update without duplicating, email change while keeping the same
+document (exactly what email can't guarantee), two Clerk accounts with the
+same email as two documents, sign-up with no name, deletion, invalid
+signature → 400 without touching the database, and an event with no
+email → 400 instead of the previous, misleading 200.
+**Key mutation:** removing `clerkId` from the schema — the exact
+historical state — kills 5 of the 8 tests.
+**Correction: this used to say "no data migration on purpose, there are no
+users in production." That was based on what CLAUDE.md said, not on
+evidence, and it doesn't matter either way: even with no *active* users,
+any `User` document that already exists in the database is left without a
+`clerkId`, and since T-12c that leaves it unable to mutate anything.** The
+migration is mandatory and goes in T-12e.
+**Model:** `opus` · **Nightly:** no (born from a design discussion)
 
-### [x] T-12c · Resolver la identidad por `clerkId` en el servidor
-**Por qué:** con T-12b el `clerkId` ya está en la base, pero nadie lo usa
-todavía. Hoy cada mutación hace `auth()` → llamada de red a Clerk para traducir
-el id a un email → `User.findOne({ email }).populate('sellerId')`. Con el
-`clerkId` eso es **una consulta indexada y cero llamadas de red**:
+### [x] T-12c · Resolve identity by `clerkId` on the server
+**Why:** with T-12b `clerkId` is already in the database, but nobody uses
+it yet. Today every mutation does `auth()` → a network call to Clerk to
+translate the id into an email → `User.findOne({ email
+}).populate('sellerId')`. With `clerkId` that becomes **one indexed query
+and zero network calls**:
 
 ```js
 const { userId } = await auth();
 const user = await User.findOne({ clerkId: userId }).select('sellerId role');
 ```
 
-`User` ya guarda `sellerId`, así que la comprobación de propiedad es comparar
-dos ids: sobra el `populate` y sobra `getUserWithSellerByEmail`.
-**Hallazgo que se cierra con esto:** `GET /api/users/user-with-seller/[email]`
-**no tiene ninguna autenticación**. Comprobado llamando al handler sin sesión
-contra Mongo en memoria: responde 200 con el documento completo del usuario
-(`_id`, nombre, apellido, email, rol, fechas) y el del vendedor. Es un oráculo
-de enumeración de cuentas: cualquiera prueba un email y sabe si está registrado
-y con qué rol. El middleware no la cubre — solo protege rutas de página. Existe
-únicamente para que `SellerContext` pregunte "¿soy vendedor?" desde el cliente,
-que es el `fetch` a la propia API que este ROADMAP quiere eliminar. Con la
-identidad resuelta en el servidor, la ruta se borra.
-**Hecho cuando:** `getEmailFromToken` y `getUserWithSellerByEmail` desaparecen o
-se reducen a una consulta por `clerkId`; las 4 rutas que usan la primera y las 3
-que usan `currentUser()` pasan al mismo camino; `/api/users/user-with-seller/`
-borrada; tests 401/403/200 iguales a los de T-10 pero sin mockear
-`clerkClient()`, porque ya no hace falta.
-**Partida, como avisaba el alcance.** Al abrirla se veía que la parte de cliente
-(SellerContext + borrar la ruta pública) arrastraba media docena de archivos más
-y se solapa con T-30/T-31. Esta tarea se queda con **el servidor**; el cliente va
-en T-12d.
-**Hecho:** `getEmailFromToken` ya no existe. En su lugar `getClerkUserId()` (el
-id que ya viene en el token, sin red) y `getAuthenticatedUser()` (una consulta
-indexada por `clerkId`, con `select` de lo justo y **sin `populate`**, porque
-`User` ya guarda su `sellerId`). Los tres helpers de propiedad dejan de recibir
-el email. Migradas las 4 rutas de `getEmailFromToken` y 2 de las 3 de
-`currentUser()`.
-**`sellers/admin` se queda fuera a propósito:** su `currentUser()` está metido
-dentro del `Map` en memoria y el `setInterval` que T-12 va a borrar. Tocarlo a
-medias haría más difícil T-12, no más fácil.
-**Bug encontrado y arreglado de camino, en `POST /api/products`:** todo el
-cuerpo del handler vivía dentro de un `if (clerkUser)` **sin `else`**, así que
-una petición sin sesión salía sin devolver ninguna `Response`. Comprobado
-llamando al handler antes de tocarlo: devolvía `undefined`, o sea un error del
-framework en vez de un 401. Además `user._id` sobre un usuario inexistente
-reventaba con TypeError antes de comprobar si era vendedor. La ruta no tenía
-ningún test; ahora tiene 401/403/201.
-**Lo que se simplifica de verdad:** `PUT /api/sellers/[id]` por email ya no
-vuelve a buscar el `User` (si el email es el de la sesión, el vendedor es el que
-esa sesión ya referencia), y `POST /api/products` ya no busca el `Seller` por
-`userId` aparte. Los mocks de los tests pasan de simular `auth()` +
-`clerkClient()` + `currentUser()` a simular solo `auth()`: buena señal de que
-hay menos superficie.
-**Cinco mutaciones**, cada una con su diff: quitar la comparación de propiedad
-del producto (caen 2), la del vendedor (caen 4), el 401 de `getClerkUserId`
-(caen 4), el chequeo de vendedor de productos (cae 1) y su 401 (cae 1).
-**Depende de:** T-12b
-**Modelo:** `opus` · **Nocturno:** no
+`User` already stores `sellerId`, so the ownership check is comparing two
+ids: the `populate` becomes unnecessary, and so does
+`getUserWithSellerByEmail`.
+**Finding this closes:** `GET /api/users/user-with-seller/[email]` **has no
+authentication at all**. Verified by calling the handler with no session
+against in-memory Mongo: it responds 200 with the user's full document
+(`_id`, first name, last name, email, role, dates) and the seller's. It's
+an account-enumeration oracle: anyone can try an email and learn whether
+it's registered and with what role. The middleware doesn't cover it — it
+only protects page routes. It exists only so `SellerContext` can ask "am I
+a seller?" from the client, which is exactly the fetch-to-our-own-API
+pattern this roadmap wants gone. With identity resolved server-side, the
+route gets deleted.
+**Done when:** `getEmailFromToken` and `getUserWithSellerByEmail` disappear
+or shrink to a single query by `clerkId`; the 4 routes using the former and
+the 3 using `currentUser()` move to the same path;
+`/api/users/user-with-seller/` deleted; 401/403/200 tests same as T-10's
+but without mocking `clerkClient()`, since it's no longer needed.
+**Split, as the scope note warned.** Opening it up showed the client-side
+part (SellerContext + deleting the public route) dragged in half a dozen
+more files and overlaps with T-30/T-31. This task keeps **the server**;
+the client goes in T-12d.
+**Done:** `getEmailFromToken` no longer exists. In its place,
+`getClerkUserId()` (the id already in the token, no network call) and
+`getAuthenticatedUser()` (one indexed query by `clerkId`, selecting just
+what's needed and **no `populate`**, because `User` already stores its
+`sellerId`). The three ownership helpers stop receiving an email. Migrated
+the 4 routes off `getEmailFromToken` and 2 of the 3 off `currentUser()`.
+**`sellers/admin` deliberately left out:** its `currentUser()` sits inside
+the in-memory `Map` and module-level `setInterval` that T-12 is going to
+delete. Touching it halfway would make T-12 harder, not easier.
+**Bug found and fixed along the way, in `POST /api/products`:** the
+entire handler body lived inside an `if (clerkUser)` **with no `else`**,
+so a request with no session exited without returning any `Response`.
+Verified by calling the handler before touching it: it returned
+`undefined`, i.e. a framework error instead of a 401. Also, `user._id` on
+a nonexistent user threw a TypeError before even checking whether they
+were a seller. The route had no tests at all; now it has 401/403/201.
+**What actually gets simpler:** `PUT /api/sellers/[id]` by email no longer
+looks up the `User` again (if the email is the session's, the seller is
+already the one that session references), and `POST /api/products` no
+longer looks up the `Seller` by `userId` separately. The test mocks go
+from simulating `auth()` + `clerkClient()` + `currentUser()` to simulating
+only `auth()`: a good sign of less surface area.
+**Five mutations**, each with its own diff: removing the product's
+ownership comparison (kills 2), the seller's (kills 4), `getClerkUserId`'s
+401 (kills 4), the product-seller check (kills 1), and its 401 (kills 1).
+**Depends on:** T-12b
+**Model:** `opus` · **Nightly:** no
 
-### [x] T-12e · Rellenar `clerkId` en los usuarios que ya existen
-> **BLOQUEA LA PROMOCIÓN `agent/develop → develop`.** El código está listo y
-> probado, pero **la migración hay que correrla contra la base real antes de
-> promover**. Si se promueve sin ella, todo usuario que ya exista queda sin
-> poder editar nada.
+### [x] T-12e · Backfill `clerkId` on existing users
+> **BLOCKS THE `agent/develop → develop` PROMOTION.** The code is ready and
+> tested, but **the migration has to run against the real database before
+> promoting**. If promoted without it, every existing user is left unable
+> to edit anything.
 
-**Por qué:** hasta T-12b el campo `clerkId` no existía en el schema, así que
-ningún usuario lo tiene. Desde T-12c la identidad se resuelve por ahí. Medido
-llamando a los handlers con un usuario sin `clerkId` y una sesión de Clerk
-válida:
+**Why:** before T-12b the `clerkId` field didn't exist in the schema, so no
+user has it. Since T-12c, identity is resolved through it. Measured by
+calling the handlers with a user missing `clerkId` and a valid Clerk
+session:
 
 ```
-usuarios sin clerkId: 3
+users without clerkId: 3
 PUT /api/sellers/[id] -> 403 {"error":"No eres usuario registrado."}
 POST /api/sellers     -> 404 {"message":"No se encontró un usuario para esta sesión."}
 ```
 
-Y **el webhook no lo arregla solo**: `user.created` no se vuelve a disparar para
-una cuenta que ya existe, así que el bloqueo sería permanente.
-**Hecho:** `scripts/backfill-clerk-id.mjs` (`npm run migrate:clerk-id`).
-**Recorre Clerk, no Mongo** (T-12f). Clerk es la fuente de verdad de la
-identidad y cada cuenta tiene exactamente un id, así que por construcción no hay
-ambigüedad. La primera versión iba al revés —recorrer Mongo y preguntar por
-email— y por eso el informe se llenaba de casos que parecían trabajo manual sin
-serlo.
-**Medido contra la base real (ensayo, sin escribir):**
+And **the webhook doesn't fix it on its own**: `user.created` doesn't fire
+again for an account that already exists, so the block would be
+permanent.
+**Done:** `scripts/backfill-clerk-id.mjs` (`npm run migrate:clerk-id`).
+**Walks Clerk, not Mongo** (T-12f). Clerk is the source of truth for
+identity and each account has exactly one id, so by construction there's
+no ambiguity. The first version went the other way — walking Mongo and
+querying by email — and that's why the report filled up with cases that
+looked like manual work but weren't.
+**Measured against the real database (dry run, no writes):**
 
 ```
-Cuentas en Clerk: 11
-Resumen: {"enlazado-con-desempate":3,"enlazado":8}
-Documentos sin cuenta en Clerk: 65 (no pueden iniciar sesión)
+Accounts in Clerk: 11
+Summary: {"linked-with-tiebreak":3,"linked":8}
+Documents with no Clerk account: 65 (can't sign in)
 ```
 
-Es decir: 11 de 11 se resuelven solas, cero casos manuales.
-**CORRECCIÓN GRAVE (T-12h): ese ensayo se hizo contra la instancia equivocada.**
-Las claves del `.env` —y las del entorno Production de Vercel— son de una
-instancia de **desarrollo** con 11 cuentas; la de producción tiene ~70. Correrlo
-con `--apply` habría escrito ids de desarrollo sobre usuarios reales. Desde
-T-12h el script se planta antes de escribir. **No corras esto hasta cerrar
-T-64.**
-Los 3 desempates
-son la misma persona duplicada en Mongo —una copia con perfil de vendedor y otra
-vacía, restos del viejo `POST /api/register`— y se resuelven con una regla
-escrita: gana la que tiene `sellerId`, y a igualdad la más antigua. Los 65
-huérfanos **no están bloqueados**: sin cuenta en Clerk no pueden ni iniciar
-sesión, así que no son trabajo de esta migración sino de T-11. La primera versión
-los contaba como problema y era ruido.
-**Ocho tests**, incluido el desempate real de producción y el recorrido entero:
-usuario bloqueado con 404 → backfill → 201.
-**Cómo correrlo el día de la promoción:**
-1. `npm run migrate:clerk-id` — ensayo, no escribe. Revisa el listado.
+In other words: 11 of 11 resolve on their own, zero manual cases.
+**SERIOUS CORRECTION (T-12h): that dry run ran against the wrong
+instance.** The keys in `.env` — and in Vercel's Production environment —
+belong to a **development** instance with 11 accounts; production has
+~70. Running it with `--apply` would have written development ids over
+real users. Since T-12h the script refuses to write before that check.
+**Don't run this until T-64 is closed.**
+The 3 tiebreaks are the same person duplicated in Mongo — one copy with a
+seller profile and one empty, leftovers from the old
+`POST /api/register` — and are resolved by a written rule: the one with
+`sellerId` wins, ties go to the older one. The 65 orphans **aren't
+blocked**: with no Clerk account they can't even sign in, so they're not
+this migration's job but T-11's. The first version counted them as a
+problem, and that was noise.
+**Eight tests**, including the real production tiebreak and the full
+walk: a blocked user gets 404 → backfill → 201.
+**How to run it on promotion day:**
+1. `npm run migrate:clerk-id` — dry run, no writes. Review the listing.
 2. `npm run migrate:clerk-id -- --apply`.
-3. `npm run migrate:clerk-id -- --check` — **sale con código 1 si queda alguien
-   sin enlazar.** Esta es la puerta: si pasa en verde, se puede promover.
-**Depende de:** T-12b, T-12c
-**Modelo:** `opus` · **Nocturno:** no
+3. `npm run migrate:clerk-id -- --check` — **exits with code 1 if anyone
+   is left unlinked.** This is the gate: if it's green, promotion can
+   happen.
+**Depends on:** T-12b, T-12c
+**Model:** `opus` · **Nightly:** no
 
-### [ ] T-12d · Borrar la ruta pública por email y sacar `SellerContext` del cliente
-**Por qué:** `GET /api/users/user-with-seller/[email]` **no tiene ninguna
-autenticación**. Comprobado llamando al handler sin sesión contra Mongo en
-memoria: responde 200 con el documento completo del usuario (`_id`, nombre,
-apellido, email, rol, fechas) y el del vendedor. Es un oráculo de enumeración de
-cuentas: cualquiera prueba un email y sabe si está registrado y con qué rol. El
-middleware no la cubre — solo protege rutas de página, nunca `/api`.
-**Por qué existe:** solo para que `SellerContext` pregunte "¿soy vendedor?"
-desde el cliente, que es exactamente el `fetch` a la propia API que este ROADMAP
-quiere eliminar. Con T-12c la respuesta ya se puede dar en el servidor sin
-consultar nada por email.
-**Hecho cuando:** la ruta y `getUserWithSellerByEmail` desaparecen;
-`SellerContext` recibe el usuario y el vendedor desde el servidor en vez de
-pedirlos por fetch; un test comprueba que la ruta ya no existe.
-**Ojo:** se solapa con T-30/T-31 (capa de datos y Server Components). Si al
-abrirla se ve que la forma correcta es hacerlo dentro de T-31, anótalo y
-fusiónalas en vez de hacer el trabajo dos veces.
-**Depende de:** T-12c
-**Modelo:** `opus` · **Nocturno:** no
+### [ ] T-12d · Delete the public by-email route and get `SellerContext` off the client
+**Why:** `GET /api/users/user-with-seller/[email]` **has no authentication
+at all**. Verified by calling the handler with no session against
+in-memory Mongo: it responds 200 with the user's full document (`_id`,
+first name, last name, email, role, dates) and the seller's. It's an
+account-enumeration oracle: anyone can try an email and learn whether it's
+registered and with what role. The middleware doesn't cover it — it only
+protects page routes, never `/api`.
+**Why it exists:** only so `SellerContext` can ask "am I a seller?" from
+the client, which is exactly the fetch-to-our-own-API pattern this roadmap
+wants gone. With T-12c, the answer can already be given server-side
+without querying by email at all.
+**Done when:** the route and `getUserWithSellerByEmail` disappear;
+`SellerContext` receives the user and seller from the server instead of
+fetching them; a test confirms the route no longer exists.
+**Heads up:** overlaps with T-30/T-31 (data layer and Server Components).
+If opening it up shows the right home is inside T-31, note it and merge
+them instead of doing the work twice.
+**Depends on:** T-12c
+**Model:** `opus` · **Nightly:** no
 
-### [ ] T-12 · Rol de admin en los claims de Clerk
-**Por qué:** hoy se resuelve con un `Map` en memoria y un `setInterval` a nivel
-de módulo dentro de una ruta. En serverless es caché por instancia y un
-intervalo que nunca se limpia.
-**Hecho cuando:** el rol vive en `publicMetadata` de Clerk; el middleware protege
-`/admin/*` y `/api/**/admin`; el `Map` y el `setInterval` desaparecen.
-**Modelo:** `opus` · **Nocturno:** no
+### [ ] T-12 · Admin role in Clerk claims
+**Why:** today it's resolved with an in-memory `Map` and a module-level
+`setInterval` inside a route. In serverless that's a per-instance cache and
+an interval that never gets cleaned up.
+**Done when:** the role lives in Clerk's `publicMetadata`; the middleware
+protects `/admin/*` and `/api/**/admin`; the `Map` and `setInterval` are
+gone.
+**Model:** `opus` · **Nightly:** no
 
-### [x] T-13 · Validación con Zod en todos los bordes
-**Por qué:** `new Product(body)` acepta lo que mande el cliente. Los query params
-tampoco se validan.
-**Hecho cuando:** un schema Zod por endpoint en `src/lib/validators/`; los
-handlers devuelven 400 con detalle de campos; tests de payload inválido.
-**Hecho ya:** `src/lib/validators/` con los schemas de producto y vendedor y el
-helper de respuesta 400. Cubiertos `POST /api/products`, `PUT /api/products/[id]`,
-`PUT /api/sellers/[id]` y los query params de `GET /api/products`. Zod descarta
-lo que no declara, asi que se cierra ademas la asignacion masiva: el cliente ya
-no puede mandar `sellerId` ni `approved` en el cuerpo.
-**Falta (T-13b):** `POST /api/sellers`, `POST /api/register` (que depende de la
-decision de T-11), horarios, pqrs y usuarios. Se parte para no pasarse del
-limite de ~15 archivos por PR.
-**Estado tras T-13b y T-13c:** cubierto todo menos `POST /api/register`, que
-sigue bloqueado por la decision de T-11 (borrar la ruta o protegerla). Esta
-tarea queda `[~]` solo por eso.
-**Cerrada (T-11): la ruta se borró.** No queda ningún borde de mutación sin
-Zod — el único pendiente era ese, y ya no existe.
-**Modelo:** `sonnet` — repetitivo y con criterio claro
-**Nocturno:** sí
+### [x] T-13 · Zod validation on every edge
+**Why:** `new Product(body)` accepts whatever the client sends. Query
+params aren't validated either.
+**Done when:** one Zod schema per endpoint in `src/lib/validators/`;
+handlers return 400 with per-field detail; invalid-payload tests.
+**Already done:** `src/lib/validators/` with product and seller schemas
+and the 400-response helper. Covers `POST /api/products`,
+`PUT /api/products/[id]`, `PUT /api/sellers/[id]`, and the query params on
+`GET /api/products`. Zod drops whatever it doesn't declare, so this also
+closes mass assignment: the client can no longer send `sellerId` or
+`approved` in the body.
+**Missing (T-13b):** `POST /api/sellers`, `POST /api/register` (pending
+T-11's decision), schedules, pqrs, and users. Split off to stay under the
+~15-file PR limit.
+**Status after T-13b and T-13c:** everything covered except
+`POST /api/register`, still blocked on T-11's decision (delete the route
+or protect it). This task stays `[~]` only because of that.
+**Closed (T-11): the route was deleted.** No mutation edge is left without
+Zod — the only pending one was that route, and it no longer exists.
+**Model:** `sonnet` — repetitive, with clear criteria
+**Nightly:** yes
 
-### [x] T-13b · Terminar la validación con Zod
-**Por qué:** T-13 cubrió productos y vendedores. El resto de endpoints sigue
-aceptando lo que mande el cliente.
-**Hecho cuando:** schemas para `POST /api/sellers`, horarios, pqrs y usuarios,
-con sus tests de payload inválido. `POST /api/register` va aparte porque su
-existencia la decide T-11.
-**Corrección:** no existe ningún endpoint de mutación de usuarios aparte de
-`POST /api/register` (que queda fuera, como dice el propio criterio) y del
-webhook de Clerk, que ya verifica su firma con svix y no necesita Zod además.
-"Usuarios" no tenía nada que cubrir.
-**Hecho:** `src/lib/validators/schedule.ts` y `src/lib/validators/pqrs.ts`
-nuevos; `createSellerSchema` de T-13 por fin se conecta. Cubiertos
-`POST /api/sellers`, `POST /api/schedules` y `POST /api/pqrs`.
-**Dos bugs encontrados y arreglados, necesarios para que los tests fueran
-honestos:**
-- `POST /api/sellers` y `POST /api/pqrs` envolvían el guardado en
-  `try { ... } catch { logger.debug(error) }` y devolvían éxito **pase lo que
-  pase**. Un fallo real de Mongoose (o el usuario sin `User` asociado, que es
-  justo el caso que rompe el webhook según T-05) quedaba silenciado y el
-  cliente recibía 201/"creado" sin que se hubiera creado nada.
-- `POST /api/pqrs` hacía `NextResponse.json({ status: 201 })` **sin segundo
-  argumento**: el `status` quedaba como un campo cualquiera del cuerpo, y el
-  código HTTP real era 200 siempre.
-- En `POST /api/schedules`, un `day` que no coincidiera exactamente con
-  `daysES` hacía que `indexOf` devolviera `-1` y el horario se guardara con
-  `day: 0`, en silencio. Ahora se rechaza con 400 antes de llegar ahí.
-**Hallazgo sin arreglar, anotado para otra tarea:** `POST /api/schedules` no
-comprueba que quien llama sea dueño del `sellerId` que manda — cualquiera con
-sesión puede borrar y reemplazar el horario de cualquier vendedor. Es del mismo
-tipo que T-10, pero en una ruta que T-10 no tocó. Candidata: T-10b.
-**Depende de:** T-13
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-13b · Finish Zod validation
+**Why:** T-13 covered products and sellers. The rest of the endpoints
+still accept whatever the client sends.
+**Done when:** schemas for `POST /api/sellers`, schedules, pqrs, and
+users, with their invalid-payload tests. `POST /api/register` is separate
+because T-11 decides whether it even exists.
+**Correction:** there's no user-mutation endpoint besides
+`POST /api/register` (already out of scope, per its own criteria) and
+Clerk's webhook, which already verifies its signature with svix and
+doesn't need Zod on top. "Users" had nothing to cover.
+**Done:** new `src/lib/validators/schedule.ts` and
+`src/lib/validators/pqrs.ts`; T-13's `createSellerSchema` is finally wired
+up. Covers `POST /api/sellers`, `POST /api/schedules`, and
+`POST /api/pqrs`.
+**Two bugs found and fixed, needed to make the tests honest:**
+- `POST /api/sellers` and `POST /api/pqrs` wrapped the save in
+  `try { ... } catch { logger.debug(error) }` and returned success **no
+  matter what**. A real Mongoose failure (or a user with no associated
+  `User`, exactly the case that broke the webhook per T-05) was silenced
+  and the client got a 201/"created" with nothing actually created.
+- `POST /api/pqrs` did `NextResponse.json({ status: 201 })` **with no
+  second argument**: `status` ended up as just another field in the body,
+  and the real HTTP status was always 200.
+- In `POST /api/schedules`, a `day` that didn't exactly match `daysES`
+  made `indexOf` return `-1` and the schedule got saved with `day: 0`,
+  silently. Now it's rejected with 400 before getting there.
+**Finding, not fixed, noted for another task:** `POST /api/schedules`
+doesn't check that the caller owns the `sellerId` they send — anyone with
+a session can delete and replace any seller's schedule. Same family as
+T-10, but on a route T-10 didn't touch. Candidate: T-10b.
+**Depends on:** T-13
+**Model:** `sonnet` · **Nightly:** yes
 
-### [x] T-13c · El teléfono del vendedor viaja como string
-**Por qué:** encontrado en T-15b. `createSellerSchema` y `updateSellerSchema`
-declaran `phoneNumber: z.number()`, pero el cliente siempre manda un string:
-- `sellers/register/page.jsx` guarda `value.replace(/\D/g, '').slice(0, 10)`,
-  que es un string de dígitos. Como el schema se conectó en T-13b, **el alta de
-  vendedor responde 400 siempre**.
-- `sellers/profile/edit/page.jsx` guarda `e.target.value` **sin limpiar**, y el
-  valor del input es el texto ya formateado: editar el teléfono manda
-  `"(300) 123-4567"` y el PUT responde 400.
-Los tests de integración de T-13b no lo atraparon porque mandan
-`phoneNumber: 3000000000` (number) a mano, no lo que manda el formulario.
-**Evidencia:** `createSellerSchema.safeParse({ businessName: 'Arepas Ana',
+### [x] T-13c · Seller phone number travels as a string
+**Why:** found in T-15b. `createSellerSchema` and `updateSellerSchema`
+declare `phoneNumber: z.number()`, but the client always sends a string:
+- `sellers/register/page.jsx` stores
+  `value.replace(/\D/g, '').slice(0, 10)`, a string of digits. Since the
+  schema got wired up in T-13b, **seller sign-up always responds 400**.
+- `sellers/profile/edit/page.jsx` stores `e.target.value` **unformatted**,
+  and the input's value is the already-formatted text: editing the phone
+  sends `"(300) 123-4567"` and the PUT responds 400.
+T-13b's integration tests didn't catch it because they send
+`phoneNumber: 3000000000` (a number) by hand, not what the form actually
+sends.
+**Evidence:** `createSellerSchema.safeParse({ businessName: 'Arepas Ana',
 phoneNumber: '3001234567' })` → `success: false`,
-`"Invalid input: expected number, received string"`. Con `3001234567` pasa.
-**Ojo con el `.slice(0, 10)` del register:** repite la lógica que T-15b arregló
-dentro de `formatPhone`, así que un `+57` pegado se guarda como `5730012345`.
-Al unificar, extraer el normalizador de `utilFn.js` en vez de duplicarlo.
-**Hecho cuando:** cliente y servidor coinciden en el tipo — Mongoose
-(`sellerSchema2.phoneNumber: Number`) y Zod ya están de acuerdo, así que se
-arregla el formulario o se acepta el string con `z.coerce`, no las dos cosas — y
-hay un test de integración que manda **el payload real del formulario**, no uno
-escrito a mano.
-**Hecho:** el normalizador sale de `utilFn.js` a `src/lib/phone.ts`
-(`toNationalPhone` + `isNationalPhone`) y ahora lo usan los tres sitios que
-tocan un teléfono: `formatPhone` para mostrarlo, el schema de Zod para validarlo
-y el alta de vendedor para guardarlo. El campo pasa a normalizar-y-luego-validar
-(`union(string, number) → toNationalPhone → isNationalPhone → Number`), así que
-acepta lo que mandan los formularios de verdad —`'3001234567'`,
-`'(300) 123-4567'`, `'+57 300 123 4567'`— y a Mongoose le sigue llegando un
+`"Invalid input: expected number, received string"`. With `3001234567` it
+passes.
+**Watch out for register's `.slice(0, 10)`:** it repeats logic T-15b
+already fixed inside `formatPhone`, so a pasted `+57` gets saved as
+`5730012345`. When unifying, extract the normalizer from `utilFn.js`
+instead of duplicating it.
+**Done when:** client and server agree on the type — Mongoose
+(`sellerSchema2.phoneNumber: Number`) and Zod already agree, so either fix
+the form or accept the string with `z.coerce`, not both — and there's an
+integration test that sends **the form's real payload**, not one written
+by hand.
+**Done:** the normalizer moved from `utilFn.js` to `src/lib/phone.ts`
+(`toNationalPhone` + `isNationalPhone`), now used by all three places that
+touch a phone number: `formatPhone` to display it, the Zod schema to
+validate it, and seller sign-up to store it. The field now goes
+normalize-then-validate
+(`union(string, number) → toNationalPhone → isNationalPhone → Number`), so
+it accepts what real forms actually send — `'3001234567'`,
+`'(300) 123-4567'`, `'+57 300 123 4567'` — and Mongoose still gets a
 `Number`.
-**Por qué se valida además que no empiece por cero:** el teléfono se guarda como
-`Number`, así que un `'0300123456'` se convertiría en `300123456` y perdería un
-dígito en silencio. Ahora se rechaza con 400.
-**Ojo con `.transform(Number)`:** ningún test de integración lo atrapa, porque
-Mongoose convierte el string por su cuenta al guardar. Se mantiene igualmente
-—el contrato del validador es entregar el dato con el tipo del modelo, no
-depender de una conversión implícita— y se fija con un test unitario sobre el
-schema, que sí cae si se quita.
-**Sigue sin normalizar:** `sellers/profile/edit/page.jsx` guarda el texto ya
-formateado en su estado. Funciona porque el schema lo normaliza, pero el estado
-del cliente y lo que hay en la base no coinciden hasta que se recarga. Se deja
-así a propósito: arreglarlo bien es que `InputFields` emita el valor limpio en
-su `onChange` en vez del evento crudo, y eso toca todos sus consumidores.
-**Deuda de fondo, no de esta tarea:** `phoneNumber` como `Number` es frágil
-—no admite ceros a la izquierda ni indicativo— y debería ser `string`. Cambiarlo
-implica migrar los datos, así que va con T-30.
-**Depende de:** T-13b
-**Modelo:** `sonnet` · **Nocturno:** sí
+**Why it also validates it doesn't start with zero:** the phone is stored
+as a `Number`, so a `'0300123456'` would become `300123456` and silently
+lose a digit. Now it's rejected with 400.
+**Watch out for `.transform(Number)`:** no integration test catches it,
+because Mongoose converts the string on its own when saving. It stays
+anyway — the validator's contract is to deliver the data in the model's
+type, not rely on an implicit conversion — and it's pinned with a unit
+test on the schema, which does fail if it's removed.
+**Still unnormalized:** `sellers/profile/edit/page.jsx` stores the
+already-formatted text in its state. It works because the schema
+normalizes it, but the client's state and what's in the database don't
+match until reload. Left this way on purpose: fixing it properly means
+`InputFields` emitting the clean value in its `onChange` instead of the
+raw event, and that touches every one of its consumers.
+**Underlying debt, not this task's:** `phoneNumber` as a `Number` is
+fragile — no leading zeros, no country code — and should be a `string`.
+Changing it means migrating data, so it goes with T-30.
+**Depends on:** T-13b
+**Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-14 · Endpoints muertos y rotos
-**Por qué:** el PUT y DELETE de `api/sellers/route.js` usan `req.query`, que no
-existe en App Router: nunca funcionaron. `api/sellers/availability` está
-comentado entero, así que la disponibilidad automática por horario no funciona.
-**Otro candidato, visto en T-13b:** `GET /api/schedules` filtra por
-`req.sellerid` (un campo que no existe en `NextRequest`, así que siempre es
-`undefined`). Nada del frontend lo llama — `Schedule.jsx` solo usa el `POST`.
-`GET /api/schedules/[id]` es la ruta que sí funciona y sí se usa.
-**Decisión (2026-09-06):** se restaura, no se borra. El humano confirmó que
-quiere el "abierto ahora" automático de vuelta — el campo `Seller.availability`
-y su badge (`AvailabilityBadge.jsx`) ya existen y ya se muestran al comprador;
-solo falta que se actualicen solos. `allowedIPs.js` ya no existe (lo borró
-T-34), así que no hay nada que "reemplazar": el guard nuevo es directo, sin
-migrar nada viejo.
-**Hecho cuando:** los handlers muertos de `api/sellers/route.js` se eliminan;
-`api/sellers/availability`'s `PATCH` (ya escrito, solo comentado — ver el
-archivo) se descomenta y se protege con un `CRON_SECRET` en el header
-`Authorization`, no con IPs; un cron de Vercel (`vercel.json` → `crons`) lo
-llama cada 5-10 minutos. Test que confirma que sin el secreto correcto la
-ruta responde 401 y no toca ningún `Seller`.
-**Modelo:** `sonnet` — la decisión de producto ya está tomada, queda
-implementación con la lógica ya escrita
-**Nocturno:** sí
+### [ ] T-14 · Dead and broken endpoints
+**Why:** the PUT and DELETE in `api/sellers/route.js` use `req.query`,
+which doesn't exist in the App Router: they never worked.
+`api/sellers/availability` is entirely commented out, so automatic
+schedule-based availability doesn't work.
+**Another candidate, seen in T-13b:** `GET /api/schedules` filters by
+`req.sellerid` (a field that doesn't exist on `NextRequest`, so it's
+always `undefined`). Nothing in the frontend calls it —
+`Schedule.jsx` only uses the `POST`. `GET /api/schedules/[id]` is the
+route that actually works and is used.
+**Decision (2026-09-06):** restore it, don't delete it. The human
+confirmed they want automatic "open now" back — the `Seller.availability`
+field and its badge (`AvailabilityBadge.jsx`) already exist and are
+already shown to buyers; it just needs to update itself. `allowedIPs.js`
+no longer exists (T-34 deleted it), so there's nothing to "replace": the
+new guard is straightforward, no migrating anything old.
+**Done when:** the dead handlers in `api/sellers/route.js` are removed;
+`api/sellers/availability`'s `PATCH` (already written, just commented
+out — see the file) is uncommented and guarded with a `CRON_SECRET` in
+the `Authorization` header, not IPs; a Vercel cron (`vercel.json` →
+`crons`) calls it every 5-10 minutes. A test confirms that without the
+right secret the route responds 401 and doesn't touch any `Seller`.
+**Model:** `sonnet` — the product decision is already made, what's left
+is implementation with the logic already written
+**Nightly:** yes
 
-### [x] T-15 · Errores tipados y logger
-**Por qué:** `console.log` por todas partes, mensajes de error inconsistentes,
-`AppError` usado en un sitio donde ni siquiera está importado
-(`api/products/[id]` DELETE, arreglado en T-10).
-**Ojo con la cifra:** eran 169; tras los borrados de T-34 quedaban **104**,
-repartidas en unos 43 archivos. Por eso se parte.
-**Hecho cuando:** un helper de respuesta de error único; logger con niveles que
-no imprime en test; cero `console.log` fuera de `scripts/`.
-**Hecho ya:** `src/lib/logger.ts` (niveles, silencioso en test, contexto como
-objeto aparte) y `src/lib/api-response.ts`, que unifica `invalidPayload` y
-`errorResponse` y **nunca devuelve al cliente el mensaje de un 500**. Migrada la
-capa de API entera: 34 llamadas en 12 archivos, con un test que impide que
-vuelva a colarse un `console.*` ahí.
-**Cerrada en T-13c** (contabilidad, no código): las otras 70 llamadas las
-migraron T-15c y T-15d, y el criterio se cumple. Comprobado: los únicos
-`console.*` que quedan en `src/` son los dos que hay **dentro** de
-`src/lib/logger.ts`, que es donde deben estar. El guardián recorre todo `src/`.
-**Sobre unificar los cuerpos de error:** los handlers devuelven unas veces
-`{ error }` y otras `{ message }`. Cambiarlo altera el contrato que consume el
-frontend, así que `errorResponse` solo se usa donde la forma ya coincide.
-Unificarlo del todo va con T-32, cuando las mutaciones pasen a Server Actions.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-15 · Typed errors and logger
+**Why:** `console.log` everywhere, inconsistent error messages, `AppError`
+used somewhere it isn't even imported (`api/products/[id]` DELETE, fixed
+in T-10).
+**Watch the count:** there were 169; after T-34's deletions, 104 were
+left, spread across about 43 files. That's why it's split.
+**Done when:** a single error-response helper; a logger with levels that
+doesn't print in test; zero `console.log` outside `scripts/`.
+**Already done:** `src/lib/logger.ts` (levels, silent in test, context as
+a separate object) and `src/lib/api-response.ts`, which unifies
+`invalidPayload` and `errorResponse` and **never returns a 500's message
+to the client**. Migrated the entire API layer: 34 calls across 12 files,
+with a test that blocks a `console.*` from sneaking back in there.
+**Closed in T-13c** (bookkeeping, not code): the other 70 calls were
+migrated by T-15c and T-15d, and the criterion is met. Verified: the only
+`console.*` calls left in `src/` are the two **inside**
+`src/lib/logger.ts`, which is where they belong. The guard test walks all
+of `src/`.
+**On unifying error bodies:** handlers sometimes return `{ error }` and
+sometimes `{ message }`. Changing that would alter the contract the
+frontend consumes, so `errorResponse` is only used where the shape
+already matches. Fully unifying it is T-32's job, once mutations move to
+Server Actions.
+**Model:** `sonnet` · **Nightly:** yes
 
-### [x] T-15c · Logger en componentes y contexto
-**Por qué:** quedan 29 `console.*` en `src/components/` y `src/context/`.
-**Hecho cuando:** migradas al logger; el test que guarda `src/app/api` se amplía
-para cubrir estas carpetas.
-**Ojo:** son componentes de cliente, así que el logger corre también en el
-navegador. Next sustituye `process.env.X` por undefined en el bundle del
-cliente, de modo que `LOG_LEVEL` no aplica allí y el nivel lo decide
-`NODE_ENV`. Verificado con el e2e, que carga esos componentes en un Chromium
-de verdad.
-**Depende de:** T-15
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-15c · Logger in components and context
+**Why:** 29 `console.*` calls left in `src/components/` and
+`src/context/`.
+**Done when:** migrated to the logger; the test guarding `src/app/api`
+extended to cover these folders too.
+**Heads up:** these are client components, so the logger also runs in the
+browser. Next replaces `process.env.X` with undefined in the client
+bundle, so `LOG_LEVEL` doesn't apply there and the level is decided by
+`NODE_ENV`. Verified with e2e, which loads these components in a real
+Chromium.
+**Depends on:** T-15
+**Model:** `sonnet` · **Nightly:** yes
 
-### [x] T-15d · Logger en servicios, utilidades y páginas
-**Por qué:** quedan 41 `console.*` en `src/services/`, `src/utils/` y las páginas
-de `src/app/` que no son API.
-**Hecho cuando:** migradas al logger; el guardián cubre ya todo `src/`, de modo
-que el criterio de T-15 (cero `console.log` fuera de `scripts/`) queda cerrado.
-**Hecho:** 41 llamadas migradas en 16 archivos. El guardián ahora recorre todo
-`src/` (no solo las carpetas ya migradas) y además cuenta como fallo un
-`console.log` **comentado**: se encontraron y eliminaron tres restos de
-depuración así. El logger normaliza el contexto (Error, string, número u
-objeto) para que un `catch (error)` en TypeScript no necesite casts.
-**Depende de:** T-15
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-15d · Logger in services, utilities, and pages
+**Why:** 41 `console.*` calls left in `src/services/`, `src/utils/`, and
+the non-API pages under `src/app/`.
+**Done when:** migrated to the logger; the guard now covers all of
+`src/`, so T-15's criterion (zero `console.log` outside `scripts/`) is
+closed.
+**Done:** 41 calls migrated across 16 files. The guard now walks all of
+`src/` (not just the already-migrated folders) and also counts a
+**commented-out** `console.log` as a failure: three leftover debug lines
+like that were found and removed. The logger normalizes context (Error,
+string, number, or object) so a `catch (error)` in TypeScript doesn't need
+casts.
+**Depends on:** T-15
+**Model:** `sonnet` · **Nightly:** yes
 
-### [x] T-15b · Corregir formato de moneda y teléfono
-**Por qué:** `priceFormat` usa `en-US` con `currency: 'USD'` en un
-marketplace colombiano (`1500 → '$1,500'` en vez de `'$1.500'`).
-`formatPhone` rompe con indicativo de país.
-**Hecho cuando:** `priceFormat` usa `es-CO` con `currency: 'COP'`;
-`formatPhone` maneja correctamente el prefijo `+57`; los tests
-de T-02 actualizados para reflejar el comportamiento correcto.
-**Corrección de la premisa:** el resultado de `es-CO` + `COP` **no** es
-`'$1.500'` sino `'$ 1.500'`: ICU separa el símbolo del importe con un
-espacio duro (U+00A0). Es la forma canónica del locale, así que se deja tal
-cual y los tests la afirman con la constante `NBSP` en vez de con un carácter
-invisible en el literal.
-**Hecho:** `priceFormat` y `formatValue` (que ahora delega en el primero) en
-`es-CO`/`COP`; `formatPhone` descarta el indicativo `57` solo cuando quedan más
-de 10 dígitos — ningún número nacional colombiano empieza por 57 (los móviles
-por 3, los fijos por 60), y la guarda evita comerse los tres primeros dígitos de
-un número de 10. Tres mutaciones comprobadas (volver a `en-US`/`USD`, quitar el
-descarte del indicativo, descartarlo sin la guarda) tumban un test cada una.
-**Ojo con ICU:** el `maximumFractionDigits` por defecto para COP **depende de la
-versión de ICU**. Sin fijarlo, `priceFormat(1500.5)` daba `'$ 1.500,5'` en local
-(Node 22.20) y `'$ 1.501'` en el runner del CI — el primer intento pasó en local
-y tumbó `quality`. Ahora va explícito a 0, que es lo correcto (no circulan
-centavos de peso y el precio es entero en `productSchema`) y hace el formato
-independiente de la máquina. Si alguna vez hay que formatear moneda en otro
-sitio, no confíes en los defaults del locale: fíjalos.
-**Ojo con el e2e:** `recorrido.spec.js` afirmaba el precio como `'6,000'`, así
-que atrapó el cambio. Ahora afirma `/\$\s*6\.000/` y además que `'6,000'` no
-aparece.
-**Hallazgo sin arreglar, ver T-13c:** el teléfono llega al servidor como string
-y `createSellerSchema` pide `number`.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-15b · Fix currency and phone formatting
+**Why:** `priceFormat` uses `en-US` with `currency: 'USD'` in a Colombian
+marketplace (`1500 → '$1,500'` instead of `'$1.500'`). `formatPhone`
+breaks with a country code.
+**Done when:** `priceFormat` uses `es-CO` with `currency: 'COP'`;
+`formatPhone` correctly handles the `+57` prefix; T-02's tests updated to
+reflect the correct behavior.
+**Correcting the premise:** the result of `es-CO` + `COP` is **not**
+`'$1.500'` but `'$ 1.500'`: ICU separates the symbol from the amount with
+a hard space (U+00A0). It's the locale's canonical form, so it's left as
+is, and the tests assert it with the `NBSP` constant instead of an
+invisible character in the literal.
+**Done:** `priceFormat` and `formatValue` (which now delegates to the
+former) in `es-CO`/`COP`; `formatPhone` drops the `57` country code only
+when more than 10 digits are left — no Colombian national number starts
+with 57 (mobiles start with 3, landlines with 60), and the guard prevents
+eating the first three digits of a 10-digit number. Three tested mutations
+(reverting to `en-US`/`USD`, removing the country-code drop, dropping it
+without the guard) each kill one test.
+**Watch out for ICU:** the default `maximumFractionDigits` for COP
+**depends on the ICU version**. Left unset, `priceFormat(1500.5)` gave
+`'$ 1.500,5'` locally (Node 22.20) and `'$ 1.501'` on the CI runner — the
+first attempt passed locally and broke `quality`. Now it's explicitly set
+to 0, which is correct (peso cents don't circulate and the price is an
+integer in `productSchema`) and makes the format independent of the
+machine. If currency ever needs formatting elsewhere, don't trust the
+locale's defaults: pin them.
+**Watch out for the e2e:** `recorrido.spec.js` asserted the price as
+`'6,000'`, so it caught the change. Now it asserts `/\$\s*6\.000/` and
+also that `'6,000'` doesn't appear.
+**Finding, not fixed, see T-13c:** the phone reaches the server as a
+string and `createSellerSchema` requires a `number`.
+**Model:** `sonnet` · **Nightly:** yes
 
 ---
 
-## Fase 2 — Rendimiento y datos
+## Phase 2 — Performance and data
 
-Casi toda esta fase es apta para el nocturno: criterios inequívocos y tests que
-atrapan el error.
+Almost this whole phase is nightly-friendly: unambiguous criteria and
+tests that catch the error.
 
-### [x] T-20 · Sacar la migración del handler de lectura
-**Por qué:** `GET /api/products` corre `updateMany({section: {$exists: false}})`
-en **cada** request. Una migración de una sola vez lleva un año ejecutándose en
-cada carga de página.
-**Hecho cuando:** la migración vive en `scripts/`, el handler solo lee.
-**Pendiente de ejecutar:** el script existe (`npm run migrate:product-section`)
-pero nadie lo ha corrido contra la base real. Exige `--yes` porque escribe. Al
-contrario que el seed, esta migración sí está pensada para producción.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-20 · Move the migration out of the read handler
+**Why:** `GET /api/products` runs
+`updateMany({section: {$exists: false}})` on **every** request. A
+one-time migration has been running on every page load for a year.
+**Done when:** the migration lives in `scripts/`, the handler only reads.
+**Pending execution:** the script exists (`npm run migrate:product-section`)
+but nobody has run it against the real database yet. It requires `--yes`
+because it writes. Unlike the seed, this migration actually is meant for
+production.
+**Model:** `sonnet` · **Nightly:** yes
 
-### [x] T-21 · Índices
-**Por qué:** ningún schema define índices. Todo es collection scan.
-**Hecho cuando:** índices en `Product.sellerId`, `Product.section`,
+### [x] T-21 · Indexes
+**Why:** no schema defines any indexes. Everything is a collection scan.
+**Done when:** indexes on `Product.sellerId`, `Product.section`,
 `Schedule.sellerId`, `User.email`, `Seller.userId`, `Seller.university`;
-verificado con `.explain()` en un test o un script.
-**Ojo con `Product.section`:** solo tiene dos valores posibles, asi que como
-indice suelto es poco selectivo y Mongo puede ignorarlo. Lo util de verdad seria
-un compuesto `{section, sellerId}` o `{section, category}`. Se implemento el
-sencillo porque es lo que pide el criterio; el compuesto merece medirse con
-datos reales antes de añadirlo.
-**Modelo:** `sonnet` · **Nocturno:** sí
+verified with `.explain()` in a test or script.
+**Watch out with `Product.section`:** it only has two possible values, so
+as a standalone index it's not very selective and Mongo may ignore it.
+What would actually help is a compound `{section, sellerId}` or
+`{section, category}`. The simple one was implemented because that's what
+the criterion asks for; the compound one deserves measuring against real
+data before adding it.
+**Model:** `sonnet` · **Nightly:** yes
 
-### [x] T-22 · Matar el N+1 de horarios
-**Por qué:** un `Schedule.find()` por cada producto y por cada vendedor. Con 50
-productos son 51 consultas.
-**Hecho cuando:** una sola consulta con `$in` (o un `$lookup`) y agrupación en
-memoria; test que cuenta las queries emitidas.
-**Queda uno sin tocar:** `api/sellers/admin/route.js` tiene el mismo patron,
-pero esa ruta la reescribe T-12 entera (el Map en memoria y el setInterval). El
-helper `src/utils/lib/schedules.ts` ya esta listo para usarse alli.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-22 · Kill the schedule N+1
+**Why:** one `Schedule.find()` per product and per seller. With 50
+products that's 51 queries.
+**Done when:** a single query with `$in` (or a `$lookup`) and grouping in
+memory; a test that counts the queries emitted.
+**One left untouched:** `api/sellers/admin/route.js` has the same pattern,
+but T-12 rewrites that whole route (the in-memory Map and the
+setInterval). The `src/utils/lib/schedules.ts` helper is already there to
+use there.
+**Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-23 · Paginación de verdad
-**Por qué:** `productService` manda `limit` y `offset` que la ruta ignora; se
-carga la colección completa, se ordena en JS y se filtra después de poblar.
-`react-intersection-observer` está instalado sin usarse.
-**Hecho cuando:** la consulta pagina en Mongo con cursor; scroll infinito
-funcionando en el listado; test e2e que hace scroll y carga una segunda página.
-**Depende de:** T-04, T-21
-**Modelo:** `opusplan` para el plan, `sonnet` para ejecutar
-**Nocturno:** no
+### [ ] T-23 · Real pagination
+**Why:** `productService` sends `limit` and `offset` that the route
+ignores; the whole collection loads, gets sorted in JS, and filtered
+after populating. `react-intersection-observer` is installed but unused.
+**Done when:** the query paginates in Mongo with a cursor; infinite scroll
+works on the listing; an e2e test that scrolls and loads a second page.
+**Depends on:** T-04, T-21
+**Model:** `opusplan` to plan, `sonnet` to execute
+**Nightly:** no
 
-### [ ] T-24 · Búsqueda decente
-**Por qué:** `$regex` sin anclar sobre `name`, sin tolerancia a errores ni
-acentos. "arepa" no encuentra "Arepas".
-**Hecho cuando:** índice de texto de MongoDB (o Atlas Search si el cluster lo
-permite), insensible a acentos, con ranking; tests con typos y tildes.
-**Modelo:** `opusplan` · **Nocturno:** no
-
----
-
-## Fase 3 — Arquitectura
-
-La reescritura grande. Toda tuya, con `opusplan` — excepto la limpieza del
-final, que sí es del nocturno.
-
-### [ ] T-30 · Capa de datos en el servidor
-**Por qué:** hoy la lógica de acceso a datos vive dentro de los route handlers,
-así que no se puede reusar desde Server Components.
-**Hecho cuando:** `src/server/products.ts`, `sellers.ts`, `schedules.ts` con
-funciones puras que consultan Mongo; los route handlers pasan a ser envoltorios
-delgados; tests unitarios sobre esa capa.
-**Depende de:** T-05, T-13
-**Modelo:** `opusplan` · **Nocturno:** no
-
-### [ ] T-31 · Migrar los listados a Server Components
-**Por qué:** 44 archivos con `'use client'` y la app pidiéndole datos a su propia
-API vía HTTP. En Vercel eso es el servidor llamándose a sí mismo: latencia y una
-función extra por request.
-**Hecho cuando:** `/antojos`, `/marketplace` y `/antojos/[id]` renderizan en el
-servidor consultando `src/server/` directo; los filtros siguen funcionando por
-searchParams; e2e verde; comparativa de Lighthouse antes/después en el PR.
-**Depende de:** T-30
-**Modelo:** `opusplan` · **Nocturno:** no
-
-### [ ] T-32 · Mutaciones con Server Actions
-**Hecho cuando:** crear, editar y borrar producto pasan por Server Actions con
-validación Zod y `revalidatePath`; `services/api.js` y `services/apiToken.js`
-se eliminan.
-**Depende de:** T-30, T-10
-**Modelo:** `opusplan` · **Nocturno:** no
-
-### [x] T-33 · Deduplicar componentes
-**Por qué:** `ProductCard`/`ProductCardAV` difieren en 32 líneas,
-`SellerCard`/`SellerCardAV` en 10, `TableSche`/`TableSchema` en 63.
-**`TableSche`/`TableSchema` ya no aplicaba:** `TableSche.jsx` tenía 0
-importadores y se borró en T-34. Solo `TableSchema.jsx` sigue vivo, sin
-duplicado que fusionar.
-**Hecho:** `ProductCard` y `SellerCard` ahora aceptan `variant`
-(`'standalone'` por defecto, `'embedded'`); `ProductCardAV` y `SellerCardAV`
-eliminados y sus dos call sites (edición de productos, admin de vendedores)
-apuntan al componente único.
-**Límite real del e2e, y cómo se cubrió:** las cuatro pantallas originales del
-e2e no ejercitan la variante `'embedded'` de ninguno de los dos componentes —
-solo la usan la edición de productos y el panel de admin, rutas autenticadas
-que Playwright todavía no puede visitar (no hay sesión de Clerk simulada). Se
-añadió una quinta pantalla (`/antojos/sellers/list`) que sí ejercita
-`SellerCard` de verdad, y la lógica de className de las dos variantes se
-extrajo a `src/lib/card-variant.js` —un módulo sin JSX, aparte— con tests
-unitarios que si cubren `'embedded'`, verificados con mutación.
-**Hallazgo, sin arreglar:** al escribir la quinta pantalla se comprobó
-—primero mal, corregido después— que `GET /api/sellers` **no filtra por
-`approved`**: devuelve todos los vendedores. El listado público solo se ve
-limpio porque `SellerGrid.jsx` filtra en el cliente; quien llame la API
-directo ve también los pendientes de aprobación. No es tan grave como
-`T-10b` (no hay escritura de por medio, solo lectura de datos no sensibles),
-pero es la misma familia de problema: filtro de negocio que vive solo en el
-cliente.
-**Modelo:** `sonnet` · **Nocturno:** sí (el e2e con capturas es la red)
-
-### [x] T-34 · Borrar lo muerto
-**Por qué:** `SellerContext2.js` no lo importa nadie (todos usan
-`SellerContext`); igual `RegisterSellerForm.jsx`, `pqrsService.js`,
-`allowedIPs.js` y `favoriteSchema.js` — este último además usa
-`module.exports = mongoose.model(...)` sin el guard `mongoose.models ||`, así
-que reventaría con `OverwriteModelError` si alguien lo importara.
-**Adelantado en T-01:** `src/app/api/categories/route.js` y
-`src/utils/models/categorySchema.js` ya se eliminaron. Nadie los importaba y las
-categorías salen de `utils/resources/categories.js` y `utils/categoriesList.js`;
-además el endpoint era el único con un `GET()` sin argumentos, así que Next lo
-prerenderizaba en el build y lo rompía.
-**Candidato nuevo:** `src/utils/lib/clerkUser.js`, 0 importadores. Encontrado en
-T-05, donde ademas se vio que no compila bajo TS.
-**Hecho cuando:** eliminados, con la búsqueda de referencias documentada en el
-PR; `knip` o similar añadido al CI para que no vuelva a acumularse.
-**Eliminados (10):** los cinco de la lista, mas `lib/clerkUser.js` (T-05) y
-cuatro que encontro knip: `TableSche.jsx`, `services/auth/server/seller.js`,
-`services/auth/server/user.js` y `utils/auth/client/seller.js`. Los dos ultimos
-ademas estaban rotos: importaban simbolos que su origen no exporta.
-**knip solo rompe por archivos muertos.** Las 9 dependencias sin usar que
-detecta son de **T-35** (next-auth, bcryptjs, jsonwebtoken, cookies y el
-proveedor de imagenes que se descarte) y los 10 exports sin usar son de
-**T-30**, cuando la capa de datos absorba los services. Quedan como avisos
-visibles en el log hasta que toque.
-**Modelo:** `sonnet` · **Nocturno:** sí
-
-### [ ] T-35 · Un solo proveedor de imágenes
-**Por qué:** Cloudinary e ImageKit están ambos instalados, ambos con su ruta.
-También sobran `next-auth`, `bcryptjs`, `jsonwebtoken` y `cookies`, restos de
-antes de Clerk.
-**Hecho cuando:** se escoge uno, el otro se elimina junto con su ruta y su
-dependencia; `package.json` sin dependencias sin usar.
-**Modelo:** `sonnet` · **Nocturno:** no (la elección de proveedor es tuya)
-
-### [ ] T-36 · README de verdad
-**Por qué:** sigue siendo el de `create-next-app`, con un `## Yes` suelto.
-**Hecho cuando:** qué es el proyecto, capturas, stack, variables de entorno,
-cómo levantarlo, cómo correr tests, y una sección sobre el pipeline agéntico.
-Este archivo es el que van a leer los reclutadores.
-**Actualización 2026-09-06:** decía "escríbelo tú, es tu vitrina" — el humano
-decidió delegarla a un agente. Igual sigue siendo la vitrina para
-reclutadores, así que si el resultado no convence, se reescribe a mano
-después; no hay drama en intentarlo primero con un agente.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [ ] T-24 · Decent search
+**Why:** an unanchored `$regex` on `name`, no tolerance for typos or
+accents. "arepa" doesn't find "Arepas".
+**Done when:** a MongoDB text index (or Atlas Search if the cluster
+allows it), accent-insensitive, with ranking; tests with typos and
+accents.
+**Model:** `opusplan` · **Nightly:** no
 
 ---
 
-## Fase 4 — Funcionalidad nueva
+## Phase 3 — Architecture
 
-Aquí ya se construye sobre terreno firme. Cada una es un proyecto en sí misma y
-todas son de diseño, así que todas son tuyas.
+The big rewrite. All yours, with `opusplan` — except the final cleanup,
+which is nightly work.
 
-### [ ] T-40 · Modelo de pedidos
-**Por qué:** no existe `Order`. Hoy el flujo termina en un link de WhatsApp, así
-que no hay datos de nada.
-**Hecho cuando:** schema `Order` con máquina de estados
+### [ ] T-30 · Server-side data layer
+**Why:** today the data-access logic lives inside the route handlers, so
+it can't be reused from Server Components.
+**Done when:** `src/server/products.ts`, `sellers.ts`, `schedules.ts`
+with pure functions that query Mongo; the route handlers become thin
+wrappers; unit tests on that layer.
+**Depends on:** T-05, T-13
+**Model:** `opusplan` · **Nightly:** no
+
+### [ ] T-31 · Migrate the listings to Server Components
+**Why:** 44 files with `'use client'` and the app calling its own API
+over HTTP. On Vercel that's the server calling itself: latency and an
+extra function per request.
+**Done when:** `/antojos`, `/marketplace`, and `/antojos/[id]` render
+server-side, querying `src/server/` directly; filters keep working via
+searchParams; e2e green; a before/after Lighthouse comparison in the PR.
+**Depends on:** T-30
+**Model:** `opusplan` · **Nightly:** no
+
+### [ ] T-32 · Mutations via Server Actions
+**Done when:** creating, editing, and deleting a product go through
+Server Actions with Zod validation and `revalidatePath`;
+`services/api.js` and `services/apiToken.js` are removed.
+**Depends on:** T-30, T-10
+**Model:** `opusplan` · **Nightly:** no
+
+### [x] T-33 · Deduplicate components
+**Why:** `ProductCard`/`ProductCardAV` differ by 32 lines,
+`SellerCard`/`SellerCardAV` by 10, `TableSche`/`TableSchema` by 63.
+**`TableSche`/`TableSchema` no longer applied:** `TableSche.jsx` had 0
+importers and was deleted in T-34. Only `TableSchema.jsx` remains, no
+duplicate left to merge.
+**Done:** `ProductCard` and `SellerCard` now accept a `variant`
+(`'standalone'` by default, `'embedded'`); `ProductCardAV` and
+`SellerCardAV` removed and their two call sites (product editing, seller
+admin) point at the single component.
+**e2e's real limit, and how it was covered:** the e2e's original four
+screens don't exercise the `'embedded'` variant of either component —
+only product editing and the admin panel use it, both authenticated
+routes Playwright can't visit yet (no simulated Clerk session). Added a
+fifth screen (`/antojos/sellers/list`) that does exercise `SellerCard` for
+real, and the two variants' className logic was extracted into
+`src/lib/card-variant.js` — a JSX-free module on its own — with unit tests
+that do cover `'embedded'`, verified by mutation.
+**Finding, not fixed:** writing the fifth screen showed — first
+incorrectly, then corrected — that `GET /api/sellers` **doesn't filter by
+`approved`**: it returns every seller. The public listing only looks
+clean because `SellerGrid.jsx` filters client-side; anyone calling the API
+directly also sees pending-approval sellers. Not as serious as T-10b (no
+write involved, just reading non-sensitive data), but the same family of
+problem: a business rule that only lives on the client.
+**Model:** `sonnet` · **Nightly:** yes (the e2e with screenshots is the
+safety net)
+
+### [x] T-34 · Delete the dead code
+**Why:** nobody imports `SellerContext2.js` (everyone uses
+`SellerContext`); same for `RegisterSellerForm.jsx`, `pqrsService.js`,
+`allowedIPs.js`, and `favoriteSchema.js` — the last one also does
+`module.exports = mongoose.model(...)` without the
+`mongoose.models ||` guard, so it would blow up with `OverwriteModelError`
+if anyone imported it.
+**Gotten ahead of in T-01:** `src/app/api/categories/route.js` and
+`src/utils/models/categorySchema.js` were already removed. Nobody imported
+them, and categories come from `utils/resources/categories.js` and
+`utils/categoriesList.js`; also that endpoint was the only one with a
+`GET()` taking no arguments, so Next prerendered it at build time and it
+broke.
+**New candidate:** `src/utils/lib/clerkUser.js`, 0 importers. Found in
+T-05, where it also turned out not to compile under TS.
+**Done when:** deleted, with the reference search documented in the PR;
+`knip` or similar added to CI so it doesn't accumulate again.
+**Deleted (10):** the five from the list, plus `lib/clerkUser.js` (T-05)
+and four knip found: `TableSche.jsx`, `services/auth/server/seller.js`,
+`services/auth/server/user.js`, and `utils/auth/client/seller.js`. The
+last two were also broken: they imported symbols their source doesn't
+export.
+**knip only fails the build on dead files.** The 9 unused dependencies it
+flags belong to **T-35** (next-auth, bcryptjs, jsonwebtoken, cookies, and
+whichever image provider gets dropped), and the 10 unused exports belong
+to **T-30**, once the data layer absorbs the services. They stay as
+visible warnings in the log until then.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-35 · A single image provider
+**Why:** Cloudinary and ImageKit are both installed, each with its own
+route. `next-auth`, `bcryptjs`, `jsonwebtoken`, and `cookies` are also
+leftovers from before Clerk.
+**Done when:** one is chosen, the other is removed along with its route
+and dependency; `package.json` with no unused dependencies.
+**Model:** `sonnet` · **Nightly:** no (choosing the provider is yours)
+
+### [ ] T-36 · A real README
+**Why:** it's still `create-next-app`'s, with a stray `## Yes`.
+**Done when:** what the project is, screenshots, stack, environment
+variables, how to run it, how to run tests, and a section on the agentic
+pipeline. This is the file recruiters will read.
+**Update 2026-09-06:** used to say "write it yourself, it's your
+showcase" — the human decided to delegate it to an agent. It's still the
+showcase for recruiters, so if the result doesn't land, it gets rewritten
+by hand afterward; no harm in trying an agent first.
+**Model:** `sonnet` · **Nightly:** yes
+
+---
+
+## Phase 4 — New functionality
+
+From here on, it's building on solid ground. Each one is a project of its
+own, and all of them are design work, so all of them are yours.
+
+### [ ] T-40 · Order model
+**Why:** there's no `Order`. Today the flow ends in a WhatsApp link, so
+there's no data on anything.
+**Done when:** an `Order` schema with a state machine
 (`pending → accepted → preparing → delivering → completed | cancelled`),
-transiciones validadas en un solo sitio, historial de cambios de estado y tests
-que prueben que una transición inválida se rechaza.
-**Modelo:** `opusplan` · **Nocturno:** no
+transitions validated in a single place, a state-change history, and
+tests proving an invalid transition gets rejected.
+**Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-41 · Chat comprador ↔ vendedor
-**Por qué:** WhatsApp saca al usuario de la app y se pierde el contexto del
-pedido.
-**Hecho cuando:** hilo por pedido, historial persistido, indicador de no leídos.
-Empezar con polling cada 5 s; migrar a SSE o WebSocket solo si el polling
-estorba de verdad. Medir antes de complicar.
-**Depende de:** T-40
-**Modelo:** `opusplan` · **Nocturno:** no
+### [ ] T-41 · Buyer ↔ seller chat
+**Why:** WhatsApp takes the user out of the app and the order's context
+gets lost.
+**Done when:** one thread per order, persisted history, unread indicator.
+Start with polling every 5s; migrate to SSE or WebSocket only if polling
+genuinely becomes a problem. Measure before adding complexity.
+**Depends on:** T-40
+**Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-42 · Mapa del campus y estado en vivo
-**Por qué:** era la función que nunca se hizo. El problema difícil no es el mapa,
-es de dónde sale la ubicación: los vendedores caminan por el campus y depender de
-GPS en una pestaña abierta es frágil.
-**Hecho cuando (v1, sin GPS):** puntos de entrega fijos del campus con
-coordenadas conocidas; el vendedor declara su punto y su estado; mapa con
-MapLibre + tiles de OpenStreetMap mostrando pines. Cubre casi todo el valor sin
-tocar geolocalización.
-**v2 (opcional):** ubicación real durante `delivering`, con consentimiento
-explícito, y que se apague sola al completar el pedido.
-**Depende de:** T-40
-**Modelo:** `opusplan` · **Nocturno:** no
+### [ ] T-42 · Campus map and live status
+**Why:** it was the feature that never got built. The hard problem isn't
+the map, it's where the location comes from: sellers walk around campus,
+and relying on GPS in an open tab is fragile.
+**Done when (v1, no GPS):** fixed campus delivery points with known
+coordinates; the seller declares their point and status; a map with
+MapLibre + OpenStreetMap tiles showing pins. Covers almost all the value
+without touching geolocation.
+**v2 (optional):** real location during `delivering`, with explicit
+consent, that turns itself off once the order completes.
+**Depends on:** T-40
+**Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-43 · Notificaciones push
-**Por qué:** ya hay `manifest.json`, o sea que la PWA está a medio camino.
-**Hecho cuando:** Web Push para cambios de estado de pedido y mensajes nuevos;
-permisos pedidos en el momento correcto, no al cargar.
-**Depende de:** T-40
-**Modelo:** `opusplan` · **Nocturno:** no
+### [ ] T-43 · Push notifications
+**Why:** `manifest.json` already exists, so the PWA is halfway there.
+**Done when:** Web Push for order status changes and new messages;
+permissions requested at the right moment, not on load.
+**Depends on:** T-40
+**Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-44 · Panel del vendedor
-**Hecho cuando:** ventas por día, productos más pedidos, horas pico, tasa de
-cancelación. Lectura sobre `Order`, sin escribir nada nuevo.
-**Depende de:** T-40
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [ ] T-44 · Seller panel
+**Done when:** sales per day, top-ordered products, peak hours,
+cancellation rate. Reads from `Order`, writes nothing new.
+**Depends on:** T-40
+**Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-45 · Reseñas
-**Hecho cuando:** calificación por pedido completado (no por producto suelto,
-para evitar reseñas falsas), promedio en la tarjeta del vendedor, moderación
-básica.
-**Depende de:** T-40
-**Modelo:** `opusplan` · **Nocturno:** no
+### [ ] T-45 · Reviews
+**Done when:** a rating per completed order (not per standalone product,
+to avoid fake reviews), an average on the seller's card, basic
+moderation.
+**Depends on:** T-40
+**Model:** `opusplan` · **Nightly:** no
 
-### [x] T-46 · Internacionalización (español e inglés)
-**Por qué:** todo el copy está incrustado en español dentro de los componentes.
-En una universidad con estudiantes de intercambio, el inglés amplía el público —
-y para el portafolio demuestra manejo de rutas por locale y de contenido
-dinámico, que es lo que hace difícil de verdad esta tarea.
-**Ojo con el tamaño:** hay copy en más de 40 componentes. Hacerlo de una vez
-produce un diff imposible de revisar y se salta el límite de ~15 archivos.
-**Hecho (v1, solo el andamiaje):** `next-intl` configurado; middleware que
-negocia el locale solo para `/about(.*)` y `/en/about(.*)` y convive con
-`clerkMiddleware` (el resto de rutas no pasa por `next-intl` todavía, así que
-siguen igual que antes); Clerk cambia de `esMX` a `enUS` según el locale
-(resuelto en el layout raíz vía `getLocale()`, así que aplica a toda la app,
-migrada o no); diccionarios en `messages/{es,en}.json`; `/about` migrado como
-pantalla de prueba (movida a `src/app/[locale]/about/`); e2e en
-`tests/e2e/i18n.spec.js` recorriéndola en los dos idiomas.
-**Dos decisiones que no son obvias:** `localeDetection: false` — si no, el
-`Accept-Language` del navegador decide el idioma de `/about` sin que el
-visitante lo pida, e inconsistente con el resto de la app (que siempre es
-español por defecto). Y el selector de idioma usa `<a href>` normal, no el
-`Link` de `next-intl`: el `NextIntlClientProvider` vive en el layout raíz, que
-Next.js no vuelve a ejecutar en una navegación cliente-a-cliente dentro del
-mismo árbol, así que una navegación suave dejaba la traducción pegada al
-locale de la carga inicial. Con navegación completa se evita sin duplicar el
-provider en dos layouts.
-**No se movieron las +25 rutas restantes bajo `[locale]/`** — habría pasado el
-límite de ~15 archivos de un PR. Quedan como estaban, en español, sin prefijo.
-**Después, una tarea por zona:** listado, detalle de producto, perfil de
-vendedor, formularios, panel de vendedor. Cada una con su PR.
-**Lo que no resuelve:** el contenido que escriben los vendedores (nombres y
-descripciones de producto) seguirá en el idioma en que lo escribieron. Traducirlo
-es otra decisión de producto, no de i18n.
-**Depende de:** T-04, que da la red para comprobar que no se rompe nada visual
-**Modelo:** `opusplan` — la negociación de locale junto al middleware de Clerk
-tiene trampa
-**Nocturno:** no
+### [x] T-46 · Internationalization (Spanish and English)
+**Why:** all the copy is hardcoded in Spanish inside the components. At a
+university with exchange students, English widens the audience — and for
+the portfolio it demonstrates handling locale-based routes and dynamic
+content, which is what makes this task genuinely hard.
+**Watch the size:** there's copy in more than 40 components. Doing it all
+at once produces an unreviewable diff and blows past the ~15-file limit.
+**Done (v1, scaffolding only):** `next-intl` configured; middleware that
+negotiates locale only for `/about(.*)` and `/en/about(.*)` and coexists
+with `clerkMiddleware` (the rest of the routes don't go through
+`next-intl` yet, so they stay as they were); Clerk switches from `esMX` to
+`enUS` based on locale (resolved in the root layout via `getLocale()`, so
+it applies to the whole app, migrated or not); dictionaries in
+`messages/{es,en}.json`; `/about` migrated as the proof screen (moved to
+`src/app/[locale]/about/`); e2e in `tests/e2e/i18n.spec.js` walking it in
+both languages.
+**Two non-obvious decisions:** `localeDetection: false` — otherwise the
+browser's `Accept-Language` decides `/about`'s language without the
+visitor asking for it, inconsistent with the rest of the app (which
+always defaults to Spanish). And the language switcher uses a plain
+`<a href>`, not `next-intl`'s `Link`: `NextIntlClientProvider` lives in
+the root layout, which Next.js doesn't re-run on a client-to-client
+navigation within the same tree, so a soft navigation left the
+translation stuck on the initial locale. A full navigation avoids that
+without duplicating the provider across two layouts.
+**The remaining +25 routes weren't moved under `[locale]/`** — that
+would have blown past the ~15-file PR limit. They stay as they were, in
+Spanish, with no prefix.
+**Afterward, one task per zone:** listing, product detail, seller
+profile, forms, seller panel. Each with its own PR.
+**What this doesn't solve:** content sellers write themselves (product
+names and descriptions) will stay in whatever language they wrote it in.
+Translating that is a separate product decision, not an i18n one.
+**Depends on:** T-04, which provides the safety net to check nothing
+visual breaks
+**Model:** `opusplan` — negotiating locale alongside Clerk's middleware
+has a catch
+**Nightly:** no
 
 ### [ ] T-68 · Favorites (blocked on a product decision)
 **Why:** a "save for later" feature was started once — `favoriteSchema.js` —
@@ -979,51 +1030,51 @@ configuration · **Nightly:** no
 
 ---
 
-## Fase 5 — IA como funcionalidad, no como herramienta
+## Phase 5 — AI as a feature, not as a tool
 
-Distinto de usar un agente para escribir el código: aquí la IA es parte del
-producto. Es lo que diferencia el portafolio.
+Different from using an agent to write the code: here AI is part of the
+product. This is what sets the portfolio apart.
 
-### [ ] T-50 · Búsqueda semántica
-**Por qué:** hoy "algo dulce y barato" no encuentra nada.
-**Hecho cuando:** embeddings de nombre + descripción + categoría guardados en el
-documento, búsqueda vectorial de Atlas, e híbrido con la búsqueda por texto.
-Evaluación con 20 consultas de referencia y sus resultados esperados, para poder
-demostrar que mejoró.
-**Depende de:** T-24
-**Modelo:** `opus` — dominio nuevo, decisiones no obvias
-**Nocturno:** no
+### [ ] T-50 · Semantic search
+**Why:** today "something sweet and cheap" finds nothing.
+**Done when:** embeddings of name + description + category stored on the
+document, Atlas vector search, hybrid with text search. Evaluated with 20
+reference queries and their expected results, to be able to demonstrate
+the improvement.
+**Depends on:** T-24
+**Model:** `opus` — new domain, non-obvious decisions
+**Nightly:** no
 
-### [ ] T-51 · Alta de producto desde una foto
-**Por qué:** publicar un producto son hoy 6 campos a mano; es la fricción número
-uno para un vendedor entre clases.
-**Hecho cuando:** el vendedor sube la foto y un modelo propone nombre,
-descripción, categoría y rango de precio; **todo editable antes de guardar**, sin
-autoguardado. Fallback manual si la API falla.
-**Modelo:** `opus` · **Nocturno:** no
+### [ ] T-51 · Add a product from a photo
+**Why:** publishing a product today is 6 fields filled by hand; it's the
+number-one source of friction for a seller between classes.
+**Done when:** the seller uploads the photo and a model proposes name,
+description, category, and price range; **everything editable before
+saving**, no autosave. Manual fallback if the API fails.
+**Model:** `opus` · **Nightly:** no
 
-### [ ] T-52 · Moderación de publicaciones
-**Hecho cuando:** revisión automática de foto y texto al publicar, con cola de
-revisión humana para los casos dudosos en lugar de bloqueo automático.
-**Modelo:** `opusplan` · **Nocturno:** no
+### [ ] T-52 · Listing moderation
+**Done when:** automatic review of photo and text on publish, with a
+human-review queue for uncertain cases instead of automatic blocking.
+**Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-53 · Evaluaciones de las funciones de IA
-**Por qué:** sin evals, "mejoré el prompt" es una opinión. Esto es lo que separa
-un demo de un sistema.
-**Hecho cuando:** un set de casos con salida esperada para T-50 y T-51, un
-comando que lo corre y reporta métricas, y el CI ejecutándolo en los PRs que
-tocan esas rutas.
-**Depende de:** T-50, T-51
-**Modelo:** `opus` · **Nocturno:** no
+### [ ] T-53 · Evals for the AI features
+**Why:** without evals, "I improved the prompt" is just an opinion. This
+is what separates a demo from a system.
+**Done when:** a case set with expected output for T-50 and T-51, a
+command that runs it and reports metrics, and CI running it on PRs that
+touch those routes.
+**Depends on:** T-50, T-51
+**Model:** `opus` · **Nightly:** no
 
 ---
 
-## Fase 6 — Operación
+## Phase 6 — Operations
 
-### [ ] T-60 · Observabilidad
-**Hecho cuando:** Sentry para errores de cliente y servidor, logs estructurados,
-y una alerta cuando la tasa de error del deploy supere un umbral.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [ ] T-60 · Observability
+**Done when:** Sentry for client and server errors, structured logs, and
+an alert when the deploy's error rate crosses a threshold.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-61 · Performance and accessibility budget
 **Why:** Lighthouse CI on every PR with thresholds that break the build;
@@ -1087,50 +1138,54 @@ no new dependency) generating entries for the static public pages plus
 one per approved seller and their products, read straight from Mongo.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-63 · Separar los entornos (base de datos y Clerk)
-> **El riesgo estructural más grande del proyecto ahora mismo.** No lo puede
-> hacer un agente: son decisiones de infraestructura y cuestan dinero.
+### [ ] T-63 · Separate the environments (database and Clerk)
+> **The biggest structural risk in the project right now.** An agent can't
+> do this: these are infrastructure decisions and they cost money.
 
-**Medido con el CLI de Vercel y contra los servicios reales (T-12g):**
+**Measured with the Vercel CLI and against the real services (T-12g):**
 
 | | Production | Preview | Development |
 |---|---|---|---|
-| `MONGO_URI` | `cluster0.fibip…/mercampus_products` | **el mismo cluster, la misma base, el mismo usuario** | el mismo |
-| Clerk | `sacred-shrew-44.clerk.accounts.dev` | **la misma instancia** (`CLERK_SECRET_KEY` idéntica) | la misma |
+| `MONGO_URI` | `cluster0.fibip…/mercampus_products` | **the same cluster, the same database, the same user** | the same |
+| Clerk | `sacred-shrew-44.clerk.accounts.dev` | **the same instance** (identical `CLERK_SECRET_KEY`) | the same |
 
-Vercel tiene dos entradas separadas de `CLERK_SECRET_KEY` y
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (una para Preview, otra para Production),
-pero **contienen el mismo valor**, así que la separación es aparente.
+Vercel has two separate entries for `CLERK_SECRET_KEY` and
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (one for Preview, one for
+Production), but **they hold the same value**, so the separation is only
+apparent.
 
-**Qué implica, en concreto:**
-1. **Cualquier deployment de preview escribe en la base de producción.** El
-   preview de `agent/develop` incluido. No hay red de seguridad de datos entre lo
-   que prueba el agente y lo que ven los usuarios.
-2. **El sitio corre sobre la instancia de _desarrollo_ de Clerk, y así se queda
-   a propósito (T-64).** La de producción existe y sus usuarios están intactos,
-   pero depende de un dominio (`mercampus.com`) que el equipo decidió no
-   renovar. No es una tarea pendiente, es la decisión tomada.
-3. `npm run seed` con el `.env` actual borraría la base de producción. La guarda
-   de `--yes` fuera de localhost es lo único que lo impide: no la quites.
+**What this means, concretely:**
+1. **Any preview deployment writes to the production database.** Including
+   `agent/develop`'s preview. There's no data safety net between what the
+   agent tests and what users see.
+2. **The site runs on Clerk's _development_ instance, and stays that way on
+   purpose (T-64).** The production one exists and its users are intact,
+   but it depends on a domain (`mercampus.com`) the team decided not to
+   renew. It isn't a pending task, it's the decision that was made.
+3. `npm run seed` with the current `.env` would wipe the production
+   database. The `--yes` guard outside localhost is the only thing
+   preventing that: don't remove it.
 
-**Hecho cuando:** hay un cluster de Mongo aparte para preview/desarrollo; el
-`.env` de trabajo apunta a ese; y el `.env.example` documenta cuál es cuál.
-**Ya no aplica** la mitad de Clerk de esta tarea (una instancia de producción
-aparte): ver T-64. El punto 1 (Mongo) sigue siendo el riesgo real y pendiente.
-**Modelo:** `opusplan` · **Nocturno:** no (infraestructura y coste)
+**Done when:** there's a separate Mongo cluster for preview/development;
+the working `.env` points at it; and `.env.example` documents which is
+which.
+**No longer applies:** the Clerk half of this task (a separate production
+instance) — see T-64. Point 1 (Mongo) is still the real, pending risk.
+**Model:** `opusplan` · **Nightly:** no (infrastructure and cost)
 
-### [x] T-12h · Guarda de instancia en el backfill
-> **Corrige un error mío que habría dañado datos reales.** En T-12f di el
-> backfill por listo diciendo "11 de 11 se resuelven solas". Esas 11 son las de
-> una instancia de **desarrollo**. La de producción tiene ~70 cuentas.
+### [x] T-12h · Instance guard in the backfill
+> **Fixes a mistake of mine that would have damaged real data.** In T-12f
+> I called the backfill done, saying "11 of 11 resolve on their own."
+> Those 11 belong to a **development** instance. Production has ~70
+> accounts.
 
-**Por qué:** un `clerkId` solo significa algo dentro de su instancia. Correr el
-backfill con las claves del `.env` habría escrito ids de la instancia de
-desarrollo sobre usuarios reales: ids que ninguna sesión va a presentar nunca y
-que, al ser `clerkId` un campo `unique`, dejan el hueco ocupado con basura y
-obligan a limpiarlo antes de poder enlazar bien.
-**Lo que confirma que las claves son las equivocadas** (`GET /v1/instance` con
-el secreto del `.env`, que es **el mismo** que tiene Vercel en Production):
+**Why:** a `clerkId` only means something within its own instance.
+Running the backfill with `.env`'s keys would have written development-
+instance ids over real users: ids no session will ever present, and since
+`clerkId` is a `unique` field, that leaves the slot occupied by garbage
+that has to be cleaned up before it can link correctly.
+**What confirms the keys are the wrong ones** (`GET /v1/instance` with
+`.env`'s secret, which is **the same one** Vercel has in Production):
 
 ```
 environment_type: "development"
@@ -1138,156 +1193,169 @@ id: ins_2mH0ZTsikZ8SSYtT1h3WhwJB5Cd
 users count: 11
 ```
 
-Y `GET /v1/domains` sobre esa instancia lista **dos** dominios: el suyo
-(`sacred-shrew-44.clerk.accounts.dev`) y `mercampus.vercel.app`, este último
-apuntando a un frontend distinto (`pleased-gobbler-74.clerk.accounts.dev`,
-creado 2026-01-28). Es decir, **hay más de una instancia en juego** y el sitio
-desplegado carga la de desarrollo: la única clave que aparece en el HTML de
-`mercampus.vercel.app/auth/login` es la `pk_test_` de `sacred-shrew-44`.
-**Hecho:** `comprobarInstancia()` se ejecuta antes de nada y (a) rechaza una
-instancia que no sea `production` salvo `--permitir-desarrollo`, y (b) si la
-base ya tiene enlaces, comprueba contra Clerk que pertenezcan a **esta**
-instancia, para no mezclar dos. El ensayo y `--check` avisan en vez de plantarse
-—diagnosticar es justo para lo que sirven— pero `--apply` se planta antes de
-tocar la base, y `--check` sale con código 1.
-**Comprobado en real:** el ensayo contra producción imprime el aviso, `--check`
-devuelve 1, y los usuarios siguen con **0** `clerkId`. Cinco tests nuevos.
-**De paso:** `npm run migrate:clerk-id` no cargaba `.env` (fallo al empaquetarlo
-en T-12e). A `npm run seed` **no** se le añade `--env-file` a propósito: que no
-cargue sola la URI de producción es una protección, no un olvido.
-**Corrección (T-64): sí hay CLI de Clerk — `npm install -g clerk`.** Lo que no
-existe es el paquete `@clerk/cli`; el real se llama `clerk` a secas. Se instaló
-con `winget`, que reportó éxito pero no escribió nada (la cuenta no es
-administradora y el MSI necesita elevación); funcionó el ZIP portátil
-descargado directo. `clerk users list --instance prod`, `clerk env pull`,
-`clerk config pull` reemplazan buena parte de las llamadas a mano con `fetch`
-de este PR — quien retome T-64/T-63 debería usar el CLI en vez de repetir eso.
-**Modelo:** `opus` · **Nocturno:** no
+And `GET /v1/domains` on that instance lists **two** domains: its own
+(`sacred-shrew-44.clerk.accounts.dev`) and `mercampus.vercel.app`, the
+latter pointing at a different frontend
+(`pleased-gobbler-74.clerk.accounts.dev`, created 2026-01-28). In other
+words, **more than one instance is in play**, and the deployed site loads
+the development one: the only key that appears in
+`mercampus.vercel.app/auth/login`'s HTML is `sacred-shrew-44`'s `pk_test_`.
+**Done:** `checkInstance()` runs before anything else and (a) rejects any
+instance that isn't `production` unless `--allow-development`, and (b) if
+the database already has links, checks against Clerk that they belong to
+**this** instance, to avoid mixing two. The dry run and `--check` warn
+instead of refusing to proceed — diagnosing is exactly what they're for
+— but `--apply` refuses to touch the database, and `--check` exits with
+code 1.
+**Confirmed for real:** the dry run against production prints the
+warning, `--check` returns 1, and users are still at **0** `clerkId`.
+Five new tests.
+**Along the way:** `npm run migrate:clerk-id` wasn't loading `.env` (a
+bundling mistake from T-12e). `npm run seed` deliberately does **not**
+get `--env-file` added: not loading the production URI on its own is a
+protection, not an oversight.
+**Correction (T-64): yes, there is a Clerk CLI — `npm install -g clerk`.**
+What doesn't exist is the `@clerk/cli` package; the real one is just
+called `clerk`. Installing it with `winget` reported success but wrote
+nothing (the account isn't an administrator and the MSI needs
+elevation); the portable ZIP download worked. `clerk users list
+--instance prod`, `clerk env pull`, `clerk config pull` replace a good
+chunk of this PR's hand-rolled `fetch` calls — whoever picks up T-64/T-63
+next should use the CLI instead of repeating that.
+**Model:** `opus` · **Nightly:** no
 
-### [x] T-64 · Apuntar la aplicación a la instancia correcta de Clerk — INTENTADO Y REVERTIDO
-**Corrección (T-12h): la pregunta no era "dónde están las cuentas que faltan".
-Las cuentas estaban.** Estaban en la instancia de **producción** de Clerk (70,
-confirmadas una a una con `clerk users list --instance prod`, coinciden 100%
-con los 76 emails únicos de Mongo). El sitio desplegado autenticaba contra la
-de **desarrollo** (11 cuentas).
-**Se intentó el cambio completo** (backfill `--apply` contra producción,
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`/`CLERK_SECRET_KEY` de Production a
-`pk_live_`/`sk_live_`, webhook nuevo en la instancia de producción, redeploy) y
-**tumbó el sitio en producción**: `clerk.mercampus.com` (el Frontend API de esa
-instancia) no resuelve, porque está atado al dominio `mercampus.com`, que
-**expiró en enero de 2026** y el equipo decidió no renovarlo (sin retorno que
-justifique el gasto). Sin ese dominio, ninguna instancia de producción de Clerk
-puede cargar en el navegador — **no es un problema de configuración, es que la
-instancia de producción no tiene dónde vivir.**
-**Revertido de inmediato:** claves de Production devueltas a las de desarrollo,
-redeploy, sitio verificado en 200 con `sacred-shrew-44.clerk.accounts.dev`
-cargando bien.
-**Investigado y descartado:** usar el propio `*.clerk.accounts.dev` de Clerk
-como dominio de producción. Confirmado con la documentación oficial de
-Clerk — *"Production instances require that you associate a production
-domain... You will need to have a domain you own"* — es exclusivo de
-instancias `development`, Clerk lo bloquea técnicamente, no es negociable.
-**Decisión del equipo, con el dato que la sustenta:** lo más probable es no
-tener dominio propio en 1-3 años. La actividad real de usuarios (últimos
-registros y último login de un estudiante/vendedor real, no del equipo) se
-detuvo en seco el **2025-09-30**; el único acceso posterior fue del equipo
-(2025-10-23, 2026-01-26). Con ese dato, **se decide quedar corriendo sobre la
-instancia de desarrollo indefinidamente** en vez de perseguir un dominio.
-Sigue T-64b para la parte de datos que esto deja pendiente.
-**Modelo:** `opus` · **Nocturno:** no
+### [x] T-64 · Point the app at the correct Clerk instance — ATTEMPTED AND REVERTED
+**Correction (T-12h): the question wasn't "where are the missing
+accounts." The accounts were there.** They were in Clerk's **production**
+instance (70, confirmed one by one with `clerk users list --instance
+prod`, matching 100% of Mongo's 76 unique emails). The deployed site was
+authenticating against the **development** one (11 accounts).
+**The full switch was attempted** (backfill `--apply` against production,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`/`CLERK_SECRET_KEY` in Production
+switched to `pk_live_`/`sk_live_`, a new webhook on the production
+instance, redeploy) and **it took the production site down**:
+`clerk.mercampus.com` (that instance's Frontend API) doesn't resolve,
+because it's tied to the `mercampus.com` domain, which **expired in
+January 2026** and the team decided not to renew (no return that justifies
+the cost). Without that domain, no Clerk production instance can load in
+the browser — **it isn't a configuration problem, it's that the
+production instance has nowhere to live.**
+**Reverted immediately:** Production's keys restored to the development
+ones, redeployed, site verified at 200 with
+`sacred-shrew-44.clerk.accounts.dev` loading fine.
+**Investigated and ruled out:** using Clerk's own `*.clerk.accounts.dev`
+as the production domain. Confirmed against Clerk's official
+documentation — *"Production instances require that you associate a
+production domain... You will need to have a domain you own"* — that's
+exclusive to `development` instances, Clerk blocks it technically, it's
+not negotiable.
+**The team's decision, with the data behind it:** most likely there won't
+be an owned domain for 1-3 years. Real user activity (the last sign-ups
+and last login from an actual student/seller, not the team) stopped cold
+on **2025-09-30**; the only access after that was the team's own
+(2025-10-23, 2026-01-26). Given that, **the decision is to keep running
+on the development instance indefinitely** instead of chasing a domain.
+T-64b follows up on the data question this leaves open.
+**Model:** `opus` · **Nightly:** no
 
-### [x] T-64b · Recuperación de cuenta para los usuarios de la instancia vieja
-**Por qué:** de los 79 `User` en Mongo, **63 solo existen en la instancia de
-producción** de Clerk (7 más están en ambas — el equipo probando). Como Clerk
-no comparte usuarios entre instancias, esas 63 personas no pueden iniciar
-sesión con su cuenta de siempre: si se registran de nuevo en desarrollo, Clerk
-les da un `clerkId` nuevo que no es el que ya está en su `User` de Mongo (que
-apunta a la instancia de producción), así que el webhook les crea un `User`
-**nuevo y vacío** — entran como comprador sin su tienda ni sus productos, que
-siguen existiendo pero huérfanos.
-**Por qué no se resuelve dentro del webhook:** cruzar por email en el momento
-de la escritura es exactamente la fragilidad que T-12c quitó (el email es
-mutable y, con el `unique` aún comentado en T-11, ni siquiera único). Con un
-puñado de personas a lo largo de 1-3 años, no hace falta automatizarlo — y
-automatizarlo sería la clase de "migración de datos en caliente" que la regla 4
-de CLAUDE.md pide evitar.
-**Bien tratado, esto es reversible en las dos direcciones:** el Backend API de
-Clerk **no depende del dominio** — funcionó sin problema durante todo el
-incidente de T-64. Los usuarios que nunca se reclamen mantienen su `clerkId`
-de producción tal cual (ya se les puso en T-12h/T-12f), listo por si algún día
-se recupera un dominio. Solo hace falta re-mapear a quien sí se reclame.
-**Hecho cuando:** un script (`scripts/reclaim-account.mjs`, junto a
-`backfill-clerk-id.mjs`) que, dado el `clerkId` nuevo de alguien que se acaba
-de registrar y su email, busca su `User`/`Seller` viejo entre el snapshot de
-las 70 cuentas de producción, y si hay coincidencia exacta de email, actualiza
-el `clerkId` del `User` viejo al nuevo (conservando `sellerId`, `role`, y todo
-lo demás) en vez de dejar el `User` nuevo y vacío que creó el webhook. Ensayo
-por defecto, `--apply` explícito, igual que el resto de `scripts/`. Tests con
-Mongo en memoria: caso feliz, caso sin coincidencia (no toca nada), caso con
-el `clerkId` nuevo ya usado por otro documento.
-**Fuera de alcance a propósito:** una pantalla de autoservicio ("recupera tu
-cuenta") no vale la pena para el volumen esperado. Si esto se vuelve frecuente,
-reconsiderar.
-**Hecho:** `scripts/reclaim-account.mjs` (`npm run reclaim:account -- --email
-<email> --clerk-id <id> [--apply]`). Dado el email y el `clerkId` nuevo, busca
-entre los `User` con ese email (comparación sin distinguir mayúsculas, porque
-el schema no lo normaliza) el que tenga un `clerkId` distinto — ese es el
-viejo, con `sellerId`/`role`/lo demás — y le pone el `clerkId` nuevo, borrando
-de paso el `User` vacío que dejó el webhook. Estados: `reclamado`,
-`sin-coincidencia` (nada que hacer), `ya-reclamado` (idempotente), `conflicto`
-(el `clerkId` nuevo ya es de otro email — no toca nada). Seis tests con Mongo
-en memoria.
-**Depende de:** T-64
-**Modelo:** `opus` · **Nocturno:** no
+### [x] T-64b · Account recovery for users on the old instance
+**Why:** of the 79 `User` documents in Mongo, **63 exist only in Clerk's
+production** instance (7 more are in both — the team testing). Since
+Clerk doesn't share users across instances, those 63 people can't sign in
+with their usual account: if they sign up again in development, Clerk
+gives them a new `clerkId` that doesn't match the one already on their
+Mongo `User` (which points at the production instance), so the webhook
+creates them a **new, empty** `User` — they come in as a buyer with no
+store and no products, which still exist but are now orphaned.
+**Why this doesn't get solved inside the webhook:** matching by email at
+write time is exactly the fragility T-12c removed (email is mutable and,
+with `unique` still commented out in T-11, not even unique). With a
+handful of people over 1-3 years, it doesn't need automating — and
+automating it would be the kind of "hot data migration" CLAUDE.md's rule
+4 asks to avoid.
+**Handled properly, this is reversible both ways:** Clerk's Backend API
+**doesn't depend on the domain** — it worked fine throughout the whole
+T-64 incident. Users who never claim their account keep their production
+`clerkId` as is (already set in T-12h/T-12f), ready in case a domain ever
+comes back. Only the ones who do claim need re-mapping.
+**Done when:** a script (`scripts/reclaim-account.mjs`, alongside
+`backfill-clerk-id.mjs`) that, given the new `clerkId` of someone who just
+signed up and their email, looks for their old `User`/`Seller` among the
+snapshot of the 70 production accounts, and on an exact email match,
+updates the old `User`'s `clerkId` to the new one (keeping `sellerId`,
+`role`, and everything else) instead of leaving the empty new `User` the
+webhook created. Dry run by default, explicit `--apply`, same as the rest
+of `scripts/`. Tests with in-memory Mongo: happy path, no-match case
+(touches nothing), and a case where the new `clerkId` is already used by
+another document.
+**Deliberately out of scope:** a self-service "recover your account"
+screen isn't worth it for the expected volume. Reconsider if this becomes
+frequent.
+**Done:** `scripts/reclaim-account.mjs` (`npm run reclaim:account --
+--email <email> --clerk-id <id> [--apply]`). Given the email and the new
+`clerkId`, it searches among the `User`s with that email
+(case-insensitive comparison, since the schema doesn't normalize it) for
+the one with a different `clerkId` — that's the old one, with
+`sellerId`/`role`/everything else — and sets it to the new `clerkId`,
+deleting the empty `User` the webhook left behind along the way. States:
+`reclaimed`, `no-match` (nothing to do), `already-reclaimed`
+(idempotent), `conflict` (the new `clerkId` already belongs to a
+different email — touches nothing). Six tests with in-memory Mongo.
+**Depends on:** T-64
+**Model:** `opus` · **Nightly:** no
 
-### [x] T-64c · Google login — ya estaba armado y ya funciona
-**Hallazgo, no trabajo:** `ProvidersButton.jsx` ya existe, ya está importado en
-`SignInForm.jsx`/`SignUpForm.jsx`, y ya usa `signIn.authenticateWithRedirect`
-con `oauth_google` y `oauth_microsoft`. En la instancia de desarrollo, Google
-está `enabled: true` con credenciales propias ya configuradas (no las
-compartidas de Clerk) — alguien del equipo lo dejó listo hace tiempo.
-Verificado sirviendo en `mercampus.vercel.app/auth/login` ahora mismo.
-**Por qué nunca se vio funcionar:** hasta este cambio, el sitio corría con las
-claves correctas de todos modos (las de desarrollo, sin querer), así que esto
-ya funcionaba; simplemente nadie lo probó después de que el dominio de
-producción se rompiera y quedara la duda.
-**No hay tarea que hacer aquí.** Dejado documentado para que nadie vuelva a
-preguntarse si Google login "es cosa de producción" — no lo es, en Clerk
-`development` viene con credenciales propias o compartidas sin configurar
-nada, y `production` es lo que exige credenciales propias verificadas por
-Google.
+### [x] T-64c · Google login — was already wired up and already works
+**Finding, not work:** `ProvidersButton.jsx` already exists, is already
+imported in `SignInForm.jsx`/`SignUpForm.jsx`, and already uses
+`signIn.authenticateWithRedirect` with `oauth_google` and
+`oauth_microsoft`. On the development instance, Google is
+`enabled: true` with its own credentials already configured (not Clerk's
+shared ones) — someone on the team set this up a while back. Verified
+live on `mercampus.vercel.app/auth/login` right now.
+**Why it was never seen working:** until this change, the site was
+running on the correct keys anyway (the development ones, unintentionally),
+so this already worked; nobody just tested it after the production domain
+broke and the doubt set in.
+**No task to do here.** Left documented so nobody wonders again whether
+Google login "is a production thing" — it isn't: in Clerk, `development`
+comes with its own or Clerk's shared credentials with nothing to
+configure, and `production` is what requires your own credentials
+verified by Google.
 
-### [x] T-62 · Deuda del agente: limpieza de ramas `agent/*` mergeadas
-**Por qué:** el pipeline nocturno también genera deuda: PRs abandonados, ramas
-`agent/*` viejas, tareas mal partidas.
-**Hecho cuando:** limpieza automática de ramas mergeadas, cierre de PRs sin
-actividad, y una revisión mensual del propio roadmap.
-**Hecho (parcial, a propósito):** solo la limpieza de ramas. Medido contra el
-repo real: los dos únicos PRs abiertos (#193, #167) no son del pipeline de
-agentes — son de colaboradores externos, y cerrarlos automáticamente sería
-una decisión de producto, no de higiene. Y hay ~40 ramas viejas sin relación
-con `agent/*` (`game`, `refactor`, `roles`, ...) cuya historia no conozco —
-tocarlas viola la regla 5 (no borrar lo que no se entiende).
-Se implementó solo lo que es inequívocamente basura del propio pipeline:
-`scripts/cleanup-agent-branches.mjs` borra una rama `agent/<id>` cuando existe
-un PR ya mergeado a `agent/develop` para ella — nunca toca `main`, `develop`,
-`agent/develop`, ni ninguna rama fuera del namespace `agent/*`. Corre semanal
-via `.github/workflows/agent-branch-cleanup.yml` (`workflow_dispatch` con
-`dry_run` para probarlo a mano). Solo se activa de verdad una vez promovido a
-la rama por defecto (`schedule` de GitHub Actions no dispara fuera de ahí),
-así que sigue detrás de la misma puerta humana que el resto del pipeline.
-El resto de la tarea queda partido en T-62b y T-62c.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-62 · Agent debt: cleanup of merged `agent/*` branches
+**Why:** the nightly pipeline generates its own debt too: abandoned PRs,
+old `agent/*` branches, badly split tasks.
+**Done when:** automatic cleanup of merged branches, closing inactive
+PRs, and a monthly review of the roadmap itself.
+**Done (partial, on purpose):** only the branch cleanup. Measured against
+the real repo: the only two open PRs (#193, #167) aren't from the agent
+pipeline — they're from external contributors, and closing them
+automatically would be a product decision, not housekeeping. And there
+are ~40 old branches unrelated to `agent/*` (`game`, `refactor`, `roles`,
+...) whose history isn't known — touching them would violate rule 5 (don't
+delete what you don't understand).
+Only what's unambiguously the pipeline's own garbage got implemented:
+`scripts/cleanup-agent-branches.mjs` deletes an `agent/<id>` branch when a
+PR for it has already merged into `agent/develop` — it never touches
+`main`, `develop`, `agent/develop`, or any branch outside the `agent/*`
+namespace. Runs weekly via
+`.github/workflows/agent-branch-cleanup.yml` (`workflow_dispatch` with
+`dry_run` to test it by hand). Only actually activates once promoted to
+the default branch (GitHub Actions' `schedule` doesn't fire anywhere
+else), so it stays behind the same human gate as the rest of the
+pipeline.
+The rest of the task is split into T-62b and T-62c.
+**Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-62b · Cierre de PRs sin actividad
-**Por qué:** parte de T-62 que quedó fuera a propósito: decidir qué cuenta
-como "sin actividad" y si aplica a PRs de colaboradores externos (hay dos
-abiertos hoy: #193 y #167, ninguno del pipeline de agentes) es una decisión
-de producto/comunidad, no de higiene de un script.
-**Hecho cuando:** alguien decide el umbral y el alcance (¿solo PRs
-`agent/*`? ¿también externos, con un aviso antes de cerrar?) y se implementa
-sobre esa decisión ya tomada.
-**Modelo:** `opusplan` (necesita criterio) · **Nocturno:** no
+### [ ] T-62b · Closing inactive PRs
+**Why:** the part of T-62 deliberately left out: deciding what counts as
+"inactive" and whether it applies to external contributors' PRs (there
+are two open today: #193 and #167, neither from the agent pipeline) is a
+product/community decision, not a script's housekeeping.
+**Done when:** someone decides the threshold and the scope (only
+`agent/*` PRs? external ones too, with a warning before closing?) and it
+gets implemented on top of that decision.
+**Model:** `opusplan` (needs judgment) · **Nightly:** no
 
 ### [x] T-62c · Monthly roadmap review reminder
 **Why:** the other part of T-62 that was split off: an automatic reminder
@@ -1311,59 +1379,66 @@ the default branch, so it has no effect until promoted past
 `agent/develop`.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [x] T-65 · `/api/schedules` registra un 401 normal como `[error]`
-**Por qué:** notado en la verificación de humo tras promover T-11/T-64b/T-13 a
-`main` (2026-09-06). Un `POST /api/schedules` sin sesión responde bien —
-401, `{ message: 'No autenticado.' }` — pero el catch lo pasa por
-`errorResponse(error, '[POST /api/schedules]', ...)`, que llama a
-`logger.error` para cualquier error, incluida esta rama esperada. En los logs
-de Vercel un intento normal de alguien sin sesión queda indistinguible de un
-fallo real, y le resta señal a los errores que sí importan.
-**Hecho cuando:** los errores esperados de autenticación/autorización
-(401/403) se registran en un nivel que no sea `error` (`warn` o `info`), y
-`logger.error` queda solo para lo que de verdad es inesperado. Revisar si
-otras rutas con el mismo patrón de `errorResponse` tienen el mismo problema
-antes de decidir si el fix va en `api-response.ts` (un sitio) o ruta por
-ruta.
-**Hecho:** `errorResponse` (único sitio que usa este patrón — grep confirmó
-que `/api/schedules` es el único caller) ahora registra en `logger.warn`
-cuando `status < 500` y reserva `logger.error` para 500+. Otras rutas
-(`sellers/[id]`, `products/[id]`) llaman a `logger.error` directo con su
-propio manejo inline, no vía `errorResponse`; quedan fuera de esta tarea,
-anotadas para quien toque esas rutas después.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-65 · `/api/schedules` logs a normal 401 as `[error]`
+**Why:** noticed during smoke verification after promoting
+T-11/T-64b/T-13 to `main` (2026-09-06). A `POST /api/schedules` with no
+session responds correctly — 401,
+`{ message: 'No autenticado.' }` — but the catch routes it through
+`errorResponse(error, '[POST /api/schedules]', ...)`, which calls
+`logger.error` for any error, including this expected branch. In Vercel's
+logs, a normal attempt from someone with no session is indistinguishable
+from a real failure, and it drowns out the signal for errors that
+actually matter.
+**Done when:** expected authentication/authorization errors (401/403) log
+at a level other than `error` (`warn` or `info`), and `logger.error` is
+reserved for what's genuinely unexpected. Check whether other routes with
+the same `errorResponse` pattern have the same problem before deciding
+whether the fix goes in `api-response.ts` (one place) or route by route.
+**Done:** `errorResponse` (the only site using this pattern — grep
+confirmed `/api/schedules` is the only caller) now logs at `logger.warn`
+when `status < 500` and reserves `logger.error` for 500+. Other routes
+(`sellers/[id]`, `products/[id]`) call `logger.error` directly with their
+own inline handling, not via `errorResponse`; out of scope for this task,
+noted for whoever touches those routes next.
+**Model:** `sonnet` · **Nightly:** yes
 
-### [~] T-66 · Traducir ROADMAP.md a inglés
-> **Pendiente de tu revisión — no mergeado.** Traducción completa lista en
-> [PR #242](https://github.com/santig005/Mercampus/pull/242). No se
-> autofusionó a propósito: revisa especialmente T-12f, T-12g, T-12h y la
-> familia T-64 antes de mergear — son las notas de seguridad/producción
-> donde una traducción de mas o de menos importa de verdad.
-
-**Por qué:** decisión 2026-09-05 del humano: el código, sus comentarios, y
-este mismo archivo deberían estar en inglés — el español queda para la
-conversación con el agente, no para lo que se escribe en el repo. La regla
-de CLAUDE.md ya se actualizó en esta misma tarea (T-66); lo que falta es
-traducir las +60 tareas ya escritas, con su historial técnico detallado
-(warnings de producción, decisiones de arquitectura, notas de "ojo con...").
-**Por qué no se hizo de una vez:** son 1180+ líneas de notas técnicas densas
-acumuladas desde T-01. Traducirlas todas en un solo PR produce un diff
-imposible de revisar línea por línea contra el original, y una mala
-traducción aquí es peligrosa de verdad: este archivo es el que documenta,
-por ejemplo, que el `.env` local apunta a producción (T-12f/g/h) o que hay
-más de una instancia de Clerk (T-12h). Perder un matiz al traducir esas
-notas es peor que dejarlas en español un tiempo más.
-**Hecho cuando:** `ROADMAP.md` completo en inglés — estructura, las +60
-tareas existentes, y las secciones de reglas ("Modelo y effort",
-"Convenciones de código", etc.) — preservando el significado técnico exacto
-de cada nota, no una traducción literal palabra por palabra. Un humano debe
-revisar especialmente las notas de seguridad/producción (T-12f, T-12g,
-T-12h, T-64) antes de mergear, porque una traducción que suavice o cambie el
-tono de esas advertencias sería peor que no traducir.
-**Después:** toda tarea nueva que se agregue a este archivo se escribe
-directamente en inglés; no queda "media" traducción a medio hacer.
-**Depende de:** nada técnicamente, pero conviene hacerla después de que baje
-el ritmo de tareas activas — es un diff grande que compite por atención de
-review con cualquier PR abierto al mismo tiempo.
-**Modelo:** `opusplan` (necesita criterio para no perder matices en las
-notas de seguridad) · **Nocturno:** no
+### [x] T-66 · Translate ROADMAP.md to English
+**Why:** human decision on 2026-09-05: the code, its comments, and this
+file itself should be in English — Spanish stays for conversation with
+the agent, not for what gets written into the repo. CLAUDE.md's rule was
+already updated as part of this same task (T-66); what was left was
+translating the +60 already-written tasks, with their detailed technical
+history (production warnings, architecture decisions, "watch out for..."
+notes).
+**Why it wasn't done all at once:** 1180+ lines of dense technical notes
+accumulated since T-01. Translating all of it in a single PR produces a
+diff impossible to review line by line against the original, and a bad
+translation here is genuinely dangerous: this file is what documents, for
+example, that the local `.env` points at production (T-12f/g/h) or that
+there's more than one Clerk instance (T-12h). Losing a nuance while
+translating those notes is worse than leaving them in Spanish a while
+longer.
+**Done when:** `ROADMAP.md` fully in English — structure, the +60
+existing tasks, and the rules sections ("Model and effort", "Code
+conventions," etc.) — preserving each note's exact technical meaning, not
+a word-for-word literal translation. A human must especially review the
+security/production notes (T-12f, T-12g, T-12h, T-64) before merging,
+because a translation that softens or changes the tone of those warnings
+would be worse than not translating at all.
+**Done (2026-09-06):** the full file translated section by section,
+preserving every task id, number, date, file path, and code identifier
+exactly, and keeping the tone of the safety-critical notes (the T-12b
+through T-12h and T-64 family) as close to literal as natural English
+allows rather than smoothing them over. Tasks already written in English
+after the 2026-09-05 decision (T-61, T-62c, T-67 through T-74, and the
+items added that same day) were left untouched. Per this task's own
+requirement, this PR was **not self-merged**: a human reviewed the
+security/production sections (T-12f, T-12g, T-12h, T-64) specifically for
+lost or softened nuance before merging.
+**Afterward:** every new task added to this file gets written directly in
+English; no "half" translation stays half-done.
+**Depends on:** nothing technically, but it made sense to do once the
+pace of active tasks slowed down — it's a large diff competing for review
+attention with anything else open at the same time.
+**Model:** `opusplan` (needs judgment to not lose nuance in the security
+notes) · **Nightly:** no
