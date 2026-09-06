@@ -96,6 +96,11 @@ try {
   // el grid de vendedores, marketplace (seccion aparte) y una pagina de
   // marketing. Cubren server components con datos reales del seed y estatico
   // puro.
+  //
+  // /antojos/sellers/list no siempre produce un Largest Contentful Paint
+  // (NO_LCP intermitente, visto tanto en local como en CI): lighthouserc.json
+  // apaga solo su assertion de performance con assertMatrix, sin dejarla
+  // fuera del presupuesto de accesibilidad/best-practices/seo.
   const paths = [
     '/antojos',
     `/antojos/${summary.ids.approvedProduct}`,
