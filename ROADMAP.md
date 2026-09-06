@@ -727,7 +727,9 @@ is implementation with the logic already written
 /api/sellers/[id]`, which already works and has its own tests).
 `api/sellers/availability`'s handler is uncommented, guarded with
 `CRON_SECRET` (fails closed if the env var itself is unset, not just on a
-mismatched header), and `vercel.json` calls it every 10 minutes.
+mismatched header), and called every 10 minutes by a GitHub Actions
+workflow (see below for why not Vercel's native cron for the frequent
+trigger).
 **Two bugs caught in the "already written" logic before shipping it,
 not left for later:**
 1. **It was exported as `PATCH`; Vercel Cron always calls the configured
@@ -750,11 +752,25 @@ forced `availability: false` then correctly flipped back to `true` at a
 mocked Monday-10am-Bogotá timestamp, and to `false` at Monday-8pm-Bogotá
 — including a case where the mocked instant is already Tuesday in UTC,
 to confirm the timezone shift (not just the hour) is right.
-**Assumption to verify against real infra, not guessed at:** `*/10 * * *
-*` in `vercel.json` assumes the Vercel plan allows sub-daily cron
-frequency. Some Vercel tiers cap cron jobs at once/day — worth a 30-second
-check in the Vercel dashboard after this promotes, not something
-verifiable from here.
+**Confirmed against real infra, not guessed at: the Vercel plan blocks
+sub-daily crons — the PR's own preview deployment failed on it.** `*/10
+* * * *` in `vercel.json` made the Vercel deployment check fail outright;
+the link Vercel gave for the failure redirects straight to
+`vercel.com/docs/cron-jobs/usage-and-pricing`, which states Hobby plans
+are capped at once a day and reject anything more frequent **at deploy
+time**. A once-daily update would leave "open now" stale basically all
+day, defeating the point of the badge, so `vercel.json`'s cron stays at
+once a day (`0 5 * * *`, a redundant fallback) and
+**`.github/workflows/availability-cron.yml`** is the real trigger: a
+scheduled GitHub Actions workflow, outside Vercel's cron system entirely,
+that calls the same protected route every 10 minutes with `curl` and a
+repo secret.
+**Needs a human to actually turn on — can't be done from here:** the
+workflow's `${{ secrets.CRON_SECRET }}` has to be a GitHub Actions repo
+secret holding the *same* value as the `CRON_SECRET` environment variable
+on the Vercel project. That's two separate dashboards; until both are set
+to the same value, calls just 401 harmlessly (safe default, not broken —
+it fails the way it's supposed to fail without the secret).
 **Left alone on purpose:** `GET /api/schedules`'s dead `req.sellerid`
 filter (T-13b's finding) — not part of this task's "done when", and
 nothing in the frontend calls it.

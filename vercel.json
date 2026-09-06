@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/sellers/availability",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 5 * * *"
     }
   ]
 }
