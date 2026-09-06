@@ -1103,11 +1103,44 @@ preguntarse si Google login "es cosa de producción" — no lo es, en Clerk
 nada, y `production` es lo que exige credenciales propias verificadas por
 Google.
 
-### [ ] T-62 · Deuda del agente
+### [x] T-62 · Deuda del agente: limpieza de ramas `agent/*` mergeadas
 **Por qué:** el pipeline nocturno también genera deuda: PRs abandonados, ramas
 `agent/*` viejas, tareas mal partidas.
 **Hecho cuando:** limpieza automática de ramas mergeadas, cierre de PRs sin
 actividad, y una revisión mensual del propio roadmap.
+**Hecho (parcial, a propósito):** solo la limpieza de ramas. Medido contra el
+repo real: los dos únicos PRs abiertos (#193, #167) no son del pipeline de
+agentes — son de colaboradores externos, y cerrarlos automáticamente sería
+una decisión de producto, no de higiene. Y hay ~40 ramas viejas sin relación
+con `agent/*` (`game`, `refactor`, `roles`, ...) cuya historia no conozco —
+tocarlas viola la regla 5 (no borrar lo que no se entiende).
+Se implementó solo lo que es inequívocamente basura del propio pipeline:
+`scripts/cleanup-agent-branches.mjs` borra una rama `agent/<id>` cuando existe
+un PR ya mergeado a `agent/develop` para ella — nunca toca `main`, `develop`,
+`agent/develop`, ni ninguna rama fuera del namespace `agent/*`. Corre semanal
+via `.github/workflows/agent-branch-cleanup.yml` (`workflow_dispatch` con
+`dry_run` para probarlo a mano). Solo se activa de verdad una vez promovido a
+la rama por defecto (`schedule` de GitHub Actions no dispara fuera de ahí),
+así que sigue detrás de la misma puerta humana que el resto del pipeline.
+El resto de la tarea queda partido en T-62b y T-62c.
+**Modelo:** `sonnet` · **Nocturno:** sí
+
+### [ ] T-62b · Cierre de PRs sin actividad
+**Por qué:** parte de T-62 que quedó fuera a propósito: decidir qué cuenta
+como "sin actividad" y si aplica a PRs de colaboradores externos (hay dos
+abiertos hoy: #193 y #167, ninguno del pipeline de agentes) es una decisión
+de producto/comunidad, no de higiene de un script.
+**Hecho cuando:** alguien decide el umbral y el alcance (¿solo PRs
+`agent/*`? ¿también externos, con un aviso antes de cerrar?) y se implementa
+sobre esa decisión ya tomada.
+**Modelo:** `opusplan` (necesita criterio) · **Nocturno:** no
+
+### [ ] T-62c · Revisión mensual del propio roadmap
+**Por qué:** la otra parte de T-62 que quedó fuera: un recordatorio
+automático para que un humano repase `ROADMAP.md` una vez al mes (tareas
+obsoletas, duplicadas, o que ya no aplican).
+**Hecho cuando:** un workflow programado mensual abre un issue de
+recordatorio; no cierra ni edita nada por sí solo.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [x] T-65 · `/api/schedules` registra un 401 normal como `[error]`

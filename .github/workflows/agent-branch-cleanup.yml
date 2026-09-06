@@ -1,0 +1,49 @@
+name: Agent branch cleanup
+
+# T-62. Deletes agent/<task-id> branches once their PR into agent/develop
+# has merged — the pipeline's own leftovers, nothing else. See
+# scripts/cleanup-agent-branches.mjs for the scope and why it stops there.
+#
+# Runs from whatever branch has this file as the default branch (GitHub only
+# fires `schedule` off the default branch), so it only goes live once this
+# is promoted past agent/develop by a human, same gate as everything else.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # lunes 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Solo mostrar qué se borraría, sin borrar de verdad'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Decide dry-run
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=--yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cleanup agent/* branches ya mergeadas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/cleanup-agent-branches.mjs ${{ steps.mode.outputs.flag }}
