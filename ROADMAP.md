@@ -942,9 +942,30 @@ tocan esas rutas.
 y una alerta cuando la tasa de error del deploy supere un umbral.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-61 · Presupuesto de rendimiento y accesibilidad
+### [x] T-61 · Presupuesto de rendimiento y accesibilidad
 **Hecho cuando:** Lighthouse CI en cada PR con umbrales que rompen el build;
 navegación por teclado y contraste revisados en las pantallas principales.
+**Hecho:** `scripts/lighthouse.mjs` reusa la receta de `e2e.mjs` (Mongo en
+memoria + seed + build + `next start`) y corre Lighthouse contra las
+pantallas principales (`/antojos`, detalle de producto, perfil de vendedor,
+grid de vendedores, `/marketplace`, `/about`). Corre via `npx`, no como
+dependencia instalada: `@lhci/cli` arrastra ~240 paquetes transitivos con
+más de 30 CVEs (varios críticos) que no vale la pena sumar al lockfile del
+proyecto para algo que se invoca una vez por PR.
+Umbrales medidos contra la app real (no inventados): performance 0.35,
+accesibilidad 0.6, best-practices 0.45, seo 0.85 — un piso por debajo de lo
+observado hoy (0.41–0.59 / 0.69–0.93 / 0.54–0.57 / 0.91–1.0), pensado para
+atrapar regresiones, no para exigir un puntaje alto que requeriría trabajo de
+performance aparte. Ver `lighthouserc.json`.
+Job `lighthouse` nuevo en `ci.yml`, con la misma puerta que `e2e` (necesita
+Clerk de verdad — su middleware corre en toda ruta pública tambien).
+**Navegación por teclado:** `tests/e2e/keyboard-nav.spec.js`, con
+`@playwright/test` (ya era dependencia, no hizo falta sumar `axe-core`).
+Cubre los dos formularios públicos (PQRS y login): orden de tabulación,
+checkbox operable con espacio, y que un botón deshabilitado no entre al
+orden de tabulación hasta que hay algo que enviar.
+**Contraste:** cubierto por el audit `color-contrast` de la categoría de
+accesibilidad de Lighthouse, no por una herramienta aparte.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
 ### [ ] T-63 · Separar los entornos (base de datos y Clerk)

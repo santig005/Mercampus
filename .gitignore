@@ -43,6 +43,10 @@ next-env.d.ts
 /test-results
 /playwright-report
 
+# lighthouse
+/lighthouse-results
+/.lighthouseci
+
 # copias de seguridad de la base: datos reales de personas, nunca al repo
 /backups
 

@@ -15,6 +15,7 @@
     "test": "vitest run",
     "verify": "node scripts/verify.mjs",
     "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
+    "budget:lighthouse": "node --import ./scripts/register-alias.mjs ./scripts/lighthouse.mjs",
     "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs",
     "migrate:product-section": "node --import ./scripts/register-alias.mjs ./scripts/migrate-product-section.mjs",
     "migrate:clerk-id": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backfill-clerk-id.mjs",
