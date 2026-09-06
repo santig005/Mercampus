@@ -942,10 +942,31 @@ tocan esas rutas.
 y una alerta cuando la tasa de error del deploy supere un umbral.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-61 · Presupuesto de rendimiento y accesibilidad
-**Hecho cuando:** Lighthouse CI en cada PR con umbrales que rompen el build;
-navegación por teclado y contraste revisados en las pantallas principales.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-61 · Performance and accessibility budget
+**Why:** Lighthouse CI on every PR with thresholds that break the build;
+keyboard navigation and contrast reviewed on the main screens.
+**Done:** `scripts/lighthouse.mjs` reuses the `e2e.mjs` recipe (in-memory
+Mongo + seed + build + `next start`) and runs Lighthouse against the main
+screens (`/antojos`, a product detail page, a seller profile, the seller
+grid, `/marketplace`, `/about`). Runs via `npx`, not as an installed
+dependency: `@lhci/cli` pulls in ~240 transitive packages with 30+ CVEs
+(several critical) that aren't worth adding to the project's lockfile for
+something invoked once per PR.
+Thresholds are measured against the real app, not guessed: performance
+0.35, accessibility 0.6, best-practices 0.45, seo 0.85 — a floor below
+today's observed scores (0.41-0.59 / 0.69-0.93 / 0.54-0.57 / 0.91-1.0),
+meant to catch regressions rather than demand a high score that would need
+separate performance work. See `lighthouserc.json`.
+New `lighthouse` job in `ci.yml`, gated the same way as `e2e` (needs real
+Clerk — its middleware runs on every route, public ones included).
+**Keyboard navigation:** `tests/e2e/keyboard-nav.spec.js`, with
+`@playwright/test` (already a dependency, no need to add `axe-core`).
+Covers the two public forms (PQRS and login): tab order, the checkbox
+being operable with Space, and a disabled button being excluded from tab
+order until there's something to submit.
+**Contrast:** covered by Lighthouse's accessibility category's
+`color-contrast` audit, not a separate tool.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-63 · Separar los entornos (base de datos y Clerk)
 > **El riesgo estructural más grande del proyecto ahora mismo.** No lo puede
