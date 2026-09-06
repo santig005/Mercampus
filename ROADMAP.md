@@ -697,7 +697,7 @@ Changing it means migrating data, so it goes with T-30.
 **Depends on:** T-13b
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-14 · Dead and broken endpoints
+### [x] T-14 · Dead and broken endpoints
 **Why:** the PUT and DELETE in `api/sellers/route.js` use `req.query`,
 which doesn't exist in the App Router: they never worked.
 `api/sellers/availability` is entirely commented out, so automatic
@@ -722,6 +722,58 @@ right secret the route responds 401 and doesn't touch any `Seller`.
 **Model:** `sonnet` — the product decision is already made, what's left
 is implementation with the logic already written
 **Nightly:** yes
+**Done:** the dead `PUT`/`DELETE` in `api/sellers/route.js` are gone
+(confirmed zero frontend callers — the real edit path is `PUT
+/api/sellers/[id]`, which already works and has its own tests).
+`api/sellers/availability`'s handler is uncommented, guarded with
+`CRON_SECRET` (fails closed if the env var itself is unset, not just on a
+mismatched header), and called every 10 minutes by a GitHub Actions
+workflow (see below for why not Vercel's native cron for the frequent
+trigger).
+**Two bugs caught in the "already written" logic before shipping it,
+not left for later:**
+1. **It was exported as `PATCH`; Vercel Cron always calls the configured
+   path with `GET`.** Shipped as written, the cron would have hit a route
+   with no `GET` handler — a silent 405, availability never updating,
+   with nothing in the logs pointing at why. Renamed to `GET`.
+2. **The day/time math used the runtime's local clock** (`now.getDay()`,
+   `now.toTimeString()`). Vercel's functions run in UTC; sellers' schedules
+   are entered in Bogotá time (UTC-5). Left as written, the cron would
+   have compared against the wrong hour (and sometimes the wrong day)
+   every single run — not unimplemented, actively wrong, which is worse
+   for a badge buyers already see and trust. Colombia has no DST, so a
+   fixed 5-hour offset computed via UTC getters (not the runtime's
+   configured timezone) is enough; no dependency needed.
+**Test:** `tests/integration/availability-cron.test.js` — no
+`Authorization`, a wrong secret, and `CRON_SECRET` itself unset all get
+401 without touching any `Seller`; with the right secret, the seeded
+approved seller (Monday/Wednesday 08:00-16:00, Friday 10:00-18:00) is
+forced `availability: false` then correctly flipped back to `true` at a
+mocked Monday-10am-Bogotá timestamp, and to `false` at Monday-8pm-Bogotá
+— including a case where the mocked instant is already Tuesday in UTC,
+to confirm the timezone shift (not just the hour) is right.
+**Confirmed against real infra, not guessed at: the Vercel plan blocks
+sub-daily crons — the PR's own preview deployment failed on it.** `*/10
+* * * *` in `vercel.json` made the Vercel deployment check fail outright;
+the link Vercel gave for the failure redirects straight to
+`vercel.com/docs/cron-jobs/usage-and-pricing`, which states Hobby plans
+are capped at once a day and reject anything more frequent **at deploy
+time**. A once-daily update would leave "open now" stale basically all
+day, defeating the point of the badge, so `vercel.json`'s cron stays at
+once a day (`0 5 * * *`, a redundant fallback) and
+**`.github/workflows/availability-cron.yml`** is the real trigger: a
+scheduled GitHub Actions workflow, outside Vercel's cron system entirely,
+that calls the same protected route every 10 minutes with `curl` and a
+repo secret.
+**Needs a human to actually turn on — can't be done from here:** the
+workflow's `${{ secrets.CRON_SECRET }}` has to be a GitHub Actions repo
+secret holding the *same* value as the `CRON_SECRET` environment variable
+on the Vercel project. That's two separate dashboards; until both are set
+to the same value, calls just 401 harmlessly (safe default, not broken —
+it fails the way it's supposed to fail without the secret).
+**Left alone on purpose:** `GET /api/schedules`'s dead `req.sellerid`
+filter (T-13b's finding) — not part of this task's "done when", and
+nothing in the frontend calls it.
 
 ### [x] T-15 · Typed errors and logger
 **Why:** `console.log` everywhere, inconsistent error messages, `AppError`
