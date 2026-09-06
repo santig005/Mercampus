@@ -858,18 +858,32 @@ básica.
 **Depende de:** T-40
 **Modelo:** `opusplan` · **Nocturno:** no
 
-### [ ] T-46 · Internacionalización (español e inglés)
+### [x] T-46 · Internacionalización (español e inglés)
 **Por qué:** todo el copy está incrustado en español dentro de los componentes.
 En una universidad con estudiantes de intercambio, el inglés amplía el público —
 y para el portafolio demuestra manejo de rutas por locale y de contenido
 dinámico, que es lo que hace difícil de verdad esta tarea.
 **Ojo con el tamaño:** hay copy en más de 40 componentes. Hacerlo de una vez
 produce un diff imposible de revisar y se salta el límite de ~15 archivos.
-**Hecho cuando (v1, solo el andamiaje):** `next-intl` configurado con rutas
-`/[locale]/`; middleware que negocia el locale y convive con `clerkMiddleware`;
-Clerk cambia de `esMX` a `enUS` según el locale; los diccionarios en
-`messages/{es,en}.json`; **una sola pantalla** migrada como prueba, y el e2e
-recorriéndola en los dos idiomas.
+**Hecho (v1, solo el andamiaje):** `next-intl` configurado; middleware que
+negocia el locale solo para `/about(.*)` y `/en/about(.*)` y convive con
+`clerkMiddleware` (el resto de rutas no pasa por `next-intl` todavía, así que
+siguen igual que antes); Clerk cambia de `esMX` a `enUS` según el locale
+(resuelto en el layout raíz vía `getLocale()`, así que aplica a toda la app,
+migrada o no); diccionarios en `messages/{es,en}.json`; `/about` migrado como
+pantalla de prueba (movida a `src/app/[locale]/about/`); e2e en
+`tests/e2e/i18n.spec.js` recorriéndola en los dos idiomas.
+**Dos decisiones que no son obvias:** `localeDetection: false` — si no, el
+`Accept-Language` del navegador decide el idioma de `/about` sin que el
+visitante lo pida, e inconsistente con el resto de la app (que siempre es
+español por defecto). Y el selector de idioma usa `<a href>` normal, no el
+`Link` de `next-intl`: el `NextIntlClientProvider` vive en el layout raíz, que
+Next.js no vuelve a ejecutar en una navegación cliente-a-cliente dentro del
+mismo árbol, así que una navegación suave dejaba la traducción pegada al
+locale de la carga inicial. Con navegación completa se evita sin duplicar el
+provider en dos layouts.
+**No se movieron las +25 rutas restantes bajo `[locale]/`** — habría pasado el
+límite de ~15 archivos de un PR. Quedan como estaban, en español, sin prefijo.
 **Después, una tarea por zona:** listado, detalle de producto, perfil de
 vendedor, formularios, panel de vendedor. Cada una con su PR.
 **Lo que no resuelve:** el contenido que escriben los vendedores (nombres y
