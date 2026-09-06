@@ -1109,3 +1109,19 @@ Google.
 **Hecho cuando:** limpieza automática de ramas mergeadas, cierre de PRs sin
 actividad, y una revisión mensual del propio roadmap.
 **Modelo:** `sonnet` · **Nocturno:** sí
+
+### [ ] T-65 · `/api/schedules` registra un 401 normal como `[error]`
+**Por qué:** notado en la verificación de humo tras promover T-11/T-64b/T-13 a
+`main` (2026-09-06). Un `POST /api/schedules` sin sesión responde bien —
+401, `{ message: 'No autenticado.' }` — pero el catch lo pasa por
+`errorResponse(error, '[POST /api/schedules]', ...)`, que llama a
+`logger.error` para cualquier error, incluida esta rama esperada. En los logs
+de Vercel un intento normal de alguien sin sesión queda indistinguible de un
+fallo real, y le resta señal a los errores que sí importan.
+**Hecho cuando:** los errores esperados de autenticación/autorización
+(401/403) se registran en un nivel que no sea `error` (`warn` o `info`), y
+`logger.error` queda solo para lo que de verdad es inesperado. Revisar si
+otras rutas con el mismo patrón de `errorResponse` tienen el mismo problema
+antes de decidir si el fix va en `api-response.ts` (un sitio) o ruta por
+ruta.
+**Modelo:** `sonnet` · **Nocturno:** sí
