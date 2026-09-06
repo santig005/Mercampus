@@ -868,13 +868,44 @@ by hand afterward; no harm in trying an agent first.
 From here on, it's building on solid ground. Each one is a project of its
 own, and all of them are design work, so all of them are yours.
 
-### [ ] T-40 · Order model
+### [x] T-40 · Order model
 **Why:** there's no `Order`. Today the flow ends in a WhatsApp link, so
 there's no data on anything.
 **Done when:** an `Order` schema with a state machine
 (`pending → accepted → preparing → delivering → completed | cancelled`),
 transitions validated in a single place, a state-change history, and
 tests proving an invalid transition gets rejected.
+**Design decisions (made interactively, not baked into the schema yet as
+an assumption for future tasks to revisit):** one seller per order — there's
+no multi-seller cart today (`ProductModal.jsx`'s WhatsApp link is already
+per product/seller), so splitting by seller avoids reshaping this schema
+if a real cart shows up later. Line items snapshot `name`/`price` at order
+time instead of only referencing `Product`, so a later price edit or
+deletion can't retroactively change a past order. History is an array
+embedded in the `Order` document itself, not a separate collection:
+`mongodb-memory-server` runs in standalone mode (no replica set, see
+T-10b), so a design needing a cross-collection transaction wouldn't be
+verifiable with today's test harness. The transition table is a plain
+`Record<OrderStatus, OrderStatus[]>` (no state-machine library) — six
+linear states plus one cancel branch don't justify a new dependency;
+xstate would pay for itself only if guards/parallel states/side-effects
+show up later.
+**Done:** `src/server/orders/stateMachine.ts` (`assertValidTransition`,
+`transitionOrder`, the only place `status` is ever assigned) and
+`src/utils/models/orderSchema.ts` (`Order`, embedding `lineItems` and
+`history`). Cancellation is allowed from `pending`/`accepted`/`preparing`,
+not from `delivering` (someone's already en route) or the terminal states.
+Tests in `tests/unit/orderStateMachine.test.js` and
+`tests/unit/orderSchema.test.js` cover the full happy path, every invalid
+transition (skipping steps, going backwards, cancelling after
+`delivering`, any transition out of a terminal state), and schema
+validation (required fields, empty `lineItems`, quantity `< 1`, status
+outside the enum).
+**Deliberately out of scope:** no API route or Server Action creates or
+transitions an `Order` yet — nothing in the roadmap's "done when" for this
+task asked for one, and wiring checkout/UI is its own decision (payment
+flow, who's allowed to trigger which transition). T-41 (chat) and T-42
+(map) depend on this schema existing, not on an endpoint.
 **Model:** `opusplan` · **Nightly:** no
 
 ### [ ] T-41 · Buyer ↔ seller chat
