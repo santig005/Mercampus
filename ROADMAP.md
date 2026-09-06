@@ -444,7 +444,7 @@ intervalo que nunca se limpia.
 `/admin/*` y `/api/**/admin`; el `Map` y el `setInterval` desaparecen.
 **Modelo:** `opus` · **Nocturno:** no
 
-### [~] T-13 · Validación con Zod en todos los bordes
+### [x] T-13 · Validación con Zod en todos los bordes
 **Por qué:** `new Product(body)` acepta lo que mande el cliente. Los query params
 tampoco se validan.
 **Hecho cuando:** un schema Zod por endpoint en `src/lib/validators/`; los
@@ -460,6 +460,8 @@ limite de ~15 archivos por PR.
 **Estado tras T-13b y T-13c:** cubierto todo menos `POST /api/register`, que
 sigue bloqueado por la decision de T-11 (borrar la ruta o protegerla). Esta
 tarea queda `[~]` solo por eso.
+**Cerrada (T-11): la ruta se borró.** No queda ningún borde de mutación sin
+Zod — el único pendiente era ese, y ya no existe.
 **Modelo:** `sonnet` — repetitivo y con criterio claro
 **Nocturno:** sí
 
