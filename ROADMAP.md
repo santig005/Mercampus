@@ -798,7 +798,11 @@ dependencia; `package.json` sin dependencias sin usar.
 **Hecho cuando:** qué es el proyecto, capturas, stack, variables de entorno,
 cómo levantarlo, cómo correr tests, y una sección sobre el pipeline agéntico.
 Este archivo es el que van a leer los reclutadores.
-**Modelo:** `sonnet` · **Nocturno:** no (escríbelo tú, es tu vitrina)
+**Actualización 2026-09-06:** decía "escríbelo tú, es tu vitrina" — el humano
+decidió delegarla a un agente. Igual sigue siendo la vitrina para
+reclutadores, así que si el resultado no convence, se reescribe a mano
+después; no hay drama en intentarlo primero con un agente.
+**Modelo:** `sonnet` · **Nocturno:** sí
 
 ---
 
@@ -894,6 +898,21 @@ es otra decisión de producto, no de i18n.
 tiene trampa
 **Nocturno:** no
 
+### [ ] T-68 · Favorites (blocked on a product decision)
+**Why:** a "save for later" feature was started once — `favoriteSchema.js` —
+but never wired up anywhere (zero importers), and T-34 already deleted it as
+dead code. Doing this means starting over, not resuming.
+**Blocked on:** whether this is worth building at all, and if so: favorite
+products only, or sellers too? Its own page, or just a filter/heart icon on
+the existing listings? Login required (almost certainly, it ties to `User`)?
+These are product calls, not implementation details — see how T-12/T-14/T-32
+handle "needs a human decision" in this file.
+**Done when (once scoped):** a `Favorite` model tying a `User` to the
+product/seller ids they've saved, a toggle on product/seller cards, and a
+"my favorites" view — with the same ownership checks as the rest of the
+app's mutations (a user can only read/write their own favorites).
+**Model:** `opusplan` — needs the product decision above · **Nightly:** no
+
 ---
 
 ## Fase 5 — IA como funcionalidad, no como herramienta
@@ -966,6 +985,21 @@ being operable with Space, and a disabled button being excluded from tab
 order until there's something to submit.
 **Contrast:** covered by Lighthouse's accessibility category's
 `color-contrast` audit, not a separate tool.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-67 · UI/UX audit across the app's main screens
+**Why:** the app grew screen by screen without ever getting a full design
+review pass. Small usability and consistency issues — spacing, unclear
+copy, awkward mobile layouts, dead-end states — likely exist and nobody
+has walked through the whole app looking for them.
+**Done when:** an agent walks through the main screens with Playwright
+(reusing the seeded test data from `tests/e2e/`) on both a desktop and a
+mobile viewport — buyer side (listing, product detail, seller profile,
+PQRS), seller side (registration, profile edit, product CRUD, schedules),
+and auth (login/register) — takes screenshots, and writes up a findings
+list (screen + issue + suggested fix) in the PR description. No code
+changes in this task; it's diagnosis, not repair. Concrete follow-ups get
+their own tasks from that list.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-63 · Separar los entornos (base de datos y Clerk)
