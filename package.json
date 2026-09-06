@@ -18,7 +18,8 @@
     "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs",
     "migrate:product-section": "node --import ./scripts/register-alias.mjs ./scripts/migrate-product-section.mjs",
     "migrate:clerk-id": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backfill-clerk-id.mjs",
-    "backup:db": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs"
+    "backup:db": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs",
+    "reclaim:account": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/reclaim-account.mjs"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",

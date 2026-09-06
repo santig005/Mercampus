@@ -1040,7 +1040,7 @@ instancia de desarrollo indefinidamente** en vez de perseguir un dominio.
 Sigue T-64b para la parte de datos que esto deja pendiente.
 **Modelo:** `opus` · **Nocturno:** no
 
-### [ ] T-64b · Recuperación de cuenta para los usuarios de la instancia vieja
+### [x] T-64b · Recuperación de cuenta para los usuarios de la instancia vieja
 **Por qué:** de los 79 `User` en Mongo, **63 solo existen en la instancia de
 producción** de Clerk (7 más están en ambas — el equipo probando). Como Clerk
 no comparte usuarios entre instancias, esas 63 personas no pueden iniciar
@@ -1072,6 +1072,15 @@ el `clerkId` nuevo ya usado por otro documento.
 **Fuera de alcance a propósito:** una pantalla de autoservicio ("recupera tu
 cuenta") no vale la pena para el volumen esperado. Si esto se vuelve frecuente,
 reconsiderar.
+**Hecho:** `scripts/reclaim-account.mjs` (`npm run reclaim:account -- --email
+<email> --clerk-id <id> [--apply]`). Dado el email y el `clerkId` nuevo, busca
+entre los `User` con ese email (comparación sin distinguir mayúsculas, porque
+el schema no lo normaliza) el que tenga un `clerkId` distinto — ese es el
+viejo, con `sellerId`/`role`/lo demás — y le pone el `clerkId` nuevo, borrando
+de paso el `User` vacío que dejó el webhook. Estados: `reclamado`,
+`sin-coincidencia` (nada que hacer), `ya-reclamado` (idempotente), `conflicto`
+(el `clerkId` nuevo ya es de otro email — no toca nada). Seis tests con Mongo
+en memoria.
 **Depende de:** T-64
 **Modelo:** `opus` · **Nocturno:** no
 
