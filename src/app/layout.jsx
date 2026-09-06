@@ -2,7 +2,9 @@ import { Montserrat } from 'next/font/google';
 import { SellerProvider } from '@/context/SellerContext';
 import { UniversityProvider } from '@/context/UniversityContext';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
-import { esMX } from '@clerk/localizations';
+import { esMX, enUS } from '@clerk/localizations';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import Analytics from '@/utils/analytics';
 
 import React from 'react';
@@ -54,33 +56,43 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // Resolved from the locale negotiated by next-intl's middleware (only for
+  // the routes it currently covers, see src/middleware.js) or the
+  // NEXT_LOCALE cookie; falls back to 'es' everywhere else, so unmigrated
+  // pages keep rendering exactly as before.
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const clerkLocalization = locale === 'en' ? enUS : esMX;
+
   return (
     <ClerkProvider
-      localization={esMX}
+      localization={clerkLocalization}
       appearance={{
         // baseTheme: dark,
         variables: { colorPrimary: '#FF7622' },
       }}
     >
-      <html lang='es' className={`${montserrat.className} hide-scrollbar`}>
+      <html lang={locale} className={`${montserrat.className} hide-scrollbar`}>
         <head>
         </head>
         <body className='bg-primary'>
-          <UniversityProvider>
-          <SellerProvider>
-            <AnimationProvider>
-              <ClerkLoading>
-                <div className='fixed top-0 left-0 z-50 w-full h-full bg-primary flex items-center justify-center'>
-                  <div className='flex justify-center'>
-                    <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <UniversityProvider>
+            <SellerProvider>
+              <AnimationProvider>
+                <ClerkLoading>
+                  <div className='fixed top-0 left-0 z-50 w-full h-full bg-primary flex items-center justify-center'>
+                    <div className='flex justify-center'>
+                      <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
+                    </div>
                   </div>
-                </div>
-              </ClerkLoading>
-              <ClerkLoaded>{children}</ClerkLoaded>
-            </AnimationProvider>
-          </SellerProvider>
-          </UniversityProvider>
+                </ClerkLoading>
+                <ClerkLoaded>{children}</ClerkLoaded>
+              </AnimationProvider>
+            </SellerProvider>
+            </UniversityProvider>
+          </NextIntlClientProvider>
         </body>
         <Analytics />
       </html>
