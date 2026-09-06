@@ -1149,13 +1149,27 @@ de producto/comunidad, no de higiene de un script.
 sobre esa decisión ya tomada.
 **Modelo:** `opusplan` (necesita criterio) · **Nocturno:** no
 
-### [ ] T-62c · Revisión mensual del propio roadmap
-**Por qué:** la otra parte de T-62 que quedó fuera: un recordatorio
-automático para que un humano repase `ROADMAP.md` una vez al mes (tareas
-obsoletas, duplicadas, o que ya no aplican).
-**Hecho cuando:** un workflow programado mensual abre un issue de
-recordatorio; no cierra ni edita nada por sí solo.
-**Modelo:** `sonnet` · **Nocturno:** sí
+### [x] T-62c · Monthly roadmap review reminder
+**Why:** the other part of T-62 that was split off: an automatic reminder
+for a human to revisit `ROADMAP.md` once a month (stale tasks, duplicates,
+or tasks that no longer apply).
+**Done when:** a monthly scheduled workflow opens a reminder issue; it
+doesn't close or edit anything on its own.
+**Done:** `.github/workflows/roadmap-review-reminder.yml` — `schedule`
+(1st of each month) plus `workflow_dispatch` for manual testing, opens one
+issue via `actions/github-script` listing what to check (stale/duplicate
+tasks, tasks needing a Nightly re-flag, notes worth trimming). Only ever
+opens an issue, matching CLAUDE.md's rule against unattended writes: no
+label creation, no auto-closing, no editing `ROADMAP.md` itself.
+Not triggered live as part of this PR's verification — doing so would
+create a real, visible issue on the repo, which needs sign-off rather than
+being a unilateral call. Verified via YAML syntax parsing and code review;
+a human can trigger it once via `workflow_dispatch` after merging to
+confirm the live run, or ask the agent to do it with explicit permission.
+Like the other scheduled workflows in this repo, `schedule` only fires off
+the default branch, so it has no effect until promoted past
+`agent/develop`.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-65 · `/api/schedules` registra un 401 normal como `[error]`
 **Por qué:** notado en la verificación de humo tras promover T-11/T-64b/T-13 a
