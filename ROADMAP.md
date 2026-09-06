@@ -1178,3 +1178,32 @@ cuando `status < 500` y reserva `logger.error` para 500+. Otras rutas
 propio manejo inline, no vía `errorResponse`; quedan fuera de esta tarea,
 anotadas para quien toque esas rutas después.
 **Modelo:** `sonnet` · **Nocturno:** sí
+
+### [ ] T-66 · Traducir ROADMAP.md a inglés
+**Por qué:** decisión 2026-09-05 del humano: el código, sus comentarios, y
+este mismo archivo deberían estar en inglés — el español queda para la
+conversación con el agente, no para lo que se escribe en el repo. La regla
+de CLAUDE.md ya se actualizó en esta misma tarea (T-66); lo que falta es
+traducir las +60 tareas ya escritas, con su historial técnico detallado
+(warnings de producción, decisiones de arquitectura, notas de "ojo con...").
+**Por qué no se hizo de una vez:** son 1180+ líneas de notas técnicas densas
+acumuladas desde T-01. Traducirlas todas en un solo PR produce un diff
+imposible de revisar línea por línea contra el original, y una mala
+traducción aquí es peligrosa de verdad: este archivo es el que documenta,
+por ejemplo, que el `.env` local apunta a producción (T-12f/g/h) o que hay
+más de una instancia de Clerk (T-12h). Perder un matiz al traducir esas
+notas es peor que dejarlas en español un tiempo más.
+**Hecho cuando:** `ROADMAP.md` completo en inglés — estructura, las +60
+tareas existentes, y las secciones de reglas ("Modelo y effort",
+"Convenciones de código", etc.) — preservando el significado técnico exacto
+de cada nota, no una traducción literal palabra por palabra. Un humano debe
+revisar especialmente las notas de seguridad/producción (T-12f, T-12g,
+T-12h, T-64) antes de mergear, porque una traducción que suavice o cambie el
+tono de esas advertencias sería peor que no traducir.
+**Después:** toda tarea nueva que se agregue a este archivo se escribe
+directamente en inglés; no queda "media" traducción a medio hacer.
+**Depende de:** nada técnicamente, pero conviene hacerla después de que baje
+el ritmo de tareas activas — es un diff grande que compite por atención de
+review con cualquier PR abierto al mismo tiempo.
+**Modelo:** `opusplan` (necesita criterio para no perder matices en las
+notas de seguridad) · **Nocturno:** no

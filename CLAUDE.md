@@ -99,7 +99,13 @@ ninguna aplica, termina sin abrir PR en vez de inventar trabajo.
   decisión.
 - **Sin `console.log` en código que se mergea.** Usa el logger de
   `src/lib/logger`.
-- **Nombres en inglés en el código, comentarios y copy en español.**
+- **Nombres y comentarios en inglés en el código y en el ROADMAP.** Decisión
+  2026-09-05 (ver T-66): antes decía "comentarios en español"; se revirtió
+  porque el portafolio y cualquier colaborador externo leen inglés, no
+  español. El copy de producto (lo que ve el estudiante en la UI) sigue en
+  español por defecto — es un idioma de negocio, no de código — con inglés
+  disponible donde ya se migró a `next-intl` (ver T-46). El español queda
+  para la conversación con el humano, no para lo que se escribe en el repo.
 
 ## Estructura objetivo
 
