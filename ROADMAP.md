@@ -508,13 +508,84 @@ no matching `User` — lost webhook event, T-12b — a buyer with no seller,
 and a seller owner, plus the JSON-serializability check above).
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-12 · Admin role in Clerk claims
+### [~] T-12 · Admin role in Clerk claims
+> **Code is done; the migration can't actually apply yet — this is a T-64b
+> situation, not a missing flag.** `npm run set-admin-metadata` found 4
+> Mongo `User`s with `role: 'admin'`: 3 have a `clerkId`
+> (`sajhdg30@gmail.com` — the project owner's own — `marcogp3510@gmail.com`,
+> `victorvillarez12@gmail.com`), 1 (`test@example.com`) has none and can't
+> log in anyway (T-12c). Tried `--apply --permitir-desarrollo` (the
+> instance the `.env` and Vercel Production point to really is the
+> "development" one that serves the live site, per T-64's decision) and
+> `comprobarInstancia()`'s cross-instance check refused: an already-linked
+> `clerkId` it sampled doesn't resolve against that instance. Checked all
+> 3 target admins individually against the Backend API — **all three
+> `clerkId`s 404 against the live instance.** They're stale: leftover from
+> the old **production** Clerk instance (the one with ~70 accounts, not
+> the one currently serving `mercampus.vercel.app`), and none of the three
+> has gone through T-64b's reclaim flow yet (confirmed for the owner's own
+> account: exactly one `User` document, still holding the pre-T-64
+> `clerkId`, no second "fresh" document from a webhook-created sign-in).
+> **The actual sequence to unblock this:** each of the 3 has to sign in on
+> the live site at least once (creates a fresh `User` via the webhook on
+> the *current* instance) → run `npm run reclaim:account` (T-64b) to remap
+> the old `User` (role, `sellerId`, everything) onto that new `clerkId` →
+> only then does `npm run set-admin-metadata -- --apply
+> --permitir-desarrollo` have a valid target. None of that is this task's
+> to execute — it needs the actual people to log in — so T-12 stays `[~]`
+> with the code merged and the migration script ready and correct, blocked
+> on a prerequisite this repo already knew about (T-64b) rather than a new
+> problem T-12 introduced.
 **Why:** today it's resolved with an in-memory `Map` and a module-level
 `setInterval` inside a route. In serverless that's a per-instance cache and
 an interval that never gets cleaned up.
 **Done when:** the role lives in Clerk's `publicMetadata`; the middleware
 protects `/admin/*` and `/api/**/admin`; the `Map` and `setInterval` are
 gone.
+**Done:** `src/middleware.js` gates `/admin(.*)` and `/api/(.*)/admin(.*)`
+before any handler runs: no session → sign-in redirect (pages) or 401
+(API); session but `publicMetadata.role !== 'admin'` → redirect home
+(pages) or 403 (API). `api/sellers/admin/route.js` lost its `Map`,
+`setInterval`, and its own `currentUser()`-based check entirely — the
+route now trusts the middleware and only fetches data, the same way
+`isProtectedRoute` already gated seller-only pages with no per-page
+recheck.
+**Why `publicMetadata` and not `sessionClaims`:** reading `publicMetadata`
+straight from the session JWT (`sessionClaims`) needs the session token
+customized in Clerk's dashboard first — an infrastructure change outside
+code, and exactly the kind of global Clerk-instance setting this repo has
+been burned by before (T-64). Went with `clerkClient().users.getUser(userId)`
+instead: a Backend API call, same cost class the old code already paid via
+`currentUser()`, but now only for the userId actually hitting an admin
+route (not cached, not needed) instead of every request.
+**Kept out of `getSellerContextData()` on purpose:** the admin check isn't
+folded into the root layout's per-request user/seller resolution
+(T-12d). That runs on every page for every visitor; adding a Backend API
+call there to support a feature one user needs would tax everyone else.
+Mongo `User.role` still drives the `SideBar`/`SellerGrid` "Administración"
+UI hints unchanged — a stale hint fails safe (worst case: a hidden link
+that still 403s, or a shown link that redirects home), since the real gate
+is the middleware, not the sidebar.
+**Regression caught by the build itself:** removing the route's `req`
+param and its `currentUser()` call left it with nothing request-specific,
+so Next optimized `GET /api/sellers/admin` as a **static** route — it
+would have served one Mongo snapshot from build time to every admin
+forever. Caught by re-checking the build output after simplifying the
+route; fixed with `export const dynamic = 'force-dynamic'`.
+**Migration:** `scripts/set-admin-metadata.mjs` (`npm run
+set-admin-metadata`), same shape as `backfill-clerk-id.mjs` — reuses its
+`comprobarInstancia()` instance guard, dry run by default, `--apply`
+explicit. Copies `role: 'admin'` from Mongo into Clerk `publicMetadata`
+for every admin that already has a `clerkId`, merging into whatever
+`publicMetadata` a user already had instead of overwriting it.
+**Tests:** `tests/unit/adminAccess.test.js` covers the pure
+allow/signin/redirect-home/401/403 decision table
+(`src/utils/lib/adminAccess.ts`, factored out of `middleware.js` so it's
+testable without mocking Clerk's request-signing internals);
+`tests/integration/middleware-admin.test.js` exercises the real exported
+middleware with `clerkMiddleware`/`clerkClient` mocked (route matching
+itself stays real); `tests/integration/set-admin-metadata.test.js` covers
+the migration's dry-run/apply/idempotency/merge behavior.
 **Model:** `opus` · **Nightly:** no
 
 ### [x] T-13 · Zod validation on every edge
@@ -1381,6 +1452,13 @@ deleting the empty `User` the webhook left behind along the way. States:
 different email — touches nothing). Six tests with in-memory Mongo.
 **Depends on:** T-64
 **Model:** `opus` · **Nightly:** no
+**Update (T-12):** confirmed concretely for at least 3 of the 63 — the
+site's 3 Mongo admins, project owner included — none had reclaimed as of
+2026-09-06. Their `User.clerkId` still 404s against the live instance's
+Backend API, so T-12's Clerk-`publicMetadata` admin migration can't apply
+for them until they sign in once (fresh `User` via the webhook) and
+someone runs `reclaim:account` for each. Not new work, just a real number
+attached to "some people haven't reclaimed yet."
 
 ### [x] T-64c · Google login — was already wired up and already works
 **Finding, not work:** `ProvidersButton.jsx` already exists, is already

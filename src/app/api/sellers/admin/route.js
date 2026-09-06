@@ -2,53 +2,24 @@ import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { User } from '@/utils/models/userSchema';
-import { currentUser } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
 import { logger } from '@/lib/logger';
 
-// Cache en memoria para roles de usuario (evita consultas repetidas a BD)
-const userRoleCache = new Map();
+// T-12: quien puede llegar aqui ya lo decidio el middleware (publicMetadata de
+// Clerk, no el `role` de Mongo) - antes esta ruta reinventaba su propio
+// chequeo con un Map+setInterval en memoria, que en serverless es cache por
+// instancia y un intervalo que nunca se limpia.
+//
+// Sin ese chequeo (que leia currentUser()), la ruta ya no toca nada especifico
+// de la request y Next la optimiza como estatica: la serviria cacheada desde
+// el build en vez de consultar Mongo en cada llamada. force-dynamic evita
+// servir vendedores desactualizados al panel de admin.
+export const dynamic = 'force-dynamic';
 
-// Limpiar cache cada 5 minutos para evitar crecimiento excesivo
-setInterval(() => {
-  userRoleCache.clear();
-}, 5 * 60 * 1000);
-
-export async function GET(req) {
+export async function GET() {
   try {
     // Connect to the database
     await connectDB();
-
-    // Verificar si el usuario actual es admin
-    let isAdmin = false;
-    try {
-      const user = await currentUser();
-      if (user) {
-        const userId = user.id;
-        const email = user.emailAddresses[0].emailAddress;
-        
-        // Verificar cache primero
-        const cachedRole = userRoleCache.get(userId);
-        if (cachedRole !== undefined) {
-          isAdmin = cachedRole === 'admin';
-        } else {
-          // Solo hacer consulta a BD si no está en cache
-          const dbUser = await User.findOne({ email: email });
-          const userRole = dbUser?.role || 'buyer';
-          userRoleCache.set(userId, userRole);
-          isAdmin = userRole === 'admin';
-        }
-      }
-    } catch (error) {
-      logger.error('Error verificando rol de admin:', error);
-      return NextResponse.json({ message: 'Error de autenticación' }, { status: 401 });
-    }
-
-    // Solo admins pueden acceder a este endpoint
-    if (!isAdmin) {
-      return NextResponse.json({ message: 'Acceso denegado. Solo administradores.' }, { status: 403 });
-    }
 
     // Obtener TODOS los vendedores ordenados del más nuevo al más viejo
     const sellers = await Seller.find()
