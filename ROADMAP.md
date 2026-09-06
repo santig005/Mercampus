@@ -1333,7 +1333,13 @@ propio manejo inline, no vía `errorResponse`; quedan fuera de esta tarea,
 anotadas para quien toque esas rutas después.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-66 · Traducir ROADMAP.md a inglés
+### [~] T-66 · Traducir ROADMAP.md a inglés
+> **Pendiente de tu revisión — no mergeado.** Traducción completa lista en
+> [PR #242](https://github.com/santig005/Mercampus/pull/242). No se
+> autofusionó a propósito: revisa especialmente T-12f, T-12g, T-12h y la
+> familia T-64 antes de mergear — son las notas de seguridad/producción
+> donde una traducción de mas o de menos importa de verdad.
+
 **Por qué:** decisión 2026-09-05 del humano: el código, sus comentarios, y
 este mismo archivo deberían estar en inglés — el español queda para la
 conversación con el agente, no para lo que se escribe en el repo. La regla
