@@ -99,8 +99,12 @@ try {
   //
   // /antojos/sellers/list no siempre produce un Largest Contentful Paint
   // (NO_LCP intermitente, visto tanto en local como en CI): lighthouserc.json
-  // apaga solo su assertion de performance con assertMatrix, sin dejarla
-  // fuera del presupuesto de accesibilidad/best-practices/seo.
+  // le da su propia entrada en assertMatrix sin categories:performance, y
+  // excluye esa URL de la entrada general con un lookahead negativo — cada
+  // entrada de assertMatrix que matchea una URL se evalua entera, no se
+  // fusionan por clave, asi que un simple "off" en una segunda entrada no
+  // basta si la primera (con un patron que tambien matchea) sigue exigiendo
+  // el score.
   const paths = [
     '/antojos',
     `/antojos/${summary.ids.approvedProduct}`,
