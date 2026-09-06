@@ -41,7 +41,11 @@ export function errorResponse(
   const message =
     error instanceof Error ? error.message : 'Error interno del servidor';
 
-  logger.error(context, { status, message });
+  // 401/403 (and other 4xx) are expected client-side rejections, not server
+  // failures: log them at warn so they don't drown out the errors that are
+  // actually unexpected.
+  const log = status >= 500 ? logger.error : logger.warn;
+  log(context, { status, message });
 
   return NextResponse.json(
     { [bodyKey]: status >= 500 ? 'Error interno del servidor' : message },
