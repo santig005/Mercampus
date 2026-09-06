@@ -555,12 +555,21 @@ comentado entero, así que la disponibilidad automática por horario no funciona
 `req.sellerid` (un campo que no existe en `NextRequest`, así que siempre es
 `undefined`). Nada del frontend lo llama — `Schedule.jsx` solo usa el `POST`.
 `GET /api/schedules/[id]` es la ruta que sí funciona y sí se usa.
-**Hecho cuando:** los handlers muertos se eliminan; se decide si la
-disponibilidad automática se restaura como cron de Vercel (y entonces
-`allowedIPs.js` se reemplaza por un `CRON_SECRET`) o se elimina junto con el
-archivo. La decisión queda escrita en el PR.
-**Modelo:** `opusplan` — hay una decisión de producto de por medio
-**Nocturno:** no
+**Decisión (2026-09-06):** se restaura, no se borra. El humano confirmó que
+quiere el "abierto ahora" automático de vuelta — el campo `Seller.availability`
+y su badge (`AvailabilityBadge.jsx`) ya existen y ya se muestran al comprador;
+solo falta que se actualicen solos. `allowedIPs.js` ya no existe (lo borró
+T-34), así que no hay nada que "reemplazar": el guard nuevo es directo, sin
+migrar nada viejo.
+**Hecho cuando:** los handlers muertos de `api/sellers/route.js` se eliminan;
+`api/sellers/availability`'s `PATCH` (ya escrito, solo comentado — ver el
+archivo) se descomenta y se protege con un `CRON_SECRET` en el header
+`Authorization`, no con IPs; un cron de Vercel (`vercel.json` → `crons`) lo
+llama cada 5-10 minutos. Test que confirma que sin el secreto correcto la
+ruta responde 401 y no toca ningún `Seller`.
+**Modelo:** `sonnet` — la decisión de producto ya está tomada, queda
+implementación con la lógica ya escrita
+**Nocturno:** sí
 
 ### [x] T-15 · Errores tipados y logger
 **Por qué:** `console.log` por todas partes, mensajes de error inconsistentes,
@@ -913,6 +922,61 @@ product/seller ids they've saved, a toggle on product/seller cards, and a
 app's mutations (a user can only read/write their own favorites).
 **Model:** `opusplan` — needs the product decision above · **Nightly:** no
 
+### [ ] T-70 · Sort options in the product/seller listings
+**Why:** the public listing currently shuffles products randomly and only
+pushes unavailable ones last (`ProductGrid` / `api/products/route.js`);
+there's no way to sort by price or by newest, even though `Product`
+already has `price` and Mongoose's `timestamps: true` gives every
+document a `createdAt` for free. University filtering already works
+(`UniversitySelector` + `useUniversity`) — this only adds ordering on top
+of it.
+**Done when:** a sort control (price asc/desc, newest first) on the
+listing, backed by a query param the API already accepts or a small
+addition to it. The random shuffle stays as the default when no sort is
+picked.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-71 · Seller pause mode
+**Why:** an approved seller who's away (exam week, sick, traveling) has no
+way to hide their store without losing approval or their whole catalog —
+today they either stay listed while genuinely absent, or a human has to
+unapprove them. `Seller.availability` already exists but means something
+different (open right now, per schedule — see T-14); reusing it for a
+multi-day pause would conflate two different meanings on one field.
+**Done when:** a new boolean (e.g. `Seller.paused`) that hides the seller
+and its products from public listings without touching `approved`; a
+toggle the seller controls from their own profile, guarded by the same
+ownership check as the rest of the seller-facing mutations.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-72 · Seller profile completeness checklist
+**Why:** nothing today nudges a newly-approved seller to actually finish
+their profile — no logo, no schedule, no description — and their listing
+looks empty next to sellers who filled everything in. Every field this
+needs already exists on `Seller`/`Schedule`; this is purely surfacing
+what's missing.
+**Done when:** a small checklist/progress indicator on the seller's own
+dashboard, computed from existing fields (has logo? has description? has
+at least one `Schedule` entry? has at least one product?) — derived only,
+no schema change.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-73 · Dark mode with a hand-designed palette
+**Why:** daisyUI is already the styling layer and ships multi-theme
+support out of the box, but only one custom light theme is defined
+(`tailwind.config.*`) — there's no dark option at all today.
+**Why it's not nightly work:** the human asked for a hand-designed dark
+palette, not daisyUI's stock "dark" preset — that needs real color
+decisions (contrast against the existing brand primary/secondary,
+readability of product photos on a dark background), not a config toggle.
+Needs a plan-mode session, same as T-45/T-63.
+**Done when:** a second daisyUI theme (`dark`) with its own hand-picked
+palette, a switcher that persists per visitor (`localStorage`, following
+daisyUI's own `data-theme` convention), and the T-61 Lighthouse budget
+re-run against it to confirm contrast still passes.
+**Model:** `opusplan` — needs real design judgment, not just
+configuration · **Nightly:** no
+
 ---
 
 ## Fase 5 — IA como funcionalidad, no como herramienta
@@ -1000,6 +1064,27 @@ and auth (login/register) — takes screenshots, and writes up a findings
 list (screen + issue + suggested fix) in the PR description. No code
 changes in this task; it's diagnosis, not repair. Concrete follow-ups get
 their own tasks from that list.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-69 · Open Graph previews for product/seller pages
+**Why:** sharing a product link (there's already a share button,
+`ShareButton.jsx`) drops a bare URL — WhatsApp/Instagram previews fall
+back to the generic site-wide metadata in `layout.jsx`, the same title and
+image for every page on the site. A student sharing "look at this arepa"
+gets a link with no picture, no price, nothing that makes someone tap it.
+**Done when:** `generateMetadata()` on the product and seller detail pages
+returning per-page `openGraph`/`twitter` tags — title, description, and
+the product/seller's own image, all already stored in Mongo. No new
+fields needed, just reading what's already there.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-74 · sitemap.xml
+**Why:** complements the SEO category T-61 already measures. Approved
+sellers and their public product/profile pages aren't discoverable via a
+sitemap today — there isn't one.
+**Done when:** `src/app/sitemap.ts` (Next.js' native sitemap convention,
+no new dependency) generating entries for the static public pages plus
+one per approved seller and their products, read straight from Mongo.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-63 · Separar los entornos (base de datos y Clerk)
