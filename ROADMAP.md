@@ -509,17 +509,33 @@ and a seller owner, plus the JSON-serializability check above).
 **Model:** `opus` · **Nightly:** no
 
 ### [~] T-12 · Admin role in Clerk claims
-> **Code is done and merged; the migration is written but not yet
-> applied.** Running `npm run set-admin-metadata` (dry run) against the
-> real database found 4 Mongo `User`s with `role: 'admin'`: 3 have a
-> `clerkId` and are ready to migrate, 1 (`test@example.com`) has none and
-> can't log in anyway (T-12c), so it's not this migration's problem. **Run
-> `npm run set-admin-metadata -- --apply` before (or right after) this
-> merges to a shared environment** — until then, those 3 real admins get
-> redirected away from `/admin/*` by the new middleware gate, because their
-> Clerk `publicMetadata.role` isn't set yet. Not destructive, not
-> irreversible, but real accounts (one is the project owner's own), so it
-> wasn't run without asking first.
+> **Code is done; the migration can't actually apply yet — this is a T-64b
+> situation, not a missing flag.** `npm run set-admin-metadata` found 4
+> Mongo `User`s with `role: 'admin'`: 3 have a `clerkId`
+> (`sajhdg30@gmail.com` — the project owner's own — `marcogp3510@gmail.com`,
+> `victorvillarez12@gmail.com`), 1 (`test@example.com`) has none and can't
+> log in anyway (T-12c). Tried `--apply --permitir-desarrollo` (the
+> instance the `.env` and Vercel Production point to really is the
+> "development" one that serves the live site, per T-64's decision) and
+> `comprobarInstancia()`'s cross-instance check refused: an already-linked
+> `clerkId` it sampled doesn't resolve against that instance. Checked all
+> 3 target admins individually against the Backend API — **all three
+> `clerkId`s 404 against the live instance.** They're stale: leftover from
+> the old **production** Clerk instance (the one with ~70 accounts, not
+> the one currently serving `mercampus.vercel.app`), and none of the three
+> has gone through T-64b's reclaim flow yet (confirmed for the owner's own
+> account: exactly one `User` document, still holding the pre-T-64
+> `clerkId`, no second "fresh" document from a webhook-created sign-in).
+> **The actual sequence to unblock this:** each of the 3 has to sign in on
+> the live site at least once (creates a fresh `User` via the webhook on
+> the *current* instance) → run `npm run reclaim:account` (T-64b) to remap
+> the old `User` (role, `sellerId`, everything) onto that new `clerkId` →
+> only then does `npm run set-admin-metadata -- --apply
+> --permitir-desarrollo` have a valid target. None of that is this task's
+> to execute — it needs the actual people to log in — so T-12 stays `[~]`
+> with the code merged and the migration script ready and correct, blocked
+> on a prerequisite this repo already knew about (T-64b) rather than a new
+> problem T-12 introduced.
 **Why:** today it's resolved with an in-memory `Map` and a module-level
 `setInterval` inside a route. In serverless that's a per-instance cache and
 an interval that never gets cleaned up.
@@ -1436,6 +1452,13 @@ deleting the empty `User` the webhook left behind along the way. States:
 different email — touches nothing). Six tests with in-memory Mongo.
 **Depends on:** T-64
 **Model:** `opus` · **Nightly:** no
+**Update (T-12):** confirmed concretely for at least 3 of the 63 — the
+site's 3 Mongo admins, project owner included — none had reclaimed as of
+2026-09-06. Their `User.clerkId` still 404s against the live instance's
+Backend API, so T-12's Clerk-`publicMetadata` admin migration can't apply
+for them until they sign in once (fresh `User` via the webhook) and
+someone runs `reclaim:account` for each. Not new work, just a real number
+attached to "some people haven't reclaimed yet."
 
 ### [x] T-64c · Google login — was already wired up and already works
 **Finding, not work:** `ProvidersButton.jsx` already exists, is already
