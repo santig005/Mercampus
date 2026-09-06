@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { useSession, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -41,7 +42,7 @@ export default function AdminSellersPage() {
       
       setSellers(data.sellers || []);
     } catch (error) {
-      console.error('Error fetching sellers:', error);
+      logger.error('Error fetching sellers:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -90,7 +91,7 @@ export default function AdminSellersPage() {
         setError('Error al actualizar el estado del vendedor');
       }
     } catch (error) {
-      console.error('Error updating seller:', error);
+      logger.error('Error updating seller:', error);
       // Revertir cambio si hay error
       setSellers(prevSellers =>
         prevSellers.map(seller =>

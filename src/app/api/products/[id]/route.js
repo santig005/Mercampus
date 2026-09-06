@@ -1,15 +1,20 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
+import { AppError } from '@/utils/lib/errors';
+import { updateProductSchema } from '@/lib/validators/product';
+import { invalidPayload } from '@/lib/api-response';
+import { verifyOwnershipAndGetSellerId } from '@/utils/lib/auth';
 import { Product } from '@/utils/models/productSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
+import { logger } from '@/lib/logger';
 
 export async function GET(req, { params }) {
   try{
     await connectDB();
   }catch(error){
-    console.log(error)
+    logger.debug(error)
   }
   
 
@@ -43,7 +48,7 @@ export async function GET(req, { params }) {
     return NextResponse.json({ ...product.toObject(), schedules}, { status: 200 });
 
   } catch (error) {
-    console.log(error);
+    logger.debug(error);
     return NextResponse.json(
       { message: 'Error getting product', error: error.message },
       { status: 500 }
@@ -53,29 +58,20 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    console.log("→ PUT /api/products/:id, arrancando auth...");
-    //const { userId, email } = await getUserFromToken(req);
-    //console.log("✔️ Sesión válida para userId:", userId, "email:", email);
-
-    // 3) Verifica que el usuario autenticado sea el vendedor propietario del producto dado, y devuelve el sellerId.
-    
     await connectDB();
-    // 1) valida auth + ownership
-    
-    //7await verifyOwnershipAndGetSellerId(params.id,email);
 
-    // 2) haz el update
-    const data = await req.json();
-    
-    // Validar que la sección sea válida si se está actualizando
-    if (data.section && !['antojos', 'marketplace'].includes(data.section)) {
-      return NextResponse.json(
-        { message: 'Sección inválida. Debe ser "antojos" o "marketplace"' },
-        { status: 400 }
-      );
+    // Identidad y propiedad antes de tocar nada. Lanzan AppError con su status:
+    // 401 sin sesión, 403 si el producto es de otro vendedor.
+    await verifyOwnershipAndGetSellerId(params.id);
+
+    const parsed = updateProductSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
     }
-    
-    const updated = await Product.findByIdAndUpdate(params.id, data, { new: true });
+
+    const updated = await Product.findByIdAndUpdate(params.id, parsed.data, {
+      new: true,
+    });
     if (!updated) {
       return NextResponse.json(
         { message: "Producto no encontrado al actualizar." },
@@ -84,7 +80,7 @@ export async function PUT(req, { params }) {
     }
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
-    console.error("Error en PUT /api/products/:id", err);
+    logger.error("Error en PUT /api/products/:id", err);
     return NextResponse.json(
       { error: err.message || "Error interno" },
       { status: err.status || 500 }
@@ -95,17 +91,16 @@ export async function PUT(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     await connectDB();
-    // 1) valida auth + ownership
-    //await verifyOwnershipAndGetSellerId(params.id);
 
-    // 2) haz el delete
+    await verifyOwnershipAndGetSellerId(params.id);
+
     const deleted = await Product.findByIdAndDelete(params.id);
     if (!deleted) {
       throw new AppError("Producto no encontrado al eliminar.", 404);
     }
     return NextResponse.json({ message: "Producto eliminado" }, { status: 200 });
   } catch (err) {
-    console.error("Error en DELETE /api/products/:id", err);
+    logger.error("Error en DELETE /api/products/:id", err);
     return NextResponse.json(
       { error: err.message || "Error interno" },
       { status: err.status || 500 }

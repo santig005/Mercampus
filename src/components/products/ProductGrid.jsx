@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { getProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
@@ -28,7 +29,7 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
       const { products } = await getProducts(product, category, sellerId, university, undefined, undefined, section);
       setProducts(products);
     } catch (error) {
-      console.error('Error loading products:', error);
+      logger.error('Error loading products:', error);
       setProducts([]);
     }
     setLoading(false);

@@ -1,5 +1,6 @@
 // src/services/apiToken.js
 'use server';
+import { logger } from '@/lib/logger';
 const API_BASE_URL = process.env.NEXT_PUBLIC_URL + '/api';
 
 export const fetchAPIToken = async (endpoint, token, options = {}) => {
@@ -27,7 +28,7 @@ export const fetchAPIToken = async (endpoint, token, options = {}) => {
         ? await response.json()
         : await response.text();
     } catch (error) {
-      console.error('API Token Fetch Error:', error);
+      logger.error('API Token Fetch Error:', error);
       throw error;
     }
   };

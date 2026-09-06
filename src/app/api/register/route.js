@@ -1,6 +1,7 @@
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { User } from '@/utils/models/userSchema';
+import { logger } from '@/lib/logger';
 
 export async function POST(req) {
   const { name, email } = await req.json();
@@ -11,7 +12,7 @@ export async function POST(req) {
 
     await user.save();
   } catch (error) {
-    console.error("Error detallado al crear el usuario:", error);
+    logger.error("Error detallado al crear el usuario:", error);
 
     return new NextResponse("Error al crear el usuario: " + JSON.stringify(error), { status: 500 });
   }

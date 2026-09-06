@@ -2,9 +2,9 @@ import { connectDB } from '@/utils/connectDB'; // Your function to connect to Mo
 import { daysES } from '@/utils/resources/days'; // Your resource file with the days of the week
 import { NextResponse } from 'next/server';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { currentUser } from '@clerk/nextjs/server';
-import { User } from '@/utils/models/userSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { replaceSchedulesSchema } from '@/lib/validators/schedule';
+import { errorResponse, invalidPayload } from '@/lib/api-response';
+import { getClerkUserId, verifySellerId } from '@/utils/lib/auth';
 
 
 export async function GET(req) {
@@ -27,17 +27,22 @@ export async function POST(req) {
   await connectDB();
 
   try {
-    const { sellerId, schedules } = await req.json();
+    // Identidad primero: sin sesión no se llega ni a mirar el cuerpo. Después
+    // propiedad, que necesita el sellerId ya validado porque viene en el
+    // cuerpo. Sin esto la ruta borraba y reescribía el horario de cualquier
+    // vendedor con solo mandar su id.
+    await getClerkUserId();
 
-    // Data validation
-    if (!sellerId || !schedules || !Array.isArray(schedules)) {
-      return NextResponse.json(
-      { message: 'Invalid data: sellerId and an array of schedules are required.' },
-      { status: 400 }
-      );
+    const parsed = replaceSchedulesSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return invalidPayload(parsed.error);
     }
+    const { sellerId, schedules } = parsed.data;
 
-    // Create new schedules
+    await verifySellerId(sellerId);
+
+    // day ya viene validado contra daysES, asi que indexOf no puede dar -1
+    // (que antes guardaba day: 0 en silencio).
     const newSchedules = schedules.map((schedule) => ({
       sellerId,
       startTime: schedule.startTime,
@@ -46,12 +51,13 @@ export async function POST(req) {
     }));
 
     // delete the previous schedules
-    const deletedSchedules = await Schedule.deleteMany({ sellerId });
+    await Schedule.deleteMany({ sellerId });
     const result = await Schedule.insertMany(newSchedules);
 
     return NextResponse.json({ message: 'Schedules created succesfully.', schedules: result }, { status: 200 });
     } catch (error) {
-    return NextResponse.json({ message: 'Intern error from the server.', error: error.message }, { status: 500 });
+    // `message` y no `error`: es la clave que lee el banner de Schedule.jsx.
+    return errorResponse(error, '[POST /api/schedules]', { bodyKey: 'message' });
   }
 }
 

@@ -2,20 +2,24 @@
 import React from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
-import SellerBadge from '../seller/SellerBadge';
+import { productCardClassName } from '@/lib/card-variant';
 
-export default function ProductCard({
-  product: { _id: id, name, availability, category, price, images, owner },
-  isClicked,
-}) {
+// variant='standalone' (por defecto): tarjeta suelta sobre el fondo de la
+// página, con su propio sombreado y la animación de escala al hacer click.
+// variant='embedded': sin fondo ni sombreado, para cuando el contenedor que la
+// envuelve ya provee esa apariencia (p. ej. la fila de edición de productos).
+// La lógica del className vive en src/lib/card-variant.js: ver ahí por qué.
+export default function ProductCard({ product, isClicked, variant = 'standalone' }) {
+  const { name, availability, category, price, images, owner } = product;
+
   const renderCategories = () => {
     try {
-      return category.map((category, index) => (
+      return category.map((cat, index) => (
         <span
           key={index}
           className='my-card-subtitle text-[11px] mr-1 px-1 py-[2px] rounded-md bg-[#ff950b]/15'
         >
-          {category}
+          {cat}
         </span>
       ));
     } catch (error) {
@@ -24,12 +28,8 @@ export default function ProductCard({
   };
 
   return (
-    <div
-      className={`bg-white drop-shadow-md flex gap-2 p-2 rounded-md transition-transform duration-300 cursor-pointer ${
-        isClicked ? 'scale-[0.95]' : 'scale-100'
-      }`}
-    >
-      <div className='size-24 w-32 rounded-md overflow-hidden flex-shrink-0'>
+    <div className={productCardClassName({ variant, isClicked })}>
+      <div className='h-24 w-32 rounded-md overflow-hidden flex-shrink-0'>
         <img className='img-full' src={images[0]} alt={'Imagen de ' + name} />
       </div>
       <div className='flex flex-col justify-between'>
@@ -39,17 +39,9 @@ export default function ProductCard({
         </div>
         <p className='card-price'>{priceFormat(price)}</p>
         <div className='flex items-center gap-2'>
-          {/* <div className='rounded-full size-6 overflow-hidden'>
-            <img
-              className='img-full'
-              src={owner?.logo}
-              alt={'Imagen del publicador del producto ' + name}
-            />
-          </div> */}
           <p className='my-card-subtitle'>{owner}</p>
         </div>
         <AvailabilityBadge availability={availability}></AvailabilityBadge>
-        {/* <SellerBadge seller={owner}></SellerBadge> */}
       </div>
     </div>
   );

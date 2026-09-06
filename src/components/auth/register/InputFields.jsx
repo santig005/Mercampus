@@ -31,7 +31,6 @@ export default function InputFields({
     // Formatea el número con comas y símbolo de dólar
     const formattedValue = formatValue(numericValue);
 
-    // console.log(numericValue.toString());
 
     setDisplayPrice(formattedValue);
     onChange({ target: { name: 'price', value: numericValue.toString() } });

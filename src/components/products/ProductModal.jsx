@@ -43,7 +43,6 @@ function ProductModal({ product, theKey }) {
         product_id: product._id,
       });
     }
-    // console.log(product);
   }, [product]);
 
   const handleShowModal = () => {

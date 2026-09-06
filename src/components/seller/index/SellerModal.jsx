@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import {
@@ -24,7 +25,7 @@ export default function SellerModal({ seller, set }) {
       try {
         setSchedules(seller.schedules);
       } catch (error) {
-        console.error('Error fetching schedules:', error);
+        logger.error('Error fetching schedules:', error);
       }
     }
     if (seller) {

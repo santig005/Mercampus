@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 export const uploadImages = async (images, folderName) => {
   let uploadedImages = [];
   try {
@@ -21,7 +22,7 @@ export const uploadImages = async (images, folderName) => {
       );
     }
   } catch (error) {
-    console.error('Error uploading image:', error);
+    logger.error('Error uploading image:', error);
     throw error;
   }
   return uploadedImages;

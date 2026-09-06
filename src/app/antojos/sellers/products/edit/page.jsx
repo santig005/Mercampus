@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { getSellerProducts, updateProduct } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
@@ -10,7 +11,6 @@ import { updateSeller } from '@/services/sellerService';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useAuth } from '@clerk/nextjs';
-import ProductCardAV from '@/components/products/ProductCardAV';
 
 export default function EditProductsPage() {
   const [products, setProducts] = useState([]);
@@ -35,7 +35,7 @@ export default function EditProductsPage() {
           const response = await getSellerProducts(seller._id);
           setProducts(response.products);
         } catch (error) {
-          console.error('Error fetching products:', error);
+          logger.error('Error fetching products:', error);
         } finally {
           setIsLoading(false);
         }
@@ -59,8 +59,8 @@ export default function EditProductsPage() {
         )
       );
       const token = await getToken({ skipCache: true});
-      console.log("etngo token");
-      console.log(token);
+      logger.debug("etngo token");
+      logger.debug(token);
       const updatedProduct = await updateProduct(id, {
         availability: !currentAvailability
       },token);
@@ -75,7 +75,7 @@ export default function EditProductsPage() {
         );
       }
     } catch (error) {
-      console.error('Error updating availability:', error);
+      logger.error('Error updating availability:', error);
     }
   };
   const handleSellerAvailability = async () => {
@@ -92,7 +92,7 @@ export default function EditProductsPage() {
         setSeller({ ...seller, availability: !sellerAvailability });
       }
     } catch (error) {
-      console.error('Error updating seller availability:', error);
+      logger.error('Error updating seller availability:', error);
     }
   };
 
@@ -162,12 +162,7 @@ export default function EditProductsPage() {
                     className='bg-white drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
                   >
                     <div onClick={() => handleProductClick(product._id)}>
-                      <ProductCardAV
-                        product={product}
-                        toggleSwitch={() =>
-                          handleAvailabilityToggle(product._id, product.availability)
-                        }
-                      />
+                      <ProductCard product={product} variant='embedded' />
                     </div>
                     <div className='flex justify-between'>
                       <p>Disponibilidad</p>
