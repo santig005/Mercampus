@@ -697,7 +697,7 @@ Changing it means migrating data, so it goes with T-30.
 **Depends on:** T-13b
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-14 · Dead and broken endpoints
+### [x] T-14 · Dead and broken endpoints
 **Why:** the PUT and DELETE in `api/sellers/route.js` use `req.query`,
 which doesn't exist in the App Router: they never worked.
 `api/sellers/availability` is entirely commented out, so automatic
@@ -722,6 +722,42 @@ right secret the route responds 401 and doesn't touch any `Seller`.
 **Model:** `sonnet` — the product decision is already made, what's left
 is implementation with the logic already written
 **Nightly:** yes
+**Done:** the dead `PUT`/`DELETE` in `api/sellers/route.js` are gone
+(confirmed zero frontend callers — the real edit path is `PUT
+/api/sellers/[id]`, which already works and has its own tests).
+`api/sellers/availability`'s handler is uncommented, guarded with
+`CRON_SECRET` (fails closed if the env var itself is unset, not just on a
+mismatched header), and `vercel.json` calls it every 10 minutes.
+**Two bugs caught in the "already written" logic before shipping it,
+not left for later:**
+1. **It was exported as `PATCH`; Vercel Cron always calls the configured
+   path with `GET`.** Shipped as written, the cron would have hit a route
+   with no `GET` handler — a silent 405, availability never updating,
+   with nothing in the logs pointing at why. Renamed to `GET`.
+2. **The day/time math used the runtime's local clock** (`now.getDay()`,
+   `now.toTimeString()`). Vercel's functions run in UTC; sellers' schedules
+   are entered in Bogotá time (UTC-5). Left as written, the cron would
+   have compared against the wrong hour (and sometimes the wrong day)
+   every single run — not unimplemented, actively wrong, which is worse
+   for a badge buyers already see and trust. Colombia has no DST, so a
+   fixed 5-hour offset computed via UTC getters (not the runtime's
+   configured timezone) is enough; no dependency needed.
+**Test:** `tests/integration/availability-cron.test.js` — no
+`Authorization`, a wrong secret, and `CRON_SECRET` itself unset all get
+401 without touching any `Seller`; with the right secret, the seeded
+approved seller (Monday/Wednesday 08:00-16:00, Friday 10:00-18:00) is
+forced `availability: false` then correctly flipped back to `true` at a
+mocked Monday-10am-Bogotá timestamp, and to `false` at Monday-8pm-Bogotá
+— including a case where the mocked instant is already Tuesday in UTC,
+to confirm the timezone shift (not just the hour) is right.
+**Assumption to verify against real infra, not guessed at:** `*/10 * * *
+*` in `vercel.json` assumes the Vercel plan allows sub-daily cron
+frequency. Some Vercel tiers cap cron jobs at once/day — worth a 30-second
+check in the Vercel dashboard after this promotes, not something
+verifiable from here.
+**Left alone on purpose:** `GET /api/schedules`'s dead `req.sellerid`
+filter (T-13b's finding) — not part of this task's "done when", and
+nothing in the frontend calls it.
 
 ### [x] T-15 · Typed errors and logger
 **Why:** `console.log` everywhere, inconsistent error messages, `AppError`
