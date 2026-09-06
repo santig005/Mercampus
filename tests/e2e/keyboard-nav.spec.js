@@ -1,69 +1,67 @@
 import { expect, test } from '@playwright/test';
 
-// T-61. Lighthouse audita el DOM en estático (aria, contraste, etiquetas) pero
-// no simula un usuario tabulando de verdad. Estas pruebas sí lo hacen, sobre
-// los dos formularios públicos del sitio.
+// T-61. Lighthouse audits the DOM statically (aria, contrast, labels) but
+// doesn't simulate a real user tabbing through a page. These tests do, on
+// the site's two public forms.
 
-test.describe('navegacion por teclado', () => {
-  test('pqrs: el tab recorre checkbox, email, tipo, descripcion, soporte y enviar en orden', async ({
+test.describe('keyboard navigation', () => {
+  test('pqrs: tab visits checkbox, email, type, description, support and submit in order', async ({
     page,
   }) => {
     await page.goto('/antojos/pqrs');
 
-    const anonimo = page.locator('form').getByRole('checkbox');
+    const anonymous = page.locator('form').getByRole('checkbox');
     const email = page.getByPlaceholder('Ingresa tu correo electrónico');
-    const tipo = page.getByRole('combobox');
-    const descripcion = page.getByPlaceholder('Escribe los detalles de tu solicitud');
-    const soporte = page.getByRole('link', { name: /hablar con soporte/i });
-    const enviar = page.getByRole('button', { name: 'Enviar' });
+    const type = page.getByRole('combobox');
+    const description = page.getByPlaceholder('Escribe los detalles de tu solicitud');
+    const support = page.getByRole('link', { name: /hablar con soporte/i });
+    const submit = page.getByRole('button', { name: 'Enviar' });
 
-    await anonimo.focus();
-    await expect(anonimo).toBeFocused();
+    await anonymous.focus();
+    await expect(anonymous).toBeFocused();
 
     await page.keyboard.press('Tab');
     await expect(email).toBeFocused();
 
     await page.keyboard.press('Tab');
-    await expect(tipo).toBeFocused();
+    await expect(type).toBeFocused();
 
     await page.keyboard.press('Tab');
-    await expect(descripcion).toBeFocused();
+    await expect(description).toBeFocused();
 
     await page.keyboard.press('Tab');
-    await expect(soporte).toBeFocused();
+    await expect(support).toBeFocused();
 
     await page.keyboard.press('Tab');
-    await expect(enviar).toBeFocused();
+    await expect(submit).toBeFocused();
   });
 
-  test('pqrs: la barra espaciadora marca "Anónimo" y oculta el campo de correo', async ({
-    page,
-  }) => {
+  test('pqrs: spacebar checks "Anónimo" and hides the email field', async ({ page }) => {
     await page.goto('/antojos/pqrs');
 
-    const anonimo = page.locator('form').getByRole('checkbox');
+    const anonymous = page.locator('form').getByRole('checkbox');
     const email = page.getByPlaceholder('Ingresa tu correo electrónico');
 
     await expect(email).toBeVisible();
 
-    await anonimo.focus();
+    await anonymous.focus();
     await page.keyboard.press('Space');
 
     await expect(email).toBeHidden();
   });
 
-  test('login: el tab llega a email, contraseña y el envio solo se habilita con ambos', async ({
+  test('login: tab reaches email, password, and submit only enables with both', async ({
     page,
   }) => {
     await page.goto('/auth/login');
 
     const email = page.getByPlaceholder('johndoe@gmail.com');
     const password = page.getByPlaceholder('********');
-    const enviar = page.getByRole('button', { name: 'Iniciar Sesión' });
+    const submit = page.getByRole('button', { name: 'Iniciar Sesión' });
 
-    // Deshabilitado con los campos vacios: no debe entrar al orden de
-    // tabulacion hasta que haya algo que enviar.
-    await expect(enviar).toBeDisabled();
+    // Disabled while the fields are empty: it shouldn't enter tab order
+    // until there's something to submit.
+    await expect(submit).toBeDisabled();
 
     await email.focus();
     await page.keyboard.type('ana@example.test');
@@ -73,7 +71,7 @@ test.describe('navegacion por teclado', () => {
     await page.keyboard.type('unaClaveSegura123');
 
     await page.keyboard.press('Tab');
-    await expect(enviar).toBeFocused();
-    await expect(enviar).toBeEnabled();
+    await expect(submit).toBeFocused();
+    await expect(submit).toBeEnabled();
   });
 });

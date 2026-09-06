@@ -34,14 +34,14 @@ function readDotEnv() {
 }
 
 const dotEnv = readDotEnv();
-// process.env manda sobre .env, igual que hace Next.
+// process.env wins over .env, same as Next does.
 const baseEnv = { ...dotEnv, ...process.env };
 
 if (!baseEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
   console.error(
-    'lighthouse: falta NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.\n' +
-      '            Igual que en el e2e, Clerk rechaza toda peticion sin una\n' +
-      '            publishable key valida, asi que ni las rutas publicas responden.'
+    'lighthouse: missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.\n' +
+      '            Same as e2e, Clerk rejects every request without a valid\n' +
+      '            publishable key, so not even the public routes respond.'
   );
   process.exit(1);
 }
@@ -59,10 +59,10 @@ async function waitForServer(url, timeoutMs = 60_000) {
       const res = await fetch(url);
       if (res.status < 500) return;
     } catch {
-      // el servidor todavia no acepta conexiones
+      // server isn't accepting connections yet
     }
     if (Date.now() > deadline) {
-      throw new Error(`lighthouse: ${url} no respondio a tiempo`);
+      throw new Error(`lighthouse: ${url} did not respond in time`);
     }
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
@@ -71,7 +71,7 @@ async function waitForServer(url, timeoutMs = 60_000) {
 let mongo;
 let server;
 try {
-  console.log('\n──── base de datos en memoria ────');
+  console.log('\n──── in-memory database ────');
   mongo = await MongoMemoryServer.create();
   const uri = `${mongo.getUri()}mercampus_lighthouse`;
   await mongoose.connect(uri);
@@ -88,23 +88,21 @@ try {
   const buildCode = await run('npx next build', env);
   if (buildCode !== 0) process.exit(buildCode);
 
-  console.log('\n──── servidor ────');
+  console.log('\n──── server ────');
   server = spawn(`npx next start -p ${PORT}`, { shell: true, stdio: 'inherit', env });
   await waitForServer(`http://localhost:${PORT}/antojos`);
 
-  // Pantallas principales: listado, detalle de producto, perfil de vendedor,
-  // el grid de vendedores, marketplace (seccion aparte) y una pagina de
-  // marketing. Cubren server components con datos reales del seed y estatico
-  // puro.
+  // Main screens: listing, product detail, seller profile, the seller
+  // grid, marketplace (separate section), and one marketing page. Covers
+  // server components with real seeded data and pure static content.
   //
-  // /antojos/sellers/list no siempre produce un Largest Contentful Paint
-  // (NO_LCP intermitente, visto tanto en local como en CI): lighthouserc.json
-  // le da su propia entrada en assertMatrix sin categories:performance, y
-  // excluye esa URL de la entrada general con un lookahead negativo — cada
-  // entrada de assertMatrix que matchea una URL se evalua entera, no se
-  // fusionan por clave, asi que un simple "off" en una segunda entrada no
-  // basta si la primera (con un patron que tambien matchea) sigue exigiendo
-  // el score.
+  // /antojos/sellers/list doesn't always produce a Largest Contentful Paint
+  // (intermittent NO_LCP, seen both locally and in CI): lighthouserc.json
+  // gives it its own assertMatrix entry without categories:performance, and
+  // excludes that URL from the general entry with a negative lookahead —
+  // every assertMatrix entry that matches a URL gets evaluated in full, they
+  // aren't merged by key, so a plain "off" in a second entry isn't enough if
+  // the first one (whose pattern also matches) still requires the score.
   const paths = [
     '/antojos',
     `/antojos/${summary.ids.approvedProduct}`,
@@ -116,9 +114,10 @@ try {
   const urls = paths.map(path => `http://localhost:${PORT}${path}`);
 
   console.log('\n──── lighthouse ────');
-  // npx en vez de una dependencia instalada: @lhci/cli arrastra ~240 paquetes
-  // transitivos (puppeteer, lighthouse-core viejo) con docenas de CVEs, para
-  // algo que corre una vez por PR. Version fija para reproducibilidad.
+  // npx instead of an installed dependency: @lhci/cli pulls in ~240
+  // transitive packages (puppeteer, an old lighthouse-core) with dozens of
+  // CVEs, for something that runs once per PR. Pinned version for
+  // reproducibility.
   const lhciArgs = [
     '--yes',
     '@lhci/cli@0.15.1',

@@ -97,9 +97,9 @@ jobs:
           path: test-results/
           retention-days: 14
 
-  # T-61. Presupuesto de rendimiento/accesibilidad: mismo motivo que el e2e
-  # para necesitar Clerk de verdad (su middleware corre en toda ruta, publicas
-  # incluidas) y la misma bandera para prenderlo.
+  # T-61. Performance/accessibility budget: same reason as e2e for needing
+  # real Clerk (its middleware runs on every route, public ones included)
+  # and the same flag to turn it on.
   lighthouse:
     if: vars.E2E_ENABLED == 'true'
     runs-on: ubuntu-latest
