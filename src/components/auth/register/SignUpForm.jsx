@@ -69,23 +69,6 @@ export default function SignUpForm() {
       'Ya has iniciado sesión, si quieres registrarte con otra cuenta, cierra sesión primero',
   };
 
-  const createUserDb = async () => {
-    try {
-      fetch(`/api/register`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: userName,
-          email: emailAddress,
-        }),
-      });
-    } catch (err) {
-      logger.error('Error creating user:', err.message);
-    }
-  };
-
   // Handle submission of the sign-up form
   const handleSubmit = async e => {
     e.preventDefault();
@@ -176,7 +159,6 @@ export default function SignUpForm() {
       // and redirect the user
       if (completeSignUp.status === 'complete') {
         setVerification(true);
-        await createUserDb();
         await setActive({ session: completeSignUp.createdSessionId });
         router.push('/');
       } else {
