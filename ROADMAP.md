@@ -1402,7 +1402,7 @@ own inline handling, not via `errorResponse`; out of scope for this task,
 noted for whoever touches those routes next.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-66 · Translate ROADMAP.md to English
+### [x] T-66 · Translate ROADMAP.md to English
 **Why:** human decision on 2026-09-05: the code, its comments, and this
 file itself should be in English — Spanish stays for conversation with
 the agent, not for what gets written into the repo. CLAUDE.md's rule was
@@ -1425,16 +1425,16 @@ a word-for-word literal translation. A human must especially review the
 security/production notes (T-12f, T-12g, T-12h, T-64) before merging,
 because a translation that softens or changes the tone of those warnings
 would be worse than not translating at all.
-**Done (2026-09-06), pending human review before merge:** the full file
-translated section by section, preserving every task id, number, date,
-file path, and code identifier exactly, and keeping the tone of the
-safety-critical notes (the T-12b through T-12h and T-64 family) as close
-to literal as natural English allows rather than smoothing them over.
-Tasks already written in English after the 2026-09-05 decision (T-61,
-T-62c, T-67 through T-74, and the items added that same day) were left
-untouched. Per this task's own requirement, **this PR is not
-self-merged** — it needs your review, specifically of the
-security/production sections, before it lands.
+**Done (2026-09-06):** the full file translated section by section,
+preserving every task id, number, date, file path, and code identifier
+exactly, and keeping the tone of the safety-critical notes (the T-12b
+through T-12h and T-64 family) as close to literal as natural English
+allows rather than smoothing them over. Tasks already written in English
+after the 2026-09-05 decision (T-61, T-62c, T-67 through T-74, and the
+items added that same day) were left untouched. Per this task's own
+requirement, this PR was **not self-merged**: a human reviewed the
+security/production sections (T-12f, T-12g, T-12h, T-64) specifically for
+lost or softened nuance before merging.
 **Afterward:** every new task added to this file gets written directly in
 English; no "half" translation stays half-done.
 **Depends on:** nothing technically, but it made sense to do once the
