@@ -1110,7 +1110,7 @@ Google.
 actividad, y una revisión mensual del propio roadmap.
 **Modelo:** `sonnet` · **Nocturno:** sí
 
-### [ ] T-65 · `/api/schedules` registra un 401 normal como `[error]`
+### [x] T-65 · `/api/schedules` registra un 401 normal como `[error]`
 **Por qué:** notado en la verificación de humo tras promover T-11/T-64b/T-13 a
 `main` (2026-09-06). Un `POST /api/schedules` sin sesión responde bien —
 401, `{ message: 'No autenticado.' }` — pero el catch lo pasa por
@@ -1124,4 +1124,10 @@ fallo real, y le resta señal a los errores que sí importan.
 otras rutas con el mismo patrón de `errorResponse` tienen el mismo problema
 antes de decidir si el fix va en `api-response.ts` (un sitio) o ruta por
 ruta.
+**Hecho:** `errorResponse` (único sitio que usa este patrón — grep confirmó
+que `/api/schedules` es el único caller) ahora registra en `logger.warn`
+cuando `status < 500` y reserva `logger.error` para 500+. Otras rutas
+(`sellers/[id]`, `products/[id]`) llaman a `logger.error` directo con su
+propio manejo inline, no vía `errorResponse`; quedan fuera de esta tarea,
+anotadas para quien toque esas rutas después.
 **Modelo:** `sonnet` · **Nocturno:** sí
