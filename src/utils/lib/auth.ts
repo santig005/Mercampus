@@ -4,6 +4,10 @@ import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
 import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
+// No se usa por nombre, pero el import registra el modelo en Mongoose: el
+// populate('sellerId') de getSellerContextData lo necesita registrado, si no
+// revienta con MissingSchemaError (mismo patron que api/products/route.js).
+import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
 
 /**
  * Id del usuario en Clerk (`user_...`).
@@ -45,6 +49,52 @@ export async function getAuthenticatedUser() {
   }
 
   return user;
+}
+
+type SellerContextValue = false | 'None' | Record<string, unknown>;
+
+/**
+ * Usuario y vendedor de la sesion actual, listos para pasar a un Client
+ * Component (`SellerContext`). A diferencia de `getAuthenticatedUser()`,
+ * nunca lanza: no hay sesion es un resultado valido (visitante anonimo), no
+ * un error, porque esto se llama en el layout raiz en cada request.
+ *
+ * Reemplaza a `GET /api/users/user-with-seller/[email]` (T-12d), que no
+ * tenia ninguna autenticacion y respondia con el User/Seller de cualquier
+ * email que se probara. Aqui la identidad sale del `clerkId` de la sesion
+ * (T-12c), nunca de un email que llegue del cliente.
+ *
+ * Devuelve `false` para "no hay sesion" y `'None'` para "hay sesion pero sin
+ * perfil de vendedor", los mismos sentinels que ya esperaban los consumidores
+ * de `SellerContext`.
+ */
+export async function getSellerContextData(): Promise<{
+  user: SellerContextValue;
+  seller: SellerContextValue;
+}> {
+  const { userId } = await auth();
+  if (!userId) {
+    return { user: false, seller: false };
+  }
+
+  await connectDB();
+  const user = await User.findOne({ clerkId: userId }).populate('sellerId').lean();
+  if (!user) {
+    // Hay sesion en Clerk pero no hay usuario en la base (evento de webhook
+    // perdido, ver T-12b). Se trata igual que "no hay sesion": no hay nada
+    // que mostrarle a SellerContext.
+    return { user: false, seller: false };
+  }
+
+  const { sellerId, ...rest } = user;
+  const seller: SellerContextValue = sellerId
+    ? JSON.parse(JSON.stringify(sellerId))
+    : 'None';
+
+  // JSON.parse(JSON.stringify(...)) en vez de pasar el objeto de Mongoose tal
+  // cual: cruza la frontera Server -> Client Component, y un ObjectId/Date de
+  // Mongoose no es un objeto plano serializable por React.
+  return { user: JSON.parse(JSON.stringify(rest)), seller };
 }
 
 /**

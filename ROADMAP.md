@@ -440,7 +440,7 @@ walk: a blocked user gets 404 → backfill → 201.
 **Depends on:** T-12b, T-12c
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-12d · Delete the public by-email route and get `SellerContext` off the client
+### [x] T-12d · Delete the public by-email route and get `SellerContext` off the client
 **Why:** `GET /api/users/user-with-seller/[email]` **has no authentication
 at all**. Verified by calling the handler with no session against
 in-memory Mongo: it responds 200 with the user's full document (`_id`,
@@ -457,8 +457,55 @@ without querying by email at all.
 fetching them; a test confirms the route no longer exists.
 **Heads up:** overlaps with T-30/T-31 (data layer and Server Components).
 If opening it up shows the right home is inside T-31, note it and merge
-them instead of doing the work twice.
-**Depends on:** T-12c
+them instead of doing the work twice. **Resolution:** kept inside T-12d —
+it's a security fix on identity resolution, not a listing migration, so it
+belongs with T-12c rather than waiting for T-31's broader Server Components
+work.
+**Done:** added `getSellerContextData()` to `src/utils/lib/auth.ts`. Unlike
+`getAuthenticatedUser()`, it never throws — no session is a valid outcome
+(anonymous visitor), not an error, since this now runs on every request via
+the root layout. It resolves identity by `clerkId` (T-12c), populates
+`sellerId`, and returns the exact `false`/`'None'`/object sentinels
+`SellerContext`'s 9 consumers already expected, so none of them needed
+changes. Root layout (`src/app/layout.jsx`) calls it and passes
+`initialUser`/`initialSeller` into `SellerProvider`; `SellerContext.js` lost
+its `useEffect` fetch, its `useUser()` import, and ~65 lines of an already-
+dead, commented-out earlier version of the same provider.
+**Serialization, not just auth:** a Mongoose lean+populate result contains
+class instances (`ObjectId`, `Date`), and React rejects non-plain objects
+crossing the Server → Client Component boundary. `getSellerContextData()`
+round-trips the result through `JSON.parse(JSON.stringify(...))` before
+returning it — confirmed necessary and sufficient with a dedicated test
+asserting `_id` comes out as a `string`, not an `ObjectId`.
+**Checked it wouldn't go stale after login:** moving this from a
+`useUser()`-driven client fetch to server props resolved once per request
+raised one real question — does the root layout re-run after
+`setActive()` on a client-side `router.push('/')` (no hard reload), or does
+Next's client router cache serve the pre-login layout? Traced it into the
+installed `@clerk/nextjs` package: `ClerkProvider` calls `router.refresh()`
+after every `setActive()` (`__unstable__onAfterSetActive`), which is
+exactly what already made the `auth()` → `userId` prop into `SideBar` (in
+`antojos/layout.jsx`/`marketplace/layout.jsx`) safe. Same guarantee here,
+not a new assumption.
+**Deleted as a consequence, not a target:** `src/services/server/userService.js`
+(`getUserWithSellerByEmail` plus an already-unexported, already-dead
+`populateSellerIdInUsers`) and `src/services/userService.js` (the client
+`fetchAPI` wrapper) both lost their only real caller and had zero
+importers left — `npm run deadcode` (knip) would fail on an orphaned file
+otherwise. `getUserByEmail`, `services/userService.js`'s other export, was
+already dead before this task (only reachable from the same deleted
+commented-out block) and disappears with the file.
+**Found, not fixed — separate ticket territory:** `GET /api/users/[id]/route.js`
+has the same shape of problem (no auth, returns the full `User` by email or
+id, 404 otherwise) and is untouched here — out of this task's stated scope,
+and its only internal caller (`getUserByEmail`) is now gone too, so it's
+reachable only by someone hitting the URL directly.
+**Tests:** `tests/integration/user-with-seller-cerrado.test.js` (same
+pattern as T-11's `register-cerrado.test.js`: importing the deleted route
+module throws, so Next would genuinely 404 it) and
+`tests/integration/sellerContextData.test.js` (no session, a `clerkId` with
+no matching `User` — lost webhook event, T-12b — a buyer with no seller,
+and a seller owner, plus the JSON-serializability check above).
 **Model:** `opus` · **Nightly:** no
 
 ### [ ] T-12 · Admin role in Clerk claims
