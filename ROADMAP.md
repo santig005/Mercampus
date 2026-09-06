@@ -508,13 +508,68 @@ no matching `User` — lost webhook event, T-12b — a buyer with no seller,
 and a seller owner, plus the JSON-serializability check above).
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-12 · Admin role in Clerk claims
+### [~] T-12 · Admin role in Clerk claims
+> **Code is done and merged; the migration is written but not yet
+> applied.** Running `npm run set-admin-metadata` (dry run) against the
+> real database found 4 Mongo `User`s with `role: 'admin'`: 3 have a
+> `clerkId` and are ready to migrate, 1 (`test@example.com`) has none and
+> can't log in anyway (T-12c), so it's not this migration's problem. **Run
+> `npm run set-admin-metadata -- --apply` before (or right after) this
+> merges to a shared environment** — until then, those 3 real admins get
+> redirected away from `/admin/*` by the new middleware gate, because their
+> Clerk `publicMetadata.role` isn't set yet. Not destructive, not
+> irreversible, but real accounts (one is the project owner's own), so it
+> wasn't run without asking first.
 **Why:** today it's resolved with an in-memory `Map` and a module-level
 `setInterval` inside a route. In serverless that's a per-instance cache and
 an interval that never gets cleaned up.
 **Done when:** the role lives in Clerk's `publicMetadata`; the middleware
 protects `/admin/*` and `/api/**/admin`; the `Map` and `setInterval` are
 gone.
+**Done:** `src/middleware.js` gates `/admin(.*)` and `/api/(.*)/admin(.*)`
+before any handler runs: no session → sign-in redirect (pages) or 401
+(API); session but `publicMetadata.role !== 'admin'` → redirect home
+(pages) or 403 (API). `api/sellers/admin/route.js` lost its `Map`,
+`setInterval`, and its own `currentUser()`-based check entirely — the
+route now trusts the middleware and only fetches data, the same way
+`isProtectedRoute` already gated seller-only pages with no per-page
+recheck.
+**Why `publicMetadata` and not `sessionClaims`:** reading `publicMetadata`
+straight from the session JWT (`sessionClaims`) needs the session token
+customized in Clerk's dashboard first — an infrastructure change outside
+code, and exactly the kind of global Clerk-instance setting this repo has
+been burned by before (T-64). Went with `clerkClient().users.getUser(userId)`
+instead: a Backend API call, same cost class the old code already paid via
+`currentUser()`, but now only for the userId actually hitting an admin
+route (not cached, not needed) instead of every request.
+**Kept out of `getSellerContextData()` on purpose:** the admin check isn't
+folded into the root layout's per-request user/seller resolution
+(T-12d). That runs on every page for every visitor; adding a Backend API
+call there to support a feature one user needs would tax everyone else.
+Mongo `User.role` still drives the `SideBar`/`SellerGrid` "Administración"
+UI hints unchanged — a stale hint fails safe (worst case: a hidden link
+that still 403s, or a shown link that redirects home), since the real gate
+is the middleware, not the sidebar.
+**Regression caught by the build itself:** removing the route's `req`
+param and its `currentUser()` call left it with nothing request-specific,
+so Next optimized `GET /api/sellers/admin` as a **static** route — it
+would have served one Mongo snapshot from build time to every admin
+forever. Caught by re-checking the build output after simplifying the
+route; fixed with `export const dynamic = 'force-dynamic'`.
+**Migration:** `scripts/set-admin-metadata.mjs` (`npm run
+set-admin-metadata`), same shape as `backfill-clerk-id.mjs` — reuses its
+`comprobarInstancia()` instance guard, dry run by default, `--apply`
+explicit. Copies `role: 'admin'` from Mongo into Clerk `publicMetadata`
+for every admin that already has a `clerkId`, merging into whatever
+`publicMetadata` a user already had instead of overwriting it.
+**Tests:** `tests/unit/adminAccess.test.js` covers the pure
+allow/signin/redirect-home/401/403 decision table
+(`src/utils/lib/adminAccess.ts`, factored out of `middleware.js` so it's
+testable without mocking Clerk's request-signing internals);
+`tests/integration/middleware-admin.test.js` exercises the real exported
+middleware with `clerkMiddleware`/`clerkClient` mocked (route matching
+itself stays real); `tests/integration/set-admin-metadata.test.js` covers
+the migration's dry-run/apply/idempotency/merge behavior.
 **Model:** `opus` · **Nightly:** no
 
 ### [x] T-13 · Zod validation on every edge
