@@ -1579,6 +1579,19 @@ already be clean). Big enough to split across a few PRs by area (admin,
 auth, seller forms, marketing pages) rather than one — see CLAUDE.md's
 ~15-file guideline. Re-run `npm run budget:lighthouse:dark` after each
 batch to catch contrast regressions.
+**Careful with that re-run (measured 2026-09-07, T-75b):** the dark budget
+is not reliable on the dev laptop. It fails there on `agent/develop` with
+*no* changes applied — `Runtime error: The page did not paint any content
+(NO_FCP)`, exit 1, zero assertion failures — and across four runs of
+identical code the set of pages that misses the 0.35 performance threshold
+changed every time (0.32-0.52 on the same page), because performance is
+timing-based and the machine orbits that threshold. One run reported
+performance `NaN`, which is the same NO_FCP surfacing as a failed
+assertion. Judge a theming batch by **accessibility**, which is a static
+audit and came out bit-stable at 0.71/0.74/0.75/0.75/0.93 in every run,
+matching T-73's baseline. Treat a performance failure there as noise
+unless it reproduces on a clean base run in the same session. Note CI only
+runs the *light* budget (`ci.yml`), so nothing catches this automatically.
 **In progress — split into 4 PRs by area.** Fresh inventory (2026-09-07):
 25 files, 175 occurrences, very unevenly spread — `/about` alone has 105.
 | Batch | Area | Files | Occurrences | State |
