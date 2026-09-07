@@ -108,7 +108,7 @@ const RegisterSeller = () => {
       </div>
       <div className='h-3/4'>
         <div className='relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-max w-full px-6 pt-6 pb-16'>
+          <div className='bg-base-100 text-base-content rounded-t-3xl h-max w-full px-6 pt-6 pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields

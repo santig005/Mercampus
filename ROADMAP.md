@@ -1583,8 +1583,8 @@ batch to catch contrast regressions.
 25 files, 175 occurrences, very unevenly spread — `/about` alone has 105.
 | Batch | Area | Files | Occurrences | State |
 |---|---|---|---|---|
-| a | admin + auth + strays | 7 | 32 | PR #255 |
-| b | seller's own forms | 12 | 30 | pending |
+| a | admin + auth + strays | 7 | 32 | merged (#255) |
+| b | seller's own forms | 9 | 28 | PR #256 |
 | c | marketing (`/about`, `about/layout`, `/landing`) | 3 | 111 | pending |
 | d | final sweep + re-grep | — | — | pending |
 Mark the task `[x]` only when the last batch lands.
@@ -1605,7 +1605,11 @@ near-black on the dark surface.
 `Carousel`/`CarouselModal`'s `bg-gray-400` is an inactive-dot indicator and
 `ShareButton`'s `text-gray-200` sits on `bg-green-600` — both are
 self-consistent colour pairs that read fine on either theme. So the
-175-occurrence count overstates the job.
+175-occurrence count overstates the job. Two more that the inventory
+counted for batch b were already migrated by T-73 and came out untouched
+(`SellerProductsBySection`, `UniGraphicSelector`), and `Schedule.jsx`'s
+`text-white bg-gray-800` pills are another self-consistent pair — left
+alone.
 **Depends on:** T-73
 **Model:** `sonnet` · **Nightly:** yes
 

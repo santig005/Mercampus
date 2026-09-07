@@ -118,10 +118,10 @@ export default function EditSellerPage() {
         </p>
       </div>
       <div className='h-3/4 bg-[#393939]'>
-        <div className='bg-white rounded-t-3xl h-max w-full absolute px-6 pt-6 pb-16'>
+        <div className='bg-base-100 text-base-content rounded-t-3xl h-max w-full absolute px-6 pt-6 pb-16'>
           <form onSubmit={handleSubmit}>
             <div className='flex flex-col gap-7'>
-              <div className='flex justify-between items-center gap-4 p-2 bg-white rounded shadow-md'>
+              <div className='flex justify-between items-center gap-4 p-2 bg-base-100 rounded shadow-md'>
                 <div>
                   <h3>Mi disponibilidad</h3>
                   <AvailabilityBadge availability={sellerAvailability} />
@@ -138,7 +138,7 @@ export default function EditSellerPage() {
                   switch tracks visibility (green = listed) rather than the
                   pause itself, to keep the same colour meaning as the toggle
                   right above it. */}
-              <div className='flex justify-between items-center gap-4 p-2 bg-white rounded shadow-md'>
+              <div className='flex justify-between items-center gap-4 p-2 bg-base-100 rounded shadow-md'>
                 <div className='pr-2'>
                   <h3>Visibilidad de mi tienda</h3>
                   <p
@@ -148,7 +148,7 @@ export default function EditSellerPage() {
                   >
                     {sellerPaused ? 'En pausa' : 'Visible'}
                   </p>
-                  <p className='text-xs text-gray-500'>
+                  <p className='text-xs text-gray-500 dark:text-base-content/70'>
                     Si la pausas dejas de aparecer en los listados mientras no
                     puedas vender. Conservas tu aprobación y tus productos:
                     cuando la reactives vuelves a aparecer como estabas.

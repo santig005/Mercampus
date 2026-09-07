@@ -36,7 +36,7 @@ export default function PqrsForm() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-8 bg-gray-100 rounded-lg shadow-lg">
+    <div className="max-w-3xl mx-auto p-8 bg-base-200 text-base-content rounded-lg shadow-lg">
       <h1 className="text-3xl font-bold text-center mb-8">Formulario PQRS</h1>
 
       {message && (
@@ -77,7 +77,7 @@ export default function PqrsForm() {
         <div>
           <label className="block text-lg font-semibold mb-2">Tipo de Solicitud</label>
           <select
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={pqrs.type}
             onChange={(e) => setPqrs({ ...pqrs, type: e.target.value })}
             required
