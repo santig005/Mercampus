@@ -1692,6 +1692,41 @@ a plain `title` and get a real tab name instead of the bare site name. None
 do today; out of scope here.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [ ] T-77 · `auth()` sometimes runs without Clerk's middleware context
+**Why:** during the T-75a Lighthouse run the server logged, 24 times in
+one run, `Clerk: auth() was called but Clerk can't detect usage of
+clerkMiddleware()`, with a React `digest` and no URL. Nothing 500s — every
+page still served 200 — but `getSellerContextData()` in the root layout
+calls `auth()` without a try/catch, so whatever request hits this path
+renders its layout through an error instead of a resolved session, and it
+would silently sign the visitor out for that render.
+**Investigated 2026-09-07, could NOT reproduce.** Ruled out, each by
+experiment against a production build served from an in-memory Mongo (the
+`scripts/lighthouse.mjs` recipe):
+- *Not* the `next-intl` early return in `src/middleware.js` — the first and
+  most obvious suspect, since `if (isIntlRoute(req)) return
+  intlMiddleware(req)` returns before Clerk decorates the request. `/about`
+  and `/en/about` log nothing.
+- *Not* the `?theme=dark` query Lighthouse appends (the matcher regex has a
+  `[^?]*` clause about search params, so it was worth testing): all 6
+  budgeted pages were probed with and without it, 12 requests, zero errors.
+- *Not* the build phase — in the logs the errors land after `──── server
+  ────`, during the page loads, not during `Generating static pages`.
+- *Not* something only a real browser triggers: driving Chromium through
+  Playwright to `networkidle` on all 6 pages, so every client component
+  mounts and makes its `/api/*` calls, also logs zero.
+**Where to pick it up:** the error carries no URL, which is what makes it
+hard — the first job is finding out *which* request it is. Both runs that
+showed it were also the runs where Lighthouse was failing with `NO_FCP` on
+this machine, so it may well be an artifact of a Chrome that never paints
+rather than a bug real visitors hit; that is a guess, not a finding.
+Cheapest next step is defensive and useful either way: wrap the `auth()`
+call in `getSellerContextData()` so a throw degrades to "no session" — a
+state that function already models and returns — instead of taking the
+root layout down with it, and log the pathname when it happens. That turns
+an invisible error into something with an address on it.
+**Model:** `opus` — a bug that doesn't reproduce on demand · **Nightly:** no
+
 ### [ ] T-63 · Separate the environments (database and Clerk)
 > **The biggest structural risk in the project right now.** An agent can't
 > do this: these are infrastructure decisions and they cost money.
