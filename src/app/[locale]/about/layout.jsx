@@ -24,7 +24,7 @@ export default async function layout({ children, params }) {
                 height={32}
                 className="w-6 h-6 sm:w-8 sm:h-8"
               />
-              <span className="text-lg sm:text-xl font-bold text-gray-900 drop-shadow-sm">Mercampus</span>
+              <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-base-content drop-shadow-sm">Mercampus</span>
             </Link>
 
             <div className="flex items-center gap-3 sm:gap-4">
