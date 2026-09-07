@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MdCloseFullscreen } from 'react-icons/md';
 
 export default function CarouselModal({ images, initialIndex, id }) {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex); // Índice actual
-  const carouselRef = useRef(null); // Referencia al contenedor del carrusel
+  const [currentIndex, setCurrentIndex] = useState(initialIndex); // Current index
+  const carouselRef = useRef(null); // Ref to the carousel container
 
-  // Actualizar el índice actual cuando se hace scroll
+  // Update the current index on scroll
   const updateCurrentIndex = useCallback(() => {
     const scrollLeft = carouselRef.current.scrollLeft;
     const width = carouselRef.current.offsetWidth;
@@ -15,7 +15,7 @@ export default function CarouselModal({ images, initialIndex, id }) {
     setCurrentIndex(index);
   }, []);
 
-  // Establecer el índice inicial al abrir el modal
+  // Set the starting index when the modal opens
   useEffect(() => {
     setCurrentIndex(initialIndex);
     if (carouselRef.current) {
@@ -26,7 +26,7 @@ export default function CarouselModal({ images, initialIndex, id }) {
     }
   }, [initialIndex]);
 
-  // Escuchar el evento `scroll` en el contenedor del carrusel
+  // Listen for `scroll` on the carousel container
   useEffect(() => {
     const carouselElement = carouselRef.current;
     if (!carouselElement) return;

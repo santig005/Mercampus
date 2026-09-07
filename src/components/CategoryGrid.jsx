@@ -14,7 +14,7 @@ export default function CategoryGrid({ section = 'antojos' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Obtener la lista de categorías según la sección
+  // The category list for this section
   const currentCategoriesList = section === 'marketplace' ? marketplaceCategoriesList : categoriesList;
 
   useEffect(() => {

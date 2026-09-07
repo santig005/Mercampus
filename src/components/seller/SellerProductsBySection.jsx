@@ -13,7 +13,7 @@ export default function SellerProductsBySection({ sellerId }) {
     async function fetchProducts() {
       try {
         setLoading(true);
-        // Obtener todos los productos del vendedor (sin filtro de sección)
+        // Every product of this seller (no section filter)
         const response = await getSellerProducts(sellerId);
         setProducts(response.products || []);
       } catch (error) {
@@ -38,8 +38,8 @@ export default function SellerProductsBySection({ sellerId }) {
   }
 
   if (!products || products.length === 0) {
-    // T-73: dark:text-base-content/70 - este bloque vive dentro del
-    // bg-primary/dark:bg-base-100 de SellerModal o SellerPage.
+    // T-73: dark:text-base-content/70 - this block sits inside SellerModal's
+    // or SellerPage's bg-primary/dark:bg-base-100.
     return (
       <div className='text-center py-8 text-gray-500 dark:text-base-content/70'>
         <p>Este vendedor aún no tiene productos disponibles.</p>
@@ -47,7 +47,7 @@ export default function SellerProductsBySection({ sellerId }) {
     );
   }
 
-  // Agrupar productos por sección
+  // Group the products by section
   const productsBySection = products.reduce((acc, product) => {
     const section = product.section || 'antojos';
     if (!acc[section]) {
@@ -57,7 +57,7 @@ export default function SellerProductsBySection({ sellerId }) {
     return acc;
   }, {});
 
-  // Ordenar secciones para que antojos vaya primero
+  // Order the sections so antojos comes first
   const sortedSections = Object.entries(productsBySection).sort(([a], [b]) => {
     if (a === 'antojos') return -1;
     if (b === 'antojos') return 1;

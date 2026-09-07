@@ -22,7 +22,7 @@ export default function ProvidersButton() {
 
   async function handleSignIn(strategy) {
     // if (!signIn || !signUp) return;
-    // if (!isLoaded) return; // Espera hasta que Clerk esté listo
+    // if (!isLoaded) return; // wait until Clerk is ready
 
     // If the user has an account in your application, but does not yet
     // have an OAuth account connected to it, you can transfer the OAuth

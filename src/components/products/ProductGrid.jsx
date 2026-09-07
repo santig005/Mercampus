@@ -12,9 +12,9 @@ import { useUniversity } from '@/context/UniversityContext';
 
 const PAGE_SIZE = 12;
 
-// T-70: opciones de orden que expone GET /api/products (ver SORT_CONFIGS).
-// 'default' mantiene el orden historico (disponibles primero); el resto son
-// las agregadas por esta tarea.
+// T-70: the sort options GET /api/products exposes (see SORT_CONFIGS).
+// 'default' keeps the historical order (available first); the rest were added
+// by that task.
 const SORT_OPTIONS = [
   { value: 'default', label: 'Recomendado' },
   { value: 'newest', label: 'Más nuevo' },
@@ -28,27 +28,26 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  // Estado local, no un query param: SearchBox reconstruye la URL desde cero
-  // en cada tecla (ver SearchBox.jsx) y se llevaria puesto cualquier param
-  // que no conozca, asi que un `sort` en la URL desaparecería al escribir.
+  // Local state, not a query param: SearchBox rebuilds the URL from scratch
+  // on every keystroke (see SearchBox.jsx) and would wipe out any param it
+  // doesn't know about, so a `sort` in the URL would vanish as you type.
   const [sort, setSort] = useState('default');
   const [parent] = useAutoAnimate();
   const searchParams = useSearchParams();
   const { university } = useUniversity();
   const { ref: sentinelRef, inView } = useInView();
 
-  // Descarta la respuesta de un fetch si los filtros ya cambiaron para
-  // cuando vuelve: sin esto, un "cargar mas" disparado justo antes de
-  // cambiar de filtro podria pisar el cursor de la pagina nueva con el de
-  // la vieja.
+  // Drops a fetch's response if the filters already changed by the time it
+  // comes back: without this, a "load more" fired just before switching
+  // filters could overwrite the new page's cursor with the old one's.
   const requestId = useRef(0);
 
-  // Extraemos los filtros desde la URL
+  // Read the filters from the URL
   const product = searchParams.get('product') || '';
   const category = searchParams.get('category') || '';
   const sellerId = searchParams.get('sellerId') || sellerIdParam;
 
-  // Cambiar de filtro reinicia el listado desde la primera pagina.
+  // Changing a filter restarts the listing from the first page.
   useEffect(() => {
     const thisRequest = ++requestId.current;
     setLoading(true);
@@ -74,11 +73,10 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
       });
   }, [product, category, sellerId, university, section, sort]);
 
-  // Scroll infinito: pide la siguiente pagina cuando el centinela de abajo
-  // entra en pantalla. Depende de hasMore/loading/loadingMore para volver a
-  // dispararse tras cada pagina cargada mientras el centinela siga visible
-  // (listados cortos que caben enteros en la ventana sin necesidad de
-  // scroll real).
+  // Infinite scroll: asks for the next page when the sentinel at the bottom
+  // comes into view. It depends on hasMore/loading/loadingMore so it fires
+  // again after each loaded page while the sentinel stays visible (short
+  // listings that fit entirely in the window without any real scrolling).
   useEffect(() => {
     if (!inView || !hasMore || loading || loadingMore) return;
 

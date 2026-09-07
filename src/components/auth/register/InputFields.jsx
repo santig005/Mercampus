@@ -25,10 +25,10 @@ export default function InputFields({
   );
 
   const handlePriceChange = e => {
-    const rawValue = e.target.value.replace(/\D/g, ''); // Elimina caracteres no numéricos
+    const rawValue = e.target.value.replace(/\D/g, ''); // Strip non-numeric characters
     const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
 
-    // Formatea el número con comas y símbolo de dólar
+    // Format the number with thousands separators and a currency symbol
     const formattedValue = formatValue(numericValue);
 
 
@@ -54,9 +54,9 @@ export default function InputFields({
   // make a function to handle the phone number input field
   const handlePhoneChange = e => {
     let { value } = e.target;
-    let phone = value.replace(/\D/g, ''); // Elimina caracteres no numéricos
+    let phone = value.replace(/\D/g, ''); // Strip non-numeric characters
 
-    // Si el usuario está borrando, evita dejar caracteres sueltos
+    // While the user is deleting, avoid leaving stray characters behind
     if (phone.length === 0) {
       setDisplayNumber('');
       setValidNumber(false);
@@ -70,16 +70,16 @@ export default function InputFields({
 
     setDisplayNumber(formattedPhone);
 
-    // Verificar si el número es válido (10 dígitos)
+    // Check the number is valid (10 digits)
     setValidNumber(phone.length === 10);
 
     if (onChange) {
-      onChange(e); // Envía solo números
+      onChange(e); // Send digits only
     }
   };
 
   useEffect(() => {
-    // Ejecuta handleResize para cada textarea cuando el componente se monta
+    // Run handleResize for every textarea when the component mounts
     const textAreas = document.querySelectorAll('textarea');
     textAreas.forEach(textarea => handleResize({ target: textarea }));
   }, []);

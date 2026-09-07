@@ -22,7 +22,7 @@ export default function ForgotPassword({ setForgotPassword }) {
   const [verification, setVerification] = useState(false);
   const [parent] = useAutoAnimate();
 
-  // Refs para cada input
+  // One ref per input
   const codeInputRefs = useRef([]);
   const [code, setCode] = useState('');
 
@@ -179,47 +179,47 @@ export default function ForgotPassword({ setForgotPassword }) {
     setLoading(false);
   }
 
-  // Manejar el cambio en los inputs
+  // Handle a change in the inputs
   const handleInput = (e, index) => {
-    const value = e.target.value.slice(0, 1); // Solo permitir un dígito
-    if (!/^\d*$/.test(value)) return; // Solo permitir números
+    const value = e.target.value.slice(0, 1); // Only one digit
+    if (!/^\d*$/.test(value)) return; // Digits only
 
-    // Actualizar la cadena completa del código
+    // Update the whole code string
     const newCodeArray = code.split('');
     newCodeArray[index] = value;
     const newCode = newCodeArray.join('');
     setCode(newCode);
 
-    // Mover el foco al siguiente input si no es el último
+    // Move focus to the next input unless this is the last one
     if (value && index < 5) {
       codeInputRefs.current[index + 1].focus();
     }
 
-    // Verificar si todos los campos están completos y enviar el código automáticamente
+    // Check whether every field is filled and submit the code automatically
     // if (newCode.length === 6 && !newCode.includes('')) {
-    //   handleVerify(newCode); // Llama a la función de verificación pasando el código
+    //   handleVerify(newCode); // calls the verify function with the code
     // }
   };
 
   // Manejar el pegado de texto
   const handlePaste = e => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData('text').slice(0, 6); // Solo obtener los primeros 6 caracteres
+    const pasteData = e.clipboardData.getData('text').slice(0, 6); // Take only the first 6 characters
     setCode(pasteData);
 
-    // Llenar los inputs con los valores pegados
+    // Fill the inputs with the pasted values
     pasteData.split('').forEach((char, i) => {
       if (codeInputRefs.current[i]) {
         codeInputRefs.current[i].value = char;
       }
     });
 
-    // Enfocar el último input pegado
+    // Focus the last pasted input
     const lastIndex = Math.min(pasteData.length - 1, 5);
     codeInputRefs.current[lastIndex].focus();
   };
 
-  // Manejar las teclas (borrar y moverse)
+  // Handle keys (delete and navigation)
   const handleKeyDown = (e, index) => {
     if (e.key === 'Backspace' && !code[index] && index > 0) {
       codeInputRefs.current[index - 1].focus();
@@ -410,7 +410,7 @@ export default function ForgotPassword({ setForgotPassword }) {
                                 maxLength={1}
                                 onChange={e => handleInput(e, index)}
                                 ref={el => (codeInputRefs.current[index] = el)}
-                                value={code[index] || ''} // Mostrar el valor actual en cada input
+                                value={code[index] || ''} // Show the current value in each input
                                 // autoFocus={index === 0}
                                 onKeyDown={e => handleKeyDown(e, index)}
                                 onPaste={handlePaste}

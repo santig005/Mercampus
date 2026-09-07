@@ -17,10 +17,10 @@ import SellerProductsBySection from '@/components/seller/SellerProductsBySection
 import { parseIfJSON } from '@/utils/utilFn';
 
 export default function SellerModal({ seller, set }) {
-  const [schedules, setSchedules] = useState([]); // Estado para almacenar los horarios
-  const [images, setImages] = useState([]); // Estado para almacenar las imágenes
+  const [schedules, setSchedules] = useState([]); // State holding the schedules
+  const [images, setImages] = useState([]); // State holding the images
   useEffect(() => {
-    // Función para obtener los horarios del vendedor desde la API
+    // Fetch the seller's schedules from the API
     async function fetchSchedules() {
       try {
         setSchedules(seller.schedules);
