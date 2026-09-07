@@ -4,6 +4,17 @@ import type { SellerPreview } from '@/server/sellers/getSellerForMetadata';
 
 export const SITE_NAME = 'Mercampus';
 
+// T-74: the canonical public origin, shared by the root layout's
+// `metadataBase` and by the sitemap, so the two can't drift apart.
+//
+// Deliberately a constant and not `NEXT_PUBLIC_URL`: that variable is the
+// client's API base and the test harnesses set it to http://localhost:<port>
+// (scripts/e2e.mjs, scripts/lighthouse.mjs). A sitemap is required to list
+// URLs on its own host, so picking it up from there risks publishing a
+// sitemap full of localhost links the day it is set wrong - worse than
+// having no sitemap at all. If the domain changes, it changes here.
+export const SITE_URL = 'https://mercampus.vercel.app';
+
 // T-76: the root layout's title config, kept here next to the builders that
 // depend on it rather than inline in layout.jsx, so the `%s` can be asserted
 // in a unit test (importing layout.jsx pulls in Clerk, next/font and the

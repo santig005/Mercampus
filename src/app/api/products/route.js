@@ -13,6 +13,7 @@ import {
 } from '@/lib/validators/product';
 import { SORT_CONFIGS } from '@/lib/sorting/product-sort';
 import { invalidPayload } from '@/lib/api-response';
+import { publicSellerFilter } from '@/lib/public-visibility';
 import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // No se usa por nombre, pero el import registra el modelo en Mongoose y el
 // populate({ model: 'Seller' }) del GET lo necesita registrado. Si se borra,
@@ -53,8 +54,7 @@ export async function GET(req) {
   // the paused ones. `$ne: true` matches the old field-less documents too,
   // which is why the schema default is enough and no migration is needed.
   const eligibleSellerIds = await Seller.find({
-    approved: true,
-    paused: { $ne: true },
+    ...publicSellerFilter(),
     university: { $regex: university, $options: 'i' },
   }).distinct('_id');
 

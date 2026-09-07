@@ -31,6 +31,12 @@ export async function GET(req) {
     // Admins keep the full list, paused included, at GET /api/sellers/admin
     // (the /admin/sellers panel), which is the one that deliberately returns
     // every seller.
+    //
+    // T-74: deliberately NOT publicSellerFilter(), which also requires
+    // `approved: true`. This endpoint returns pending sellers on purpose -
+    // SellerGrid hides them from ordinary visitors client-side but shows them
+    // to an admin, who approves them from that very grid. Adding `approved`
+    // here empties the admin's approval queue; there is a test for it now.
     var sellers = await Seller.find({ paused: { $ne: true } });
     if (university) {
       sellers = sellers.filter(
