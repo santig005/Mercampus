@@ -72,8 +72,8 @@ const sellerSchema = new Schema(
   }
 );
 
-// userId: para resolver el vendedor a partir del usuario autenticado.
-// university: el listado publico filtra por universidad.
+// userId: to resolve the seller from the authenticated user.
+// university: the public listing filters by university.
 sellerSchema.index({ userId: 1 });
 sellerSchema.index({ university: 1 });
 

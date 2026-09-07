@@ -11,14 +11,14 @@ export const antojosCategories = [
   'Otros'
 ];
 
-// Mantener compatibilidad con código existente
+// Kept for compatibility with existing code
 export const categories = antojosCategories;
 
 export const Categories = async () => {
   return antojosCategories;
 };
 
-// Función para obtener categorías por sección
+// Returns the categories for a given section
 export const getCategoriesBySection = async (section) => {
   if (section === 'marketplace') {
     const { marketplaceCategories } = await import('./marketplaceCategories');

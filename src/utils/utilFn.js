@@ -1,17 +1,17 @@
 import { toNationalPhone } from '@/lib/phone';
 
-// Mercampus es un marketplace colombiano: los precios van en pesos y los
-// teléfonos en el formato nacional de 10 dígitos.
+// Mercampus is a Colombian marketplace: prices are in pesos and phone
+// numbers in the 10-digit national format.
 const CURRENCY_LOCALE = 'es-CO';
 const CURRENCY = 'COP';
 
-// Ojo: `es-CO` separa el símbolo del importe con un espacio duro (U+00A0),
-// así que 1500 sale como '$ 1.500'. Es la forma canónica del locale.
-// `maximumFractionDigits` va explicito a proposito: para COP su valor por
-// defecto depende de la version de ICU (0 en el runner del CI, 2 en el Node
-// 22.20 local), asi que sin fijarlo el mismo precio se ve distinto segun la
-// maquina. Cero es ademas lo correcto: no circulan centavos de peso y el
-// precio es entero en `productSchema`.
+// Careful: `es-CO` separates the symbol from the amount with a non-breaking
+// space (U+00A0), so 1500 comes out as '$ 1.500'. That is the locale's
+// canonical form. `maximumFractionDigits` is set explicitly on purpose: for
+// COP its default depends on the ICU version (0 on the CI runner, 2 on the
+// local Node 22.20), so without pinning it the same price looks different
+// depending on the machine. Zero is also the correct value: peso cents do not
+// circulate and the price is an integer in `productSchema`.
 const currencyFormatter = new Intl.NumberFormat(CURRENCY_LOCALE, {
   style: 'currency',
   currency: CURRENCY,
@@ -36,8 +36,8 @@ export const formatValue = value => (value > 0 ? priceFormat(value) : '');
 export const formatPhone = phone => {
   if (!phone) return ''; // Si phone es null/undefined, retorna vacío
 
-  // El normalizador vive en `@/lib/phone` porque el schema de Zod valida el
-  // teléfono con el mismo criterio con el que se muestra aquí.
+  // The normaliser lives in `@/lib/phone` because the Zod schema validates
+  // the phone by the same rule it is displayed with here.
   const cleanPhone = toNationalPhone(phone);
 
   if (cleanPhone.length > 6) {

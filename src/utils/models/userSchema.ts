@@ -2,13 +2,14 @@ import mongoose, { Schema, type InferSchemaType, type Model } from 'mongoose';
 
 const userSchema = new Schema(
   {
-    // Id del usuario en Clerk (`user_...`). Es la clave con la que Clerk y
-    // Mongo se unen: inmutable, a diferencia del email, y disponible sin salir
-    // a la API de Clerk porque `auth()` ya la devuelve.
+    // The user's Clerk id (`user_...`). It is the key joining Clerk and
+    // Mongo: immutable, unlike the email, and available without calling
+    // Clerk's API because `auth()` already returns it.
     //
-    // El webhook siempre buscó por aquí, pero el campo no existía en el schema,
-    // así que Mongoose lanzaba StrictModeError en cada `user.created` y el
-    // try/catch se lo tragaba: no se creó nunca ningún usuario por esta vía.
+    // The webhook always looked it up by this field, but the field did not
+    // exist in the schema, so Mongoose threw StrictModeError on every
+    // `user.created` and the try/catch swallowed it: not a single user was
+    // ever created through that path.
     clerkId: {
       type: String,
       required: false, // los usuarios anteriores al webhook no lo tienen
@@ -27,7 +28,7 @@ const userSchema = new Schema(
     email: {
       type: String,
       required: true,
-      // unique: true,  // pendiente de T-11: hay que migrar duplicados antes
+      // unique: true,  // waiting on T-11: duplicates must be migrated first
     },
     role: {
       type: String,
@@ -38,7 +39,7 @@ const userSchema = new Schema(
       type: String,
       default: '',
     },
-    // Referencia al documento Seller asociado a este usuario, si existe.
+    // Reference to the Seller document tied to this user, if there is one.
     sellerId: {
       type: Schema.Types.ObjectId,
       ref: 'Seller',
@@ -52,9 +53,9 @@ const userSchema = new Schema(
   }
 );
 
-// El email es la clave con la que se busca al usuario en cada verificacion de
-// autorizacion. Sin unique: eso llega con T-11, que antes tiene que migrar los
-// duplicados que ya existen.
+// Email is the key the user is looked up by on every authorisation check. No
+// unique: that comes with T-11, which first has to migrate the duplicates
+// already in the database.
 userSchema.index({ email: 1 });
 
 export type UserDoc = InferSchemaType<typeof userSchema>;

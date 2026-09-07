@@ -1,8 +1,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// Mismo criterio que imagekit.js: sin prefijo NEXT_PUBLIC_, porque solo se usa
-// en servidor, y configuracion perezosa para que el build no dependa de que
-// existan las variables.
+// Same rule as imagekit.js: no NEXT_PUBLIC_ prefix, because this is only used
+// on the server, and lazy configuration so the build does not depend on those
+// variables existing.
 let configured = false;
 
 export function getCloudinary() {

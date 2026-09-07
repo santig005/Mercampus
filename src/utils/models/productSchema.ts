@@ -15,9 +15,10 @@ const productSchema = new Schema(
     },
     sellerId: {
       type: Schema.Types.ObjectId,
-      // OJO: el valor real es un id de Seller, no de User. Las rutas lo pueblan
-      // con `model: 'Seller'` explicito. Corregir el ref sin migrar los datos
-      // romperia el populate; hay un test de T-03 que fija el comportamiento.
+      // CAREFUL: the actual value is a Seller id, not a User id. The routes
+      // populate it with an explicit `model: 'Seller'`. Fixing the ref
+      // without migrating the data would break that populate; a T-03 test
+      // pins the behaviour down.
       ref: 'User',
       required: true,
     },
@@ -43,9 +44,9 @@ const productSchema = new Schema(
       type: [String],
       required: true,
       validate: {
-        // `this` es el documento que se valida. Hay que anotarlo: bajo strict
-        // seria un any implicito, y de ese `this.section` depende contra que
-        // lista se comprueban las categorias.
+        // `this` is the document being validated. It has to be annotated:
+        // under strict it would be an implicit any, and which list the
+        // categories are checked against depends on that `this.section`.
         validator: function (this: { section?: string }, categories: string[]) {
           const validCategories =
             this.section === 'marketplace'
@@ -68,20 +69,20 @@ const productSchema = new Schema(
   }
 );
 
-// El listado filtra siempre por section y, cuando se pide un vendedor, por
-// sellerId. Sin indices ambos eran collection scan.
+// The listing always filters by section and, when a seller is requested, by
+// sellerId. Without indexes both were collection scans.
 productSchema.index({ sellerId: 1 });
 productSchema.index({ section: 1 });
-// T-23: el listado pagina con un cursor que sigue este mismo orden
-// (availability desc, createdAt desc, _id como desempate). Sin este indice,
-// ordenar la coleccion completa para cada pagina es un sort en memoria que
-// crece con el tamaño de la coleccion, no con el tamaño de la pagina.
+// T-23: the listing paginates with a cursor that follows this same order
+// (availability desc, createdAt desc, _id as the tie-breaker). Without this
+// index, ordering the whole collection for each page is an in-memory sort
+// that grows with the size of the collection, not the size of the page.
 productSchema.index({ section: 1, availability: -1, createdAt: -1 });
-// T-70: los sorts 'newest' y 'price_asc'/'price_desc' filtran por section
-// igual que el default, pero ordenan por otro campo - cada uno necesita su
-// propio indice para no caer en un sort en memoria. price_desc reutiliza
-// este mismo indice recorriendolo al reves (Mongo puede escanear un indice
-// en cualquier direccion).
+// T-70: the 'newest' and 'price_asc'/'price_desc' sorts filter by section
+// just like the default, but order by a different field - each one needs its
+// own index to avoid falling back to an in-memory sort. price_desc reuses
+// this same index by walking it backwards (Mongo can scan an index in either
+// direction).
 productSchema.index({ section: 1, createdAt: -1 });
 productSchema.index({ section: 1, price: 1 });
 
