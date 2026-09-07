@@ -2,7 +2,25 @@ import { priceFormat } from '@/utils/utilFn';
 import type { ProductPreview } from '@/server/products/getProductForMetadata';
 import type { SellerPreview } from '@/server/sellers/getSellerForMetadata';
 
-const SITE_NAME = 'Mercampus';
+export const SITE_NAME = 'Mercampus';
+
+// T-76: the root layout's title config, kept here next to the builders that
+// depend on it rather than inline in layout.jsx, so the `%s` can be asserted
+// in a unit test (importing layout.jsx pulls in Clerk, next/font and the
+// global CSS).
+//
+// It used to read `template: 'Mercampus'`. A template needs a `%s` to
+// interpolate the child page's title into it; without one Next.js renders the
+// literal string, so any page setting a plain `title: '...'` silently came
+// out as just 'Mercampus'. Every page and layout under src/app was audited
+// before changing this: nothing was relying on the old behaviour, because
+// nothing sets a plain title - the only three pages with metadata (product
+// and seller detail) go through the builders below, which used
+// `title.absolute` to step around this exact bug. Now they don't have to.
+export const titleMetadata = {
+  template: `%s · ${SITE_NAME}`,
+  default: SITE_NAME,
+};
 
 // Las descripciones a veces quedan guardadas como un string JSON (ver
 // parseIfJSON en utilFn.js, que las mismas pantallas ya usan para
@@ -21,9 +39,14 @@ function plainTextDescription(raw: string | undefined): string | undefined {
 
 // T-69: un link compartido (WhatsApp, Instagram) hoy cae en la metadata
 // generica de layout.jsx - mismo titulo e imagen para cualquier producto o
-// vendedor. title.absolute (no solo `title`) porque el template del layout
-// raiz es 'Mercampus' sin un %s para interpolar: con un `title` comun,
-// Next.js aplica ese template y el nombre del producto desaparece.
+// vendedor.
+//
+// T-76: `title` es el nombre a secas y el sufijo ` · Mercampus` lo pone el
+// template del layout raiz, ahora que ese template interpola de verdad. Antes
+// era un `title.absolute` con el sufijo escrito a mano, justamente para
+// saltarse el template roto. El titulo renderizado es el mismo; openGraph y
+// twitter si llevan el string completo, porque a esos Next.js no les aplica
+// el template.
 export function buildProductMetadata(product: ProductPreview) {
   const title = `${product.name} · ${SITE_NAME}`;
   const description =
@@ -32,7 +55,7 @@ export function buildProductMetadata(product: ProductPreview) {
   const images = product.image ? [{ url: product.image }] : undefined;
 
   return {
-    title: { absolute: title },
+    title: product.name,
     description,
     openGraph: { title, description, images, type: 'website' as const },
     twitter: { card: 'summary_large_image' as const, title, description, images },
@@ -48,7 +71,7 @@ export function buildSellerMetadata(seller: SellerPreview) {
   const images = seller.logo ? [{ url: seller.logo }] : undefined;
 
   return {
-    title: { absolute: title },
+    title: seller.businessName,
     description,
     openGraph: { title, description, images, type: 'website' as const },
     twitter: { card: 'summary_large_image' as const, title, description, images },

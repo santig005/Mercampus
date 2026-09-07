@@ -1582,7 +1582,7 @@ batch to catch contrast regressions.
 **Depends on:** T-73
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-76 · Root layout's title.template swallows every page title
+### [x] T-76 · Root layout's title.template swallows every page title
 **Why:** found while building T-69. `src/app/layout.jsx`'s metadata sets
 `title: { template: 'Mercampus', default: 'Mercampus' }` — a template
 needs a `%s` to interpolate a child page's title into it, and this one
@@ -1597,6 +1597,31 @@ noticed.
 whatever the human prefers for the tab title format), confirmed against
 every page that currently sets its own `title` to make sure none of them
 were relying on the current no-op behavior on purpose.
+**Done:** template is now `'%s · Mercampus'`, moved out of `layout.jsx`
+into `src/lib/metadata.ts` (`titleMetadata`) so the `%s` can be asserted in
+a unit test — importing `layout.jsx` from a test pulls in Clerk, next/font
+and the global CSS.
+**Audit (the part the ticket asked for):** all 22 pages and 4 layouts under
+`src/app` were checked. Exactly one file exports `metadata` (the root
+layout) and three export `generateMetadata` (`antojos/[id]`,
+`antojos/sellers/[id]`, `marketplace/[id]`); there is no `<title>` tag
+anywhere and no nested layout sets metadata. So **nothing was relying on
+the no-op**: no page sets a plain `title` at all. The three that do set one
+route through `buildProductMetadata`/`buildSellerMetadata`, which used
+`title.absolute` with a hand-written ` · Mercampus` suffix precisely to
+step around this bug (noted in T-69). Both builders now return the bare
+name and let the template add the suffix; `openGraph`/`twitter` keep the
+full string, since Next.js doesn't apply the title template to those.
+**Verified:** the rendered title is unchanged, but it is now produced *by*
+the template — `tests/e2e/recorrido.spec.js` already asserted
+`toHaveTitle('Arepa de queso · Mercampus')` and
+`toHaveTitle('Arepas El Parche · Mercampus')`, and with a plain `title` and
+the old template those would have rendered the literal `'Mercampus'` and
+failed. 16/16 e2e green, `npm run verify` green.
+**Follow-up (not filed as a task):** now that the template works, ordinary
+pages (`/about`, `/landing`, `/auth/*`, the seller's own screens) could set
+a plain `title` and get a real tab name instead of the bare site name. None
+do today; out of scope here.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-63 · Separate the environments (database and Clerk)
