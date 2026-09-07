@@ -22,9 +22,24 @@ const sellerSchema = new Schema(
     instagramUser: {
       type: String,
     },
+    // Open right now, per the seller's Schedule. Recomputed for every seller
+    // by the T-14 cron (GET /api/sellers/availability), so anything a human
+    // writes here is overwritten on the next run: it can't hold a multi-day
+    // absence. That's what `paused` below is for - see T-71.
     availability: {
       type: Boolean,
       default: true,
+    },
+    // T-71: the seller took their store off the public listings themselves
+    // (exam week, illness, travel). Deliberately separate from `approved`
+    // (an admin decision the seller can't undo) and from `availability`
+    // (today's schedule): pausing keeps both the approval and the catalog.
+    // Existing documents have no `paused` field at all, so every query that
+    // filters on it must use `$ne: true`, never `false` - see the note in
+    // api/products/route.js.
+    paused: {
+      type: Boolean,
+      default: false,
     },
     phoneNumber: {
       type: Number,

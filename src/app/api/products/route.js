@@ -41,8 +41,20 @@ export async function GET(req) {
   // filtrar no sabe cuantos de esos items van a sobrevivir el filtro
   // posterior. Resolviendolo antes, como ids elegibles, deja que Product.find
   // pagine sobre exactamente los productos que van a mostrarse.
+  //
+  // T-71: `paused` belongs right here next to `approved`, not in a filter over
+  // the page Mongo already returned - a paused seller has to be gone before
+  // the limit is counted, for the same reason.
+  //
+  // It has to be `$ne: true`, never `paused: false`: none of the 54 sellers
+  // already in the database carry the field (measured read-only against the
+  // real one), and an equality filter doesn't match a missing field, so
+  // `false` would have emptied the listing for everybody instead of hiding
+  // the paused ones. `$ne: true` matches the old field-less documents too,
+  // which is why the schema default is enough and no migration is needed.
   const eligibleSellerIds = await Seller.find({
     approved: true,
+    paused: { $ne: true },
     university: { $regex: university, $options: 'i' },
   }).distinct('_id');
 
