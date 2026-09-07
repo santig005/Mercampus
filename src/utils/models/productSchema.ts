@@ -77,6 +77,13 @@ productSchema.index({ section: 1 });
 // ordenar la coleccion completa para cada pagina es un sort en memoria que
 // crece con el tamaño de la coleccion, no con el tamaño de la pagina.
 productSchema.index({ section: 1, availability: -1, createdAt: -1 });
+// T-70: los sorts 'newest' y 'price_asc'/'price_desc' filtran por section
+// igual que el default, pero ordenan por otro campo - cada uno necesita su
+// propio indice para no caer en un sort en memoria. price_desc reutiliza
+// este mismo indice recorriendolo al reves (Mongo puede escanear un indice
+// en cualquier direccion).
+productSchema.index({ section: 1, createdAt: -1 });
+productSchema.index({ section: 1, price: 1 });
 
 export type ProductDoc = InferSchemaType<typeof productSchema>;
 

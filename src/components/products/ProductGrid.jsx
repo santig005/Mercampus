@@ -12,12 +12,26 @@ import { useUniversity } from '@/context/UniversityContext';
 
 const PAGE_SIZE = 12;
 
+// T-70: opciones de orden que expone GET /api/products (ver SORT_CONFIGS).
+// 'default' mantiene el orden historico (disponibles primero); el resto son
+// las agregadas por esta tarea.
+const SORT_OPTIONS = [
+  { value: 'default', label: 'Recomendado' },
+  { value: 'newest', label: 'Más nuevo' },
+  { value: 'price_asc', label: 'Precio: menor a mayor' },
+  { value: 'price_desc', label: 'Precio: mayor a menor' },
+];
+
 export default function ProductGrid({ sellerIdParam = '', section = 'antojos' }) {
   const [products, setProducts] = useState([]);
   const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Estado local, no un query param: SearchBox reconstruye la URL desde cero
+  // en cada tecla (ver SearchBox.jsx) y se llevaria puesto cualquier param
+  // que no conozca, asi que un `sort` en la URL desaparecería al escribir.
+  const [sort, setSort] = useState('default');
   const [parent] = useAutoAnimate();
   const searchParams = useSearchParams();
   const { university } = useUniversity();
@@ -42,7 +56,7 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
     setCursor(null);
     setHasMore(true);
 
-    getProducts({ product, category, sellerId, university, section, limit: PAGE_SIZE })
+    getProducts({ product, category, sellerId, university, section, sort, limit: PAGE_SIZE })
       .then(({ products, nextCursor }) => {
         if (thisRequest !== requestId.current) return;
         setProducts(products);
@@ -58,7 +72,7 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
       .finally(() => {
         if (thisRequest === requestId.current) setLoading(false);
       });
-  }, [product, category, sellerId, university, section]);
+  }, [product, category, sellerId, university, section, sort]);
 
   // Scroll infinito: pide la siguiente pagina cuando el centinela de abajo
   // entra en pantalla. Depende de hasMore/loading/loadingMore para volver a
@@ -77,6 +91,7 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
       sellerId,
       university,
       section,
+      sort,
       limit: PAGE_SIZE,
       cursor,
     })
@@ -94,12 +109,26 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
       .finally(() => {
         if (thisRequest === requestId.current) setLoadingMore(false);
       });
-  }, [inView, hasMore, loading, loadingMore, cursor, product, category, sellerId, university, section]);
+  }, [inView, hasMore, loading, loadingMore, cursor, product, category, sellerId, university, section, sort]);
 
   return (
     <ProductModalHandler>
       {showModal => (
         <div className=''>
+          <div className='flex justify-end px-2 pb-2'>
+            <select
+              className='select select-bordered select-sm'
+              aria-label='Ordenar productos'
+              value={sort}
+              onChange={e => setSort(e.target.value)}
+            >
+              {SORT_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className='flex flex-col gap-2' ref={parent}>
             {loading ? (
               <div className='flex justify-center'>
