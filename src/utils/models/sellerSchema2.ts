@@ -2,6 +2,14 @@ import mongoose, { Schema, type InferSchemaType, type Model } from 'mongoose';
 
 import { universities } from '@/utils/resources/universities';
 
+// Exported because it is not just a default: it is the value that means "this
+// seller never picked a logo". T-72's checklist has to compare against it -
+// every seller has a `logo`, so a truthiness check would call all of them
+// done. Measured read-only against the real database: of the 7 approved
+// sellers without a real logo, 6 carry exactly this placeholder.
+export const DEFAULT_SELLER_LOGO =
+  'https://ik.imagekit.io/iebk3hngu/sellerlogos/whisk1.png?updatedAt=1739224183820';
+
 const sellerSchema = new Schema(
   {
     businessName: {
@@ -16,8 +24,7 @@ const sellerSchema = new Schema(
     },
     logo: {
       type: String,
-      default:
-        'https://ik.imagekit.io/iebk3hngu/sellerlogos/whisk1.png?updatedAt=1739224183820',
+      default: DEFAULT_SELLER_LOGO,
     },
     instagramUser: {
       type: String,

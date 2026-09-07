@@ -1364,7 +1364,7 @@ profile page still resolve, exactly as they already do for unapproved
 sellers; only the listings are gated.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-72 · Seller profile completeness checklist
+### [x] T-72 · Seller profile completeness checklist
 **Why:** nothing today nudges a newly-approved seller to actually finish
 their profile — no logo, no schedule, no description — and their listing
 looks empty next to sellers who filled everything in. Every field this
@@ -1374,6 +1374,27 @@ what's missing.
 dashboard, computed from existing fields (has logo? has description? has
 at least one `Schedule` entry? has at least one product?) — derived only,
 no schema change.
+**Done:** `ProfileChecklist` on `/antojos/sellers/profile/edit`, the
+closest thing to a seller dashboard today (it's where an approved seller
+lands) — a real one is still T-44. Progress bar plus only the pending
+items, each linking to the screen that fixes it; once all four are done it
+collapses to a single line. Derived, no schema change: the rules live in
+`src/lib/profile-completeness.ts` (pure, unit tested) and the reads in
+`src/server/sellers/getProfileChecklist.ts` (`countDocuments`, both
+collections already indexed by `sellerId`). The page became a Server
+Component that hands the result to the form, now
+`src/components/seller/EditSellerForm.jsx` — it stays a Client Component
+because it is all state and handlers.
+**The trap, measured read-only against the real database:** `Seller.logo`
+has a schema default, so *every* seller has one and `if (seller.logo)`
+would mark all of them done. Of the 7 approved sellers without a real
+logo, **6 carry exactly that placeholder** — a truthiness check would have
+missed 6 of the 7. `DEFAULT_SELLER_LOGO` is now exported from the schema
+and compared against, instead of being a bare string in two places.
+**Worth knowing:** of 36 approved sellers only **21 have all four items**.
+Missing today: 10 without a single product, 9 without any schedule, 7
+without a real logo, 2 without a description. This nudges 15 of 36, not a
+corner case.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-73 · Dark mode with a hand-designed palette
