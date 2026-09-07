@@ -13,6 +13,7 @@ import {
   productQuerySchema,
 } from '@/lib/validators/product';
 import { invalidPayload } from '@/lib/api-response';
+import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // No se usa por nombre, pero el import registra el modelo en Mongoose y el
 // populate({ model: 'Seller' }) del GET lo necesita registrado. Si se borra,
 // el listado revienta con MissingSchemaError.
@@ -60,7 +61,13 @@ export async function GET(req) {
   }
 
   if (product) {
-    filter.name = { $regex: product, $options: 'i' };
+    // Regex propio en vez de un indice $text: el buscador busca en vivo
+    // desde 2 caracteres (SearchBox.jsx), y $text no hace match por
+    // prefijo ("bro" no encuentra "Brownie" hasta casi terminar de
+    // escribirlo, medido contra datos reales) - hubiera roto la busqueda
+    // mientras se escribe. Esto conserva el substring/prefijo de siempre y
+    // solo le suma tolerancia a acentos.
+    filter.name = buildAccentInsensitiveRegex(product);
   }
 
   if (section) {
@@ -93,7 +100,8 @@ export async function GET(req) {
   const products = await Product.find(filter)
     .sort({ availability: -1, createdAt: -1, _id: -1 })
     .limit(limit + 1)
-    .populate({ path: 'sellerId', model: 'Seller' });
+    .populate({ path: 'sellerId', model: 'Seller' })
+    .lean();
 
   const hasMore = products.length > limit;
   const page = hasMore ? products.slice(0, limit) : products;
@@ -120,8 +128,10 @@ const getPopulatedProducts = async approvedProducts => {
     approvedProducts.map(product => product.sellerId._id)
   );
 
+  // .lean() ya devuelve objetos planos, no documentos de Mongoose: no hace
+  // falta (ni corresponde) llamar .toObject() aqui.
   return approvedProducts.map(product => ({
-    ...product.toObject(),
+    ...product,
     schedules: withDayNames(
       schedulesBySeller.get(product.sellerId._id.toString()) ?? []
     ),

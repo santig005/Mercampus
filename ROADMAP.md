@@ -977,12 +977,67 @@ bypassing Mongoose's schema middleware entirely).
 **Model:** `opusplan` to plan, `sonnet` to execute
 **Nightly:** no
 
-### [ ] T-24 · Decent search
+### [x] T-24 · Decent search
 **Why:** an unanchored `$regex` on `name`, no tolerance for typos or
 accents. "arepa" doesn't find "Arepas".
+**Correction on the example above:** "arepa" *does* find "Arepas" today —
+it's a literal substring. The real gap runs the other way: searching
+"arepas" (plural) does **not** find a product named "Arepa de queso"
+(singular) — a morphology problem, not an accent one, and more common than
+it sounds given 87% of product names are more than one word (see below).
+**Measured against the real database before designing anything** (no
+search-query logging exists yet — that's T-60 — so this is exposure, not
+confirmed user failures): of 112 real products, 7 (6%) have an accented
+character or ñ in the name buyers search, and 97 (87%) have multi-word
+names. Small catalog, so not "half of searches fail," but not
+hypothetical either — real names like "Postre de limón" and "Sándwiches
+cubanos" are exactly what an unaccented, fast, one-handed phone search
+would miss today.
 **Done when:** a MongoDB text index (or Atlas Search if the cluster
 allows it), accent-insensitive, with ranking; tests with typos and
 accents.
+**Rejected, and why — checked, not assumed:**
+- **Atlas Search:** the roadmap's own hedge ("if the cluster allows it")
+  turned out to be the deciding factor. `$search` needs Atlas's separate
+  Lucene sidecar process, which doesn't exist in `mongodb-memory-server` —
+  the engine every test in this repo runs against. Choosing it would mean
+  shipping a feature with zero test coverage against the harness Fase 0
+  built specifically so nothing ships unverified.
+- **MongoDB `$text` index:** implemented first, then reverted after
+  measuring it against real product names instead of assuming it would
+  work. `SearchBox.jsx` searches live from 2 characters with a 500ms
+  debounce — genuine type-ahead. `$text` matches whole words/stems, not
+  prefixes: tested directly, `"bro"` and `"brow"` find nothing against
+  "Brownie de chocolate," only `"browni"` onward does. Shipping that would
+  have made the search box feel broken for the first several keystrokes of
+  most words — a real regression to working behavior, discovered by
+  testing before shipping rather than after.
+**Done:** `buildAccentInsensitiveRegex()` (`src/utils/lib/search.ts`) —
+normalizes the query term (Unicode NFD, strip combining diacritics,
+lowercase), then rebuilds it into a regex where each vowel/ñ becomes a
+character class matching every accented variant (`limon` →
+`l[ií...]m[oó...]n`... `n` → `[nñ]`), keeping `$options`-free case
+insensitivity via the regex `i` flag. Replaces `filter.name = { $regex:
+product, $options: 'i' }` with `filter.name =
+buildAccentInsensitiveRegex(product)` — same substring/prefix matching
+behavior as before (verified: `"are"` still finds "Arepa de queso"),
+now accent-insensitive on either side (query has the accent, name doesn't,
+or vice versa). Doesn't fix the plural/singular gap from the correction
+above, but a live type-ahead search self-mitigates most of that in
+practice: reaching "arepas" already passed through the matching "arepa"
+substring at an earlier keystroke.
+**No schema or index change, no migration:** the normalization happens on
+the query term at request time, not on stored data — nothing to backfill,
+works retroactively on the existing 112 products immediately.
+**Tests:** `tests/unit/search.test.js` — the regex builder directly:
+accent either direction, ñ either direction, case-insensitivity, prefix
+matching preserved (the exact property `$text` would have broken),
+special regex characters escaped instead of throwing. Plus a "genuinely
+absent term finds nothing" control. `tests/integration/busqueda-productos.test.js`
+covers the same through the real route: an unaccented query finds
+"Buñuelo," a short prefix still works end-to-end, a pending seller's
+products stay excluded from search results too, and a term with regex
+metacharacters doesn't 500.
 **Model:** `opusplan` · **Nightly:** no
 
 ---
