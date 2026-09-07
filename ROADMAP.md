@@ -1557,7 +1557,7 @@ no new dependency) generating entries for the static public pages plus
 one per approved seller and their products, read straight from Mongo.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-75 · Migrate the rest of the app to daisyUI's theme tokens
+### [x] T-75 · Migrate the rest of the app to daisyUI's theme tokens
 **Why:** T-73 added a dark theme and switcher but only migrated the core
 product/seller browsing flow (`ProductCard`/`SellerCard`, `Navbar`,
 `CategoryGrid`, the product/seller modals and detail pages) from hardcoded
@@ -1598,9 +1598,9 @@ runs the *light* budget (`ci.yml`), so nothing catches this automatically.
 |---|---|---|---|---|
 | a | admin + auth + strays | 7 | 32 | merged (#255) |
 | b | seller's own forms | 9 | 28 | merged (#256) |
-| c | marketing (`/about`, `about/layout`, `/landing`) | 3 | 111 | PR #257 |
-| d | final sweep + re-grep | — | — | pending |
-Mark the task `[x]` only when the last batch lands.
+| c | marketing (`/about`, `about/layout`, `/landing`) | 3 | 111 | merged (#257) |
+| d | final sweep + guard test | — | — | merged (#258) |
+All four landed.
 **Rule the batches follow** (the one T-73 actually applied, which is not
 quite what "Done when" above says): surfaces and borders are *replaced*
 with tokens — `bg-white`→`bg-base-100`, `bg-gray-50/100/200`→`bg-base-200`,
@@ -1623,6 +1623,30 @@ counted for batch b were already migrated by T-73 and came out untouched
 (`SellerProductsBySection`, `UniGraphicSelector`), and `Schedule.jsx`'s
 `text-white bg-gray-800` pills are another self-consistent pair — left
 alone.
+**Done (batch d):** the re-grep is a test now, not a one-off check —
+`tests/unit/theme-tokens.test.js`, which runs inside `npm run verify` and
+in CI. It scans `src/` and fails on any surface/border class that wasn't
+replaced, or any text grey without its `dark:` companion, naming the file
+and the class. Confirmed it actually catches a regression by adding a
+`bg-white text-gray-700` to `SellerGrid` and watching it fail with both.
+This matters because **nothing else can catch this class of bug**: a stray
+`bg-white` renders identically in the light theme, so it looks correct in
+review, in every existing test and in CI, and only breaks for someone
+browsing in dark mode.
+A plain grep over `src/` still reports ~110 hits and that number is
+misleading: migrated lines keep their light class (`text-gray-600
+dark:text-base-content/70` still contains `text-gray-600`). The real
+remainder is **5 occurrences in 2 files**, all deliberate and listed in
+the test's `ALLOWED` with a reason: the `/about` CTA button on the orange
+band (`bg-white`/`bg-gray-100` — white is the *contrast colour* there, not
+a surface), its dark footer's `text-gray-400`, and `ShareButton`'s
+`text-gray-200` on `!bg-green-600`. A second test asserts each exception
+still exists, so a later migration can't leave dead entries behind.
+**Not verified:** the dark Lighthouse budget never produced a usable run
+for batches c and d — it aborts with NO_FCP on this machine, on the base
+branch too (see the note above). `/about` is in the budget's page list and
+batch c rewrote it, so its contrast is the one thing here confirmed only
+by reading the diff. Worth a re-run wherever the budget works.
 **Depends on:** T-73
 **Model:** `sonnet` · **Nightly:** yes
 
