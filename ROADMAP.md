@@ -1608,6 +1608,29 @@ crawler at the sitemap — worth a small `src/app/robots.ts`, but it's its
 own deliverable, not this ticket's "Done when".
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-78 · robots.txt
+**Why:** T-74 added a sitemap and nothing points a crawler at it, so it
+reaches no one. Filed and closed in the same PR — it is the five lines
+that make the previous task's work count.
+**Done:** `src/app/robots.ts` (Next's native convention, no dependency),
+sharing `SITE_URL` with the sitemap and the root layout's `metadataBase`.
+Allows everything, disallows the API, `/admin`, `/auth`, and the seller's
+own screens. Prerendered at build, unlike the sitemap — it touches no
+database.
+**The trap:** `/antojos/sellers/` is the obvious prefix for "the seller's
+own screens", and it would have deindexed every public seller profile
+(`/antojos/sellers/<id>`) and the directory (`/antojos/sellers/list`) —
+precisely the pages T-74 had just started advertising. Each private screen
+is listed by its own prefix instead, and a test cross-checks the disallow
+list against the URLs `buildSitemap` produces, so the two can't contradict
+each other. Confirmed the test catches it by widening the prefix and
+watching it name both URLs.
+**Left open on purpose:** `/landing` is not disallowed. Nothing in `src/`
+links to it and it is not in the sitemap either, but whether it is dead,
+private or just unlinked is a product question for the human — blocking it
+here would decide that quietly.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [x] T-75 · Migrate the rest of the app to daisyUI's theme tokens
 **Why:** T-73 added a dark theme and switcher but only migrated the core
 product/seller browsing flow (`ProductCard`/`SellerCard`, `Navbar`,
