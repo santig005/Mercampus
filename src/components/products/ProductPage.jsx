@@ -188,7 +188,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
             //     </div>
             //   </div>
             //   <h2 className='font-medium text-pretty'>
-            //     Algo salió mal, por favor intente de nuevo
+            //     Something went wrong, please try again
             //   </h2>
             // </div>
             <div className=''></div>

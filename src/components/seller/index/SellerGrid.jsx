@@ -100,7 +100,7 @@ export default function SellerGrid({ section = 'antojos' }) {
                   ))}
                 </div>
               ) : (
-                // Diseño para usuarios normales (solo aprobados)
+                // Layout for ordinary visitors (approved sellers only)
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {visibleSellers.map(seller => (
                     <div

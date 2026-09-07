@@ -3,16 +3,16 @@
 import { TbMoon, TbSun } from 'react-icons/tb';
 import { useEffect, useState } from 'react';
 
-// T-73: string plano en localStorage, no JSON.stringify como el resto de
-// la app hace en useLocalStorage - el script anti-FOUC de layout.jsx corre
-// antes que React (no puede importar nada de aca) y necesita leerlo con un
-// solo localStorage.getItem. Sigue la convencion `data-theme` que la propia
-// documentacion de daisyUI usa para este patron.
+// T-73: a plain string in localStorage, not JSON.stringify as the rest of
+// the app does through useLocalStorage - layout.jsx's anti-FOUC script runs
+// before React (it can't import anything from here) and needs to read it with
+// a single localStorage.getItem. It follows the `data-theme` convention
+// daisyUI's own documentation uses for this pattern.
 const THEME_STORAGE_KEY = 'theme';
 
 export default function ThemeToggle() {
-  // null hasta el primer efecto: todavia no sabemos que tema aplico el
-  // script anti-FOUC antes de que React montara.
+  // null until the first effect: we don't yet know which theme the anti-FOUC
+  // script applied before React mounted.
   const [theme, setTheme] = useState(null);
 
   useEffect(() => {
@@ -25,8 +25,8 @@ export default function ThemeToggle() {
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
-      // localStorage puede fallar (modo privado, cuota llena) - el tema
-      // igual cambia para esta carga, solo no persiste para la proxima.
+      // localStorage can fail (private mode, quota exceeded) - the theme
+      // still changes for this load, it just won't persist to the next.
     }
     setTheme(next);
   };

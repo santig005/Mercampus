@@ -28,7 +28,7 @@ export default function Carousel({ images, _id: id }) {
   }, []);
 
   useEffect(() => {
-    setCurrentIndex(0); // Resetear índice al cambiar imágenes
+    setCurrentIndex(0); // Reset the index when the images change
   }, [images]);
 
   return (
