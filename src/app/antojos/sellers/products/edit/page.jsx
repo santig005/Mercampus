@@ -116,7 +116,7 @@ export default function EditProductsPage() {
         especifico para editar mas detalles
       </h2>
       <div>
-        <div className='flex justify-between items-center p-4 bg-white rounded-md shadow-md'>
+        <div className='flex justify-between items-center p-4 bg-base-100 text-base-content rounded-md shadow-md'>
           <div>
             <h3 className='text-lg font-semibold'>Mi disponibilidad</h3>
             <AvailabilityBadge availability={sellerAvailability} />
@@ -148,7 +148,7 @@ export default function EditProductsPage() {
 
           return sortedSections.map(([section, sectionProducts]) => (
             <div key={section} className='mt-6'>
-              <h3 className='text-xl font-bold mb-4 text-gray-800'>
+              <h3 className='text-xl font-bold mb-4 text-gray-800 dark:text-base-content'>
                 {section === 'antojos' ? (
                   <>🍕 Antojos ({sectionProducts.length} productos)</>
                 ) : (
@@ -159,7 +159,7 @@ export default function EditProductsPage() {
                 {sectionProducts.map(product => (
                   <div
                     key={product._id}
-                    className='bg-white drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
+                    className='bg-base-100 text-base-content drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
                   >
                     <div onClick={() => handleProductClick(product._id)}>
                       <ProductCard product={product} variant='embedded' />
