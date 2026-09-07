@@ -245,7 +245,7 @@ export default function SignUpForm() {
               <div className='flex gap-2 justify-center mt-4'>
                 {[0, 1, 2, 3, 4, 5].map(index => (
                   <input
-                    className='text-2xl size-12 p-2 rounded-lg border border-gray-300 focus-within:outline-0 focus-within:shadow-md focus-within:border-primary text-center'
+                    className='text-2xl size-12 p-2 rounded-lg border border-base-300 focus-within:outline-0 focus-within:shadow-md focus-within:border-primary text-center'
                     key={index}
                     type='number'
                     maxLength={1}
@@ -325,7 +325,7 @@ export default function SignUpForm() {
           <p className='text-white'>Por favor regístrate para comenzar</p>
         </div>
         <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-max w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+          <div className='bg-base-100 text-base-content rounded-t-3xl h-max w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
@@ -467,7 +467,7 @@ export default function SignUpForm() {
             </div> */}
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/login' className='text-center text-primary'>
-                <span className='text-black'>¿Ya tienes una cuenta?</span>{' '}
+                <span className='text-black dark:text-base-content'>¿Ya tienes una cuenta?</span>{' '}
                 Inicia sesión
               </Link>
             </div>

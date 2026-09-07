@@ -122,14 +122,14 @@ export default function AdminSellersPage() {
     <div className="container mx-auto px-4 py-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-base-content mb-2">
           Panel de Administración - Vendedores
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-base-content/70">
           Gestiona todos los vendedores registrados. Ordenados del más nuevo al más antiguo.
         </p>
         <div className="mt-4 flex items-center gap-4">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-base-content/70">
             Total de vendedores: <span className="font-semibold">{sellers.length}</span>
           </div>
           <button 
@@ -164,15 +164,15 @@ export default function AdminSellersPage() {
         <>
           {sellers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="text-gray-400 mb-4">
+              <div className="text-gray-400 dark:text-base-content/70 mb-4">
                 <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+              <h3 className="text-lg font-semibold text-gray-600 dark:text-base-content/70 mb-2">
                 No hay vendedores registrados
               </h3>
-              <p className="text-gray-500 max-w-md">
+              <p className="text-gray-500 dark:text-base-content/70 max-w-md">
                 No hay vendedores registrados en el sistema en este momento.
               </p>
             </div>
@@ -181,20 +181,20 @@ export default function AdminSellersPage() {
               {sellers.map((seller) => {
             const approvalStatus = getApprovalStatus(seller);
             return (
-              <div key={seller._id} className="bg-white shadow-md rounded-lg hover:shadow-lg transition-shadow cursor-pointer">
+              <div key={seller._id} className="bg-base-100 shadow-md rounded-lg hover:shadow-lg transition-shadow cursor-pointer">
                 {/* Header con fecha y estado - clickeable */}
                 <div 
-                  className="flex justify-between items-center p-3 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                  className="flex justify-between items-center p-3 border-b border-base-300 hover:bg-base-200 transition-colors"
                   onClick={() => handleSellerClick(seller._id)}
                 >
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs text-gray-500">Registrado:</span>
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-xs text-gray-500 dark:text-base-content/70">Registrado:</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-base-content">
                       {formatDate(seller.createdAt)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Estado:</span>
+                    <span className="text-xs text-gray-500 dark:text-base-content/70">Estado:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${approvalStatus.color}`}>
                       {approvalStatus.text}
                     </span>
@@ -203,7 +203,7 @@ export default function AdminSellersPage() {
 
                 {/* Seller Card - clickeable */}
                 <div 
-                  className="p-3 hover:bg-gray-50 transition-colors"
+                  className="p-3 hover:bg-base-200 transition-colors"
                   onClick={() => handleSellerClick(seller._id)}
                 >
                   <SellerCard seller={seller} />
@@ -211,12 +211,12 @@ export default function AdminSellersPage() {
 
                 {/* Footer con universidad y toggle - NO clickeable */}
                 <div 
-                  className="flex justify-between items-center p-3 border-t border-gray-200 bg-gray-50"
+                  className="flex justify-between items-center p-3 border-t border-base-300 bg-base-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs text-gray-500">Universidad:</span>
-                    <span className="text-sm font-medium text-gray-700">{seller.university || 'No especificada'}</span>
+                    <span className="text-xs text-gray-500 dark:text-base-content/70">Universidad:</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-base-content">{seller.university || 'No especificada'}</span>
                   </div>
                   <ToggleSwitch
                     isOn={seller.approved || false}
