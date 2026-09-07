@@ -73,6 +73,14 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(businessNames(await getSellers())).not.toContain('Arepas El Parche');
   });
 
+  // T-74: nothing covered this and a refactor broke it - sharing the product
+  // listing's filter (which requires approved: true) with this endpoint empties
+  // the admin's approval queue, because SellerGrid is where an admin approves
+  // pending sellers. Pausing hides a seller here; being unapproved must not.
+  it('un vendedor sin aprobar SI se devuelve: el admin los aprueba desde ese listado', async () => {
+    expect(businessNames(await getSellers())).toContain('Postres Laura');
+  });
+
   it('pausar esconde tambien sus productos del listado', async () => {
     const antes = await getProducts('section=antojos');
     expect(antes.products.length).toBeGreaterThan(0);

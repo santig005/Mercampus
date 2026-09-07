@@ -1569,13 +1569,43 @@ title gets silently discarded in favor of that literal string; worth
 fixing on its own, left alone here since it's unrelated to this task.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-74 · sitemap.xml
+### [x] T-74 · sitemap.xml
 **Why:** complements the SEO category T-61 already measures. Approved
 sellers and their public product/profile pages aren't discoverable via a
 sitemap today — there isn't one.
 **Done when:** `src/app/sitemap.ts` (Next.js' native sitemap convention,
 no new dependency) generating entries for the static public pages plus
 one per approved seller and their products, read straight from Mongo.
+**Done:** `src/app/sitemap.ts` (Next's native convention, no dependency,
+no route handler), `dynamic = 'force-dynamic'`, not `revalidate`: ISR
+still *prerenders* during `next build`, so the build needed a database and
+CI (which builds without `MONGO_URI`) failed with `Error occurred
+prerendering page "/sitemap.xml"`. It passed locally only because Next
+loads `.env` — meaning the local build was quietly querying the production
+database. Every other route here is already `ƒ`; the sitemap was the odd
+one out. URL shapes are pure and unit tested in `src/lib/sitemap.ts`;
+the reads are in `src/server/sitemap/getPublicSitemapData.ts`. Products are
+scoped to the eligible sellers rather than fetched wholesale, and each one
+is listed under its own section (`/marketplace/<id>` vs `/antojos/<id>`),
+never both. `/` is left out — it's a permanent redirect to `/antojos`
+(`next.config.mjs`) — and `/about` declares its `es`/`en` alternates from
+T-46. Verified against a real production build: `/sitemap.xml` returns 200
+`application/xml`, well-formed, all absolute, unapproved sellers absent.
+**Eligibility is shared now, not copied:** `publicSellerFilter()` in
+`src/lib/public-visibility.ts` is the single definition of "publicly
+visible" (`approved` + not `paused`), used by `GET /api/products` and the
+sitemap. A sitemap that disagrees with the listing is worse than none — it
+would keep advertising a seller who paused their store.
+**Careful — `GET /api/sellers` deliberately does NOT use it.** That
+endpoint returns *unapproved* sellers on purpose: `SellerGrid` hides them
+from ordinary visitors client-side but shows them to an admin, who
+approves them from that very grid. Sharing the filter there empties the
+approval queue. This was found by breaking it during this task; nothing
+covered it, so there's a test for it now in
+`tests/integration/seller-pause.test.js`.
+**Follow-up, not done here:** there's no `robots.txt`, so nothing points a
+crawler at the sitemap — worth a small `src/app/robots.ts`, but it's its
+own deliverable, not this ticket's "Done when".
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-75 · Migrate the rest of the app to daisyUI's theme tokens

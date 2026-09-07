@@ -11,7 +11,7 @@ import { getSellerContextData } from '@/utils/lib/auth';
 import React from 'react';
 import '../../public/css/main.css';
 import AnimationProvider from '@/components/AnimationProvider';
-import { titleMetadata } from '@/lib/metadata';
+import { SITE_URL, titleMetadata } from '@/lib/metadata';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -27,7 +27,7 @@ export const metadata = {
   title: titleMetadata,
   description:
     'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
-  metadataBase: new URL('https://mercampus.vercel.app/'),
+  metadataBase: new URL(SITE_URL),
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },
