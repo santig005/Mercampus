@@ -64,7 +64,9 @@ const ProductPage = ({ id, section = 'antojos' }) => {
           <ShareButton data={product} type='product' />
           {product ? (
             <>
-              <div className='modal-box w-full h-full rounded-none bg-primary p-0 relative'>
+              {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
+                  bg-primary (rinde blanco fijo via override en main.css). */}
+              <div className='modal-box w-full h-full rounded-none bg-primary dark:bg-base-100 p-0 relative'>
                 <div className='sticky top-0 left-0'>
                   <div className='absolute w-full z-10'>
                     <div className='modal-action m-0 justify-between p-2'>
@@ -90,7 +92,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                 </div>
 
                 <div className='relative h-auto bg-inherit'>
-                  <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
+                  <div className='bg-primary dark:bg-base-100 rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
                     <div className='flex flex-col pb-32 gap-2'>
                       {/* <h2 className='card-title px-6 mt-2'>{product.name}</h2> */}
                       <div className='flex flex-col px-6 gap-1'>
@@ -136,7 +138,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                   </div>
                 </div>
               </div>
-              <div className='bg-gray-200 rounded-t-3xl pt-4 fixed bottom-0 w-full h-auto px-6 shadow-2xl shadow-black drop-shadow-2xl'>
+              <div className='bg-base-200 text-base-content rounded-t-3xl pt-4 fixed bottom-0 w-full h-auto px-6 shadow-2xl shadow-black drop-shadow-2xl'>
                 <div className='flex flex-col h-full justify-center'>
                   <h3 className='font-bold text-lg'>
                     {priceFormat(product.price)}

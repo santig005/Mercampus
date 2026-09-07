@@ -2,6 +2,13 @@
 import SellerGrid from '@/components/seller/index/SellerGrid';
 import { useState } from 'react';
 
+// /100 obliga a Tailwind a generar el color real del tema
+// (oklch(var(--p)/1)) en vez de la clase bg-primary a secas, que
+// public/css/main.css redefine a un blanco fijo (#f8f8f8) - ver la nota en
+// Layout.jsx.
+const ACTIVE_SECTION_CLASSES = 'bg-primary/100 text-primary-content shadow-md';
+const INACTIVE_SECTION_CLASSES = 'text-base-content hover:bg-base-200';
+
 function Sellers() {
   const [selectedSection, setSelectedSection] = useState('antojos');
 
@@ -21,13 +28,13 @@ function Sellers() {
 
       {/* Selector de sección */}
       <div className='flex justify-center mb-6'>
-        <div className='bg-white rounded-lg p-1 shadow-md'>
+        <div className='bg-base-100 rounded-lg p-1 shadow-md'>
           <button
             onClick={() => handleSectionChange('antojos')}
             className={`px-6 py-2 rounded-md transition-all duration-200 ${
               selectedSection === 'antojos'
-                ? 'bg-[#FF7622] text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? ACTIVE_SECTION_CLASSES
+                : INACTIVE_SECTION_CLASSES
             }`}
           >
             🍕 Antojos
@@ -36,8 +43,8 @@ function Sellers() {
             onClick={() => handleSectionChange('marketplace')}
             className={`px-6 py-2 rounded-md transition-all duration-200 ${
               selectedSection === 'marketplace'
-                ? 'bg-[#FF7622] text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? ACTIVE_SECTION_CLASSES
+                : INACTIVE_SECTION_CLASSES
             }`}
           >
             🛍️ Marketplace

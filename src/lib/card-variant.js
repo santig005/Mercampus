@@ -18,7 +18,10 @@ export function productCardClassName({ variant, isClicked }) {
   return [
     'flex gap-2',
     isStandalone &&
-      'bg-white drop-shadow-md p-2 rounded-md cursor-pointer transition-transform duration-300',
+      // T-73: bg-base-100/text-base-content en vez de bg-white fijo, para
+      // que la tarjeta responda al tema oscuro en vez de quedar blanca
+      // sobre un fondo oscuro.
+      'bg-base-100 text-base-content drop-shadow-md p-2 rounded-md cursor-pointer transition-transform duration-300',
     isStandalone && (isClicked ? 'scale-[0.95]' : 'scale-100'),
   ]
     .filter(Boolean)
@@ -29,7 +32,8 @@ export function sellerCardClassName({ variant, isClicked }) {
   const isStandalone = variant === 'standalone';
   return [
     'flex gap-2 p-2 rounded-md cursor-pointer',
-    isStandalone && 'bg-white drop-shadow-md transition-transform duration-300',
+    isStandalone &&
+      'bg-base-100 text-base-content drop-shadow-md transition-transform duration-300',
     isStandalone && (isClicked ? 'scale-[0.95]' : 'scale-100'),
     !isStandalone && 'w-full',
   ]

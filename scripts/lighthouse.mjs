@@ -8,9 +8,15 @@
 // every route, public ones included, without one.
 //
 //   npm run budget:lighthouse
+//   npm run budget:lighthouse:dark   (T-73 - mismas paginas, en modo oscuro)
 //
 // Thresholds live in lighthouserc.json. `lhci autorun` exits non-zero (and
-// so does this script) when a page misses its budget.
+// so does this script) when a page misses its budget. Con
+// LIGHTHOUSE_THEME=dark, cada URL se visita con ?theme=dark - el script
+// anti-FOUC de layout.jsx lo lee y aplica data-theme="dark" para esa carga
+// sin depender de localStorage (Lighthouse arranca cada visita con un
+// perfil de Chrome nuevo, sin nada guardado). Los resultados van a una
+// carpeta separada para no pisar los de modo claro.
 
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -21,6 +27,7 @@ import mongoose from 'mongoose';
 import { seedDatabase } from './seed.mjs';
 
 const PORT = Number(process.env.LIGHTHOUSE_PORT || 3100);
+const DARK_THEME = process.env.LIGHTHOUSE_THEME === 'dark';
 
 function readDotEnv() {
   if (!existsSync('.env')) return {};
@@ -103,6 +110,8 @@ try {
   // every assertMatrix entry that matches a URL gets evaluated in full, they
   // aren't merged by key, so a plain "off" in a second entry isn't enough if
   // the first one (whose pattern also matches) still requires the score.
+  // Both patterns tolerate an optional `?...` suffix (`(\?.*)?$` instead of
+  // a bare `$`) so they still match with `?theme=dark` appended below.
   const paths = [
     '/antojos',
     `/antojos/${summary.ids.approvedProduct}`,
@@ -111,7 +120,9 @@ try {
     '/marketplace',
     '/about',
   ];
-  const urls = paths.map(path => `http://localhost:${PORT}${path}`);
+  const urls = paths.map(
+    path => `http://localhost:${PORT}${path}${DARK_THEME ? '?theme=dark' : ''}`
+  );
 
   console.log('\n──── lighthouse ────');
   // npx instead of an installed dependency: @lhci/cli pulls in ~240
@@ -124,6 +135,7 @@ try {
     'autorun',
     '--config=lighthouserc.json',
     ...urls.map(url => `--collect.url=${url}`),
+    ...(DARK_THEME ? ['--upload.outputDir=./lighthouse-results-dark'] : []),
   ];
   process.exitCode = await run(`npx ${lhciArgs.join(' ')}`, env);
 } finally {

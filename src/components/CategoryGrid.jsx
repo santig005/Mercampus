@@ -48,7 +48,9 @@ export default function CategoryGrid({ section = 'antojos' }) {
         <button
           key={category.name}
           className={`btn hover:text-primary hover:bg-primary/25 hover:border-primary ${
-            category.name === activeCategory ? 'category-active' : 'bg-white'
+            category.name === activeCategory
+              ? 'category-active'
+              : 'bg-base-100 text-base-content'
           } rounded-full`}
           onClick={() => handleChangeCategory(category.name)}
         >

@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { SignOutButton, useUser } from '@clerk/nextjs';
 import SidebarBtn from '@/components/header/SidebarBtn';
+import ThemeToggle from '@/components/header/ThemeToggle';
 import { useSeller } from '@/context/SellerContext';
 
 import {
@@ -67,7 +68,10 @@ const SideBar = ({ userId }) => {
         aria-label='close sidebar'
         className='drawer-overlay'
       ></label>
-      <ul className='menu text-base-content min-h-full w-72 p-4 pt-16 bg-primary flex flex-col justify-between'>
+      {/* T-73: dark:bg-base-200 - ver la nota sobre bg-primary en Layout.jsx,
+          es el mismo caso (bg-primary rinde un blanco fijo por el override
+          de main.css, no el naranja de marca). */}
+      <ul className='menu text-base-content min-h-full w-72 p-4 pt-16 bg-primary dark:bg-base-200 flex flex-col justify-between'>
         <div className='mt-4 flex flex-col gap-2'>
           <li>
             <SidebarBtn
@@ -206,6 +210,9 @@ const SideBar = ({ userId }) => {
               iconActive={<MdInfo className='size-5' />}
               iconInactive={<MdOutlineInfo className='size-5' />}
             />
+          </li>
+          <li>
+            <ThemeToggle />
           </li>
         </div>
         <div className='mb-4'>
