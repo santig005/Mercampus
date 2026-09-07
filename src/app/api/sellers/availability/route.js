@@ -4,19 +4,19 @@ import { Seller } from '@/utils/models/sellerSchema2';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 
-// Colombia no tiene horario de verano, asi que un offset fijo alcanza. Sin
-// esto, "ahora" saldria en la zona horaria del runtime (UTC en Vercel), que
-// no coincide con la hora local que el vendedor puso en su horario.
+// Colombia has no daylight saving, so a fixed offset is enough. Without
+// this, "now" would come out in the runtime's timezone (UTC on Vercel),
+// which doesn't match the local time the seller entered in their schedule.
 const BOGOTA_OFFSET_HOURS = 5;
 
-// T-14: antes protegida por IP (allowedIPs.js, borrado en T-34). Vercel Cron
-// no manda cookies de Clerk, asi que el guard es un secreto compartido en el
-// header Authorization en vez de sesion.
+// T-14: this used to be protected by IP (allowedIPs.js, deleted in T-34).
+// Vercel Cron doesn't send Clerk cookies, so the guard is a shared secret in
+// the Authorization header rather than a session.
 //
-// GET, no PATCH: Vercel Cron siempre invoca la ruta con GET. El codigo
-// original (comentado) lo exportaba como PATCH, lo que habria dejado el cron
-// pegandole a una ruta sin handler para ese verbo - un 405 silencioso, nunca
-// se habria actualizado nada.
+// GET, not PATCH: Vercel Cron always calls the route with GET. The original
+// code (commented out) exported it as PATCH, which would have left the cron
+// hitting a route with no handler for that verb - a silent 405, and nothing
+// would ever have been updated.
 export async function GET(req) {
   const authHeader = req.headers.get('authorization');
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

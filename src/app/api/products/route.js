@@ -15,9 +15,9 @@ import { SORT_CONFIGS } from '@/lib/sorting/product-sort';
 import { invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
 import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
-// No se usa por nombre, pero el import registra el modelo en Mongoose y el
-// populate({ model: 'Seller' }) del GET lo necesita registrado. Si se borra,
-// el listado revienta con MissingSchemaError.
+// Not used by name, but the import registers the model with Mongoose and the
+// GET's populate({ model: 'Seller' }) needs it registered. Delete it and the
+// listing blows up with MissingSchemaError.
 import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
 import { logger } from '@/lib/logger';
 
@@ -35,13 +35,13 @@ export async function GET(req) {
     parsedQuery.data;
   const sortConfig = SORT_CONFIGS[sort];
 
-  // Antes esto era un populate({match: {approved, university}}) que traia
-  // TODA la coleccion, poblaba, y recien despues descartaba en JS los
-  // productos de vendedores no aprobados o de otra universidad. Eso rompe
-  // cualquier paginacion en Mongo: un limit()/skip() sobre la query sin
-  // filtrar no sabe cuantos de esos items van a sobrevivir el filtro
-  // posterior. Resolviendolo antes, como ids elegibles, deja que Product.find
-  // pagine sobre exactamente los productos que van a mostrarse.
+  // This used to be a populate({match: {approved, university}}) that pulled
+  // the WHOLE collection, populated it, and only then dropped in JS the
+  // products of unapproved sellers or sellers from another university. That
+  // breaks any pagination in Mongo: a limit()/skip() over the unfiltered
+  // query has no idea how many of those items will survive the later filter.
+  // Resolving it up front, as eligible ids, lets Product.find paginate over
+  // exactly the products that are going to be shown.
   //
   // T-71: `paused` belongs right here next to `approved`, not in a filter over
   // the page Mongo already returned - a paused seller has to be gone before
@@ -74,12 +74,12 @@ export async function GET(req) {
   }
 
   if (product) {
-    // Regex propio en vez de un indice $text: el buscador busca en vivo
-    // desde 2 caracteres (SearchBox.jsx), y $text no hace match por
-    // prefijo ("bro" no encuentra "Brownie" hasta casi terminar de
-    // escribirlo, medido contra datos reales) - hubiera roto la busqueda
-    // mientras se escribe. Esto conserva el substring/prefijo de siempre y
-    // solo le suma tolerancia a acentos.
+    // Our own regex rather than a $text index: the search runs live from 2
+    // characters (SearchBox.jsx), and $text doesn't match by prefix ("bro"
+    // doesn't find "Brownie" until it is almost fully typed, measured
+    // against real data) - that would have broken search-as-you-type. This
+    // keeps the substring/prefix behaviour there has always been and only
+    // adds accent tolerance.
     filter.name = buildAccentInsensitiveRegex(product);
   }
 
@@ -87,16 +87,16 @@ export async function GET(req) {
     filter.section = section;
   }
 
-  // T-70: cada sort trae su propio orden de Mongo y su propio filtro de
-  // "siguiente pagina" (ver SORT_CONFIGS) - un orden aleatorio por request,
-  // como tenia esto antes, no se puede paginar con un cursor estable (la
-  // pagina 2 podria repetir o saltarse productos de la pagina 1).
+  // T-70: each sort brings its own Mongo order and its own
+  // "next page" filter (see SORT_CONFIGS) - a per-request random order, as
+  // this had before, can't be paginated with a stable cursor (page 2 could
+  // repeat or skip products from page 1).
   if (cursor) {
     Object.assign(filter, sortConfig.buildCursorFilter(cursor));
   }
 
-  // Se pide un item de mas para saber si hay siguiente pagina sin una
-  // segunda consulta countDocuments.
+  // One extra item is requested to know whether there is a next page without
+  // a second countDocuments query.
   const products = await Product.find(filter)
     .sort(sortConfig.mongoSort)
     .limit(limit + 1)
@@ -118,14 +118,14 @@ export async function GET(req) {
 }
 
 const getPopulatedProducts = async approvedProducts => {
-  // Una sola consulta para todos los vendedores del listado, en vez de una por
-  // producto.
+  // A single query for every seller in the listing, instead of one per
+  // product.
   const schedulesBySeller = await getSchedulesBySeller(
     approvedProducts.map(product => product.sellerId._id)
   );
 
-  // .lean() ya devuelve objetos planos, no documentos de Mongoose: no hace
-  // falta (ni corresponde) llamar .toObject() aqui.
+  // .lean() already returns plain objects, not Mongoose documents: calling
+  // .toObject() here is unnecessary (and wrong).
   return approvedProducts.map(product => ({
     ...product,
     schedules: withDayNames(
@@ -137,17 +137,17 @@ const getPopulatedProducts = async approvedProducts => {
 export async function POST(req) {
   try {
     await connectDB();
-    // Antes esto era `if (clerkUser) { ... }` sin `else`: una petición sin
-    // sesión salía del handler sin devolver ninguna Response, así que no daba
-    // 401 sino un error del framework. Y `user._id` sobre un usuario que no
-    // existía en Mongo reventaba con TypeError.
+    // This used to be `if (clerkUser) { ... }` with no `else`: a request
+    // without a session left the handler returning no Response at all, so it
+    // produced a framework error rather than a 401. And `user._id` on a user
+    // that didn't exist in Mongo blew up with a TypeError.
     const { userId: clerkId } = await auth();
     if (!clerkId) {
       return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
     }
 
-    // El User ya guarda a qué vendedor pertenece: sobra buscar el Seller por
-    // userId aparte.
+    // The User already records which seller it belongs to: looking the
+    // Seller up by userId separately is redundant.
     const user = await User.findOne({ clerkId }).select('sellerId').lean();
     if (!user?.sellerId) {
       return NextResponse.json(
@@ -161,8 +161,8 @@ export async function POST(req) {
       return invalidPayload(parsed.error);
     }
 
-    // sellerId sale de la sesión, nunca del cuerpo: el schema descarta lo que
-    // no declara, así que el cliente no puede colarlo.
+    // sellerId comes from the session, never from the body: the schema drops
+    // whatever it doesn't declare, so the client can't sneak it in.
     const newProduct = new Product({
       ...parsed.data,
       sellerId: user.sellerId,

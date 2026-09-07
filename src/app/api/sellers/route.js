@@ -12,7 +12,7 @@ import { invalidPayload } from '@/lib/api-response';
 
 export async function GET(req) {
   try {
-    // Connnect to the database
+    // Connect to the database
     await connectDB();
     const url = new URL(req.url);
     const university = url.searchParams.get('university') || '';
@@ -44,27 +44,27 @@ export async function GET(req) {
       );
     }
 
-    // Si se especifica una sección, filtrar vendedores que tengan productos en esa sección
+    // If a section is given, keep only sellers with products in it
     if (section) {
       const { Product } = await import('@/utils/models/productSchema');
 
-      // Obtener IDs de vendedores que tengan productos en la sección especificada
+      // Ids of the sellers that have products in the given section
       const sellersWithProducts = await Product.distinct('sellerId', {
         section: section,
       });
 
-      // Si no hay productos en la sección, verificar si hay productos sin sección
+      // If nothing matched the section, look for products with no section
       if (sellersWithProducts.length === 0 && section === 'antojos') {
         const sellersWithoutSection = await Product.distinct('sellerId', {
           section: { $exists: false },
         });
-        // Usar estos IDs si no hay productos con sección específica
+        // Fall back to those ids when no product carries an explicit section
         if (sellersWithoutSection.length > 0) {
           sellersWithProducts.push(...sellersWithoutSection);
         }
       }
 
-      // Filtrar sellers para incluir solo los que tienen productos en la sección
+      // Keep only the sellers that have products in the section
       sellers = sellers.filter(seller => {
         const sellerIdString = seller._id.toString();
         const isIncluded = sellersWithProducts.some(
@@ -77,7 +77,7 @@ export async function GET(req) {
       return NextResponse.json({ sellers: [] }, { status: 200 });
     }
 
-    // Una sola consulta para todos los vendedores, en vez de una por vendedor.
+    // A single query for every seller, instead of one per seller.
     const schedulesBySeller = await getSchedulesBySeller(
       sellers.map(seller => seller._id)
     );
@@ -107,12 +107,13 @@ export async function POST(req) {
       return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
     }
 
-    // Por clerkId, no por email: no hace falta pedirle el usuario a la API de
-    // Clerk solo para traducir el id, y el email ni es estable ni es único.
+    // By clerkId, not by email: there is no need to ask Clerk's API for the
+    // whole user just to translate the id, and email is neither stable nor
+    // unique.
     const usuario = await User.findOne({ clerkId });
     if (!usuario) {
-      // El webhook de Clerk crea este User (T-12b); si falta, es que su evento
-      // se perdió.
+      // Clerk's webhook creates this User (T-12b); if it is missing, its
+      // event was lost.
       return NextResponse.json(
         { message: 'No se encontró un usuario para esta sesión.' },
         { status: 404 }
@@ -124,7 +125,7 @@ export async function POST(req) {
       return invalidPayload(parsed.error);
     }
 
-    // userId sale de la sesión, nunca del cuerpo.
+    // userId comes from the session, never from the body.
     const newSeller = new Seller({ ...parsed.data, userId: usuario._id });
     await newSeller.save();
 

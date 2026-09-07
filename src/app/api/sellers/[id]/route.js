@@ -84,9 +84,9 @@ export async function PUT(req, { params }) {
   try {
       await connectDB();
 
-      // Identidad primero, para que una petición sin sesión reciba 401 y no el
-      // 400 de un cuerpo mal formado. La propiedad se comprueba abajo, que es
-      // donde ya se sabe por qué se identifica al vendedor.
+      // Identity first, so a request without a session gets a 401 and not
+      // the 400 of a malformed body. Ownership is checked below, where it is
+      // already known how the seller is being identified.
       await getClerkUserId();
 
       const parsed = updateSellerSchema.safeParse(await req.json());
@@ -96,9 +96,9 @@ export async function PUT(req, { params }) {
       const data = parsed.data;
       let seller;
       if (params.id.includes('@')) {
-          // Identifica al vendedor por el email de su dueño. Si el email es el
-          // de la sesión, el vendedor es el que el propio User ya referencia:
-          // no hace falta volver a buscarlo.
+          // Identifies the seller by their owner's email. If the email is
+          // the session's own, the seller is the one the User already
+          // references: no need to look it up again.
           const user = await verifySellerEmail(params.id);
           seller = user.sellerId
             ? await Seller.findByIdAndUpdate(user.sellerId, data, { new: true })

@@ -5,15 +5,15 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
 import { logger } from '@/lib/logger';
 
-// T-12: quien puede llegar aqui ya lo decidio el middleware (publicMetadata de
-// Clerk, no el `role` de Mongo) - antes esta ruta reinventaba su propio
-// chequeo con un Map+setInterval en memoria, que en serverless es cache por
-// instancia y un intervalo que nunca se limpia.
+// T-12: who gets here was already decided by the middleware (Clerk's
+// publicMetadata, not Mongo's `role`) - this route used to reinvent its own
+// check with an in-memory Map+setInterval, which in serverless is a
+// per-instance cache and an interval that is never cleared.
 //
-// Sin ese chequeo (que leia currentUser()), la ruta ya no toca nada especifico
-// de la request y Next la optimiza como estatica: la serviria cacheada desde
-// el build en vez de consultar Mongo en cada llamada. force-dynamic evita
-// servir vendedores desactualizados al panel de admin.
+// Without that check (which read currentUser()), the route touches nothing
+// request-specific and Next optimises it as static: it would be served
+// cached from the build instead of querying Mongo on every call.
+// force-dynamic keeps the admin panel from being handed stale sellers.
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -21,9 +21,9 @@ export async function GET() {
     // Connect to the database
     await connectDB();
 
-    // Obtener TODOS los vendedores ordenados del más nuevo al más viejo
+    // ALL the sellers, newest first
     const sellers = await Seller.find()
-      .sort({ createdAt: -1 }) // Ordenar por fecha de creación descendente (más nuevo primero)
+      .sort({ createdAt: -1 }) // newest first
       .lean();
 
     if (!sellers || sellers.length === 0) {
@@ -34,7 +34,7 @@ export async function GET() {
       }, { status: 200 });
     }
     
-    // Poblar con horarios para cada vendedor
+    // Attach each seller's schedules
     const populatedSellers = await Promise.all(
       sellers.map(async seller => {
         const schedules = await Schedule.find({ sellerId: seller._id });
@@ -46,7 +46,7 @@ export async function GET() {
       })
     );
 
-    // Transformar horarios para mostrar nombres de días
+    // Turn the day numbers into day names for display
     const transformedSellers = populatedSellers.map(seller => {
       const transformedSchedules = seller.schedules.map(schedule => ({
         ...schedule,
