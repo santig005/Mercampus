@@ -31,9 +31,8 @@ export function productPath(product: SitemapProduct): string {
 }
 
 // `/` is a permanent redirect to /antojos (next.config.mjs), so the listing is
-// the entry point, not the root. /landing is left out on purpose: nothing in
-// src/ links to it and it may be dead - confirm before advertising it.
-// Seller-only, admin and auth screens are not public content.
+// the entry point, not the root. Seller-only, admin and auth screens are not
+// public content.
 function staticEntries(now: Date): SitemapEntry[] {
   return [
     { url: absolute('/antojos'), lastModified: now, changeFrequency: 'daily', priority: 1 },
