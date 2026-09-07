@@ -122,3 +122,124 @@ describe('GET /api/products · paginación (T-23)', () => {
     expect(JSON.stringify(plan.queryPlanner.winningPlan)).toContain('IXSCAN');
   });
 });
+
+describe('GET /api/products · sort (T-70)', () => {
+  beforeAll(async () => {
+    process.env.MONGO_URI = await startTestDb();
+    productsRoute = await import('@/app/api/products/route.js');
+  }, 120_000);
+
+  afterAll(async () => {
+    await stopTestDb();
+  });
+
+  beforeEach(async () => {
+    ({ ids } = await seedDatabase());
+
+    // Precios bien separados para que ningun desempate por precio dependa
+    // del orden de insercion.
+    const precios = [500, 4000, 1500, 3000, 2500];
+    for (let i = 0; i < precios.length; i++) {
+      await Product.create({
+        name: `Ordenado ${i + 1}`,
+        price: precios[i],
+        description: 'Producto de prueba para el ordenamiento.',
+        images: ['https://ik.imagekit.io/seed/ordenado.jpg'],
+        section: 'antojos',
+        category: ['Otros'],
+        sellerId: ids.approvedSeller,
+        availability: true,
+      });
+    }
+  });
+
+  const collectAllPages = async (sort, limit = 2) => {
+    const nombres = [];
+    let cursor = '';
+
+    for (let i = 0; i < 20; i++) {
+      const query = `section=antojos&product=Ordenado&sort=${sort}&limit=${limit}${
+        cursor ? `&cursor=${cursor}` : ''
+      }`;
+      const body = await (await get(query)).json();
+      nombres.push(...body.products.map(p => p.name));
+      if (!body.nextCursor) break;
+      cursor = body.nextCursor;
+    }
+
+    return nombres;
+  };
+
+  it('price_asc ordena de menor a mayor precio a traves de todas las paginas', async () => {
+    const nombres = await collectAllPages('price_asc');
+    expect(nombres).toEqual([
+      'Ordenado 1',
+      'Ordenado 3',
+      'Ordenado 5',
+      'Ordenado 4',
+      'Ordenado 2',
+    ]);
+  });
+
+  it('price_desc ordena de mayor a menor precio a traves de todas las paginas', async () => {
+    const nombres = await collectAllPages('price_desc');
+    expect(nombres).toEqual([
+      'Ordenado 2',
+      'Ordenado 4',
+      'Ordenado 5',
+      'Ordenado 3',
+      'Ordenado 1',
+    ]);
+  });
+
+  it('newest ordena por mas reciente primero', async () => {
+    const nombres = await collectAllPages('newest');
+    // Se crearon en orden 1..5, asi que el mas nuevo es el ultimo creado.
+    expect(nombres).toEqual([
+      'Ordenado 5',
+      'Ordenado 4',
+      'Ordenado 3',
+      'Ordenado 2',
+      'Ordenado 1',
+    ]);
+  });
+
+  it('un cursor de un sort no sirve para paginar otro sort', async () => {
+    const primera = await (
+      await get('section=antojos&product=Ordenado&sort=price_asc&limit=2')
+    ).json();
+
+    const response = await get(
+      `section=antojos&product=Ordenado&sort=newest&limit=2&cursor=${primera.nextCursor}`
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('sin sort, el orden por default no cambia (availability desc, createdAt desc)', async () => {
+    const nombres = await collectAllPages('default');
+    // El default no depende del precio: los 5 son availability:true, asi que
+    // el desempate es createdAt desc - el ultimo creado aparece primero.
+    expect(nombres).toEqual([
+      'Ordenado 5',
+      'Ordenado 4',
+      'Ordenado 3',
+      'Ordenado 2',
+      'Ordenado 1',
+    ]);
+  });
+
+  it('cada sort nuevo se resuelve por indice, no por collection scan', async () => {
+    await Product.syncIndexes();
+
+    const planNewest = await Product.find({ section: 'antojos' })
+      .sort({ createdAt: -1, _id: -1 })
+      .explain('queryPlanner');
+    expect(JSON.stringify(planNewest.queryPlanner.winningPlan)).toContain('IXSCAN');
+
+    const planPrice = await Product.find({ section: 'antojos' })
+      .sort({ price: 1, _id: 1 })
+      .explain('queryPlanner');
+    expect(JSON.stringify(planPrice.queryPlanner.winningPlan)).toContain('IXSCAN');
+  });
+});

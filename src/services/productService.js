@@ -11,6 +11,7 @@ export const getProducts = async ({
   sellerId,
   university,
   section = 'antojos',
+  sort,
   limit,
   cursor,
 } = {}) => {
@@ -21,6 +22,9 @@ export const getProducts = async ({
   if (sellerId) queryParams.append('sellerId', sellerId);
   if (university) queryParams.append('university', university);
   if (section) queryParams.append('section', section);
+  // 'default' es el valor por omision del backend - omitirlo mantiene la URL
+  // limpia cuando nadie eligio un orden explicito.
+  if (sort && sort !== 'default') queryParams.append('sort', sort);
   if (limit) queryParams.append('limit', limit);
   if (cursor) queryParams.append('cursor', cursor);
 

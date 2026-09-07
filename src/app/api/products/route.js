@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
@@ -12,6 +11,7 @@ import {
   encodeProductCursor,
   productQuerySchema,
 } from '@/lib/validators/product';
+import { SORT_CONFIGS } from '@/lib/sorting/product-sort';
 import { invalidPayload } from '@/lib/api-response';
 import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // No se usa por nombre, pero el import registra el modelo en Mongoose y el
@@ -30,8 +30,9 @@ export async function GET(req) {
   if (!parsedQuery.success) {
     return invalidPayload(parsedQuery.error);
   }
-  const { product, category, sellerId, university, section, limit, cursor } =
+  const { product, category, sellerId, university, section, sort, limit, cursor } =
     parsedQuery.data;
+  const sortConfig = SORT_CONFIGS[sort];
 
   // Antes esto era un populate({match: {approved, university}}) que traia
   // TODA la coleccion, poblaba, y recien despues descartaba en JS los
@@ -74,31 +75,18 @@ export async function GET(req) {
     filter.section = section;
   }
 
-  // Reemplaza el shuffle aleatorio que tenia esto antes: un orden aleatorio
-  // por request no se puede paginar con un cursor estable (la pagina 2 podria
-  // repetir o saltarse productos de la pagina 1). availability desc conserva
-  // la idea original de mostrar primero a quien esta abierto ahora; createdAt
-  // y _id como desempate hacen el orden determinista.
+  // T-70: cada sort trae su propio orden de Mongo y su propio filtro de
+  // "siguiente pagina" (ver SORT_CONFIGS) - un orden aleatorio por request,
+  // como tenia esto antes, no se puede paginar con un cursor estable (la
+  // pagina 2 podria repetir o saltarse productos de la pagina 1).
   if (cursor) {
-    // createdAt en Mongo es un BSON Date; el cursor lo trae como string ISO
-    // (asi viaja en JSON), asi que hay que volver a convertirlo antes de
-    // compararlo, o $lt/$eq no matchean nada por el desajuste de tipo.
-    const cursorCreatedAt = new Date(cursor.createdAt);
-    filter.$or = [
-      { availability: { $lt: cursor.availability } },
-      { availability: cursor.availability, createdAt: { $lt: cursorCreatedAt } },
-      {
-        availability: cursor.availability,
-        createdAt: cursorCreatedAt,
-        _id: { $lt: new mongoose.Types.ObjectId(cursor.id) },
-      },
-    ];
+    Object.assign(filter, sortConfig.buildCursorFilter(cursor));
   }
 
   // Se pide un item de mas para saber si hay siguiente pagina sin una
   // segunda consulta countDocuments.
   const products = await Product.find(filter)
-    .sort({ availability: -1, createdAt: -1, _id: -1 })
+    .sort(sortConfig.mongoSort)
     .limit(limit + 1)
     .populate({ path: 'sellerId', model: 'Seller' })
     .lean();
@@ -111,11 +99,7 @@ export async function GET(req) {
   const last = page[page.length - 1];
   const nextCursor =
     hasMore && last
-      ? encodeProductCursor({
-          availability: last.availability,
-          createdAt: last.createdAt.toISOString(),
-          id: last._id.toString(),
-        })
+      ? encodeProductCursor(sortConfig.encodeCursorPayload(last))
       : null;
 
   return NextResponse.json({ products: populated, nextCursor }, { status: 200 });

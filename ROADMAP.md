@@ -1292,19 +1292,31 @@ product/seller ids they've saved, a toggle on product/seller cards, and a
 app's mutations (a user can only read/write their own favorites).
 **Model:** `opusplan` — needs the product decision above · **Nightly:** no
 
-### [ ] T-70 · Sort options in the product/seller listings
-**Why:** the public listing currently shuffles products randomly and only
-pushes unavailable ones last (`ProductGrid` / `api/products/route.js`);
-there's no way to sort by price or by newest, even though `Product`
-already has `price` and Mongoose's `timestamps: true` gives every
-document a `createdAt` for free. University filtering already works
-(`UniversitySelector` + `useUniversity`) — this only adds ordering on top
-of it.
+### [x] T-70 · Sort options in the product/seller listings
+**Why:** the public listing's default order pushes unavailable products
+last and otherwise orders deterministically by `createdAt` (T-23 replaced
+the old random shuffle with cursor pagination — `availability` desc,
+`createdAt` desc, `_id` as tiebreak); there was no way to sort by price or
+by newest, even though `Product` already has `price` and Mongoose's
+`timestamps: true` gives every document a `createdAt` for free. University
+filtering already works (`UniversitySelector` + `useUniversity`) — this
+only adds ordering on top of it.
 **Done when:** a sort control (price asc/desc, newest first) on the
 listing, backed by a query param the API already accepts or a small
-addition to it. The random shuffle stays as the default when no sort is
-picked.
-**Model:** `sonnet` · **Nightly:** yes
+addition to it. The deterministic default order stays the default when no
+sort is picked.
+**Done:** `sort` query param (`default` | `newest` | `price_asc` |
+`price_desc`) added to `productQuerySchema`/`GET /api/products`, reusing
+the existing cursor-pagination machinery — each sort defines its own Mongo
+sort spec, cursor filter and cursor payload shape in
+`src/lib/sorting/product-sort.ts` (`SORT_CONFIGS`), keyed by a `sort` field
+in the cursor itself so a cursor can't be replayed against a different
+sort. New indexes `{section, createdAt}` and `{section, price}` back
+`newest`/`price_desc` and `price_asc` respectively (Mongo scans the price
+index in either direction). `ProductGrid` gets a sort `<select>`, kept as
+local component state rather than a URL param — `SearchBox` rebuilds the
+query string from scratch on every keystroke and would silently drop an
+unknown `sort` param. **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-71 · Seller pause mode
 **Why:** an approved seller who's away (exam week, sick, traveling) has no
