@@ -12,11 +12,12 @@ const isProtectedRoute = createRouteMatcher([
   '/antojos/product/add(.*)',
 ]);
 
-// T-12: la unica puerta para /admin/*. Antes cada ruta admin reinventaba su
-// propio chequeo (Map+setInterval en memoria en api/sellers/admin/route.js,
-// y la pagina /admin/sellers no comprobaba rol en absoluto, solo sesion). El
-// rol vive en publicMetadata de Clerk, no en el `role` de Mongo: ese sigue
-// existiendo para buyer/seller, pero para "admin" Clerk es la fuente unica.
+// T-12: the single door to /admin/*. Every admin route used to reinvent its
+// own check (an in-memory Map+setInterval in api/sellers/admin/route.js, and
+// the /admin/sellers page checked no role at all, only that there was a
+// session). The role lives in Clerk's publicMetadata, not in Mongo's `role`:
+// that one still exists for buyer/seller, but for "admin" Clerk is the only
+// source of truth.
 const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/(.*)/admin(.*)']);
 
 // T-46 v1: only /about is migrated to next-intl so far. Everything else
@@ -26,11 +27,11 @@ const isIntlRoute = createRouteMatcher(['/about(.*)', '/en/about(.*)']);
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-// clerkClient() sale a la Backend API de Clerk (publicMetadata no viaja en el
-// JWT de sesion salvo que se personalice el session token en el dashboard, un
-// cambio de infraestructura que este repo ya evita tras el incidente de
-// T-64). Solo se llama cuando ya hay userId, es decir, solo para quien
-// intenta entrar a una ruta de admin - no en cada request publica.
+// clerkClient() goes out to Clerk's Backend API (publicMetadata doesn't
+// travel in the session JWT unless the session token is customised in the
+// dashboard - an infrastructure change this repo avoids after the T-64
+// incident). It's only called once there is a userId, i.e. only for someone
+// trying to reach an admin route, not on every public request.
 async function esAdmin(userId) {
   const user = await clerkClient().users.getUser(userId);
   return user.publicMetadata?.role === 'admin';

@@ -1,10 +1,10 @@
 import { fetchAPI } from './api';
 import { fetchAPIToken } from './apiToken';
 
-// T-23: limit/cursor reemplazan a offset - un offset numerico no se puede
-// mantener estable si el listado pagina en Mongo con un cursor (ver
-// GET /api/products). Objeto de opciones en vez de posicionales: ya eran 7
-// parametros antes de agregar el cursor.
+// T-23: limit/cursor replace offset - a numeric offset can't be kept stable
+// once the listing paginates in Mongo with a cursor (see GET /api/products).
+// An options object rather than positional arguments: there were already 7
+// parameters before the cursor was added.
 export const getProducts = async ({
   product,
   category,
@@ -22,8 +22,8 @@ export const getProducts = async ({
   if (sellerId) queryParams.append('sellerId', sellerId);
   if (university) queryParams.append('university', university);
   if (section) queryParams.append('section', section);
-  // 'default' es el valor por omision del backend - omitirlo mantiene la URL
-  // limpia cuando nadie eligio un orden explicito.
+  // 'default' is the backend's own fallback - leaving it out keeps the URL
+  // clean when nobody picked an explicit order.
   if (sort && sort !== 'default') queryParams.append('sort', sort);
   if (limit) queryParams.append('limit', limit);
   if (cursor) queryParams.append('cursor', cursor);

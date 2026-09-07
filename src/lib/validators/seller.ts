@@ -3,21 +3,20 @@ import { z } from 'zod';
 import { isNationalPhone, toNationalPhone } from '@/lib/phone';
 import { universities } from '@/utils/resources/universities';
 
-// El formulario manda el teléfono como string —a veces ya formateado, como
-// "(300) 123-4567"— mientras que Mongoose lo guarda como Number. Pedir
-// `z.number()` a secas hacía que el alta de vendedor respondiera 400 siempre.
-// Se normaliza en el borde: se dejan los dígitos, se descarta el indicativo
-// +57 y se valida antes de convertir, así que a Mongoose siempre le llega un
-// número nacional de 10 dígitos.
+// The form sends the phone as a string - sometimes already formatted, like
+// "(300) 123-4567" - while Mongoose stores it as a Number. Asking for a plain
+// `z.number()` made seller sign-up answer 400 every time. It is normalised at
+// the edge: keep the digits, drop the +57 country code, and validate before
+// converting, so Mongoose always receives a 10-digit national number.
 const phoneNumber = z
   .union([z.string(), z.number()])
   .transform(toNationalPhone)
   .refine(isNationalPhone, 'El teléfono debe tener 10 dígitos')
   .transform(Number);
 
-// userId, clerkId y approved NO se declaran: los pone el servidor. Antes
-// `new Seller(body)` dejaba que el cliente mandara approved: true y se
-// autoaprobara.
+// userId, clerkId and approved are NOT declared: the server sets them.
+// `new Seller(body)` used to let the client send approved: true and
+// self-approve.
 const sellerFields = {
   businessName: z.string().trim().min(1, 'El nombre del negocio es obligatorio').max(120),
   slogan: z.string().trim().max(160).optional(),

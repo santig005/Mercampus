@@ -10,9 +10,9 @@ export type SellerPreview = {
   logo: string;
 };
 
-// Mismo criterio que getProductForMetadata: solo los campos que necesita el
-// Open Graph de la pagina de perfil, y null (no una excepcion) para un id
-// invalido o inexistente.
+// Same rule as getProductForMetadata: only the fields the profile page's
+// Open Graph tags need, and null (not an exception) for a malformed or
+// missing id.
 export async function getSellerForMetadata(
   id: string
 ): Promise<SellerPreview | null> {

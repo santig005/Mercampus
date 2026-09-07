@@ -33,11 +33,11 @@ export const titleMetadata = {
   default: SITE_NAME,
 };
 
-// Las descripciones a veces quedan guardadas como un string JSON (ver
-// parseIfJSON en utilFn.js, que las mismas pantallas ya usan para
-// mostrarlas). Ahi puede devolver un objeto si el JSON.parse tiene exito -
-// una meta description tiene que ser texto plano si o si, asi que un
-// resultado que no sea string se descarta en vez de mostrarlo roto.
+// Descriptions are sometimes stored as a JSON string (see parseIfJSON in
+// utilFn.js, which those same screens already use to display them). There it
+// can return an object when JSON.parse succeeds - a meta description has to
+// be plain text, so a non-string result is discarded rather than rendered
+// broken.
 function plainTextDescription(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   try {
@@ -48,16 +48,15 @@ function plainTextDescription(raw: string | undefined): string | undefined {
   }
 }
 
-// T-69: un link compartido (WhatsApp, Instagram) hoy cae en la metadata
-// generica de layout.jsx - mismo titulo e imagen para cualquier producto o
-// vendedor.
+// T-69: a shared link (WhatsApp, Instagram) used to fall back to layout.jsx's
+// generic metadata - the same title and image for every product and seller.
 //
-// T-76: `title` es el nombre a secas y el sufijo ` · Mercampus` lo pone el
-// template del layout raiz, ahora que ese template interpola de verdad. Antes
-// era un `title.absolute` con el sufijo escrito a mano, justamente para
-// saltarse el template roto. El titulo renderizado es el mismo; openGraph y
-// twitter si llevan el string completo, porque a esos Next.js no les aplica
-// el template.
+// T-76: `title` is the bare name and the ` · Mercampus` suffix comes from the
+// root layout's template, now that the template actually interpolates. It
+// used to be a `title.absolute` with the suffix written by hand, precisely to
+// step around the broken template. The rendered title is the same; openGraph
+// and twitter do carry the full string, because Next.js does not apply the
+// title template to those.
 export function buildProductMetadata(product: ProductPreview) {
   const title = `${product.name} · ${SITE_NAME}`;
   const description =

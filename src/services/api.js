@@ -43,7 +43,7 @@ export const fetchAPI = async (endpoint, options = {}) => {
       ...options,
     });
 
-    // Verifica tipo de contenido antes de parsear JSON
+    // Check the content type before parsing JSON
     const contentType = response.headers.get("content-type") || "";
     if (!response.ok) {
       const errorText = contentType.includes("application/json")
