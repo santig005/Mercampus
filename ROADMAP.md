@@ -1267,7 +1267,10 @@ without duplicating the provider across two layouts.
 would have blown past the ~15-file PR limit. They stay as they were, in
 Spanish, with no prefix.
 **Afterward, one task per zone:** listing, product detail, seller
-profile, forms, seller panel. Each with its own PR.
+profile, forms, seller panel. Each with its own PR. **Filed as T-81
+(2026-09-07)** — until then this promise lived only here, inside a task
+already marked done, and 20 of 21 pages were still unmigrated with nothing
+tracking it.
 **What this doesn't solve:** content sellers write themselves (product
 names and descriptions) will stay in whatever language they wrote it in.
 Translating that is a separate product decision, not an i18n one.
@@ -1826,6 +1829,74 @@ root layout down with it, and log the pathname when it happens. That turns
 an invisible error into something with an address on it.
 **Model:** `opus` — a bug that doesn't reproduce on demand · **Nightly:** no
 
+### [ ] T-80 · Translate the existing code comments to English
+**Why:** the 2026-09-05 decision (see T-66) says code, comments and the
+ROADMAP go in English. T-66 delivered exactly what its own "Done when"
+asked for — `ROADMAP.md` — and CLAUDE.md's rule was updated, but the
+comments already written in the code were never migrated. Every task since
+then adds English comments next to Spanish ones, so the repo drifts
+further into a mix rather than settling. Measured 2026-09-07: **670
+comment lines across 124 files** carry Spanish markers (accents, `ñ`,
+`¿¡`, or Spanish function words) — a floor, not an exact count, since the
+heuristic misses unaccented Spanish.
+**Not a rewrite:** comments only. No renaming of identifiers, no behaviour
+change, no reflowing of code. A batch that touches anything but comment
+text has gone out of scope.
+**Done when:** the comment bodies are in English, batch by batch, keeping
+each note's exact technical meaning rather than translating word for word
+— the same bar T-66 set for the ROADMAP.
+**Split by zone** (~15 files per PR, per CLAUDE.md), in this order:
+| Batch | Zone | Files | Lines |
+|---|---|---|---|
+| a | `src/lib`, `src/server`, `src/services`, `src/context`, `middleware.js` | ~15 | ~90 |
+| b | `src/app/api`, `src/utils` | ~19 | ~120 |
+| c | `src/components`, the pages under `src/app` | ~28 | ~80 |
+| d | `tests/` | 34 | 156 |
+| e | `scripts/` | 13 | 149 |
+**Batch e needs a human, and should be last.** `scripts/` is where the
+dangerous notes live — `seed.mjs`'s "NUNCA apuntes esto a producción",
+`backup-db.mjs`, `reclaim-account.mjs`, `set-admin-metadata.mjs`. T-66
+already made this point about the ROADMAP: a translation that softens or
+blurs one of those warnings is worse than leaving it in Spanish. Same
+applies to the `.env`-points-at-production and multiple-Clerk-instances
+notes wherever they appear in code.
+**Not in scope:** UI copy. What a student reads stays Spanish by default
+(CLAUDE.md: it's a business language, not a code one); translating that is
+T-81.
+**Model:** `sonnet` for batches a-d, `opus` for e · **Nightly:** yes for
+a-d, no for e
+
+### [ ] T-81 · Finish the i18n migration, zone by zone
+**Why:** T-46 shipped the scaffolding and `/about` as the proof screen,
+and closed with "afterward, one task per zone: listing, product detail,
+seller profile, forms, seller panel. Each with its own PR." Those tasks
+were never filed, so the follow-up lives only as a sentence inside a
+ticket that is already marked done — which nobody reads. Measured
+2026-09-07: **1 of 21 pages** sits under `[locale]/`, and at least 53
+hardcoded Spanish strings remain in 21 files (a floor: the count only sees
+text between `>` and `<` on one line, not `placeholder=`, `title=`, `alt=`
+or multi-line copy).
+**Done when:** each zone moved under `src/app/[locale]/` with its copy in
+`messages/{es,en}.json`, one PR per zone, and `tests/e2e/i18n.spec.js`
+extended to walk it in both languages.
+**Suggested order** — by what an exchange student hits first: listing
+(`/antojos`, `/marketplace`) → product detail → seller profile → auth →
+the seller's own forms → admin (or leave admin out; it has one user).
+**Carry over from T-46, don't rediscover it:** `localeDetection: false` on
+purpose, and the language switcher is a plain `<a href>`, not `next-intl`'s
+`Link` — `NextIntlClientProvider` lives in the root layout, which Next
+doesn't re-run on a client-side navigation, so a soft navigation left the
+translation stuck on the initial locale.
+**Watch out:** the middleware currently matches `/about(.*)` and
+`/en/about(.*)` only, and has to keep coexisting with `clerkMiddleware`.
+Every zone widens that matcher, which is the part that can break auth on
+routes that have nothing to do with i18n.
+**Still not solved by any of this:** what sellers write themselves —
+product names and descriptions — stays in whatever language they typed. A
+product decision, not an i18n one.
+**Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
+rethinking · **Nightly:** yes
+
 ### [ ] T-63 · Separate the environments (database and Clerk)
 > **The biggest structural risk in the project right now.** An agent can't
 > do this: these are infrastructure decisions and they cost money.
@@ -2132,6 +2203,11 @@ security/production sections (T-12f, T-12g, T-12h, T-64) specifically for
 lost or softened nuance before merging.
 **Afterward:** every new task added to this file gets written directly in
 English; no "half" translation stays half-done.
+**What this task did NOT cover, and nothing tracked until T-80
+(2026-09-07):** the comments already written in the *code*. This ticket's
+"Done when" was `ROADMAP.md`, and it delivered that — but the 2026-09-05
+decision covers code and comments too, and 670 comment lines across 124
+files were still Spanish two days later.
 **Depends on:** nothing technically, but it made sense to do once the
 pace of active tasks slowed down — it's a large diff competing for review
 attention with anything else open at the same time.
