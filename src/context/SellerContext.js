@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 
 const SellerContext = createContext(null);
 
-// user/seller llegan ya resueltos por el servidor (getSellerContextData en
-// src/utils/lib/auth.ts, llamada desde el layout raiz) en vez de pedirse por
-// fetch al montar. Antes SellerContext le pegaba a
-// GET /api/users/user-with-seller/[email] desde el cliente: esa ruta no
-// tenia autenticacion y era un oraculo de enumeracion de cuentas (T-12d).
-// setSeller/setDbUser se conservan porque varias pantallas los usan para
-// actualizacion optimista tras un PUT, sin volver a pedir los datos.
+// user/seller arrive already resolved by the server (getSellerContextData in
+// src/utils/lib/auth.ts, called from the root layout) instead of being
+// fetched on mount. SellerContext used to hit
+// GET /api/users/user-with-seller/[email] from the client: that route had no
+// authentication at all and was an account-enumeration oracle (T-12d).
+// setSeller/setDbUser are kept because several screens use them for an
+// optimistic update after a PUT, without re-fetching the data.
 export const SellerProvider = ({ children, initialUser, initialSeller }) => {
   const [seller, setSeller] = useState(initialSeller);
   const [dbUser, setDbUser] = useState(initialUser);
@@ -25,7 +25,7 @@ export const SellerProvider = ({ children, initialUser, initialSeller }) => {
   );
 };
 
-// Custom hook para consumir el contexto
+// Custom hook for consuming the context
 export const useSeller = () => {
   const context = useContext(SellerContext);
   if (context === undefined) {

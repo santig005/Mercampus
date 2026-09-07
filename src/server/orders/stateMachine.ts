@@ -16,8 +16,9 @@ interface OrderLike {
   history: Array<{ status: OrderStatus; at: Date }>;
 }
 
-// Cancelacion solo hasta "preparing": una vez el pedido esta "delivering" ya
-// hay alguien en camino, y revertir eso es un problema logistico, no de datos.
+// Cancellation only up to "preparing": once the order is "delivering"
+// somebody is already on their way, and undoing that is a logistics problem,
+// not a data one.
 const TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   pending: ['accepted', 'cancelled'],
   accepted: ['preparing', 'cancelled'],
@@ -39,8 +40,8 @@ export function assertValidTransition(
   }
 }
 
-// Unico punto de escritura de `status`: nunca se asigna a mano en otro sitio,
-// para que el historial y el estado actual no puedan desincronizarse.
+// The only place `status` is written: it is never assigned by hand anywhere
+// else, so the history and the current state can't drift apart.
 export function transitionOrder(order: OrderLike, next: OrderStatus): void {
   assertValidTransition(order.status, next);
   order.history.push({ status: next, at: new Date() });

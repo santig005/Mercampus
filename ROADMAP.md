@@ -1846,13 +1846,13 @@ text has gone out of scope.
 each note's exact technical meaning rather than translating word for word
 — the same bar T-66 set for the ROADMAP.
 **Split by zone** (~15 files per PR, per CLAUDE.md), in this order:
-| Batch | Zone | Files | Lines |
-|---|---|---|---|
-| a | `src/lib`, `src/server`, `src/services`, `src/context`, `middleware.js` | ~15 | ~90 |
-| b | `src/app/api`, `src/utils` | ~19 | ~120 |
-| c | `src/components`, the pages under `src/app` | ~28 | ~80 |
-| d | `tests/` | 34 | 156 |
-| e | `scripts/` | 13 | 149 |
+| Batch | Zone | Files | Lines | State |
+|---|---|---|---|---|
+| a | `src/lib`, `src/server`, `src/services`, `src/context`, `middleware.js` | 17 | 100 | **done (#265)** |
+| b | `src/app/api`, `src/utils` | ~19 | ~120 | pending |
+| c | `src/components`, the pages under `src/app` | ~28 | ~80 | pending |
+| d | `tests/` | 34 | 156 | pending |
+| e | `scripts/` | 13 | 149 | pending |
 **Batch e needs a human, and should be last.** `scripts/` is where the
 dangerous notes live — `seed.mjs`'s "NUNCA apuntes esto a producción",
 `backup-db.mjs`, `reclaim-account.mjs`, `set-admin-metadata.mjs`. T-66

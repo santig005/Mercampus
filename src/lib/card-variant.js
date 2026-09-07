@@ -1,26 +1,26 @@
-// Construcción del className de ProductCard y SellerCard según su variant.
+// Building the className for ProductCard and SellerCard from their variant.
 //
-// Vive fuera de los componentes, en un archivo sin JSX, para poder testearla
-// sin pasar por el pipeline de transformación de JSX de Vite: tsconfig.json
-// declara "jsx": "preserve" (lo necesita Next, que usa su propio compilador
-// SWC en vez de esbuild), y Vite respeta ese ajuste al pie de la letra —
-// importar un .jsx real desde un test revienta el análisis de imports de Vite
-// con "contains invalid JS syntax" en vez de transformarlo. Un módulo sin
-// sintaxis JSX no tropieza con eso.
+// It lives outside the components, in a file with no JSX, so it can be tested
+// without going through Vite's JSX transform: tsconfig.json declares
+// "jsx": "preserve" (Next needs that, since it uses its own SWC compiler
+// rather than esbuild) and Vite honours that setting to the letter -
+// importing a real .jsx from a test blows up Vite's import analysis with
+// "contains invalid JS syntax" instead of transforming it. A module with no
+// JSX syntax doesn't hit that.
 //
-// La variante 'embedded' solo la usan pantallas autenticadas (edición de
-// productos, admin de vendedores) que el e2e todavía no puede visitar: no hay
-// sesión de Clerk simulada en Playwright. Los tests de este archivo son la
-// única red que cubre esa variante hasta que exista.
+// The 'embedded' variant is only used by authenticated screens (product
+// editing, seller admin) that the e2e can't visit yet: there is no simulated
+// Clerk session in Playwright. This file's tests are the only net covering
+// that variant until there is one.
 
 export function productCardClassName({ variant, isClicked }) {
   const isStandalone = variant === 'standalone';
   return [
     'flex gap-2',
     isStandalone &&
-      // T-73: bg-base-100/text-base-content en vez de bg-white fijo, para
-      // que la tarjeta responda al tema oscuro en vez de quedar blanca
-      // sobre un fondo oscuro.
+      // T-73: bg-base-100/text-base-content instead of a fixed bg-white, so
+      // the card follows the dark theme instead of staying white on a dark
+      // background.
       'bg-base-100 text-base-content drop-shadow-md p-2 rounded-md cursor-pointer transition-transform duration-300',
     isStandalone && (isClicked ? 'scale-[0.95]' : 'scale-100'),
   ]

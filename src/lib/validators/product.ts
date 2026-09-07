@@ -8,10 +8,10 @@ const SECTIONS = ['antojos', 'marketplace'] as const;
 const categoriesFor = (section: (typeof SECTIONS)[number]) =>
   section === 'marketplace' ? marketplaceCategories : antojosCategories;
 
-// Por defecto Zod descarta las claves que no estan declaradas, que es justo lo
-// que hace falta: `new Product(body)` aceptaba cualquier campo del cliente,
-// sellerId incluido. Aqui sellerId no se declara a proposito — lo pone el
-// servidor a partir de la sesion.
+// By default Zod drops keys that are not declared, which is exactly what is
+// needed here: `new Product(body)` accepted any field from the client,
+// sellerId included. sellerId is deliberately not declared - the server sets
+// it from the session.
 const productFields = {
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(120),
   price: z.number().int('El precio debe ser un entero').nonnegative(),
@@ -23,9 +23,9 @@ const productFields = {
   stock: z.boolean().optional(),
 };
 
-// La coherencia categoria/seccion tambien la valida el schema de Mongoose. Aqui
-// se repite para devolver 400 con el campo, en vez de un 500 al guardar; ambas
-// leen las mismas listas, asi que no pueden desincronizarse.
+// The category/section coherence is validated by the Mongoose schema too. It
+// is repeated here to return a 400 naming the field instead of a 500 on save;
+// both read the same lists, so they cannot drift apart.
 const checkCategoriesMatchSection = (
   data: { section: (typeof SECTIONS)[number]; category: string[] },
   ctx: z.RefinementCtx
@@ -46,8 +46,8 @@ export const createProductSchema = z
   .object(productFields)
   .superRefine(checkCategoriesMatchSection);
 
-// En una edicion pueden venir solo algunos campos, pero si vienen categoria y
-// seccion tienen que seguir siendo coherentes.
+// An edit may carry only some of the fields, but if category and section do
+// arrive they still have to be coherent.
 export const updateProductSchema = z
   .object(productFields)
   .partial()
@@ -60,25 +60,25 @@ export const updateProductSchema = z
     }
   });
 
-// --- Ordenamiento -------------------------------------------------------------
+// --- Sorting ------------------------------------------------------------------
 //
-// 'default' es el orden historico del listado (availability desc, createdAt
-// desc, _id como desempate) - T-23 lo hizo determinista, reemplazando el
-// shuffle aleatorio que habia antes. T-70 suma 'newest' y los dos sentidos de
-// precio sobre la misma maquina de paginacion por cursor, sin tocar el
-// default.
+// 'default' is the listing's historical order (availability desc, createdAt
+// desc, _id as the tie-breaker) - T-23 made it deterministic, replacing the
+// random shuffle that was there before. T-70 adds 'newest' and both price
+// directions on top of the same cursor-pagination machinery, without touching
+// the default.
 export const SORT_OPTIONS = ['default', 'newest', 'price_asc', 'price_desc'] as const;
 export type ProductSort = (typeof SORT_OPTIONS)[number];
 
 const objectIdRegex = /^[a-f\d]{24}$/i;
 
-// --- Paginacion por cursor ---------------------------------------------------
+// --- Cursor pagination --------------------------------------------------------
 //
-// El cursor guarda los campos del ultimo producto de la pagina anterior, en
-// el mismo orden que usa el sort activo, mas el propio sort: asi un cursor
-// generado para 'price_asc' no se puede reutilizar por error con 'newest'
-// (el shape no matchea y decodeProductCursor lo rechaza). Codificado en
-// base64url para que viaje en la URL sin necesitar escapes.
+// The cursor stores the fields of the previous page's last product, in the
+// same order the active sort uses, plus the sort itself: that way a cursor
+// generated for 'price_asc' cannot be reused by mistake with 'newest' (the
+// shape does not match and decodeProductCursor rejects it). Encoded as
+// base64url so it travels in the URL without needing escapes.
 const cursorPayloadSchema = z.discriminatedUnion('sort', [
   z.object({
     sort: z.literal('default'),
@@ -109,10 +109,9 @@ export function encodeProductCursor(value: ProductCursor): string {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 
-// z.NEVER + ctx.addIssue en vez de lanzar: un cursor invalido es un dato de
-// entrada mal formado, no una excepcion — con esto safeParse lo reporta igual
-// que cualquier otro campo invalido, en vez de necesitar un try/catch aparte
-// en la ruta.
+// z.NEVER + ctx.addIssue rather than throwing: an invalid cursor is malformed
+// input, not an exception - this way safeParse reports it like any other
+// invalid field, instead of needing a separate try/catch in the route.
 const decodeProductCursor = (
   raw: string,
   ctx: z.RefinementCtx
@@ -131,12 +130,12 @@ const decodeProductCursor = (
 export const productQuerySchema = z
   .object({
     section: z.enum(SECTIONS).default('antojos'),
-    // product y category acaban en un $regex, asi que se acota la longitud.
+    // product and category end up in a $regex, so their length is capped.
     product: z.string().max(100).default(''),
     category: z.string().max(60).default(''),
     university: z.string().max(120).default(''),
-    // Un sellerId con formato invalido llegaba a Mongo y reventaba con
-    // CastError, o sea un 500 por un parametro mal escrito.
+    // A malformed sellerId reached Mongo and blew up with a CastError - a
+    // 500 caused by a mistyped query parameter.
     sellerId: z
       .union([
         z.string().regex(/^[a-f\d]{24}$/i, 'sellerId debe ser un ObjectId'),
@@ -147,10 +146,10 @@ export const productQuerySchema = z
     limit: z.coerce.number().int().min(1).max(50).default(12),
     cursor: z.string().default('').transform(decodeProductCursor),
   })
-  // Un cursor codifica su propio sort (ver arriba). Si no coincide con el
-  // `sort` del pedido, "cargar mas" mezclaria dos ordenes distintos a mitad
-  // de listado - mas facil rechazarlo aca que dejar que produzca resultados
-  // repetidos o salteados en el cliente.
+  // A cursor encodes its own sort (see above). If it does not match the
+  // request's `sort`, "load more" would mix two different orders halfway down
+  // the listing - easier to reject it here than to let it produce repeated or
+  // skipped results in the client.
   .superRefine((data, ctx) => {
     if (data.cursor && data.cursor.sort !== data.sort) {
       ctx.addIssue({

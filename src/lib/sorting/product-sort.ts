@@ -12,29 +12,30 @@ type ProductLike = {
 type CursorFor<S extends ProductSort> = Extract<ProductCursor, { sort: S }>;
 
 type SortConfig<S extends ProductSort> = {
-  // Mismo orden que recibe .sort() de Mongoose.
+  // The same sort spec Mongoose's .sort() receives.
   mongoSort: Record<string, 1 | -1>;
-  // Traduce el cursor de la pagina anterior en el filtro que trae "lo que
-  // sigue" segun este orden.
+  // Turns the previous page's cursor into the filter that fetches "what
+  // comes next" under this order.
   buildCursorFilter: (cursor: CursorFor<S>) => Record<string, unknown>;
   encodeCursorPayload: (last: ProductLike) => CursorFor<S>;
 };
 
 const objectId = (id: string) => new mongoose.Types.ObjectId(id);
 
-// T-23 fijo 'default' (availability desc, createdAt desc, _id de desempate).
-// T-70 suma 'newest' y los dos sentidos de precio sobre la misma maquina de
-// paginacion: cada sort declara su propio orden de Mongo, su filtro de
-// "siguiente pagina" a partir del cursor, y como armar el cursor de la
-// pagina que devuelve. La ruta no conoce estos detalles, solo indexa este
-// mapa por el `sort` ya validado.
+// T-23 pinned down 'default' (availability desc, createdAt desc, _id as the
+// tie-breaker). T-70 adds 'newest' and both price directions on top of the
+// same pagination machinery: each sort declares its own Mongo order, its
+// "next page" filter built from the cursor, and how to build the cursor for
+// the page it returns. The route knows none of these details, it just indexes
+// this map by the already-validated `sort`.
 export const SORT_CONFIGS: { [S in ProductSort]: SortConfig<S> } = {
   default: {
     mongoSort: { availability: -1, createdAt: -1, _id: -1 },
     buildCursorFilter: cursor => {
-      // createdAt en Mongo es un BSON Date; el cursor lo trae como string ISO
-      // (asi viaja en JSON), asi que hay que volver a convertirlo antes de
-      // comparar, o $lt/$eq no matchean nada por el desajuste de tipo.
+      // createdAt is a BSON Date in Mongo; the cursor carries it as an ISO
+      // string (that is how it travels in JSON), so it has to be converted
+      // back before comparing, or $lt/$eq match nothing on the type
+      // mismatch.
       const cursorCreatedAt = new Date(cursor.createdAt);
       return {
         $or: [

@@ -2,13 +2,13 @@ const COUNTRY_CODE = '57';
 const NATIONAL_DIGITS = 10;
 
 /**
- * Deja un teléfono en su forma nacional colombiana: solo dígitos, sin
- * indicativo de país y como mucho 10.
+ * Reduces a phone number to its Colombian national form: digits only, no
+ * country code, at most 10 of them.
  *
- * El `57` se descarta únicamente cuando quedan más de 10 dígitos: ningún
- * número nacional empieza por 57 (los móviles empiezan por 3 y los fijos por
- * 60), pero si llegara uno de exactamente 10 dígitos, quitárselo se comería
- * los tres primeros.
+ * The `57` is dropped only when more than 10 digits remain: no national
+ * number starts with 57 (mobiles start with 3 and landlines with 60), but if
+ * one of exactly 10 digits ever arrived, stripping it would eat its first
+ * three.
  */
 export const toNationalPhone = (value: unknown): string => {
   if (value === null || value === undefined) return '';
@@ -23,9 +23,9 @@ export const toNationalPhone = (value: unknown): string => {
 };
 
 /**
- * Un número nacional válido tiene 10 dígitos y no empieza por cero. Lo del
- * cero importa porque el teléfono se guarda como `Number` en Mongoose: un
- * `'0300123456'` se convertiría en 300123456 y perdería un dígito en silencio.
+ * A valid national number has 10 digits and doesn't start with a zero. The
+ * zero matters because the phone is stored as a `Number` in Mongoose: a
+ * `'0300123456'` would become 300123456 and lose a digit silently.
  */
 export const isNationalPhone = (digits: string): boolean =>
   /^[1-9]\d{9}$/.test(digits);

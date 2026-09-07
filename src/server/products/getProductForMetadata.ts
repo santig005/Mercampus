@@ -10,11 +10,11 @@ export type ProductPreview = {
   image: string | undefined;
 };
 
-// generateMetadata() en la pagina de detalle necesita nombre/descripcion/
-// precio/imagen para el Open Graph, no el producto completo con el vendedor
-// poblado que arma GET /api/products/[id]. Un id con formato invalido
-// (o inexistente) devuelve null en vez de reventar con un CastError - la
-// pagina cae al metadata generico del layout, no a un 500.
+// generateMetadata() on the detail page needs name/description/price/image
+// for the Open Graph tags, not the full product with its seller populated
+// that GET /api/products/[id] builds. A malformed (or missing) id returns
+// null rather than blowing up with a CastError - the page falls back to the
+// layout's generic metadata, not to a 500.
 export async function getProductForMetadata(
   id: string
 ): Promise<ProductPreview | null> {

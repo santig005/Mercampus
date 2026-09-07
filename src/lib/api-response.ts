@@ -3,7 +3,7 @@ import type { ZodError } from 'zod';
 
 import { logger } from '@/lib/logger';
 
-/** 400 con el detalle por campo. */
+/** 400 with the per-field detail. */
 export const invalidPayload = (error: ZodError) =>
   NextResponse.json(
     {
@@ -17,16 +17,17 @@ export const invalidPayload = (error: ZodError) =>
   );
 
 /**
- * Respuesta de error unica para los handlers.
+ * The one error response for the handlers.
  *
- * Toma el status de AppError cuando lo hay, registra el error una sola vez, y
- * nunca devuelve al cliente el mensaje de un 500: los errores internos llevan
- * rutas, nombres de coleccion y a veces fragmentos de la consulta.
+ * Takes the status from AppError when there is one, logs the error exactly
+ * once, and never returns a 500's message to the client: internal errors
+ * carry paths, collection names and sometimes fragments of the query.
  *
- * `bodyKey` existe porque los handlers no coinciden en la forma del cuerpo:
- * unos devuelven `{ error }` y otros `{ message }`, y cambiarla rompe al
- * frontend que ya la lee. Se unifica en T-32; mientras tanto cada ruta declara
- * la suya en vez de repetir la politica de no filtrar el mensaje de un 500.
+ * `bodyKey` exists because the handlers don't agree on the body shape: some
+ * return `{ error }` and others `{ message }`, and changing it breaks the
+ * frontend already reading it. T-32 unifies them; until then each route
+ * declares its own instead of repeating the policy of not leaking a 500's
+ * message.
  */
 export function errorResponse(
   error: unknown,
