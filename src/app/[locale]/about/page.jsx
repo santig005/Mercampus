@@ -10,7 +10,7 @@ const InfoPage = () => {
   const t = useTranslations('About');
 
   return (
-    <div className="bg-white text-gray-800 min-h-screen !w-full">
+    <div className="bg-base-100 text-gray-800 dark:text-base-content min-h-screen !w-full">
       {/* Hero Section */}
       <header className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-25 w-full pt-20">
         {/* Subtle background elements */}
@@ -37,7 +37,7 @@ const InfoPage = () => {
                   {t('hero.badge')}
                 </motion.div>
                 <motion.h1
-                  className="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight"
+                  className="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-base-content leading-tight"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.4 }}
@@ -45,7 +45,7 @@ const InfoPage = () => {
                   Mercampus
                 </motion.h1>
                 <motion.h2
-                  className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-600 leading-relaxed"
+                  className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-600 dark:text-base-content/70 leading-relaxed"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.6 }}
@@ -55,7 +55,7 @@ const InfoPage = () => {
               </div>
 
               <motion.p
-                className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl"
+                className="text-lg sm:text-xl text-gray-600 dark:text-base-content/70 leading-relaxed max-w-2xl"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.8 }}
@@ -73,7 +73,7 @@ const InfoPage = () => {
                   {t('hero.ctaPrimary')}
                   <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
-                <Link href="/antojos" className="inline-flex items-center px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-2xl text-lg font-semibold hover:border-orange-500 hover:text-orange-600 transition-all duration-300">
+                <Link href="/antojos" className="inline-flex items-center px-8 py-4 border-2 border-base-300 text-gray-700 dark:text-base-content rounded-2xl text-lg font-semibold hover:border-orange-500 hover:text-orange-600 transition-all duration-300">
                   {t('hero.ctaSecondary')}
                 </Link>
               </motion.div>
@@ -86,11 +86,11 @@ const InfoPage = () => {
               >
                 <div className="flex items-center gap-2">
                   <FaUsers className="text-orange-500 text-xl" />
-                  <span className="text-gray-600">{t('hero.statStudents')}</span>
+                  <span className="text-gray-600 dark:text-base-content/70">{t('hero.statStudents')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FaShieldAlt className="text-orange-500 text-xl" />
-                  <span className="text-gray-600">{t('hero.statSecure')}</span>
+                  <span className="text-gray-600 dark:text-base-content/70">{t('hero.statSecure')}</span>
                 </div>
               </motion.div>
             </motion.div>
@@ -127,17 +127,17 @@ const InfoPage = () => {
       <section className="py-20 lg:py-32 w-full">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-base-content mb-6">
               {t('problem.heading')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-base-content/70 max-w-3xl mx-auto">
               {t('problem.subheading')}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             <motion.div
-              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-150 hover:shadow-xl hover:-translate-y-2"
+              className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-150 hover:shadow-xl hover:-translate-y-2"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -151,12 +151,12 @@ const InfoPage = () => {
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-200 transition-colors duration-300">
                 <FaSearch className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('problem.search.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('problem.search.quote')}</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-base-content mb-4">{t('problem.search.title')}</h3>
+              <p className="text-gray-600 dark:text-base-content/70 leading-relaxed">{t('problem.search.quote')}</p>
             </motion.div>
 
             <motion.div
-              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2"
+              className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -170,12 +170,12 @@ const InfoPage = () => {
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-200 transition-colors duration-300">
                 <FaClock className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('problem.time.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('problem.time.quote')}</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-base-content mb-4">{t('problem.time.title')}</h3>
+              <p className="text-gray-600 dark:text-base-content/70 leading-relaxed">{t('problem.time.quote')}</p>
             </motion.div>
 
             <motion.div
-              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2"
+              className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
@@ -189,24 +189,24 @@ const InfoPage = () => {
               <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-200 transition-colors duration-300">
                 <FaShieldAlt className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('problem.trust.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('problem.trust.quote')}</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-base-content mb-4">{t('problem.trust.title')}</h3>
+              <p className="text-gray-600 dark:text-base-content/70 leading-relaxed">{t('problem.trust.quote')}</p>
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* Qué es Mercampus */}
-      <section className="py-20 lg:py-32 bg-gray-50 w-full relative overflow-hidden">
+      <section className="py-20 lg:py-32 bg-base-200 w-full relative overflow-hidden">
         {/* Background blur elements */}
         <div className="absolute top-10 left-1/4 w-96 h-96 bg-orange-200/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-orange-300/15 rounded-full blur-3xl"></div>
         <div className="mx-auto max-w-6xl px-6 relative">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-base-content mb-6">
               {t('what.heading')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 dark:text-base-content/70 max-w-4xl mx-auto leading-relaxed">
               {t('what.description')}
             </p>
           </div>
@@ -231,11 +231,11 @@ const InfoPage = () => {
                 </div>
                 <div>
                   <h3
-                    className="text-xl font-semibold text-gray-900 mb-2"
+                    className="text-xl font-semibold text-gray-900 dark:text-base-content mb-2"
                   >
                     {t('what.mobile.title')}
                   </h3>
-                  <p className="text-gray-600">{t('what.mobile.text')}</p>
+                  <p className="text-gray-600 dark:text-base-content/70">{t('what.mobile.text')}</p>
                 </div>
               </motion.div>
 
@@ -252,12 +252,12 @@ const InfoPage = () => {
                 </div>
                 <div>
                   <h3
-                    className="text-xl font-semibold text-gray-900 mb-2"
+                    className="text-xl font-semibold text-gray-900 dark:text-base-content mb-2"
 
                   >
                     {t('what.community.title')}
                   </h3>
-                  <p className="text-gray-600">{t('what.community.text')}</p>
+                  <p className="text-gray-600 dark:text-base-content/70">{t('what.community.text')}</p>
                 </div>
               </motion.div>
 
@@ -274,12 +274,12 @@ const InfoPage = () => {
                 </div>
                 <div>
                   <h3
-                    className="text-xl font-semibold text-gray-900 mb-2"
+                    className="text-xl font-semibold text-gray-900 dark:text-base-content mb-2"
 
                   >
                     {t('what.quality.title')}
                   </h3>
-                  <p className="text-gray-600">{t('what.quality.text')}</p>
+                  <p className="text-gray-600 dark:text-base-content/70">{t('what.quality.text')}</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -293,7 +293,7 @@ const InfoPage = () => {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-orange-300/10 rounded-3xl blur-xl"></div>
               <motion.div
-                className="relative bg-white rounded-3xl p-8 shadow-2xl"
+                className="relative bg-base-100 rounded-3xl p-8 shadow-2xl"
                 whileHover={{
                   scale: 1.05,
                   rotateY: 5,
@@ -309,15 +309,15 @@ const InfoPage = () => {
                       className="w-3 h-3 bg-green-500 rounded-full"
 
                     ></div>
-                    <span className="text-sm text-gray-600">{t('what.cardOnline')}</span>
+                    <span className="text-sm text-gray-600 dark:text-base-content/70">{t('what.cardOnline')}</span>
                   </div>
                   <h4
-                    className="text-lg font-semibold text-gray-900"
+                    className="text-lg font-semibold text-gray-900 dark:text-base-content"
 
                   >
                     {t('what.cardApp')}
                   </h4>
-                  <p className="text-gray-600 text-sm">{t('what.cardText')}</p>
+                  <p className="text-gray-600 dark:text-base-content/70 text-sm">{t('what.cardText')}</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -329,17 +329,17 @@ const InfoPage = () => {
       <section className="py-20 lg:py-32 w-full">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-base-content mb-6">
               {t('categories.heading')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-base-content/70 max-w-3xl mx-auto">
               {t('categories.subheading')}
             </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <motion.div
-              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -358,17 +358,17 @@ const InfoPage = () => {
                 <FaHamburger className="w-8 h-8 text-orange-600" />
               </div>
               <motion.h3
-                className="text-lg font-semibold text-gray-900 mb-2"
+                className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2"
                 whileHover={{ color: "#ea580c" }}
                 transition={{ duration: 0.2 }}
               >
                 {t('categories.food.title')}
               </motion.h3>
-              <p className="text-sm text-gray-600">{t('categories.food.text')}</p>
+              <p className="text-sm text-gray-600 dark:text-base-content/70">{t('categories.food.text')}</p>
             </motion.div>
 
             <motion.div
-              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -387,17 +387,17 @@ const InfoPage = () => {
                 <FaBook className="w-8 h-8 text-orange-600" />
               </div>
               <motion.h3
-                className="text-lg font-semibold text-gray-900 mb-2"
+                className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2"
                 whileHover={{ color: "#ea580c" }}
                 transition={{ duration: 0.2 }}
               >
                 {t('categories.services.title')}
               </motion.h3>
-              <p className="text-sm text-gray-600">{t('categories.services.text')}</p>
+              <p className="text-sm text-gray-600 dark:text-base-content/70">{t('categories.services.text')}</p>
             </motion.div>
 
             <motion.div
-              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
@@ -416,17 +416,17 @@ const InfoPage = () => {
                 <FaHome className="w-8 h-8 text-orange-600" />
               </div>
               <motion.h3
-                className="text-lg font-semibold text-gray-900 mb-2"
+                className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2"
                 whileHover={{ color: "#ea580c" }}
                 transition={{ duration: 0.2 }}
               >
                 {t('categories.campusLife.title')}
               </motion.h3>
-              <p className="text-sm text-gray-600">{t('categories.campusLife.text')}</p>
+              <p className="text-sm text-gray-600 dark:text-base-content/70">{t('categories.campusLife.text')}</p>
             </motion.div>
 
             <motion.div
-              className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
+              className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 text-center"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
@@ -445,29 +445,29 @@ const InfoPage = () => {
                 <FaTicketAlt className="w-8 h-8 text-orange-600" />
               </div>
               <motion.h3
-                className="text-lg font-semibold text-gray-900 mb-2"
+                className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2"
                 whileHover={{ color: "#ea580c" }}
                 transition={{ duration: 0.2 }}
               >
                 {t('categories.events.title')}
               </motion.h3>
-              <p className="text-sm text-gray-600">{t('categories.events.text')}</p>
+              <p className="text-sm text-gray-600 dark:text-base-content/70">{t('categories.events.text')}</p>
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* Beneficios */}
-      <section className="py-20 lg:py-32 bg-gray-50 w-full relative overflow-hidden">
+      <section className="py-20 lg:py-32 bg-base-200 w-full relative overflow-hidden">
         {/* Background blur elements */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-orange-300/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-10 w-64 h-64 bg-orange-400/15 rounded-full blur-3xl"></div>
         <div className="mx-auto max-w-6xl px-6 relative">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-base-content mb-6">
               {t('benefits.heading')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-base-content/70 max-w-3xl mx-auto">
               {t('benefits.subheading')}
             </p>
           </div>
@@ -477,7 +477,7 @@ const InfoPage = () => {
               className="space-y-8"
             >
               <h3
-                className="text-3xl font-bold text-gray-900 mb-8"
+                className="text-3xl font-bold text-gray-900 dark:text-base-content mb-8"
               >
                 {t('benefits.buyersHeading')}
               </h3>
@@ -492,11 +492,11 @@ const InfoPage = () => {
                   </div>
                   <div>
                     <h4
-                      className="text-lg font-semibold text-gray-900 mb-2"
+                      className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2"
                     >
                       {t('benefits.buyer1.title')}
                     </h4>
-                    <p className="text-gray-600">{t('benefits.buyer1.text')}</p>
+                    <p className="text-gray-600 dark:text-base-content/70">{t('benefits.buyer1.text')}</p>
                   </div>
                 </div>
 
@@ -505,8 +505,8 @@ const InfoPage = () => {
                     <FaCheckCircle className="w-4 h-4 text-orange-600" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">{t('benefits.buyer2.title')}</h4>
-                    <p className="text-gray-600">{t('benefits.buyer2.text')}</p>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2">{t('benefits.buyer2.title')}</h4>
+                    <p className="text-gray-600 dark:text-base-content/70">{t('benefits.buyer2.text')}</p>
                   </div>
                 </div>
 
@@ -520,26 +520,26 @@ const InfoPage = () => {
                   </div>
                   <div>
                     <h4
-                      className="text-lg font-semibold text-gray-900 mb-2"
+                      className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2"
                     >
                       {t('benefits.buyer3.title')}
                     </h4>
-                    <p className="text-gray-600">{t('benefits.buyer3.text')}</p>
+                    <p className="text-gray-600 dark:text-base-content/70">{t('benefits.buyer3.text')}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="space-y-8">
-              <h3 className="text-3xl font-bold text-gray-900 mb-8">{t('benefits.sellersHeading')}</h3>
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-base-content mb-8">{t('benefits.sellersHeading')}</h3>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                     <FaCheckCircle className="w-4 h-4 text-orange-600" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">{t('benefits.seller1.title')}</h4>
-                    <p className="text-gray-600">{t('benefits.seller1.text')}</p>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2">{t('benefits.seller1.title')}</h4>
+                    <p className="text-gray-600 dark:text-base-content/70">{t('benefits.seller1.text')}</p>
                   </div>
                 </div>
 
@@ -548,8 +548,8 @@ const InfoPage = () => {
                     <FaCheckCircle className="w-4 h-4 text-orange-600" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">{t('benefits.seller2.title')}</h4>
-                    <p className="text-gray-600">{t('benefits.seller2.text')}</p>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2">{t('benefits.seller2.title')}</h4>
+                    <p className="text-gray-600 dark:text-base-content/70">{t('benefits.seller2.text')}</p>
                   </div>
                 </div>
 
@@ -558,8 +558,8 @@ const InfoPage = () => {
                     <FaCheckCircle className="w-4 h-4 text-orange-600" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">{t('benefits.seller3.title')}</h4>
-                    <p className="text-gray-600">{t('benefits.seller3.text')}</p>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-base-content mb-2">{t('benefits.seller3.title')}</h4>
+                    <p className="text-gray-600 dark:text-base-content/70">{t('benefits.seller3.text')}</p>
                   </div>
                 </div>
               </div>
@@ -572,10 +572,10 @@ const InfoPage = () => {
       <section className="py-20 lg:py-32 w-full">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-base-content mb-6">
               {t('howItWorks.heading')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-base-content/70 max-w-3xl mx-auto">
               {t('howItWorks.subheading')}
             </p>
           </div>
@@ -585,69 +585,69 @@ const InfoPage = () => {
               <div className="w-24 h-24 bg-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-white">1</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">{t('howItWorks.step1.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('howItWorks.step1.text')}</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-base-content mb-4">{t('howItWorks.step1.title')}</h3>
+              <p className="text-gray-600 dark:text-base-content/70 leading-relaxed">{t('howItWorks.step1.text')}</p>
             </div>
 
             <div className="group text-center">
               <div className="w-24 h-24 bg-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-white">2</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">{t('howItWorks.step2.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('howItWorks.step2.text')}</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-base-content mb-4">{t('howItWorks.step2.title')}</h3>
+              <p className="text-gray-600 dark:text-base-content/70 leading-relaxed">{t('howItWorks.step2.text')}</p>
             </div>
 
             <div className="group text-center">
               <div className="w-24 h-24 bg-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                 <span className="text-3xl font-bold text-white">3</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">{t('howItWorks.step3.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('howItWorks.step3.text')}</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-base-content mb-4">{t('howItWorks.step3.title')}</h3>
+              <p className="text-gray-600 dark:text-base-content/70 leading-relaxed">{t('howItWorks.step3.text')}</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Comunidad y testimonios */}
-      <section className="py-20 lg:py-32 bg-gray-50 w-full relative overflow-hidden">
+      <section className="py-20 lg:py-32 bg-base-200 w-full relative overflow-hidden">
         {/* Background blur elements */}
         <div className="absolute top-1/2 left-1/3 w-80 h-80 bg-orange-200/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-orange-300/15 rounded-full blur-3xl"></div>
         <div className="mx-auto max-w-6xl px-6 relative">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-base-content mb-6">
               {t('community.heading')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-base-content/70 max-w-3xl mx-auto">
               {t('community.subheading')}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl">
+            <div className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                   <FaUsers className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">María G.</h4>
-                  <p className="text-sm text-gray-600">{t('community.testimonial1.role')}</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-base-content">María G.</h4>
+                  <p className="text-sm text-gray-600 dark:text-base-content/70">{t('community.testimonial1.role')}</p>
                 </div>
               </div>
-              <p className="text-gray-700 leading-relaxed italic">{t('community.testimonial1.quote')}</p>
+              <p className="text-gray-700 dark:text-base-content leading-relaxed italic">{t('community.testimonial1.quote')}</p>
             </div>
 
-            <div className="group p-8 bg-white rounded-3xl border border-gray-100 hover:border-orange-200 transition-all duration-300 hover:shadow-xl">
+            <div className="group p-8 bg-base-100 rounded-3xl border border-base-300 hover:border-orange-200 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                   <FaHamburger className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Carlos R.</h4>
-                  <p className="text-sm text-gray-600">{t('community.testimonial2.role')}</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-base-content">Carlos R.</h4>
+                  <p className="text-sm text-gray-600 dark:text-base-content/70">{t('community.testimonial2.role')}</p>
                 </div>
               </div>
-              <p className="text-gray-700 leading-relaxed italic">{t('community.testimonial2.quote')}</p>
+              <p className="text-gray-700 dark:text-base-content leading-relaxed italic">{t('community.testimonial2.quote')}</p>
             </div>
           </div>
         </div>
@@ -657,25 +657,25 @@ const InfoPage = () => {
       <section className="py-20 lg:py-32 w-full">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-8">
+            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-base-content mb-8">
               {t('vision.heading')}
             </h2>
             <div className="max-w-4xl mx-auto">
-              <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed mb-8">
+              <p className="text-xl sm:text-2xl text-gray-600 dark:text-base-content/70 leading-relaxed mb-8">
                 {t('vision.quote')}
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-8 text-center">
                 <div>
                   <div className="text-3xl font-bold text-orange-600 mb-2">10M+</div>
-                  <div className="text-gray-600">{t('vision.statStudents')}</div>
+                  <div className="text-gray-600 dark:text-base-content/70">{t('vision.statStudents')}</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-orange-600 mb-2">50+</div>
-                  <div className="text-gray-600">{t('vision.statUniversities')}</div>
+                  <div className="text-gray-600 dark:text-base-content/70">{t('vision.statUniversities')}</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-orange-600 mb-2">100%</div>
-                  <div className="text-gray-600">{t('vision.statSecure')}</div>
+                  <div className="text-gray-600 dark:text-base-content/70">{t('vision.statSecure')}</div>
                 </div>
               </div>
             </div>
@@ -683,6 +683,13 @@ const InfoPage = () => {
         </div>
       </section>
 
+      {/* T-75: this section and the footer below keep their raw classes on
+          purpose. Here `bg-white` is a contrast colour *on* the orange band
+          (the button, and the three blurred glows), not a themeable surface -
+          turning it into bg-base-100 would darken them while the band stays
+          orange, losing the contrast they exist for. The footer is a
+          self-contained dark block that already reads correctly on either
+          theme. */}
       {/* Call to Action Final */}
       <section className="py-20 lg:py-32 bg-orange-500 w-full relative overflow-hidden">
         {/* Background blur elements */}

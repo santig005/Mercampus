@@ -4,11 +4,11 @@ import { FaHamburger, FaBook, FaHome, FaTicketAlt, FaInstagram } from 'react-ico
 
 const LandingPage = () => {
   return (
-    <div className="bg-white text-gray-800">
+    <div className="bg-base-100 text-gray-800 dark:text-base-content">
       {/* Hero Section */}
       <header className="bg-[#F2F2F2] py-20">
         <div className="container mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-base-content">
             Mercampus: conecta, compra y vende dentro de tu universidad.
           </h1>
           <p className="text-xl mt-4">

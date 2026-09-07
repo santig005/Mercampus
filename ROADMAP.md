@@ -1597,8 +1597,8 @@ runs the *light* budget (`ci.yml`), so nothing catches this automatically.
 | Batch | Area | Files | Occurrences | State |
 |---|---|---|---|---|
 | a | admin + auth + strays | 7 | 32 | merged (#255) |
-| b | seller's own forms | 9 | 28 | PR #256 |
-| c | marketing (`/about`, `about/layout`, `/landing`) | 3 | 111 | pending |
+| b | seller's own forms | 9 | 28 | merged (#256) |
+| c | marketing (`/about`, `about/layout`, `/landing`) | 3 | 111 | PR #257 |
 | d | final sweep + re-grep | — | — | pending |
 Mark the task `[x]` only when the last batch lands.
 **Rule the batches follow** (the one T-73 actually applied, which is not
