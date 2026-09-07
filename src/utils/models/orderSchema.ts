@@ -9,8 +9,9 @@ const lineItemSchema = new Schema(
       ref: 'Product',
       required: true,
     },
-    // Copiados al crear el pedido: si el vendedor edita el precio o borra el
-    // producto despues, el pedido ya hecho no debe cambiar retroactivamente.
+    // Copied when the order is created: if the seller edits the price or
+    // deletes the product later, an order already placed must not change
+    // retroactively.
     name: {
       type: String,
       required: true,
@@ -51,10 +52,10 @@ const orderSchema = new Schema(
       ref: 'User',
       required: true,
     },
-    // Un pedido es siempre de un solo vendedor. Hoy no existe carrito
-    // multi-vendedor (el contacto es un link de WhatsApp por producto), asi
-    // que partir por vendedor desde ya evita rediseñar el schema si mas
-    // adelante se agrega un carrito de verdad.
+    // An order always belongs to a single seller. There is no multi-seller
+    // cart today (contact is a WhatsApp link per product), so splitting by
+    // seller from the start avoids redesigning the schema if a real cart
+    // shows up later.
     sellerId: {
       type: Schema.Types.ObjectId,
       ref: 'Seller',
@@ -74,11 +75,11 @@ const orderSchema = new Schema(
       enum: ORDER_STATUSES,
       default: 'pending',
     },
-    // Se escribe exclusivamente a traves de transitionOrder() (stateMachine.ts).
-    // Embebido en el mismo documento -y no en una coleccion aparte- porque
-    // mongodb-memory-server corre en modo standalone (sin replica set, ver
-    // T-10b): una escritura en dos colecciones necesitaria una transaccion que
-    // hoy no se puede probar con el arnes que existe.
+    // Written exclusively through transitionOrder() (stateMachine.ts).
+    // Embedded in the same document -- not in a separate collection --
+    // because mongodb-memory-server runs standalone (no replica set, see
+    // T-10b): writing to two collections would need a transaction that the
+    // current harness cannot test.
     history: {
       type: [historyEntrySchema],
       required: true,

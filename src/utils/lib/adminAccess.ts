@@ -1,7 +1,7 @@
 /**
- * Que hacer con una request a una ruta de admin, separado de como Clerk y
- * Next entregan esos datos (middleware.js). Puro y sin dependencias: se
- * puede probar sin construir un NextRequest ni mockear @clerk/nextjs/server.
+ * What to do with a request to an admin route, separated from how Clerk and
+ * Next deliver that data (middleware.js). Pure and dependency-free: it can be
+ * tested without building a NextRequest or mocking @clerk/nextjs/server.
  */
 export type AdminAccessDecision =
   | { action: 'allow' }

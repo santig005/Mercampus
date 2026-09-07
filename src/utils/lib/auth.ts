@@ -4,19 +4,20 @@ import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
 import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
-// No se usa por nombre, pero el import registra el modelo en Mongoose: el
-// populate('sellerId') de getSellerContextData lo necesita registrado, si no
-// revienta con MissingSchemaError (mismo patron que api/products/route.js).
+// Not used by name, but the import registers the model with Mongoose:
+// getSellerContextData's populate('sellerId') needs it registered, or it
+// blows up with MissingSchemaError (same pattern as api/products/route.js).
 import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
 
 /**
- * Id del usuario en Clerk (`user_...`).
+ * The user's Clerk id (`user_...`).
  *
- * `auth()` lo resuelve con el token que ya trae la peticion: no sale a la red.
- * Antes esto era `getEmailFromToken`, que ademas pedia el usuario completo a la
- * Backend API de Clerk solo para traducir el id a un email, y despues buscaba
- * en Mongo por ese email. El email es mutable y ni siquiera es unico en la
- * base (T-11), asi que era mala clave de union; `clerkId` no cambia nunca.
+ * `auth()` resolves it from the token the request already carries: it makes no
+ * network call. This used to be `getEmailFromToken`, which on top of that
+ * asked Clerk's Backend API for the whole user just to turn the id into an
+ * email, and then looked that email up in Mongo. Email is mutable and is not
+ * even unique in this database (T-11), so it was a bad join key; `clerkId`
+ * never changes.
  */
 export async function getClerkUserId(): Promise<string> {
   const { userId } = await auth();
@@ -29,10 +30,11 @@ export async function getClerkUserId(): Promise<string> {
 }
 
 /**
- * El `User` de Mongo de la sesion actual, en una sola consulta indexada.
+ * The current session's Mongo `User`, in a single indexed query.
  *
- * Trae `sellerId` directamente en vez de poblarlo: `User` ya guarda a que
- * vendedor pertenece, asi que comprobar propiedad es comparar dos ids.
+ * It selects `sellerId` directly instead of populating it: `User` already
+ * records which seller it belongs to, so checking ownership is comparing two
+ * ids.
  */
 export async function getAuthenticatedUser() {
   const clerkId = await getClerkUserId();
@@ -43,8 +45,8 @@ export async function getAuthenticatedUser() {
     .lean();
 
   if (!user) {
-    // Hay sesion en Clerk pero no hay usuario en la base. Con el webhook
-    // arreglado (T-12b) esto solo pasa si el evento se perdio.
+    // There is a Clerk session but no user in the database. With the webhook
+    // fixed (T-12b) this only happens if its event was lost.
     throw new AppError('No eres usuario registrado.', 403);
   }
 
@@ -54,19 +56,19 @@ export async function getAuthenticatedUser() {
 type SellerContextValue = false | 'None' | Record<string, unknown>;
 
 /**
- * Usuario y vendedor de la sesion actual, listos para pasar a un Client
- * Component (`SellerContext`). A diferencia de `getAuthenticatedUser()`,
- * nunca lanza: no hay sesion es un resultado valido (visitante anonimo), no
- * un error, porque esto se llama en el layout raiz en cada request.
+ * The current session's user and seller, ready to hand to a Client Component
+ * (`SellerContext`). Unlike `getAuthenticatedUser()`, this never throws: no
+ * session is a valid result (an anonymous visitor), not an error, because
+ * this is called from the root layout on every request.
  *
- * Reemplaza a `GET /api/users/user-with-seller/[email]` (T-12d), que no
- * tenia ninguna autenticacion y respondia con el User/Seller de cualquier
- * email que se probara. Aqui la identidad sale del `clerkId` de la sesion
- * (T-12c), nunca de un email que llegue del cliente.
+ * It replaces `GET /api/users/user-with-seller/[email]` (T-12d), which had no
+ * authentication whatsoever and answered with the User/Seller of any email
+ * somebody cared to try. Here the identity comes from the session's `clerkId`
+ * (T-12c), never from an email arriving from the client.
  *
- * Devuelve `false` para "no hay sesion" y `'None'` para "hay sesion pero sin
- * perfil de vendedor", los mismos sentinels que ya esperaban los consumidores
- * de `SellerContext`.
+ * Returns `false` for "no session" and `'None'` for "there is a session but
+ * no seller profile", the same sentinels `SellerContext`'s consumers already
+ * expected.
  */
 export async function getSellerContextData(): Promise<{
   user: SellerContextValue;
@@ -80,9 +82,9 @@ export async function getSellerContextData(): Promise<{
   await connectDB();
   const user = await User.findOne({ clerkId: userId }).populate('sellerId').lean();
   if (!user) {
-    // Hay sesion en Clerk pero no hay usuario en la base (evento de webhook
-    // perdido, ver T-12b). Se trata igual que "no hay sesion": no hay nada
-    // que mostrarle a SellerContext.
+    // There is a Clerk session but no user in the database (a lost webhook
+    // event, see T-12b). Treated the same as "no session": there is nothing
+    // to show SellerContext.
     return { user: false, seller: false };
   }
 
@@ -91,15 +93,15 @@ export async function getSellerContextData(): Promise<{
     ? JSON.parse(JSON.stringify(sellerId))
     : 'None';
 
-  // JSON.parse(JSON.stringify(...)) en vez de pasar el objeto de Mongoose tal
-  // cual: cruza la frontera Server -> Client Component, y un ObjectId/Date de
-  // Mongoose no es un objeto plano serializable por React.
+  // JSON.parse(JSON.stringify(...)) rather than passing the Mongoose object
+  // as-is: it crosses the Server -> Client Component boundary, and a Mongoose
+  // ObjectId/Date is not a plain object React can serialise.
   return { user: JSON.parse(JSON.stringify(rest)), seller };
 }
 
 /**
- * Comprueba que el usuario autenticado sea el dueño del producto. Devuelve el
- * sellerId del producto.
+ * Checks that the authenticated user owns the product. Returns the product's
+ * sellerId.
  */
 export const verifyOwnershipAndGetSellerId = async (productId: string) => {
   const user = await getAuthenticatedUser();
@@ -122,8 +124,8 @@ export const verifyOwnershipAndGetSellerId = async (productId: string) => {
 };
 
 /**
- * Comprueba que el usuario autenticado sea el dueño del vendedor indicado, o
- * un admin. Devuelve el usuario.
+ * Checks that the authenticated user owns the given seller, or is an admin.
+ * Returns the user.
  */
 export const verifySellerId = async (sellerId: string) => {
   const user = await getAuthenticatedUser();
@@ -139,8 +141,8 @@ export const verifySellerId = async (sellerId: string) => {
 };
 
 /**
- * Variante para las rutas que identifican al vendedor por email en vez de por
- * id. Sin excepcion para admin, igual que antes.
+ * Variant for the routes that identify the seller by email instead of by id.
+ * No admin exception, same as before.
  */
 export const verifySellerEmail = async (sellerEmail: string) => {
   const user = await getAuthenticatedUser();

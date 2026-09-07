@@ -1,4 +1,4 @@
-// Importar iconos para marketplace (puedes agregar más según necesites)
+// Icons for the marketplace section (add more as needed)
 import AccesoriosIcon from '/public/images/category/accesorios.png';
 import MaquillajeIcon from '/public/images/category/maquillaje.png';
 import RopaIcon from '/public/images/category/ropa.png';

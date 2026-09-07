@@ -1,19 +1,18 @@
-// Regex insensible a acentos para el buscador de productos (T-24).
+// Accent-insensitive regex for the product search (T-24).
 //
-// Medido contra la base real: 6% de los nombres de producto llevan tilde o
-// eñe, y el $regex sin normalizar no los encontraba si el usuario escribia
-// sin acento -- el caso comun al escribir rapido en el celular.
+// Measured against the real database: 6% of product names carry an accent or
+// an n-tilde, and the un-normalised $regex did not find them if the user
+// typed without the accent -- the common case when typing fast on a phone.
 //
-// No se uso un indice de texto de Mongo ($text): el buscador hace busqueda
-// en vivo desde 2 caracteres (SearchBox.jsx, debounce de 500ms), y $text
-// no hace match por prefijo -- probado contra datos reales, "bro" no
-// encuentra "Brownie de chocolate" hasta escribir casi la palabra completa
-// ("browni"). Eso habria roto la busqueda mientras se escribe. Este regex
-// conserva el mismo comportamiento de substring/prefijo que ya existia,
-// solo le suma tolerancia a acentos -- no corrige singular/plural, pero en
-// un buscador que ya busca por cada tecla, ese caso se mitiga solo: al
-// llegar a escribir "arepas" ya se paso por "arepa" (singular) en un
-// tecleo anterior.
+// A Mongo text index ($text) was not used: the search runs live from 2
+// characters (SearchBox.jsx, 500ms debounce), and $text does not match by
+// prefix -- tested against real data, "bro" does not find "Brownie de
+// chocolate" until almost the whole word is typed ("browni"). That would
+// have broken search-as-you-type. This regex keeps the substring/prefix
+// behaviour that already existed and only adds accent tolerance -- it does
+// not handle singular/plural, but in a search that fires on every keystroke
+// that case takes care of itself: by the time you have typed "arepas" you
+// already went through "arepa" (singular) on an earlier keystroke.
 
 const ACCENT_VARIANTS: Record<string, string> = {
   a: 'áàäâã',
@@ -24,19 +23,19 @@ const ACCENT_VARIANTS: Record<string, string> = {
   n: 'ñ',
 };
 
-// Rango Unicode "Combining Diacritical Marks" (U+0300 a U+036F): lo que
-// separa NFD al descomponer una letra acentuada en letra base + marca de
-// acento. Construido con RegExp(string) en vez de un literal /.../ para que
-// el escape quede como texto legible en el archivo, no como el caracter de
-// combinacion en si.
+// The Unicode "Combining Diacritical Marks" range (U+0300 to U+036F): what
+// NFD splits off when it decomposes an accented letter into base letter +
+// accent mark. Built with RegExp(string) rather than a /.../ literal so the
+// escape stays readable text in the file, instead of the combining character
+// itself.
 const COMBINING_DIACRITICS = new RegExp('[\\u0300-\\u036f]', 'g');
 
 const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/;
 
 /**
- * Convierte un termino de busqueda en un RegExp que matchea sin importar
- * tildes/eñe, sin importar de que lado esten: si el usuario escribe con o
- * sin acento, y si el nombre guardado lo tiene o no.
+ * Turns a search term into a RegExp that matches regardless of accents or
+ * n-tilde, on either side: whether the user typed them or not, and whether
+ * the stored name has them or not.
  */
 export function buildAccentInsensitiveRegex(term: string): RegExp {
   const base = term
