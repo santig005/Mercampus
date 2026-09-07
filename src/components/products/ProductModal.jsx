@@ -58,7 +58,10 @@ function ProductModal({ product, theKey }) {
         <ShareButton data={product} type='product' />
         {product ? (
           <>
-            <div className='modal-box rounded-none bg-primary p-0 relative h-full modal-width shadow-lg'>
+            {/* T-73: dark:bg-base-100 - bg-primary rinde un blanco fijo
+                (override en main.css), no el naranja de marca; ver la nota
+                en Layout.jsx. */}
+            <div className='modal-box rounded-none bg-primary dark:bg-base-100 p-0 relative h-full modal-width shadow-lg'>
               <div className='sticky top-0 left-0'>
                 <div className='absolute w-full z-10'>
                   <div className='modal-action m-0 justify-between p-2'>
@@ -79,10 +82,10 @@ function ProductModal({ product, theKey }) {
               </div>
 
               <div className='relative h-auto bg-inherit'>
-                <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
+                <div className='bg-primary dark:bg-base-100 rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
                   <div className='flex flex-col pb-56 gap-2'>
                     <div className='flex flex-col px-6 gap-1'>
-                      <h2 className='text-lg font-semibold break-words'>
+                      <h2 className='text-lg font-semibold break-words dark:text-base-content'>
                         {name}
                       </h2>
                       <AvailabilityBadge availability={availability} />
@@ -110,7 +113,7 @@ function ProductModal({ product, theKey }) {
                       </p>
                     </button>
                     <div>
-                      <h2 className='card-title px-6'>Horario</h2>
+                      <h2 className='card-title px-6 dark:text-base-content'>Horario</h2>
                       {schedules && <TableSchema schedules={schedules} />}
                     </div>
                   </div>
@@ -119,7 +122,7 @@ function ProductModal({ product, theKey }) {
             </div>
 
             <div className='fixed bottom-0 h-auto w-full'>
-              <div className='bg-gray-200 rounded-t-3xl p-4 flex flex-col h-auto justify-center modal-width shadow-2xl shadow-black drop-shadow-2xl'>
+              <div className='bg-base-200 text-base-content rounded-t-3xl p-4 flex flex-col h-auto justify-center modal-width shadow-2xl shadow-black drop-shadow-2xl'>
                 <h3 className='font-bold text-lg'>{priceFormat(price)}</h3>
                 <div className='pt-2'>
                   <a

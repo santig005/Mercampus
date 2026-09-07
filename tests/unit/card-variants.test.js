@@ -11,7 +11,7 @@ describe('productCardClassName', () => {
   it('standalone trae fondo, sombra y cursor-pointer', () => {
     const className = productCardClassName({ variant: 'standalone', isClicked: false });
 
-    expect(className).toContain('bg-white');
+    expect(className).toContain('bg-base-100');
     expect(className).toContain('drop-shadow-md');
     expect(className).toContain('cursor-pointer');
     expect(className).toContain('scale-100');
@@ -29,7 +29,7 @@ describe('productCardClassName', () => {
     const conClick = productCardClassName({ variant: 'embedded', isClicked: true });
 
     for (const className of [sinClick, conClick]) {
-      expect(className).not.toContain('bg-white');
+      expect(className).not.toContain('bg-base-100');
       expect(className).not.toContain('drop-shadow-md');
       expect(className).not.toContain('scale-');
     }
@@ -42,7 +42,7 @@ describe('sellerCardClassName', () => {
   it('standalone trae fondo, sombra y escala', () => {
     const className = sellerCardClassName({ variant: 'standalone', isClicked: false });
 
-    expect(className).toContain('bg-white');
+    expect(className).toContain('bg-base-100');
     expect(className).toContain('drop-shadow-md');
     expect(className).toContain('scale-100');
     expect(className).not.toContain('w-full');
@@ -52,7 +52,7 @@ describe('sellerCardClassName', () => {
     const className = sellerCardClassName({ variant: 'embedded', isClicked: true });
 
     expect(className).toContain('w-full');
-    expect(className).not.toContain('bg-white');
+    expect(className).not.toContain('bg-base-100');
     expect(className).not.toContain('drop-shadow-md');
     expect(className).not.toContain('scale-');
   });

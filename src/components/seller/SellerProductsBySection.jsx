@@ -38,8 +38,10 @@ export default function SellerProductsBySection({ sellerId }) {
   }
 
   if (!products || products.length === 0) {
+    // T-73: dark:text-base-content/70 - este bloque vive dentro del
+    // bg-primary/dark:bg-base-100 de SellerModal o SellerPage.
     return (
-      <div className='text-center py-8 text-gray-500'>
+      <div className='text-center py-8 text-gray-500 dark:text-base-content/70'>
         <p>Este vendedor aún no tiene productos disponibles.</p>
       </div>
     );
@@ -68,7 +70,7 @@ export default function SellerProductsBySection({ sellerId }) {
         <div className='space-y-6'>
           {sortedSections.map(([section, sectionProducts]) => (
             <div key={section}>
-              <h3 className='text-lg font-bold mb-3 text-gray-800 px-6'>
+              <h3 className='text-lg font-bold mb-3 text-gray-800 dark:text-base-content px-6'>
                 {section === 'antojos' ? (
                   <>🍕 Antojos ({sectionProducts.length} productos)</>
                 ) : (

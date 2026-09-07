@@ -78,6 +78,20 @@ export default async function RootLayout({ children }) {
     >
       <html lang={locale} className={`${montserrat.className} hide-scrollbar`}>
         <head>
+          {/* T-73: corre antes de la hidratacion de React para aplicar el
+              tema guardado sin un parpadeo claro->oscuro al cargar. No
+              puede vivir en un componente: para cuando React monta, el
+              primer paint ya paso. El query param ?theme= es un override de
+              una sola carga (no se persiste) - pensado para compartir un
+              link ya en el tema que se quiere, y es lo que usa
+              scripts/lighthouse-dark.mjs para medir el presupuesto de T-61
+              contra el tema oscuro sin depender de localStorage. */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html:
+                "(function(){try{var q=new URLSearchParams(location.search).get('theme');var t=(q==='dark'||q==='light')?q:localStorage.getItem('theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();",
+            }}
+          />
         </head>
         <body className='bg-primary'>
           <NextIntlClientProvider locale={locale} messages={messages}>

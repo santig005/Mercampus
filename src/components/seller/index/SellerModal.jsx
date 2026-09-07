@@ -52,7 +52,9 @@ export default function SellerModal({ seller, set }) {
         <ShareButton data={seller} type='seller' />
         {seller && (
           <>
-            <div className='modal-box w-full h-full rounded-none bg-primary p-0 relative modal-width'>
+            {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
+                bg-primary (rinde blanco fijo via override en main.css). */}
+            <div className='modal-box w-full h-full rounded-none bg-primary dark:bg-base-100 p-0 relative modal-width'>
               <div className='sticky top-0 left-0'>
                 <div className='absolute w-full z-10'>
                   <div className='modal-action m-0 justify-between p-2'>
@@ -73,7 +75,7 @@ export default function SellerModal({ seller, set }) {
               </div>
 
               <div className='relative h-auto w-full bg-inherit'>
-                <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
+                <div className='bg-primary dark:bg-base-100 rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-6'>
                   <div className='flex flex-col pb-48 gap-2'>
                     <div className='px-6 pt-2 mb-1'>
                       <div className='flex flex-col gap-1'>
@@ -91,7 +93,7 @@ export default function SellerModal({ seller, set }) {
                         &quot;
                       </p>
                     )}
-                    <p className='text-[16px] text-black px-6 text-balance whitespace-pre-wrap'>
+                    <p className='text-[16px] text-base-content px-6 text-balance whitespace-pre-wrap'>
                       {parseIfJSON(seller.description)}
                     </p>
                     <div className='flex flex-col gap-4 mt-4'>
@@ -122,7 +124,7 @@ export default function SellerModal({ seller, set }) {
               </div>
             </div>
             <div className='fixed bottom-0 h-auto w-full'>
-              <div className='bg-gray-200 rounded-t-3xl p-4 flex flex-col h-auto justify-center modal-width shadow-2xl shadow-black drop-shadow-2xl'>
+              <div className='bg-base-200 text-base-content rounded-t-3xl p-4 flex flex-col h-auto justify-center modal-width shadow-2xl shadow-black drop-shadow-2xl'>
                 <div className='flex justify-center items-center h-full'>
                   <div className='flex flex-col justify-between w-full'>
                     <div className='join w-full'>

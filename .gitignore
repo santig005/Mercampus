@@ -45,6 +45,7 @@ next-env.d.ts
 
 # lighthouse
 /lighthouse-results
+/lighthouse-results-dark
 /.lighthouseci
 
 # copias de seguridad de la base: datos reales de personas, nunca al repo

@@ -1343,7 +1343,7 @@ at least one `Schedule` entry? has at least one product?) — derived only,
 no schema change.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-73 · Dark mode with a hand-designed palette
+### [x] T-73 · Dark mode with a hand-designed palette
 **Why:** daisyUI is already the styling layer and ships multi-theme
 support out of the box, but only one custom light theme is defined
 (`tailwind.config.*`) — there's no dark option at all today.
@@ -1356,6 +1356,47 @@ Needs a plan-mode session, same as T-45/T-63.
 palette, a switcher that persists per visitor (`localStorage`, following
 daisyUI's own `data-theme` convention), and the T-61 Lighthouse budget
 re-run against it to confirm contrast still passes.
+**Done:** human picked a "warm charcoal" palette (near-black warm
+backgrounds, the brand orange lightened one step for AA contrast, a
+lightened secondary grey) — `dark` theme added in `tailwind.config.js`
+alongside `light`, `darkMode` set to track the `data-theme` attribute
+(daisyUI's own convention) instead of `prefers-color-scheme`. Switcher
+lives in `SideBar.jsx` (`ThemeToggle.jsx`), persists to `localStorage`,
+applied pre-hydration by an inline script in `layout.jsx` to avoid a
+light→dark flash; that same script also accepts a one-time `?theme=`
+override (not persisted) for sharing a link in a specific theme and for
+`scripts/lighthouse-dark.mjs`'s budget re-run below.
+Scope was deliberately partial, confirmed with the human mid-task: most of
+the app uses hardcoded Tailwind classes (`bg-white`, `text-gray-*`) instead
+of daisyUI's theme-aware tokens, and migrating all of it (31 files) is its
+own rewrite — out of bounds for one PR per CLAUDE.md. This PR migrates the
+core product/seller browsing flow to `base-100`/`base-200`/`base-content`
+etc: `ProductCard`/`SellerCard` (`card-variant.js`), `CategoryGrid`,
+`Navbar` (`Hambtn.jsx`, `UniGraphicSelector.jsx`), the product/seller
+modals and detail pages (`ProductModal`, `SellerModal`, `ProductPage`,
+`SellerPage`, `TableSchema`, `SellerProductsBySection`), `Carousel`/
+`CarouselModal`, and the `/antojos/sellers/list` section toggle. Everything
+else (admin, auth, about, landing, seller forms) stays light-only for now.
+**Found along the way:** `public/css/main.css` has `.bg-primary { @apply
+bg-[#f8f8f8]; }` — a hand-written override that's always won the cascade
+tie against daisyUI's theme-driven `.bg-primary`, so `bg-primary` has
+never actually painted the brand orange anywhere in the app, in any theme;
+it's a flat near-white canvas color (`bg-primary-orange`, right below it in
+the same file, is the separate class that *does* use the real orange). Not
+a bug worth fixing site-wide here — that's its own, unrelated change with
+its own blast radius — but every scoped file above pairs its `bg-primary`
+with an explicit `dark:bg-base-100`/`dark:bg-base-200` companion, or the
+dark canvas would've stayed bright white behind the newly-dark cards. Left
+a comment in `Layout.jsx` for whoever touches this next.
+**Lighthouse re-run (T-61 budget, dark theme):** `npm run
+budget:lighthouse:dark` (new script, results under the gitignored
+`lighthouse-results-dark/`) — all 6 pages pass the same thresholds as
+light mode; accessibility scored 0.71–0.93, in line with (part of it above)
+light mode's own 0.69–0.93 baseline noted in T-61.
+**Depends on (follow-up filed):** T-75 — migrating the rest of the app
+(admin, auth, about, landing, seller forms) to the same tokens, so the
+toggle doesn't leave those screens looking half-dark if someone navigates
+there after switching.
 **Model:** `opusplan` — needs real design judgment, not just
 configuration · **Nightly:** no
 
@@ -1467,6 +1508,31 @@ sitemap today — there isn't one.
 **Done when:** `src/app/sitemap.ts` (Next.js' native sitemap convention,
 no new dependency) generating entries for the static public pages plus
 one per approved seller and their products, read straight from Mongo.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-75 · Migrate the rest of the app to daisyUI's theme tokens
+**Why:** T-73 added a dark theme and switcher but only migrated the core
+product/seller browsing flow (`ProductCard`/`SellerCard`, `Navbar`,
+`CategoryGrid`, the product/seller modals and detail pages) from hardcoded
+Tailwind classes (`bg-white`, `text-gray-*`, `text-black`, `border-gray-*`)
+to daisyUI's theme-aware tokens (`bg-base-100`, `text-base-content`, etc).
+Everything else — admin (`admin/sellers`), auth (`login`/`register`/
+`ForgotPassword`), `about`, `landing`, and the seller's own forms
+(registration, profile edit, product CRUD, schedules, PQRS) — still uses
+the hardcoded classes, so a visitor who toggles dark mode while browsing
+and then navigates into one of those screens sees it stay light: not
+broken (nothing becomes unreadable, since each screen's own contrast pairs
+are internally consistent), just half-migrated.
+**Done when:** the same `bg-white`→`bg-base-100`,
+`text-gray-*`/`text-black`→`text-base-content` pattern T-73 already
+applied, extended to the remaining ~25 files (a fresh grep for
+`bg-white|text-black\b|text-gray-[0-9]+|border-gray-[0-9]+|bg-gray-[0-9]+`
+across `src/` finds the current list — some of what T-73 touched will
+already be clean). Big enough to split across a few PRs by area (admin,
+auth, seller forms, marketing pages) rather than one — see CLAUDE.md's
+~15-file guideline. Re-run `npm run budget:lighthouse:dark` after each
+batch to catch contrast regressions.
+**Depends on:** T-73
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-63 · Separate the environments (database and Clerk)

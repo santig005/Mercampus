@@ -4,7 +4,7 @@ export default function Hambtn() {
   return (
     <div className='z-50'>
       <label
-        className='btn btn-circle swap swap-rotate bg-[#ECF0F4]'
+        className='btn btn-circle swap swap-rotate bg-base-200 text-base-content'
         htmlFor='my-dibujador'
       >
         <input type='checkbox' />

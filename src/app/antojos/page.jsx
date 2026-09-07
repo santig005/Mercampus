@@ -35,7 +35,9 @@ const Antojos = () => {
         </div>
       </div>
       <div className='flex flex-col gap-2'>
-        <h2 className='title w-full bg-primary px-2'>Todos</h2>
+        {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
+            bg-primary (rinde blanco fijo via override en main.css). */}
+        <h2 className='title w-full bg-primary dark:bg-base-100 px-2'>Todos</h2>
         <div className='px-2'>
           <ProductGrid />
         </div>
