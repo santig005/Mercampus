@@ -72,6 +72,11 @@ const productSchema = new Schema(
 // sellerId. Sin indices ambos eran collection scan.
 productSchema.index({ sellerId: 1 });
 productSchema.index({ section: 1 });
+// T-23: el listado pagina con un cursor que sigue este mismo orden
+// (availability desc, createdAt desc, _id como desempate). Sin este indice,
+// ordenar la coleccion completa para cada pagina es un sort en memoria que
+// crece con el tamaño de la coleccion, no con el tamaño de la pagina.
+productSchema.index({ section: 1, availability: -1, createdAt: -1 });
 
 export type ProductDoc = InferSchemaType<typeof productSchema>;
 

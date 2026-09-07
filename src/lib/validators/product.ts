@@ -60,6 +60,43 @@ export const updateProductSchema = z
     }
   });
 
+// --- Paginacion por cursor ---------------------------------------------------
+//
+// Sigue la forma del sort de GET /api/products (availability desc, createdAt
+// desc, _id como desempate final): el cursor guarda esos tres valores del
+// ultimo producto de la pagina anterior. Codificado en base64url para que
+// viaje en la URL sin necesitar escapes.
+const cursorPayloadSchema = z.object({
+  availability: z.boolean(),
+  createdAt: z.string().datetime(),
+  id: z.string().regex(/^[a-f\d]{24}$/i),
+});
+
+export type ProductCursor = z.infer<typeof cursorPayloadSchema>;
+
+export function encodeProductCursor(value: ProductCursor): string {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+// z.NEVER + ctx.addIssue en vez de lanzar: un cursor invalido es un dato de
+// entrada mal formado, no una excepcion — con esto safeParse lo reporta igual
+// que cualquier otro campo invalido, en vez de necesitar un try/catch aparte
+// en la ruta.
+const decodeProductCursor = (
+  raw: string,
+  ctx: z.RefinementCtx
+): ProductCursor | null => {
+  if (!raw) return null;
+  try {
+    return cursorPayloadSchema.parse(
+      JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'))
+    );
+  } catch {
+    ctx.addIssue({ code: 'custom', message: 'cursor inválido' });
+    return z.NEVER;
+  }
+};
+
 export const productQuerySchema = z.object({
   section: z.enum(SECTIONS).default('antojos'),
   // product y category acaban en un $regex, asi que se acota la longitud.
@@ -74,4 +111,6 @@ export const productQuerySchema = z.object({
       z.literal(''),
     ])
     .default(''),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
+  cursor: z.string().default('').transform(decodeProductCursor),
 });

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
@@ -8,6 +9,7 @@ import { daysES } from '@/utils/resources/days';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 import {
   createProductSchema,
+  encodeProductCursor,
   productQuerySchema,
 } from '@/lib/validators/product';
 import { invalidPayload } from '@/lib/api-response';
@@ -27,13 +29,31 @@ export async function GET(req) {
   if (!parsedQuery.success) {
     return invalidPayload(parsedQuery.error);
   }
-  const { product, category, sellerId, university, section } = parsedQuery.data;
+  const { product, category, sellerId, university, section, limit, cursor } =
+    parsedQuery.data;
 
-  let filter = {};
+  // Antes esto era un populate({match: {approved, university}}) que traia
+  // TODA la coleccion, poblaba, y recien despues descartaba en JS los
+  // productos de vendedores no aprobados o de otra universidad. Eso rompe
+  // cualquier paginacion en Mongo: un limit()/skip() sobre la query sin
+  // filtrar no sabe cuantos de esos items van a sobrevivir el filtro
+  // posterior. Resolviendolo antes, como ids elegibles, deja que Product.find
+  // pagine sobre exactamente los productos que van a mostrarse.
+  const eligibleSellerIds = await Seller.find({
+    approved: true,
+    university: { $regex: university, $options: 'i' },
+  }).distinct('_id');
 
   if (sellerId) {
-    filter.sellerId = sellerId;
+    const isEligible = eligibleSellerIds.some(id => id.toString() === sellerId);
+    if (!isEligible) {
+      return NextResponse.json({ products: [], nextCursor: null }, { status: 200 });
+    }
   }
+
+  const filter = {
+    sellerId: sellerId || { $in: eligibleSellerIds },
+  };
 
   if (category) {
     filter.category = { $in: [category] };
@@ -47,24 +67,50 @@ export async function GET(req) {
     filter.section = section;
   }
 
-  let products = await Product.find(filter).populate({
-    path: 'sellerId', // Campo relacionado a poblar
-    model: 'Seller', // Modelo al que pertenece el campo
-    match: {
-      approved: true,
-      university: { $regex: university, $options: 'i' },
-    }, // Filtro para poblar
-  });
+  // Reemplaza el shuffle aleatorio que tenia esto antes: un orden aleatorio
+  // por request no se puede paginar con un cursor estable (la pagina 2 podria
+  // repetir o saltarse productos de la pagina 1). availability desc conserva
+  // la idea original de mostrar primero a quien esta abierto ahora; createdAt
+  // y _id como desempate hacen el orden determinista.
+  if (cursor) {
+    // createdAt en Mongo es un BSON Date; el cursor lo trae como string ISO
+    // (asi viaja en JSON), asi que hay que volver a convertirlo antes de
+    // compararlo, o $lt/$eq no matchean nada por el desajuste de tipo.
+    const cursorCreatedAt = new Date(cursor.createdAt);
+    filter.$or = [
+      { availability: { $lt: cursor.availability } },
+      { availability: cursor.availability, createdAt: { $lt: cursorCreatedAt } },
+      {
+        availability: cursor.availability,
+        createdAt: cursorCreatedAt,
+        _id: { $lt: new mongoose.Types.ObjectId(cursor.id) },
+      },
+    ];
+  }
 
-  products = products.sort(() => Math.random() - 0.5);
-  products.sort((a, b) => b.availability - a.availability);
-  const approvedProducts = products.filter(
-    product => product.sellerId !== null
-  );
+  // Se pide un item de mas para saber si hay siguiente pagina sin una
+  // segunda consulta countDocuments.
+  const products = await Product.find(filter)
+    .sort({ availability: -1, createdAt: -1, _id: -1 })
+    .limit(limit + 1)
+    .populate({ path: 'sellerId', model: 'Seller' });
 
-  const populated = await getPopulatedProducts(approvedProducts);
+  const hasMore = products.length > limit;
+  const page = hasMore ? products.slice(0, limit) : products;
 
-  return NextResponse.json({ products: populated }, { status: 200 });
+  const populated = await getPopulatedProducts(page);
+
+  const last = page[page.length - 1];
+  const nextCursor =
+    hasMore && last
+      ? encodeProductCursor({
+          availability: last.availability,
+          createdAt: last.createdAt.toISOString(),
+          id: last._id.toString(),
+        })
+      : null;
+
+  return NextResponse.json({ products: populated, nextCursor }, { status: 200 });
 }
 
 const getPopulatedProducts = async approvedProducts => {

@@ -904,13 +904,76 @@ setInterval). The `src/utils/lib/schedules.ts` helper is already there to
 use there.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-23 · Real pagination
+### [x] T-23 · Real pagination
 **Why:** `productService` sends `limit` and `offset` that the route
 ignores; the whole collection loads, gets sorted in JS, and filtered
 after populating. `react-intersection-observer` is installed but unused.
 **Done when:** the query paginates in Mongo with a cursor; infinite scroll
 works on the listing; an e2e test that scrolls and loads a second page.
 **Depends on:** T-04, T-21
+**Scope:** `GET /api/products` only. `GET /api/sellers` has the exact same
+shape of problem (`Seller.find()` with no filter, `.filter()` in JS for
+university/section) but the roadmap talks about "the listing" singular and
+sellers already got its own task history (T-14); left untouched here.
+**The real blocker wasn't the cursor, it was where filtering happened.**
+`populate({ path: 'sellerId', match: { approved, university } })` fetched
+the *entire* matching collection, populated it, and only discarded
+unapproved/wrong-university sellers **after** — so a Mongo `.limit()`
+wouldn't know how many of a page's items would survive that filter. Moved
+the eligibility check ahead of the query instead: `Seller.find({approved,
+university}).distinct('_id')` once, then `Product.find` filters by
+`sellerId: {$in: eligibleIds}` directly — the same two-step
+"resolve ids in one collection, filter the other by `$in`" pattern
+`api/sellers/route.js` already used for its `section` filter, not a new
+idiom.
+**The random shuffle had to go.** `products.sort(() => Math.random() -
+0.5)` picked a fresh order every request — fundamentally incompatible with
+a stable cursor (page 2 could repeat or skip page 1's items, since there
+was never a persisted order to resume from). Replaced with a deterministic
+sort: `availability desc, createdAt desc, _id desc`. Keeps the original
+intent (open-now sellers surface first) while making every page
+reproducible. Considered and rejected a seeded/session-stable shuffle for
+variety — real complexity for a food-listing sort order the task never
+asked to preserve.
+**Cursor:** opaque base64url JSON of `{availability, createdAt, id}` —
+the exact fields of the last item on a page, decoded and validated inside
+`productQuerySchema` itself (a malformed cursor is a Zod issue, 400, not a
+try/catch in the route). Accepted, minor edge case left in the open: if a
+seller's `availability` flips (the T-14 cron runs every 10 min) *between*
+two of a user's own page fetches in the same scroll session, keyset
+pagination on a mutable sort key can duplicate or skip one item at the
+boundary. Same class of eventual-consistency gap every infinite-scroll UI
+accepts; not worth a snapshot-isolation design for a food marketplace
+listing.
+**Frontend:** `ProductGrid.jsx` — `react-intersection-observer`'s
+`useInView` on a sentinel div at the list's end triggers the next fetch;
+a `requestId` ref discards a stale response if the filters change while a
+"load more" is still in flight. `productService.getProducts()` moved from
+7 positional params (about to become 9) to an options object; single
+caller updated in the same change.
+**Index:** `productSchema.index({ section: 1, availability: -1, createdAt:
+-1 })`, matching the new sort — confirmed with `.explain()` in the test, same
+pattern as T-21.
+**e2e caught two real bugs in the test itself, not in the feature:**
+`window.scrollTo` scrolled the browser window, but the listing scrolls
+inside its own `overflow-y-scroll` container (`Layout.jsx`) — the window
+never moves, so the trigger did nothing. Fixed with
+`locator.scrollIntoViewIfNeeded()`, which finds the real scrollable
+ancestor. And `page.getByText('Antojo de scroll 1')` (Playwright's default
+substring match) also matched "10" through "15" — needed `{ exact: true }`.
+**Seed data lives only in `scripts/e2e.mjs`, not `seedDatabase()`:** the
+shared seed's 3 visible antojos aren't enough to fill a 12-item page, but
+growing it there would break every other test/e2e that asserts on it by
+name. 15 extra products are added after seeding, specifically for this
+e2e run — `availability: false` and a backdated `createdAt` so they sort
+*after* the original 3, not ahead of them.
+**A real Mongoose gotcha, not a guess:** backdating those 15 products'
+`createdAt` via `Product.updateMany(..., { $set: { createdAt } })` silently
+didn't work — Mongoose's `timestamps` middleware overwrites `createdAt`
+with the current time on any update, even one that explicitly sets it.
+Confirmed by inspecting the written value before concluding, not assumed.
+Fixed with `Product.collection.updateMany(...)` (the native driver,
+bypassing Mongoose's schema middleware entirely).
 **Model:** `opusplan` to plan, `sonnet` to execute
 **Nightly:** no
 

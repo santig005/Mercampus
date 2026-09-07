@@ -4,45 +4,102 @@ import { logger } from '@/lib/logger';
 import { getProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
 import ProductModalHandler from '@/components/products/ProductModalHandler';
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'next/navigation';
 import { useUniversity } from '@/context/UniversityContext';
 
+const PAGE_SIZE = 12;
+
 export default function ProductGrid({ sellerIdParam = '', section = 'antojos' }) {
   const [products, setProducts] = useState([]);
-  const [parent] = useAutoAnimate();
-  const containerRef = useRef(null);
-  const searchParams = useSearchParams();
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [parent] = useAutoAnimate();
+  const searchParams = useSearchParams();
   const { university } = useUniversity();
+  const { ref: sentinelRef, inView } = useInView();
+
+  // Descarta la respuesta de un fetch si los filtros ya cambiaron para
+  // cuando vuelve: sin esto, un "cargar mas" disparado justo antes de
+  // cambiar de filtro podria pisar el cursor de la pagina nueva con el de
+  // la vieja.
+  const requestId = useRef(0);
 
   // Extraemos los filtros desde la URL
   const product = searchParams.get('product') || '';
   const category = searchParams.get('category') || '';
   const sellerId = searchParams.get('sellerId') || sellerIdParam;
 
-
-  const loadProducts = useCallback(async () => {
+  // Cambiar de filtro reinicia el listado desde la primera pagina.
+  useEffect(() => {
+    const thisRequest = ++requestId.current;
     setLoading(true);
-    try {
-      const { products } = await getProducts(product, category, sellerId, university, undefined, undefined, section);
-      setProducts(products);
-    } catch (error) {
-      logger.error('Error loading products:', error);
-      setProducts([]);
-    }
-    setLoading(false);
+    setProducts([]);
+    setCursor(null);
+    setHasMore(true);
+
+    getProducts({ product, category, sellerId, university, section, limit: PAGE_SIZE })
+      .then(({ products, nextCursor }) => {
+        if (thisRequest !== requestId.current) return;
+        setProducts(products);
+        setCursor(nextCursor);
+        setHasMore(Boolean(nextCursor));
+      })
+      .catch(error => {
+        if (thisRequest !== requestId.current) return;
+        logger.error('Error loading products:', error);
+        setProducts([]);
+        setHasMore(false);
+      })
+      .finally(() => {
+        if (thisRequest === requestId.current) setLoading(false);
+      });
   }, [product, category, sellerId, university, section]);
 
+  // Scroll infinito: pide la siguiente pagina cuando el centinela de abajo
+  // entra en pantalla. Depende de hasMore/loading/loadingMore para volver a
+  // dispararse tras cada pagina cargada mientras el centinela siga visible
+  // (listados cortos que caben enteros en la ventana sin necesidad de
+  // scroll real).
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    if (!inView || !hasMore || loading || loadingMore) return;
+
+    const thisRequest = requestId.current;
+    setLoadingMore(true);
+
+    getProducts({
+      product,
+      category,
+      sellerId,
+      university,
+      section,
+      limit: PAGE_SIZE,
+      cursor,
+    })
+      .then(({ products: nextProducts, nextCursor }) => {
+        if (thisRequest !== requestId.current) return;
+        setProducts(current => [...current, ...nextProducts]);
+        setCursor(nextCursor);
+        setHasMore(Boolean(nextCursor));
+      })
+      .catch(error => {
+        if (thisRequest !== requestId.current) return;
+        logger.error('Error loading more products:', error);
+        setHasMore(false);
+      })
+      .finally(() => {
+        if (thisRequest === requestId.current) setLoadingMore(false);
+      });
+  }, [inView, hasMore, loading, loadingMore, cursor, product, category, sellerId, university, section]);
 
   return (
     <ProductModalHandler>
       {showModal => (
-        <div className='' ref={containerRef}>
+        <div className=''>
           <div className='flex flex-col gap-2' ref={parent}>
             {loading ? (
               <div className='flex justify-center'>
@@ -76,6 +133,13 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
               </div>
             )}
           </div>
+          {!loading && hasMore && (
+            <div ref={sentinelRef} className='flex justify-center py-4'>
+              {loadingMore && (
+                <span className='loading loading-spinner loading-md'></span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </ProductModalHandler>
