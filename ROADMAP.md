@@ -1577,8 +1577,13 @@ sitemap today — there isn't one.
 no new dependency) generating entries for the static public pages plus
 one per approved seller and their products, read straight from Mongo.
 **Done:** `src/app/sitemap.ts` (Next's native convention, no dependency,
-no route handler), `revalidate = 3600` so the catalogue isn't frozen at
-deploy time. URL shapes are pure and unit tested in `src/lib/sitemap.ts`;
+no route handler), `dynamic = 'force-dynamic'`, not `revalidate`: ISR
+still *prerenders* during `next build`, so the build needed a database and
+CI (which builds without `MONGO_URI`) failed with `Error occurred
+prerendering page "/sitemap.xml"`. It passed locally only because Next
+loads `.env` — meaning the local build was quietly querying the production
+database. Every other route here is already `ƒ`; the sitemap was the odd
+one out. URL shapes are pure and unit tested in `src/lib/sitemap.ts`;
 the reads are in `src/server/sitemap/getPublicSitemapData.ts`. Products are
 scoped to the eligible sellers rather than fetched wholesale, and each one
 is listed under its own section (`/marketplace/<id>` vs `/antojos/<id>`),
