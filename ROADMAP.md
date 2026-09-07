@@ -1850,13 +1850,21 @@ each note's exact technical meaning rather than translating word for word
 |---|---|---|---|---|
 | a | `src/lib`, `src/server`, `src/services`, `src/context`, `middleware.js` | 17 | 100 | **done (#265)** |
 | b1 | `src/utils` | 16 | 100 | **done (#266)** |
-| b2 | `src/app/api` | 9 | 69 | pending |
+| b2 | `src/app/api` | 10 | 84 | **done (#267)** |
 | c | `src/components`, the pages under `src/app` | ~28 | ~80 | pending |
 | d | `tests/` | 34 | 156 | pending |
 | e | `scripts/` | 13 | 149 | pending |
 **Batch b was split in two (2026-09-07):** the estimate said ~19 files, the
 real count is 25 (169 lines) - over CLAUDE.md's ~15 guideline, so `src/utils`
 and `src/app/api` became b1 and b2.
+**The inventory undercounts, and b2 proved how (2026-09-07):** the scan
+only looked at lines *starting* with a comment marker, so trailing
+`code // comment` was invisible, and the Spanish detector missed comments
+written without accents or its keyword list. `api/uploadimageProduct/
+route.js` never appeared in the inventory at all for that reason - all of
+its comments are Spanish. The scan now also reads trailing comments and a
+wider word list; treat every count in this ticket as a floor and rescan
+each zone after translating it rather than trusting the original number.
 **Batch e needs a human, and should be last.** `scripts/` is where the
 dangerous notes live — `seed.mjs`'s "NUNCA apuntes esto a producción",
 `backup-db.mjs`, `reclaim-account.mjs`, `set-admin-metadata.mjs`. T-66

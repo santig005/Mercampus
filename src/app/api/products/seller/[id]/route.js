@@ -10,7 +10,7 @@ export async function GET(req, {params}) {
       
       let filter = { sellerId: params.id };
       
-      // Agregar filtro por sección si se proporciona
+      // Add the section filter when one is given
       if (section) {
         filter.section = section;
       }

@@ -27,10 +27,10 @@ export async function POST(req) {
   await connectDB();
 
   try {
-    // Identidad primero: sin sesión no se llega ni a mirar el cuerpo. Después
-    // propiedad, que necesita el sellerId ya validado porque viene en el
-    // cuerpo. Sin esto la ruta borraba y reescribía el horario de cualquier
-    // vendedor con solo mandar su id.
+    // Identity first: without a session the body is never even looked at.
+    // Then ownership, which needs the already-validated sellerId because it
+    // arrives in the body. Without this the route deleted and rewrote any
+    // seller's schedule just by sending their id.
     await getClerkUserId();
 
     const parsed = replaceSchedulesSchema.safeParse(await req.json());
@@ -41,8 +41,8 @@ export async function POST(req) {
 
     await verifySellerId(sellerId);
 
-    // day ya viene validado contra daysES, asi que indexOf no puede dar -1
-    // (que antes guardaba day: 0 en silencio).
+    // day arrives already validated against daysES, so indexOf can't return
+    // -1 (which used to store day: 0 silently).
     const newSchedules = schedules.map((schedule) => ({
       sellerId,
       startTime: schedule.startTime,
@@ -56,7 +56,7 @@ export async function POST(req) {
 
     return NextResponse.json({ message: 'Schedules created succesfully.', schedules: result }, { status: 200 });
     } catch (error) {
-    // `message` y no `error`: es la clave que lee el banner de Schedule.jsx.
+    // `message` and not `error`: it is the key Schedule.jsx's banner reads.
     return errorResponse(error, '[POST /api/schedules]', { bodyKey: 'message' });
   }
 }

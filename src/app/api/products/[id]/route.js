@@ -21,9 +21,9 @@ export async function GET(req, { params }) {
   // get product by id
   try {
     var product = await Product.findById(params.id).populate({
-      path: 'sellerId', // Campo relacionado a poblar
-      model: 'Seller', // Modelo al que pertenece el campo
-      match: { approved: true }, // Filtro para poblar
+      path: 'sellerId', // the related field to populate
+      model: 'Seller', // the model that field belongs to
+      match: { approved: true }, // filter applied while populating
     });
     if (!product) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function GET(req, { params }) {
       return a.startTime.localeCompare(b.startTime);
     });
 
-    // Transformar los días a nombres
+    // Turn the day numbers into names
     schedules = schedules.map(schedule => ({
       ...schedule.toObject(),
       day: daysES[schedule.day - 1],
@@ -60,8 +60,9 @@ export async function PUT(req, { params }) {
   try {
     await connectDB();
 
-    // Identidad y propiedad antes de tocar nada. Lanzan AppError con su status:
-    // 401 sin sesión, 403 si el producto es de otro vendedor.
+    // Identity and ownership before touching anything. They throw AppError
+    // with its status: 401 without a session, 403 if the product belongs to
+    // another seller.
     await verifyOwnershipAndGetSellerId(params.id);
 
     const parsed = updateProductSchema.safeParse(await req.json());
