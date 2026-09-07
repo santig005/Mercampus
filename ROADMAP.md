@@ -1489,7 +1489,7 @@ changes in this task; it's diagnosis, not repair. Concrete follow-ups get
 their own tasks from that list.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-69 · Open Graph previews for product/seller pages
+### [x] T-69 · Open Graph previews for product/seller pages
 **Why:** sharing a product link (there's already a share button,
 `ShareButton.jsx`) drops a bare URL — WhatsApp/Instagram previews fall
 back to the generic site-wide metadata in `layout.jsx`, the same title and
@@ -1499,6 +1499,20 @@ gets a link with no picture, no price, nothing that makes someone tap it.
 returning per-page `openGraph`/`twitter` tags — title, description, and
 the product/seller's own image, all already stored in Mongo. No new
 fields needed, just reading what's already there.
+**Done:** `generateMetadata()` added to the three detail pages
+(`antojos/[id]`, `marketplace/[id]`, `antojos/sellers/[id]`), backed by two
+new minimal, Mongo-direct reads (`src/server/products/
+getProductForMetadata.ts`, `src/server/sellers/getSellerForMetadata.ts` —
+`.select()` only the OG-relevant fields, `null` on a malformed or missing
+id instead of throwing) and a shared presentation layer
+(`src/lib/metadata.ts`) that builds the actual `title`/`openGraph`/
+`twitter` object, falls back price→generic text when a product has no
+description, and unwraps the legacy string-JSON description format
+(`parseIfJSON` in `utilFn.js`) without ever handing a parsed object to a
+meta tag. Uses `title: { absolute }` rather than a plain string — the root
+layout's `title.template` is `'Mercampus'` with no `%s`, so a plain child
+title gets silently discarded in favor of that literal string; worth
+fixing on its own, left alone here since it's unrelated to this task.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-74 · sitemap.xml
@@ -1533,6 +1547,23 @@ auth, seller forms, marketing pages) rather than one — see CLAUDE.md's
 ~15-file guideline. Re-run `npm run budget:lighthouse:dark` after each
 batch to catch contrast regressions.
 **Depends on:** T-73
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-76 · Root layout's title.template swallows every page title
+**Why:** found while building T-69. `src/app/layout.jsx`'s metadata sets
+`title: { template: 'Mercampus', default: 'Mercampus' }` — a template
+needs a `%s` to interpolate a child page's title into it, and this one
+has none, so Next.js just renders the literal string `'Mercampus'` for
+any page that sets a plain `title: '...'` instead of showing that page's
+own title. T-69 worked around this with `title: { absolute: '...' }` on
+the two detail pages (bypasses the template entirely), but any other page
+that sets an ordinary `title` string is silently getting `'Mercampus'`
+instead — worth checking which pages currently do that and whether they
+noticed.
+**Done when:** the template reads something like `'%s · Mercampus'` (or
+whatever the human prefers for the tab title format), confirmed against
+every page that currently sets its own `title` to make sure none of them
+were relying on the current no-op behavior on purpose.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-63 · Separate the environments (database and Clerk)

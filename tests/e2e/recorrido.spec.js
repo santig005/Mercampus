@@ -49,6 +49,15 @@ test.describe('recorrido publico', () => {
     await expect(page.getByText(/\$\s*6\.000/).first()).toBeVisible();
     await expect(page.getByText('6,000')).toHaveCount(0);
 
+    // T-69: el link que se comparte tiene que traer su propia preview, no la
+    // generica del layout raiz (mismo titulo/imagen para cualquier pagina).
+    await expect(page).toHaveTitle('Arepa de queso · Mercampus');
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+      'content',
+      'Arepa de queso · Mercampus'
+    );
+    await expect(page.locator('meta[property="og:image"]')).toHaveCount(1);
+
     await shot(page, '03-detalle-producto');
   });
 
@@ -59,6 +68,14 @@ test.describe('recorrido publico', () => {
     // Sus productos, no los del otro vendedor.
     await expect(page.getByText('Arepa de queso').first()).toBeVisible();
     await expect(page.getByText('Brownie de chocolate')).toHaveCount(0);
+
+    // T-69: mismo caso que el detalle de producto, para el perfil del vendedor.
+    await expect(page).toHaveTitle('Arepas El Parche · Mercampus');
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+      'content',
+      'Arepas El Parche · Mercampus'
+    );
+    await expect(page.locator('meta[property="og:image"]')).toHaveCount(1);
 
     await shot(page, '04-perfil-vendedor');
   });
