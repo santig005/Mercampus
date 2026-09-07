@@ -20,7 +20,7 @@ export default async function LocaleSwitcher() {
           className={
             locale === activeLocale
               ? 'font-semibold text-orange-600'
-              : 'text-gray-500 hover:text-orange-600'
+              : 'text-gray-500 dark:text-base-content/70 hover:text-orange-600'
           }
           aria-current={locale === activeLocale ? 'true' : undefined}
         >

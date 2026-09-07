@@ -12,7 +12,7 @@ export default function ProductCardFavorite({
   return (
     <Link
       href={`/antojos/${id}`}
-      className={`bg-white drop-shadow-md flex flex-col rounded-md min-w-36 transition-transform duration-300 ${
+      className={`bg-base-100 text-base-content drop-shadow-md flex flex-col rounded-md min-w-36 transition-transform duration-300 ${
         isClicked ? 'scale-[0.95]' : 'scale-100'
       }`}
       onClick={onClick}

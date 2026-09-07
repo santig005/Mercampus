@@ -162,7 +162,7 @@ export default function SignInForm() {
           </p>
         </div>
         <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+          <div className='bg-base-100 text-base-content rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
@@ -202,7 +202,7 @@ export default function SignInForm() {
                     className='text-center text-primary'
                     onClick={() => setForgotPassword(true)}
                   >
-                    <span className='text-black'>
+                    <span className='text-black dark:text-base-content'>
                       ¿Has olvidado tu contraseña?
                     </span>{' '}
                     Recupérala
@@ -216,7 +216,7 @@ export default function SignInForm() {
             </div> */}
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/register' className='text-center text-primary'>
-                <span className='text-black'>¿No tienes una cuenta?</span> Crea
+                <span className='text-black dark:text-base-content'>¿No tienes una cuenta?</span> Crea
                 una
               </Link>
             </div>

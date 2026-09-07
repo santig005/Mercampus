@@ -1579,6 +1579,33 @@ already be clean). Big enough to split across a few PRs by area (admin,
 auth, seller forms, marketing pages) rather than one — see CLAUDE.md's
 ~15-file guideline. Re-run `npm run budget:lighthouse:dark` after each
 batch to catch contrast regressions.
+**In progress — split into 4 PRs by area.** Fresh inventory (2026-09-07):
+25 files, 175 occurrences, very unevenly spread — `/about` alone has 105.
+| Batch | Area | Files | Occurrences | State |
+|---|---|---|---|---|
+| a | admin + auth + strays | 7 | 32 | PR #255 |
+| b | seller's own forms | 12 | 30 | pending |
+| c | marketing (`/about`, `about/layout`, `/landing`) | 3 | 111 | pending |
+| d | final sweep + re-grep | — | — | pending |
+Mark the task `[x]` only when the last batch lands.
+**Rule the batches follow** (the one T-73 actually applied, which is not
+quite what "Done when" above says): surfaces and borders are *replaced*
+with tokens — `bg-white`→`bg-base-100`, `bg-gray-50/100/200`→`bg-base-200`,
+`border-gray-*`→`border-base-300` — and that is pixel-identical in light
+mode, since daisyUI's light `base-100` is white. Text greys are *not*
+replaced: they keep the light class and gain a `dark:` companion
+(`text-gray-500 dark:text-base-content/70`). Replacing them outright would
+swap a mid-grey for the light theme's near-black `base-content` and darken
+every piece of secondary text in light mode — a visible regression on the
+theme almost everyone uses. Migrated surfaces also get an explicit
+`text-base-content`, or their text keeps the body colour and stays
+near-black on the dark surface.
+**Not real work, despite matching the grep:** `ToggleSwitch.jsx`'s
+`bg-white` is inside a commented-out JSX block (dead markup, left alone);
+`Carousel`/`CarouselModal`'s `bg-gray-400` is an inactive-dot indicator and
+`ShareButton`'s `text-gray-200` sits on `bg-green-600` — both are
+self-consistent colour pairs that read fine on either theme. So the
+175-occurrence count overstates the job.
 **Depends on:** T-73
 **Model:** `sonnet` · **Nightly:** yes
 
