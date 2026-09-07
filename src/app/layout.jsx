@@ -11,6 +11,7 @@ import { getSellerContextData } from '@/utils/lib/auth';
 import React from 'react';
 import '../../public/css/main.css';
 import AnimationProvider from '@/components/AnimationProvider';
+import { titleMetadata } from '@/lib/metadata';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -20,10 +21,10 @@ const montserrat = Montserrat({
 });
 
 export const metadata = {
-  title: {
-    template: 'Mercampus',
-    default: 'Mercampus',
-  },
+  // T-76: the template lives in src/lib/metadata.ts. It used to be
+  // `template: 'Mercampus'` right here - no `%s`, so it interpolated nothing
+  // and flattened any page title to the literal site name.
+  title: titleMetadata,
   description:
     'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
   metadataBase: new URL('https://mercampus.vercel.app/'),

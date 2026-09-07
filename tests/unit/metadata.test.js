@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildProductMetadata, buildSellerMetadata } from '@/lib/metadata';
+import {
+  buildProductMetadata,
+  buildSellerMetadata,
+  titleMetadata,
+} from '@/lib/metadata';
+
+describe('titleMetadata (T-76)', () => {
+  // The bug this replaced: `template: 'Mercampus'` with no %s. Next.js renders
+  // a template without a placeholder literally, so every page that set a plain
+  // `title` came out as just 'Mercampus'.
+  it('el template interpola el titulo de la pagina', () => {
+    expect(titleMetadata.template).toContain('%s');
+  });
+
+  it('el template conserva el nombre del sitio como sufijo', () => {
+    expect(titleMetadata.template).toBe('%s · Mercampus');
+  });
+
+  it('una pagina sin titulo propio cae al nombre del sitio', () => {
+    expect(titleMetadata.default).toBe('Mercampus');
+  });
+});
 
 describe('buildProductMetadata', () => {
   const product = {
@@ -10,9 +31,17 @@ describe('buildProductMetadata', () => {
     image: 'https://ik.imagekit.io/seed/arepa.jpg',
   };
 
-  it('usa title.absolute para saltarse el template roto del layout raiz', () => {
+  // T-76: era un title.absolute con el sufijo escrito a mano, para saltarse el
+  // template roto del layout raiz. Ahora el sufijo lo pone el template.
+  it('deja el nombre del producto solo, para que el template le ponga el sufijo', () => {
     const metadata = buildProductMetadata(product);
-    expect(metadata.title).toEqual({ absolute: 'Arepa de queso · Mercampus' });
+    expect(metadata.title).toBe('Arepa de queso');
+  });
+
+  it('openGraph y twitter si llevan el titulo completo: el template no les aplica', () => {
+    const metadata = buildProductMetadata(product);
+    expect(metadata.openGraph.title).toBe('Arepa de queso · Mercampus');
+    expect(metadata.twitter.title).toBe('Arepa de queso · Mercampus');
   });
 
   it('usa la descripcion del producto tal cual, en description/openGraph/twitter', () => {
@@ -64,9 +93,15 @@ describe('buildSellerMetadata', () => {
     logo: 'https://ik.imagekit.io/seed/logo.png',
   };
 
-  it('usa title.absolute con el nombre del negocio', () => {
+  it('deja el nombre del negocio solo, para que el template le ponga el sufijo', () => {
     const metadata = buildSellerMetadata(seller);
-    expect(metadata.title).toEqual({ absolute: 'Arepas El Parche · Mercampus' });
+    expect(metadata.title).toBe('Arepas El Parche');
+  });
+
+  it('openGraph y twitter si llevan el titulo completo', () => {
+    const metadata = buildSellerMetadata(seller);
+    expect(metadata.openGraph.title).toBe('Arepas El Parche · Mercampus');
+    expect(metadata.twitter.title).toBe('Arepas El Parche · Mercampus');
   });
 
   it('prefiere la descripcion sobre el slogan cuando ambas existen', () => {
