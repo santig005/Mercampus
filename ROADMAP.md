@@ -1608,6 +1608,30 @@ crawler at the sitemap — worth a small `src/app/robots.ts`, but it's its
 own deliverable, not this ticket's "Done when".
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-79 · Remove the `/landing` draft
+**Why:** `/landing` was an early draft of what Mercampus could look like
+(confirmed by the human, 2026-09-07), superseded by `/about` — which is
+the same idea grown up: 750 lines, `next-intl` since T-46, animated.
+`/landing` is 172 lines of hardcoded colours and, in its entire history,
+was touched by exactly two commits: the one that created it and T-75c's
+theme migration. Nobody edited it since it was written.
+**It still cost something:** it was a live public URL — anyone typing it
+saw a half-finished page carrying the brand — it was built into every
+deploy, and it surfaced in every repo-wide search. T-75c migrated two of
+its lines to the dark theme for nothing, and T-74 had to argue in a code
+comment about why the sitemap skipped it.
+**Done when:** deleted, with the reference search that proves nothing
+points at it.
+**Done:** `src/app/landing/` removed. The only mentions of it anywhere in
+`src/`, `tests/` and `scripts/` were the file itself and the sitemap
+comment explaining the exclusion — no imports, no links, no tests, no
+scripts. The sitemap comment is gone with it, and T-78's note about
+leaving it undisallowed is updated.
+**Recoverable:** `git show 5363433:src/app/landing/page.jsx` returns the
+draft exactly as it was, forever. Deleting it from the tree doesn't delete
+the idea.
+**Model:** `sonnet` · **Nightly:** no — deleting a page is the human's call
+
 ### [x] T-78 · robots.txt
 **Why:** T-74 added a sitemap and nothing points a crawler at it, so it
 reaches no one. Filed and closed in the same PR — it is the five lines
@@ -1625,10 +1649,11 @@ is listed by its own prefix instead, and a test cross-checks the disallow
 list against the URLs `buildSitemap` produces, so the two can't contradict
 each other. Confirmed the test catches it by widening the prefix and
 watching it name both URLs.
-**Left open on purpose:** `/landing` is not disallowed. Nothing in `src/`
-links to it and it is not in the sitemap either, but whether it is dead,
-private or just unlinked is a product question for the human — blocking it
-here would decide that quietly.
+**`/landing` was left undisallowed on purpose** — whether it was dead,
+private or just unlinked was a product question, and blocking it here
+would have decided it quietly. The human answered: it was an early draft
+of what they imagined for Mercampus, superseded by `/about`. Deleted in
+T-79, so there is nothing left to block.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-75 · Migrate the rest of the app to daisyUI's theme tokens
