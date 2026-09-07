@@ -1,25 +1,29 @@
 import { fetchAPI } from './api';
 import { fetchAPIToken } from './apiToken';
 
-export const getProducts = async (
+// T-23: limit/cursor reemplazan a offset - un offset numerico no se puede
+// mantener estable si el listado pagina en Mongo con un cursor (ver
+// GET /api/products). Objeto de opciones en vez de posicionales: ya eran 7
+// parametros antes de agregar el cursor.
+export const getProducts = async ({
   product,
   category,
   sellerId,
   university,
+  section = 'antojos',
   limit,
-  offset,
-  section = 'antojos'
-) => {
+  cursor,
+} = {}) => {
   const queryParams = new URLSearchParams();
 
   if (product) queryParams.append('product', product);
   if (category) queryParams.append('category', category);
   if (sellerId) queryParams.append('sellerId', sellerId);
   if (university) queryParams.append('university', university);
-  if (limit) queryParams.append('limit', limit);
-  if (offset) queryParams.append('offset', offset);
   if (section) queryParams.append('section', section);
-  
+  if (limit) queryParams.append('limit', limit);
+  if (cursor) queryParams.append('cursor', cursor);
+
   return await fetchAPI(`/products?${queryParams.toString()}`);
 };
 

@@ -18,6 +18,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
 import { seedDatabase } from './seed.mjs';
+import { Product } from '@/utils/models/productSchema';
 
 const PORT = Number(process.env.E2E_PORT || 3100);
 
@@ -61,10 +62,40 @@ try {
   const uri = `${server.getUri()}mercampus_e2e`;
   await mongoose.connect(uri);
   const summary = await seedDatabase();
+
+  // T-23: el scroll infinito necesita mas de una pagina (PAGE_SIZE=12 en
+  // ProductGrid.jsx) para poder probarse, y seedDatabase() solo deja 3
+  // antojos visibles - sembrar mas ahi rompe otros tests que verifican
+  // exactamente esos 3 por nombre. Se agregan aqui, solo para el e2e, con
+  // availability:false y un createdAt viejo para que ordenen DESPUES de los
+  // 3 originales (availability desc, createdAt desc) y no les quiten su
+  // lugar en la primera pagina.
+  const scrollFillers = await Product.insertMany(
+    Array.from({ length: 15 }, (_, i) => ({
+      name: `Antojo de scroll ${i + 1}`,
+      price: 3000,
+      description: 'Producto de prueba para el e2e de scroll infinito.',
+      images: ['https://ik.imagekit.io/seed/scroll.jpg'],
+      section: 'antojos',
+      category: ['Otros'],
+      sellerId: summary.ids.approvedSeller,
+      availability: false,
+    }))
+  );
+  // .collection.updateMany (driver nativo), no Product.updateMany: el
+  // middleware de timestamps de Mongoose pisa createdAt con la hora actual
+  // en cualquier update, incluso viniendo en un $set explicito - confirmado
+  // corriendo esto con Product.updateMany, que dejaba a los filler con
+  // createdAt "ahora" en vez de la fecha vieja pedida.
+  await Product.collection.updateMany(
+    { _id: { $in: scrollFillers.map(product => product._id) } },
+    { $set: { createdAt: new Date('2000-01-01') } }
+  );
+
   await mongoose.disconnect();
   console.log(
     `sembrado: ${summary.users} usuarios, ${summary.sellers} vendedores, ` +
-      `${summary.products} productos, ${summary.schedules} horarios`
+      `${summary.products + scrollFillers.length} productos, ${summary.schedules} horarios`
   );
 
   const env = {
