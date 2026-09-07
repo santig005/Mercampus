@@ -1318,7 +1318,7 @@ local component state rather than a URL param — `SearchBox` rebuilds the
 query string from scratch on every keystroke and would silently drop an
 unknown `sort` param. **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-71 · Seller pause mode
+### [x] T-71 · Seller pause mode
 **Why:** an approved seller who's away (exam week, sick, traveling) has no
 way to hide their store without losing approval or their whole catalog —
 today they either stay listed while genuinely absent, or a human has to
@@ -1329,6 +1329,39 @@ multi-day pause would conflate two different meanings on one field.
 and its products from public listings without touching `approved`; a
 toggle the seller controls from their own profile, guarded by the same
 ownership check as the rest of the seller-facing mutations.
+**Done:** `Seller.paused` (boolean, default `false`) added next to
+`availability`, with a comment on each explaining which is which — the
+T-14 cron rewrites `availability` for every seller on every run, so it
+could never have held a multi-day absence. Public listings resolve it in
+Mongo, not in the browser: `GET /api/products` adds it to the
+`eligibleSellerIds` query alongside `approved` (before pagination, so the
+`limit` counts only products that will actually show), and
+`GET /api/sellers` filters it in the `Seller.find()` itself. The toggle
+lives on the seller's own profile page (`/antojos/sellers/profile/edit`),
+written through the `PUT /api/sellers/[id]` that already runs
+`verifySellerId` — no new route and no new ownership check. `paused` is in
+`updateSellerSchema` only, not in `createSellerSchema`. Pausing leaves
+`approved` and the catalog untouched, and the seller's own product
+dashboard is unaffected (it reads `/api/products/seller/[id]`, which never
+filtered by eligibility).
+**Measured against the real database (read-only, no writes):** 54 sellers,
+36 approved, **0 with a `paused` field**. So the obvious filter,
+`paused: false`, would have matched *nothing* and emptied the public
+listing for all 36 — the T-12c trap again. Both queries use
+`paused: { $ne: true }`, which matches the field-less documents, so the
+schema default covers old data and **no migration is needed**. Note that
+Mongoose only applies that default when hydrating a document: `.lean()`
+reads (`getSellerContextData`, `/api/sellers/admin`) still return
+`undefined` for old sellers, so the UI coerces with `Boolean(...)`.
+A test in `tests/integration/seller-pause.test.js` unsets the field on a
+seller and asserts it stays listed; it was confirmed to fail against the
+`paused: false` version of the filter.
+**Left out on purpose:** an admin's view of `/antojos/sellers/list` (which
+reuses the public `GET /api/sellers`) no longer lists paused sellers —
+`/admin/sellers`, backed by `GET /api/sellers/admin`, still returns every
+seller and is the panel meant for that. Direct links to a paused seller's
+profile page still resolve, exactly as they already do for unapproved
+sellers; only the listings are gated.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-72 · Seller profile completeness checklist

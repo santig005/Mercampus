@@ -30,4 +30,12 @@ const sellerFields = {
 };
 
 export const createSellerSchema = z.object(sellerFields);
-export const updateSellerSchema = z.object(sellerFields).partial();
+
+// `paused` (T-71) is an update-only field: a seller that doesn't exist yet has
+// nothing to hide from the listings, and leaving it out of the create schema
+// keeps the sign-up payload as narrow as it was. The ownership check for
+// writing it is the one PUT /api/sellers/[id] already runs (verifySellerId),
+// the same one every other field here goes through.
+export const updateSellerSchema = z
+  .object({ ...sellerFields, paused: z.boolean() })
+  .partial();

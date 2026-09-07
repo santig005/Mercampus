@@ -18,8 +18,20 @@ export async function GET(req) {
     const university = url.searchParams.get('university') || '';
     const section = url.searchParams.get('section') || '';
 
-    // Get all sellers
-    var sellers = await Seller.find();
+    // T-71: paused sellers are hidden from the public listing here, in the
+    // Mongo query, not in the browser - SellerGrid's client-side `approved`
+    // filter is a rendering choice (an admin browsing this page sees the
+    // pending ones so they can approve them), and a store the seller took
+    // down on purpose shouldn't ship to the client at all.
+    //
+    // `$ne: true` and not `false`: existing sellers have no `paused` field,
+    // and an equality filter would drop every one of them. Same note as in
+    // api/products/route.js.
+    //
+    // Admins keep the full list, paused included, at GET /api/sellers/admin
+    // (the /admin/sellers panel), which is the one that deliberately returns
+    // every seller.
+    var sellers = await Seller.find({ paused: { $ne: true } });
     if (university) {
       sellers = sellers.filter(
         seller => seller.university.toLowerCase() === university.toLowerCase()
