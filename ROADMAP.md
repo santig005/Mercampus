@@ -1531,7 +1531,7 @@ order until there's something to submit.
 `color-contrast` audit, not a separate tool.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-67 · UI/UX audit across the app's main screens
+### [x] T-67 · UI/UX audit across the app's main screens
 **Why:** the app grew screen by screen without ever getting a full design
 review pass. Small usability and consistency issues — spacing, unclear
 copy, awkward mobile layouts, dead-end states — likely exist and nobody
@@ -1544,6 +1544,25 @@ and auth (login/register) — takes screenshots, and writes up a findings
 list (screen + issue + suggested fix) in the PR description. No code
 changes in this task; it's diagnosis, not repair. Concrete follow-ups get
 their own tasks from that list.
+**Done:** 27 findings written up in the PR (screen + issue + suggested
+fix), with 24 screenshots in `docs/audits/t-67/`. The walkthrough used a
+throwaway stack — `MongoMemoryServer` + `scripts/seed.mjs` + build + serve,
+the recipe from `scripts/e2e.mjs` — on 1280x900 and 390x844, in both
+themes. No product code changed.
+The three worth pulling out: `/antojos/<unknown id>` renders the whole
+product page empty with `$ NaN` and a live WhatsApp button instead of a
+404; `/antojos/sellers/<unknown id>` spins forever; and a shared
+`/antojos?product=...` URL comes back unfiltered because SearchBox
+rewrites the query string on mount, wiping the param ProductGrid reads.
+Plus the dark-mode gap this task was expected to find: the `/about` hero
+never moved to daisyUI tokens, so in dark it is near-white text on its
+original light gradient.
+**What this task did NOT cover:** the authenticated screens the "Done
+when" asks for — seller registration, profile edit, product CRUD,
+schedules, admin. Playwright has no Clerk session, so all of them redirect
+to `/auth/login`; auditing them needs a signed-in Playwright fixture
+first, which is its own task — proposed, with the rest of the follow-ups,
+in the PR body rather than written in here unilaterally.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-69 · Open Graph previews for product/seller pages
