@@ -1,3 +1,5 @@
+import { cache } from 'react';
+
 import { connectDB } from '@/utils/connectDB';
 import { Seller } from '@/utils/models/sellerSchema2';
 
@@ -13,7 +15,7 @@ export type SellerPreview = {
 // Same rule as getProductForMetadata: only the fields the profile page's
 // Open Graph tags need, and null (not an exception) for a malformed or
 // missing id.
-export async function getSellerForMetadata(
+async function readSellerForMetadata(
   id: string
 ): Promise<SellerPreview | null> {
   if (!OBJECT_ID_RE.test(id)) return null;
@@ -31,3 +33,15 @@ export async function getSellerForMetadata(
     logo: seller.logo,
   };
 }
+
+// `cache` is only exported by React's react-server build - the one Next
+// resolves for Server Components. Vitest resolves the regular build, where the
+// import lands as undefined, so fall back to calling straight through: the
+// dedupe is a per-request optimisation, never behaviour a test asserts on.
+type Reader<T> = (id: string) => Promise<T | null>;
+const perRequest = <T,>(read: Reader<T>): Reader<T> =>
+  typeof cache === 'function' ? cache(read) : read;
+
+// T-90: same as getProductForMetadata - the profile page resolves the seller
+// to decide whether to 404, and generateMetadata resolves it again.
+export const getSellerForMetadata = perRequest<SellerPreview>(readSellerForMetadata);

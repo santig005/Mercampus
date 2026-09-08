@@ -2160,6 +2160,67 @@ drawer. And `btn-nav` is not defined anywhere in `main.css` - only
 like a hook someone may still want, and this task is about the link.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-90 · Dead ends: unknown product and seller ids (F1, F2)
+**Why:** the T-67 audit's number one, and the only finding that can send a
+buyer into a WhatsApp chat about something that does not exist.
+`/antojos/<unknown id>` returned HTTP 200 and painted the whole product
+chrome around nothing: no name, `$ NaN` in the price bar, a "No disponible"
+badge, a broken image, and a live **"Contactar por WhatsApp"** button.
+`/antojos/sellers/<unknown id>` logged `Seller not found` to the console and
+spun forever - no error, no empty state, no way out but the back button.
+Both pages are Server Components that already resolve the id for
+`generateMetadata` (T-69); they just never looked at the answer.
+**Done when:** an id that does not resolve renders a 404 instead of a fake
+product, and the 404 offers a way back.
+**Done:** `notFound()` on the three detail pages (`antojos/[id]`,
+`marketplace/[id]`, `antojos/sellers/[id]` - the audit only walked the
+antojos route, but marketplace renders the same component from the same id)
+plus `src/app/not-found.jsx`, because Next's stock 404 is itself a dead end:
+correct status, no navigation, which is half of what F1 and F2 were about.
+The reads are the T-69 ones wrapped in React `cache()`, so resolving the id
+twice per request - once for metadata, once for the guard - is still one
+query. Nine tests in `tests/e2e/dead-end-404.spec.js`, over both shapes of
+bad id: a well-formed ObjectId that matches nothing (reaches Mongo) and a
+malformed one (rejected by the id check first).
+**What this did NOT fix, measured and filed as T-91:** the page renders as a
+404 and still answers **200**. A soft 404. Not this route's doing - see T-91
+for the measurement.
+**Still true for a seller whose fetch fails for another reason:** F2's
+spinner is only fixed for the unknown-id case. `SellerPage` still has no
+error state, so a network failure mid-load spins the same way. Out of scope
+here; it needs an error state, not a route guard.
+**Model:** `opus` · **Nightly:** yes
+
+### [ ] T-91 · `notFound()` answers 200 - the whole app soft-404s
+**Why:** found while doing T-90, and it is not what T-90 was about. Every
+`notFound()` in this app renders the 404 page with an HTTP **200**. A
+crawler is told the page is fine; Google indexes soft 404s as real pages,
+which works directly against T-74's sitemap and T-78's robots.txt.
+**Measured (2026-09-08), so nobody has to guess:**
+- `/nope/nope`, a path matching no route at all → **404**. The router
+  decides before rendering, so the status is still free.
+- A throwaway route whose entire body is `notFound()`, no data access, no
+  `await` → **200**.
+- The same with an `await` before it → **200**.
+- T-90's detail pages, with the check in `generateMetadata` (which runs
+  during the render in Next 14, not before it) → **200**.
+So it is not about awaiting, not about Mongo, and not about where in the
+page the call happens. It is app-wide.
+**The suspect:** `src/app/layout.jsx` is an async root layout that awaits
+`getLocale()`, `getMessages()` and `getSellerContextData()` (Clerk + Mongo)
+before rendering any child. The response is committed by the time a page
+calls `notFound()`, and a status line that has been sent cannot be changed.
+**Done when:** `notFound()` answers 404. The test that proves it already
+exists and is marked `test.fail()` in `tests/e2e/dead-end-404.spec.js` -
+when this lands, that test starts passing and Playwright fails the run to
+say the annotation should come off.
+**Careful:** the obvious fix - move `getSellerContextData()` out of the root
+layout, behind Suspense - touches how `SellerProvider` is seeded, which is
+T-12d's work. Read that entry first. Do not "fix" this by removing the
+awaits without understanding what reads them.
+**Model:** `opus` - it is a rendering/streaming question with an auth
+context in the middle · **Nightly:** no
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on
