@@ -1931,6 +1931,46 @@ product decision, not an i18n one.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
+### [ ] T-82 · Deleting a product leaves its images behind
+**Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
+imagenes y todo asociado a ese producto"), and confirmed still true on
+2026-09-07: `DELETE /api/products/[id]` is a bare
+`Product.findByIdAndDelete`. The document goes, the uploaded images stay in
+ImageKit forever. Every product ever deleted has left its files there, and
+nothing ever cleans them up — it is a bill that only grows, and the images
+of a deleted product stay publicly reachable by URL.
+**Done when:** deleting a product also deletes its images, and a failure to
+delete a remote file does not leave the product undeleted (or the other way
+round) without saying so. `src/app/api/fileId/route.js` already resolves an
+ImageKit fileId from a URL and `ImageGrid.jsx` already deletes one, so the
+pieces exist — this is about calling them from the delete path and deciding
+what happens when the remote call fails.
+**Worth measuring first:** how many orphaned files are already up there, and
+what they cost. That number decides whether this also needs a one-off
+cleanup script in `scripts/`, which would be its own task.
+**Careful:** the same URL can, in principle, be referenced by more than one
+product (a copy-pasted image). Check before deleting by URL, or a delete
+takes down another product's picture.
+**Model:** `opus` — a delete path that touches an external service and can
+half-fail · **Nightly:** no
+
+### [ ] T-83 · Extraordinary availability, overriding the schedule
+**Why:** rescued from GitHub issue #120 (2025-02-25). A seller who opens
+outside their usual hours has no way to say so: `Seller.availability` is
+recomputed from `Schedule` by the T-14 cron on every run, so anything set by
+hand is overwritten within the hour.
+**Note it is the mirror image of T-71, not the same thing.** T-71 added
+`paused`, a manual flag that hides the store *despite* the schedule. This
+asks for the opposite: appearing open *despite* the schedule saying closed.
+Whoever takes it should read T-71's entry first — the field separation, and
+the `$ne: true` trap for documents that predate the new field, apply here
+too.
+**Done when:** a seller can mark themselves open right now for a bounded
+window, the cron respects that window instead of overwriting it, and the
+public listing reflects it. The bound matters: an override with no expiry
+becomes a seller permanently marked available who is not.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-63 · Separate the environments (database and Clerk)
 > **The biggest structural risk in the project right now.** An agent can't
 > do this: these are infrastructure decisions and they cost money.
