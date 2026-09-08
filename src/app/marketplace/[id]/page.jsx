@@ -3,8 +3,8 @@ import React from 'react'
 import { getProductForMetadata } from '@/server/products/getProductForMetadata'
 import { buildProductMetadata } from '@/lib/metadata'
 
-// T-69: ver la nota en antojos/[id]/page.jsx - mismo producto, misma
-// metadata, solo cambia la seccion en la que se muestra la pagina.
+// T-69: see the note in antojos/[id]/page.jsx - same product, same
+// metadata, only the section the page is shown in changes.
 export async function generateMetadata({ params }) {
   const product = await getProductForMetadata(params.id);
   if (!product) return {};

@@ -48,7 +48,7 @@ export const fetchAPI = async (endpoint, options = {}) => {
     if (!response.ok) {
       const errorText = contentType.includes("application/json")
         ? await response.json()
-        : await response.text(); // podría ser HTML
+        : await response.text(); // might be HTML
       throw new Error(`Error HTTP ${response.status}: ${JSON.stringify(errorText)}`);
     }
 
@@ -59,6 +59,6 @@ export const fetchAPI = async (endpoint, options = {}) => {
     }
   } catch (error) {
     logger.error('API Fetch Error:', error);
-    throw error; // si lo quieres propagar
+    throw error; // re-thrown for the caller to handle
   }
 };

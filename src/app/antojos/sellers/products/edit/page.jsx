@@ -129,7 +129,7 @@ export default function EditProductsPage() {
 
         {/* Productos agrupados por sección */}
         {(() => {
-          // Agrupar productos por sección
+          // Group the products by section
           const productsBySection = products?.reduce((acc, product) => {
             const section = product.section || 'antojos';
             if (!acc[section]) {
@@ -139,7 +139,7 @@ export default function EditProductsPage() {
             return acc;
           }, {});
 
-          // Ordenar secciones para que antojos vaya primero
+          // Order the sections so antojos comes first
           const sortedSections = Object.entries(productsBySection || {}).sort(([a], [b]) => {
             if (a === 'antojos') return -1;
             if (b === 'antojos') return 1;

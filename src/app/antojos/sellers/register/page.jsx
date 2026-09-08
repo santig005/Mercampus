@@ -35,10 +35,10 @@ const RegisterSeller = () => {
 
     let newValue = type === 'checkbox' ? checked : value;
 
-    // Si el campo es "phone", lo normalizamos antes de guardarlo. Recortar a
-    // los 10 primeros dígitos a secas convertía un `+57 300 123 4567` pegado
-    // en `5730012345`, un número de 10 dígitos que el servidor ya no puede
-    // distinguir de uno bueno.
+    // When the field is "phone" it is normalised before being stored. Simply
+    // truncating to the first 10 digits turned a pasted `+57 300 123 4567`
+    // into `5730012345`, a 10-digit number the server can no longer tell
+    // apart from a good one.
     if (name === 'phoneNumber') {
       newValue = toNationalPhone(value);
     }

@@ -70,19 +70,19 @@ export default function AdminSellersPage() {
 
   const handleSellerApproval = async (isOn, sellerId) => {
     try {
-      // Actualizar estado local primero para feedback inmediato
+      // Update local state first, for immediate feedback
       setSellers(prevSellers =>
         prevSellers.map(seller =>
           seller._id === sellerId ? { ...seller, approved: !isOn } : seller
         )
       );
       
-      // Hacer la llamada a la API
+      // Call the API
       const token = await getToken({ skipCache: true });
       const response = await updateSeller(sellerId, { approved: !isOn }, token);
       
       if (response.error) {
-        // Revertir cambio si hay error
+        // Roll the change back on error
         setSellers(prevSellers =>
           prevSellers.map(seller =>
             seller._id === sellerId ? { ...seller, approved: isOn } : seller
@@ -92,7 +92,7 @@ export default function AdminSellersPage() {
       }
     } catch (error) {
       logger.error('Error updating seller:', error);
-      // Revertir cambio si hay error
+      // Roll the change back on error
       setSellers(prevSellers =>
         prevSellers.map(seller =>
           seller._id === sellerId ? { ...seller, approved: isOn } : seller
@@ -115,7 +115,7 @@ export default function AdminSellersPage() {
   }
 
   if (!session) {
-    return null; // Se redirigirá automáticamente
+    return null; // The redirect happens on its own
   }
 
   return (

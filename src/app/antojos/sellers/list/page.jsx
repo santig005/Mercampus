@@ -2,9 +2,9 @@
 import SellerGrid from '@/components/seller/index/SellerGrid';
 import { useState } from 'react';
 
-// /100 obliga a Tailwind a generar el color real del tema
-// (oklch(var(--p)/1)) en vez de la clase bg-primary a secas, que
-// public/css/main.css redefine a un blanco fijo (#f8f8f8) - ver la nota en
+// The /100 forces Tailwind to emit the theme's real colour
+// (oklch(var(--p)/1)) instead of the bare bg-primary class, which
+// public/css/main.css redefines to a fixed white (#f8f8f8) - see the note in
 // Layout.jsx.
 const ACTIVE_SECTION_CLASSES = 'bg-primary/100 text-primary-content shadow-md';
 const INACTIVE_SECTION_CLASSES = 'text-base-content hover:bg-base-200';

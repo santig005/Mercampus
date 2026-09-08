@@ -40,7 +40,7 @@ const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/;
 export function buildAccentInsensitiveRegex(term: string): RegExp {
   const base = term
     .normalize('NFD')
-    .replace(COMBINING_DIACRITICS, '') // quita los diacriticos, deja la letra base
+    .replace(COMBINING_DIACRITICS, '') // strips the diacritics, keeps the base letter
     .toLowerCase();
 
   const pattern = Array.from(base)

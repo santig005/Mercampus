@@ -3,8 +3,8 @@ import React from 'react'
 import { getSellerForMetadata } from '@/server/sellers/getSellerForMetadata'
 import { buildSellerMetadata } from '@/lib/metadata'
 
-// T-69: ver la nota equivalente en antojos/[id]/page.jsx, mismo caso para
-// el perfil del vendedor.
+// T-69: see the equivalent note in antojos/[id]/page.jsx, same case for the
+// seller profile.
 export async function generateMetadata({ params }) {
   const seller = await getSellerForMetadata(params.id);
   if (!seller) return {};

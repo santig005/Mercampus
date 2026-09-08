@@ -40,7 +40,7 @@ export default function InputFields({
     handleResize(e);
     setInputValue(e.target.value);
     if (onChange) {
-      onChange(e); // Si el componente padre maneja el estado, se lo pasamos.
+      onChange(e); // If the parent component owns the state, hand it over.
     }
   };
 

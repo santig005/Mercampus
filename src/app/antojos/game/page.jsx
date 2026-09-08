@@ -12,7 +12,7 @@ export default function SquirrelGame() {
   const [gameSpeed, setGameSpeed] = useState(80);
   const [touchStartX, setTouchStartX] = useState(null);
 
-  // Ajuste de posiciones para centrar en carriles de 106px
+  // Position offset to centre within the 106px lanes
   const LANE_POSITIONS = [23, 123, 223]; 
   const OBSTACLES = ['basura', 'obstaculo', 'perro'];
   const COLLISION_DISTANCE = 40;
@@ -69,7 +69,7 @@ export default function SquirrelGame() {
             Math.abs(cookie.top - 450) < COLLISION_DISTANCE) {
               playCookieSound();
           setScore(score + 1);
-          setGameSpeed(s => Math.min(s + 1, 100)); // Reducimos aceleración
+          setGameSpeed(s => Math.min(s + 1, 100)); // Ease off the acceleration
         }
       });
 
@@ -86,7 +86,7 @@ export default function SquirrelGame() {
     setCookies([]);
   };
 
-  // Control táctil para móviles
+  // Touch controls for phones
   const handleTouchStart = (e) => {
     setTouchStartX(e.touches[0].clientX);
   };
@@ -126,7 +126,7 @@ export default function SquirrelGame() {
       gameInterval = setInterval(() => {
         moveElements();
         
-        // Generar elementos con menor frecuencia y verificar superposición
+        // Spawn items less often and check for overlap
         if (Math.random() < 0.07) { 
           const newElement = generateRandomElement();
           const lastElements = [...obstacles.slice(-3), ...cookies.slice(-3)];
@@ -142,7 +142,7 @@ export default function SquirrelGame() {
             }
           }
         }
-      }, 60); // Intervalo más lento
+      }, 60); // Slower interval
     }
     return () => clearInterval(gameInterval);
   }, [isPlaying, moveElements, generateRandomElement, obstacles, cookies]);
