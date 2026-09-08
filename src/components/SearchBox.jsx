@@ -17,7 +17,16 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-export default function SearchBox() {
+// T-88 (audit finding F21): the placeholder used to be hardcoded to the
+// antojos copy, so /marketplace asked for "tu antojo mas deseado" too. The
+// `section` prop is the same one CategoryGrid and ProductGrid already take,
+// so the three components on these pages are configured the same way.
+const PLACEHOLDERS = {
+  antojos: 'Busca tu antojo más deseado',
+  marketplace: 'Busca en el marketplace',
+};
+
+export default function SearchBox({ section = 'antojos' }) {
   const [search, setSearch] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,7 +61,7 @@ export default function SearchBox() {
         className='grow'
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder='Busca tu antojo más deseado'
+        placeholder={PLACEHOLDERS[section] ?? PLACEHOLDERS.antojos}
       />
       <svg
         xmlns='http://www.w3.org/2000/svg'
