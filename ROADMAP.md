@@ -1855,7 +1855,7 @@ each note's exact technical meaning rather than translating word for word
 | c2 | the pages under `src/app`, plus what the old scan missed in a/b | 16 | 41 | **done (#269)** |
 | d1 | `tests/integration` | 20 | 143 | **done (#271)** |
 | d2 | `tests/unit`, `tests/e2e`, `tests/setup.js` | 16 | 92 | **done (#272)** |
-| e | `scripts/` | 13 | 184 | pending |
+| e | `scripts/` | 13 | 213 | **PR #273, awaiting human review** |
 **Batch b was split in two (2026-09-07):** the estimate said ~19 files, the
 real count is 25 (169 lines) - over CLAUDE.md's ~15 guideline, so `src/utils`
 and `src/app/api` became b1 and b2.

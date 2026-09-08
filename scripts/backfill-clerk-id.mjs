@@ -1,25 +1,25 @@
 /**
- * Enlaza cada cuenta de Clerk con su `User` de Mongo, rellenando `clerkId`.
+ * Links every Clerk account to its Mongo `User`, filling in `clerkId`.
  *
- * Por qué hace falta: hasta T-12b el campo no existía en `userSchema`, así que
- * el webhook nunca pudo guardarlo. Desde T-12c la identidad se resuelve por ahí,
- * de modo que una cuenta sin enlazar no puede mutar nada (403 en productos,
- * vendedores y horarios; 404 al registrarse como vendedor). Y el webhook no lo
- * arregla solo: `user.created` no se vuelve a disparar para una cuenta que ya
+ * Why it is needed: until T-12b the field did not exist in `userSchema`, so
+ * the webhook could never store it. Since T-12c identity is resolved through
+ * it, so an unlinked account cannot mutate anything (403 on products,
+ * sellers and schedules; 404 when registering as a seller). And the webhook
+ * does not fix it on its own: `user.created` does not fire again for an
  * existe.
  *
- * **Recorre Clerk, no Mongo.** Clerk es la fuente de verdad de la identidad y
- * cada cuenta tiene exactamente un id, así que por construcción no hay
- * ambigüedad. Al revés —recorriendo Mongo y preguntando a Clerk por email— la
- * mayoría de los documentos son restos que no corresponden a ninguna cuenta y
- * el informe se llena de ruido que parece trabajo manual y no lo es.
+ * **It walks Clerk, not Mongo.** Clerk is the source of truth for identity
+ * and each account has exactly one id, so by construction there is no
+ * ambiguity. The other way round - walking Mongo and asking Clerk by email -
+ * most documents are leftovers matching no account at all and the report
+ * fills with noise that looks like manual work and is not.
  *
- *   npm run migrate:clerk-id            # ensayo: no escribe nada
+ *   npm run migrate:clerk-id            # dry run: writes nothing
  *   npm run migrate:clerk-id -- --apply # escribe
- *   npm run migrate:clerk-id -- --check # sale con codigo 1 si queda algo por enlazar
+ *   npm run migrate:clerk-id -- --check # exits 1 if anything is still unlinked
  *
- * `--check` es la puerta que conviene correr antes de promover a `develop`: no
- * escribe, solo falla si alguien podría quedarse bloqueado.
+ * `--check` is the gate worth running before promoting to `develop`: it does
+ * not write, it only fails if somebody could be left locked out.
  */
 import mongoose from 'mongoose';
 
@@ -31,14 +31,14 @@ export const ENLAZADO_CON_DESEMPATE = 'enlazado-con-desempate';
 export const CREADO = 'creado';
 
 /**
- * Con qué documento se queda cuando un email tiene varias copias en Mongo.
+ * Which document wins when one email has several copies in Mongo.
  *
- * Pasa porque el `unique` del email sigue comentado (T-11) y el viejo
- * `POST /api/register` creaba usuarios sin autenticación. En los datos reales
- * cada duplicado es la misma persona dos veces: una copia con perfil de
- * vendedor y otra vacía. La que lleva el `sellerId` es la que tiene la
- * información que se perdería; a igualdad, gana la más antigua, que es la que
- * llevan referenciando los demás documentos.
+ * This happens because the email's `unique` is still commented out (T-11)
+ * and the old `POST /api/register` created users with no authentication. In
+ * the real data every duplicate is the same person twice: one copy with a
+ * seller profile and one empty. The one carrying `sellerId` holds the
+ * information that would be lost; all else equal the oldest wins, which is
+ * the one the other documents have been referencing.
  */
 const elegirDocumento = documentos =>
   [...documentos].sort((a, b) => {
@@ -48,14 +48,14 @@ const elegirDocumento = documentos =>
   })[0];
 
 /**
- * Se planta antes de escribir si las claves no son de la instancia correcta.
+ * Refuses to write if the keys are not from the right instance.
  *
- * Hace falta porque un `clerkId` solo significa algo dentro de su instancia.
- * Mercampus tiene más de una, y las claves del `.env` —y las del entorno
- * Production de Vercel— son de una instancia de **desarrollo** con 11 cuentas,
- * mientras que la de producción tiene ~70. Enlazar con las claves equivocadas
- * escribiría ids que ninguna sesión real va a presentar nunca, y como `clerkId`
- * es `unique`, dejaría el hueco ocupado con basura.
+ * Needed because a `clerkId` only means anything inside its own instance.
+ * Mercampus has more than one, and the keys in `.env` - and those in
+ * Vercel's Production environment - belong to a **development** instance
+ * with 11 accounts, while the production one has ~70. Linking with the wrong
+ * keys would write ids no real session will ever present, and since `clerkId`
+ * is `unique`, it would leave the slot occupied by garbage.
  */
 export async function comprobarInstancia({
   describirInstancia,
@@ -73,9 +73,9 @@ export async function comprobarInstancia({
     );
   }
 
-  // Si la base ya tiene enlaces, tienen que ser de esta misma instancia. Si no,
-  // es que se corrió antes con otras claves y mezclar dos instancias es peor
-  // que no haber empezado.
+  // If the database already has links, they have to be from this same
+  // instance. Otherwise it was run before with different keys, and mixing two
+  // instances is worse than never having started.
   const yaEnlazado = await User.findOne({ clerkId: { $exists: true, $ne: null } })
     .select('clerkId')
     .lean();
@@ -112,8 +112,8 @@ export async function backfillClerkIds({ listarUsuariosDeClerk, apply = false })
       continue;
     }
 
-    // Solo candidatos sin enlazar: uno que ya tenga otro clerkId es otra
-    // persona, y pisarlo rompería el índice unique además de mezclar cuentas.
+    // Unlinked candidates only: one that already has a different clerkId is
+    // another person, and overwriting it would break the unique index as well
     const candidatos = await User.find({
       email: { $in: emails },
       $or: [{ clerkId: { $exists: false } }, { clerkId: null }],
@@ -122,8 +122,8 @@ export async function backfillClerkIds({ listarUsuariosDeClerk, apply = false })
       .lean();
 
     if (candidatos.length === 0) {
-      // La cuenta existe en Clerk pero no tiene User: es justo lo que habría
-      // hecho el webhook si el campo hubiera existido.
+      // The account exists in Clerk but has no User: exactly what the webhook
+      // would have done if the field had existed.
       if (apply) {
         await User.create({
           clerkId: cuenta.id,
@@ -154,10 +154,10 @@ export async function backfillClerkIds({ listarUsuariosDeClerk, apply = false })
     });
   }
 
-  // Documentos que no corresponden a ninguna cuenta de Clerk. **No están
-  // bloqueados**: sin cuenta en Clerk no pueden ni iniciar sesión, así que no
-  // son un problema de esta migración. Son restos del viejo POST /api/register
-  // (T-11) y se cuentan aparte para no confundirlos con trabajo pendiente.
+  // Documents matching no Clerk account at all. **They are not locked
+  // out**: with no Clerk account they cannot even sign in, so they are not
+  // this migration's problem. They are leftovers of the old POST
+  // /api/register (T-11), counted separately so they are not mistaken for work.
   const sinEnlazar = await User.find({
     $or: [{ clerkId: { $exists: false } }, { clerkId: null }],
   })
@@ -171,8 +171,8 @@ export async function backfillClerkIds({ listarUsuariosDeClerk, apply = false })
     cuentasDeClerk: cuentas.length,
     resultados,
     huerfanos,
-    // Lo único que impide promover: cuentas que pueden entrar y no están
-    // enlazadas. Después de un --apply correcto tiene que ser cero.
+    // The only thing blocking promotion: accounts that can sign in and are not
+    // linked. After a successful --apply this has to be zero.
     pendientes: resultados.filter(r => r.estado !== YA_ENLAZADO).length,
     resumen: resultados.reduce((acc, r) => {
       acc[r.estado] = (acc[r.estado] ?? 0) + 1;
@@ -200,7 +200,7 @@ async function main() {
     const cuentas = [];
     for (let offset = 0; ; offset += 100) {
       const respuesta = await clerk.users.getUserList({ limit: 100, offset });
-      // v5 devuelve { data, totalCount }; versiones anteriores, un array.
+      // v5 returns { data, totalCount }; earlier versions, an array.
       const lote = respuesta?.data ?? respuesta ?? [];
       cuentas.push(
         ...lote.map(u => ({
@@ -216,9 +216,9 @@ async function main() {
     return cuentas;
   };
 
-  // Llamadas directas a la Backend API: no hay CLI oficial de Clerk (`@clerk/cli`
-  // no existe en npm) y el SDK de Node está deprecado, así que para lo que no
-  // cubre el SDK se usa fetch con el secreto en la cabecera.
+  // Direct calls to the Backend API: there is no official Clerk CLI
+  // (`@clerk/cli` does not exist on npm) and the Node SDK is deprecated, so
+  // whatever the SDK does not cover uses fetch with the secret in the header.
   const apiClerk = async ruta => {
     const r = await fetch('https://api.clerk.com/v1' + ruta, {
       headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
@@ -236,8 +236,8 @@ async function main() {
   await mongoose.connect(process.env.MONGO_URI);
 
   try {
-    // El ensayo y el --check sirven para diagnosticar, así que avisan en vez de
-    // plantarse. El --apply sí se planta: es el que deja marca en la base.
+    // The dry run and --check are for diagnosing, so they warn instead of
+    // refusing. --apply does refuse: it is the one that leaves a mark.
     let instanciaMal = null;
     try {
       const instancia = await comprobarInstancia({
@@ -294,7 +294,7 @@ async function main() {
   }
 }
 
-// Solo cuando se ejecuta como script, no al importarlo desde los tests.
+// Only when run as a script, not when imported from the tests.
 if (process.argv[1]?.includes('backfill-clerk-id')) {
   main().catch(error => {
     console.error(error);

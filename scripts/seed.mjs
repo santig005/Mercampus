@@ -1,10 +1,10 @@
-// Datos de prueba para desarrollo.
+// Test data for development.
 //
-// `seedDatabase()` asume que ya hay una conexión de Mongoose abierta, para que
-// los tests puedan llamarla contra una base en memoria. La parte de CLI de
-// abajo es la que conecta, y solo se ejecuta si el archivo se corre directo.
+// `seedDatabase()` assumes a Mongoose connection is already open, so the
+// tests can call it against an in-memory database. The CLI part below is
+// what connects, and only runs if the file is executed directly.
 //
-// NUNCA apuntes esto a producción: borra las colecciones que siembra.
+// NEVER point this at production: it deletes the collections it seeds.
 
 import { pathToFileURL } from 'node:url';
 
@@ -15,7 +15,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { User } from '@/utils/models/userSchema';
 
-// day: 1 = lunes ... 7 = domingo, igual que daysOfWeekES.
+// day: 1 = Monday ... 7 = Sunday, same as daysOfWeekES.
 const weekdaySchedule = [
   { day: 1, startTime: '08:00', endTime: '16:00' },
   { day: 3, startTime: '08:00', endTime: '16:00' },
@@ -23,7 +23,7 @@ const weekdaySchedule = [
 ];
 
 export async function seedDatabase() {
-  // Solo las colecciones que siembra. No toca nada más.
+  // Only the collections it seeds. It touches nothing else.
   await Promise.all([
     Product.deleteMany({}),
     Schedule.deleteMany({}),
@@ -31,9 +31,9 @@ export async function seedDatabase() {
     User.deleteMany({}),
   ]);
 
-  // clerkId es la clave con la que el webhook une Clerk y Mongo. Los usuarios
-  // sembrados lo llevan para que las pruebas se parezcan a la realidad: en
-  // producción todo usuario nace de un evento `user.created` de Clerk.
+  // clerkId is the key the webhook joins Clerk and Mongo by. The seeded
+  // users carry it so the tests resemble reality: in production every user
+  // is born from a Clerk `user.created` event.
   const [buyer, approvedOwner, pendingOwner] = await User.create([
     {
       clerkId: 'user_seed_ana',
@@ -58,8 +58,8 @@ export async function seedDatabase() {
     },
   ]);
 
-  // Un vendedor aprobado y uno pendiente: el listado público solo debe mostrar
-  // los productos del aprobado, y sin el pendiente no hay forma de probarlo.
+  // One approved seller and one pending: the public listing must only show
+  // the approved one's products, and without the pending one there is no way
   const [approvedSeller, pendingSeller] = await Seller.create([
     {
       businessName: 'Arepas El Parche',
@@ -81,14 +81,14 @@ export async function seedDatabase() {
     },
   ]);
 
-  // El usuario apunta de vuelta a su perfil de vendedor.
+  // The user points back at its seller profile.
   approvedOwner.sellerId = approvedSeller._id;
   pendingOwner.sellerId = pendingSeller._id;
   await Promise.all([approvedOwner.save(), pendingOwner.save()]);
 
-  // Ojo: Product.sellerId guarda el id del Seller, no el del User, pese a que
-  // el schema declare `ref: 'User'`. Las rutas lo pueblan con
-  // `model: 'Seller'` explícito. Ver el PR de T-03.
+  // Careful: Product.sellerId stores the Seller id, not the User id, even
+  // though the schema declares `ref: 'User'`. The routes populate it with an
+  // explicit `model: 'Seller'`. See T-03's PR.
   const products = await Product.create([
     {
       name: 'Arepa de queso',
@@ -164,8 +164,8 @@ export async function seedDatabase() {
     approvedSellers: 1,
     products: products.length,
     schedules: schedules.length,
-    // Los ids los usa el e2e para navegar directo. Solo los del vendedor
-    // aprobado aparecen en el listado publico.
+    // The e2e uses these ids to navigate straight to a page. Only the approved
+    // seller's appear in the public listing.
     ids: {
       approvedSeller: approvedSeller._id.toString(),
       pendingSeller: pendingSeller._id.toString(),
@@ -180,7 +180,7 @@ export async function seedDatabase() {
 // CLI
 
 function describeTarget(uri) {
-  // No imprimas la URI: lleva usuario y contraseña.
+  // Do not print the URI: it carries a username and password.
   const { host, pathname } = new URL(uri.replace(/^mongodb\+srv:/, 'mongodb:'));
   return { host, database: pathname.replace(/^\//, '') || '(por defecto)' };
 }
@@ -204,8 +204,8 @@ async function main() {
 
   console.log(`seed: destino ${host}/${database}`);
 
-  // Borra las colecciones que siembra, así que fuera de localhost exige que
-  // alguien lo haya escrito a propósito.
+  // It deletes the collections it seeds, so outside localhost it demands
+  // that somebody typed it on purpose.
   if (!isLocal && !confirmed) {
     console.error(
       'seed: el destino no es local y borra datos. Repite con --yes si de verdad\n' +

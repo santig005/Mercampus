@@ -1,21 +1,21 @@
 /**
- * Re-mapea la cuenta vieja de alguien que se registró de nuevo en la
- * instancia equivocada de Clerk.
+ * Re-maps the old account of someone who signed up again on the wrong Clerk
+ * instance.
  *
- * Por qué hace falta (T-64b): 63 de los 79 `User` en Mongo solo existen en la
- * instancia de **producción** de Clerk (ver T-64/T-12h). El sitio autentica
- * contra la instancia de **desarrollo**, así que si esa persona se registra de
- * nuevo ahí, Clerk le da un `clerkId` nuevo que no es el que ya tiene su
- * `User` viejo. El webhook (T-12b) no encuentra ese `clerkId` y crea un `User`
- * **nuevo y vacío** — entra como comprador sin su tienda, que sigue
- * existiendo pero huérfana.
+ * Why it is needed (T-64b): 63 of the 79 `User` documents in Mongo exist
+ * only in Clerk's **production** instance (see T-64/T-12h). The site
+ * authenticates against the **development** instance, so if that person
+ * signs up again there, Clerk hands them a new `clerkId` that is not the one
+ * their old `User` already has. The webhook (T-12b) does not find that
+ * `clerkId` and creates a **new, empty** `User` - they come in as a buyer
+ * with no store, which still exists but is orphaned.
  *
- * Por qué no vive en el webhook: cruzar por email en el momento de la
- * escritura es la fragilidad que T-12c quitó a propósito (el email es
- * mutable, y con el `unique` aún comentado en T-11 ni siquiera es único).
- * Con un puñado de reclamos a lo largo de 1-3 años, no hace falta
- * automatizarlo — se corre a mano cuando alguien reporta que "perdió su
- * tienda", con su email y el `clerkId` nuevo que acaba de recibir.
+ * Why it does not live in the webhook: joining by email at write time is
+ * exactly the fragility T-12c removed on purpose (email is mutable, and with
+ * the `unique` still commented out in T-11 it is not even unique).
+ * With a handful of claims over 1-3 years there is no need to automate it -
+ * it is run by hand when somebody reports they "lost their store", with
+ * their email and the new `clerkId` they were just given.
  *
  *   npm run reclaim:account -- --email ana@example.com --clerk-id user_xyz
  *   npm run reclaim:account -- --email ana@example.com --clerk-id user_xyz --apply
@@ -34,18 +34,18 @@ const escaparRegex = texto => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export async function reclaimAccount({ email, newClerkId, apply = false }) {
   const emailLower = email.toLowerCase();
 
-  // El schema no normaliza el email (T-11 sigue pendiente), así que el
-  // `User` viejo puede tener otras mayúsculas que las que llegan aquí.
+  // The schema does not normalise the email (T-11 is still pending), so the
+  // old `User` may have different casing from what arrives here.
   const candidatos = await User.find({
     email: { $regex: `^${escaparRegex(emailLower)}$`, $options: 'i' },
   })
     .select('_id email clerkId sellerId createdAt')
     .lean();
 
-  // El `clerkId` nuevo ya podría estar en Mongo por dos razones muy
-  // distintas: el `User` vacío que creó el webhook con este mismo email (caso
-  // normal, se resuelve solo), o un documento de **otra** persona (algo salió
-  // mal con los datos de entrada). Solo lo segundo es un conflicto real.
+  // The new `clerkId` could already be in Mongo for two very different
+  // reasons: the empty `User` the webhook created with this same email (the
+  // normal case, it resolves itself), or **another** person's document
+  // (something went wrong with the input). Only the second is a real conflict.
   const otroConEseId = await User.findOne({ clerkId: newClerkId })
     .select('_id email')
     .lean();
@@ -68,8 +68,8 @@ export async function reclaimAccount({ email, newClerkId, apply = false }) {
   }
 
   if (apply) {
-    // El stub se borra primero: `clerkId` es unique, así que mientras exista
-    // con el id nuevo, ponérselo al documento viejo chocaría contra el índice.
+    // The stub is deleted first: `clerkId` is unique, so while it exists
+    // with the new id, setting it on the old document would hit the index.
     if (stub && String(stub._id) !== String(viejo._id)) {
       await User.deleteOne({ _id: stub._id });
     }

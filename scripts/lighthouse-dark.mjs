@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// T-73. Atajo cross-platform para correr lighthouse.mjs con
+// T-73. Cross-platform shortcut for running lighthouse.mjs with
 // LIGHTHOUSE_THEME=dark: la sintaxis `VAR=valor comando` de bash no
-// funciona en cmd.exe/PowerShell (el entorno de desarrollo de este repo),
-// asi que esto fija la env var en el proceso antes de importar el script
-// real en vez de depender de la sintaxis del shell.
+// work in cmd.exe/PowerShell (this repo's development environment), so this
+// sets the env var on the process before importing the real script, rather
+// than depending on the shell's syntax.
 process.env.LIGHTHOUSE_THEME = 'dark';
 await import('./lighthouse.mjs');
