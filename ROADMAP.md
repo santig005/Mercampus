@@ -2088,6 +2088,13 @@ translucent bar needs no JS, but a 95% veil over the hero gradient leaves a
 visible horizontal seam exactly where the header ends. The state is real,
 so it is a client component - `'use client'` for a scroll listener is what
 the convention in CLAUDE.md means by "effects", not a shortcut around it.
+**Worth knowing for the next e2e that scrolls `/about`:** `page.mouse.wheel()`
+is not enough. The page animates its sections in with framer-motion, so on a
+cold CI runner the document is still viewport-height when the wheel lands -
+the event goes nowhere, `scrollY` stays 0 and nothing flips. Two of these
+three tests passed locally and failed in CI for exactly that. They now poll
+`document.body.scrollHeight` until the page is scrollable, scroll with
+`window.scrollTo`, and poll `scrollY` until it moved.
 **Note on the markup:** the header carries `data-scrolled` so the state is
 inspectable from a test without asserting on a Tailwind class string. One
 attribute, and it is the component's actual state, not a test-only hook.

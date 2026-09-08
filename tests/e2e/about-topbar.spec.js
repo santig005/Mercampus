@@ -10,6 +10,25 @@ const backgroundOf = locator =>
 
 const isTransparent = color => /rgba\([^)]*,\s*0\s*\)/.test(color);
 
+// page.mouse.wheel() is not enough here, and CI proved it: /about animates its
+// sections in with framer-motion, so on a cold runner the document can still be
+// viewport-height when the wheel lands. The event goes nowhere, scrollY stays 0
+// and the bar never flips. Wait until the page is actually scrollable, scroll,
+// then wait until it moved.
+const scrollDown = async (page, to = 900) => {
+  await expect
+    .poll(() => page.evaluate(() => document.body.scrollHeight - window.innerHeight))
+    .toBeGreaterThan(to);
+
+  await page.evaluate(y => window.scrollTo(0, y), to);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(24);
+};
+
+const scrollToTop = async page => {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+};
+
 test.describe('/about sticky topbar (T-87)', () => {
   test('transparent over the hero, opaque once the page scrolls', async ({ page }) => {
     await page.goto('/about');
@@ -20,7 +39,7 @@ test.describe('/about sticky topbar (T-87)', () => {
     await expect(topbar(page)).toHaveAttribute('data-scrolled', 'false');
     expect(isTransparent(await backgroundOf(topbar(page)))).toBe(true);
 
-    await page.mouse.wheel(0, 900);
+    await scrollDown(page);
 
     await expect(topbar(page)).toHaveAttribute('data-scrolled', 'true');
     expect(isTransparent(await backgroundOf(topbar(page)))).toBe(false);
@@ -33,10 +52,10 @@ test.describe('/about sticky topbar (T-87)', () => {
 
   test('scrolling back to the top puts the hero back behind it', async ({ page }) => {
     await page.goto('/about');
-    await page.mouse.wheel(0, 900);
+    await scrollDown(page);
     await expect(topbar(page)).toHaveAttribute('data-scrolled', 'true');
 
-    await page.mouse.wheel(0, -900);
+    await scrollToTop(page);
 
     await expect(topbar(page)).toHaveAttribute('data-scrolled', 'false');
     expect(isTransparent(await backgroundOf(topbar(page)))).toBe(true);
@@ -50,7 +69,7 @@ test.describe('/about sticky topbar (T-87)', () => {
     await page.goto('/about');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-    await page.mouse.wheel(0, 900);
+    await scrollDown(page);
     await expect(topbar(page)).toHaveAttribute('data-scrolled', 'true');
 
     const background = await backgroundOf(topbar(page));
