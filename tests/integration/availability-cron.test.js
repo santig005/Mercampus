@@ -15,7 +15,7 @@ const request = authorization =>
     headers: authorization ? { authorization } : {},
   });
 
-// Del seed: vendedor aprobado con horario lunes/miercoles 08:00-16:00 y
+// From the seed: an approved seller open Mon/Wed 08:00-16:00 and
 // viernes 10:00-18:00 (day: 1 = lunes, ver scripts/seed.mjs).
 describe('GET /api/sellers/availability', () => {
   beforeAll(async () => {
@@ -66,8 +66,8 @@ describe('GET /api/sellers/availability', () => {
   });
 
   it('marca disponible al vendedor sembrado dentro de su horario (lunes 10am Bogota)', async () => {
-    // Se fuerza a false primero: si el test pasara igual sin que la ruta
-    // hiciera nada, no probaria lo que dice probar (el default del schema ya
+    // Forced to false first: if the test passed without the route doing
+    // anything, it wouldn't prove what it claims to (the schema default is
     // es true).
     await Seller.findByIdAndUpdate(ids.approvedSeller, { availability: false });
 
@@ -84,8 +84,8 @@ describe('GET /api/sellers/availability', () => {
   it('marca no disponible al vendedor sembrado fuera de su horario (lunes 8pm Bogota)', async () => {
     vi.useFakeTimers();
     // 2024-01-02T01:00 UTC es 2024-01-01 20:00 en Bogota: sigue siendo lunes
-    // en hora local aunque el dia UTC ya cambio - confirma que la conversion
-    // de zona horaria, no solo la de hora, esta bien.
+    // in local time even though the UTC day already rolled over - confirming
+    // the timezone conversion, not just the hour, is right.
     vi.setSystemTime(new Date('2024-01-02T01:00:00.000Z'));
 
     const response = await availabilityRoute.GET(request(`Bearer ${CRON_SECRET}`));

@@ -1,24 +1,24 @@
 import { NextRequest } from 'next/server';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Sesion y publicMetadata de Clerk simuladas. vi.hoisted porque vi.mock se
-// eleva por encima de todo lo demas y necesita leer estos objetos.
+// Stubbed Clerk session and publicMetadata. vi.hoisted because vi.mock is
+// hoisted above everything else and needs to read these objects.
 const session = vi.hoisted(() => ({ userId: null }));
 const clerkUser = vi.hoisted(() => ({ publicMetadata: {} }));
 
-// Se mockean solo clerkMiddleware y clerkClient. createRouteMatcher se deja
-// real: es lo que decide si /admin/sellers y /api/sellers/admin coinciden
-// con los patrones, y eso es justo parte de lo que hay que probar.
+// Only clerkMiddleware and clerkClient are mocked. createRouteMatcher is
+// left real: it is what decides whether /admin/sellers and
+// /api/sellers/admin match the patterns, and that is part of what to test.
 //
-// clerkMiddleware real valida el token de sesion contra los servidores de
-// Clerk (necesita una cookie real, como el e2e de T-04) - aqui se reemplaza
-// por un wrapper minimo que le pasa al handler de middleware.js un `auth()`
-// controlable, igual que autorizacion.test.js mockea `auth` para los route
+// The real clerkMiddleware validates the session token against Clerk's
+// servers (it needs a real cookie, like T-04's e2e) - here it is replaced
+// by a minimal wrapper handing middleware.js's handler a controllable
+// `auth()`, the same way autorizacion.test.js mocks `auth` for the route
 // handlers.
-// next-intl/middleware importa next/server con una especificacion que el
-// resolvedor ESM de Vitest no acepta (falla fuera de la propia build de
-// Next, que sí lo resuelve). Nada en estos tests pasa por isIntlRoute, asi
-// que se reemplaza por un stub en vez de arrastrar ese modulo real.
+// next-intl/middleware imports next/server with a specifier Vitest's ESM
+// resolver rejects (it fails outside Next's own build, which does resolve
+// it). Nothing in these tests goes through isIntlRoute, so it is stubbed
+// rather than dragging in the real module.
 vi.mock('next-intl/middleware', () => ({
   default: () => () => undefined,
 }));

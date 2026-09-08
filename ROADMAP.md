@@ -1853,7 +1853,8 @@ each note's exact technical meaning rather than translating word for word
 | b2 | `src/app/api` | 10 | 84 | **done (#267)** |
 | c1 | `src/components` | 17 | 91 | **done (#268)** |
 | c2 | the pages under `src/app`, plus what the old scan missed in a/b | 16 | 41 | **done (#269)** |
-| d | `tests/` | 36 | 232 | pending |
+| d1 | `tests/integration` | 20 | 143 | **done (#271)** |
+| d2 | `tests/unit`, `tests/e2e`, `tests/setup.js` | 16 | 92 | pending |
 | e | `scripts/` | 13 | 184 | pending |
 **Batch b was split in two (2026-09-07):** the estimate said ~19 files, the
 real count is 25 (169 lines) - over CLAUDE.md's ~15 guideline, so `src/utils`
@@ -1887,6 +1888,11 @@ word list made it flag English comments containing "no", turning 41 real
 hits into 111 mostly-false ones. If you rebuild it, prefer accents, `ñ` and
 words with no English twin; then read the output rather than trusting the
 count.
+**The scan cannot be trusted as a stop condition.** By batch d it was
+producing false positives in the other direction: an English comment
+containing "error", or a Spanish product name ("Buñuelo") inside an English
+sentence. Use it to find candidates, then read them. A zone is finished
+when the remaining hits are all explainable, not when the count is zero.
 **Batch e needs a human, and should be last.** `scripts/` is where the
 dangerous notes live — `seed.mjs`'s "NUNCA apuntes esto a producción",
 `backup-db.mjs`, `reclaim-account.mjs`, `set-admin-metadata.mjs`. T-66

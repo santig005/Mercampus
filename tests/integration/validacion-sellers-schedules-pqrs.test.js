@@ -5,16 +5,16 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 const session = vi.hoisted(() => ({ userId: null }));
 
-// Desde T-12c todas las rutas resuelven la identidad igual: el clerkId que
-// devuelve auth(). Ya no hay que simular currentUser() ni clerkClient(),
-// porque nadie le pide el email a la Backend API de Clerk.
+// Since T-12c every route resolves identity the same way: the clerkId
+// auth() returns. currentUser() and clerkClient() no longer need stubbing,
+// because nobody asks Clerk's Backend API for the email any more.
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
 }));
 
-// Del seed.
-const BUYER = 'user_seed_ana'; // sin sellerId, role: buyer
-const OWNER = 'user_seed_carlos'; // ya es vendedor
+// From the seed.
+const BUYER = 'user_seed_ana'; // no sellerId, role: buyer
+const OWNER = 'user_seed_carlos'; // already a seller
 
 const post = body =>
   new Request('http://localhost/api', {
@@ -40,8 +40,8 @@ let User;
 let Pqrs;
 let ids;
 
-// Una sola conexión para todo el archivo: stopTestDb() la cierra, así que si
-// cada describe abre y cierra la suya, el segundo describe se queda sin base.
+// One connection for the whole file: stopTestDb() closes it, so if each
+// describe opened and closed its own, the second would be left with no db.
 beforeAll(async () => {
   process.env.MONGO_URI = await startTestDb();
   sellersRoute = await import('@/app/api/sellers/route.js');
@@ -104,7 +104,7 @@ describe('POST /api/sellers · validación y registro', () => {
       post({
         businessName: 'Postres Ana',
         phoneNumber: 3000000001,
-        approved: true, // no está declarado en el schema
+        approved: true, // not declared in the schema
       })
     );
 
@@ -137,10 +137,10 @@ describe('POST /api/sellers · validación y registro', () => {
   });
 });
 
-// T-13c. Los formularios mandan el teléfono como string y el schema pedía
-// `z.number()`, así que el alta de vendedor respondía 400 siempre. Estos casos
-// usan el payload que construyen las páginas de verdad, no uno escrito a mano
-// con un number: por eso los tests de T-13b no atraparon el bug.
+// T-13c. The forms send the phone as a string and the schema asked for
+// `z.number()`, so seller sign-up answered 400 every time. These cases use
+// the payload the real pages build, not one hand-written with a number:
+// that is why T-13b's tests did not catch the bug.
 describe('teléfono del vendedor · el payload real del formulario', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
@@ -204,7 +204,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
 
   it('400 si el telefono empieza por cero', async () => {
     // Se guarda como Number: '0300123456' se convertiria en 300123456 y
-    // perderia un digito sin que nadie se entere.
+    // would lose a digit without anyone noticing.
     session.userId = BUYER;
 
     const response = await sellersRoute.POST(
@@ -218,8 +218,8 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
 describe('POST /api/schedules · reemplazo de horario', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
-    // Desde T-10b la ruta exige sesión y propiedad. Estos casos son sobre la
-    // validación del cuerpo, así que entran ya como el dueño del vendedor; el
+    // Since T-10b the route demands a session and ownership. These cases are
+    // about body validation, so they sign in as the seller's owner already;
     // 401 y el 403 se comprueban en `autorizacion.test.js`.
     session.userId = OWNER;
   });
@@ -258,7 +258,7 @@ describe('POST /api/schedules · reemplazo de horario', () => {
 
   it('200 con un payload válido: reemplaza el horario completo', async () => {
     const antes = await Schedule.countDocuments({ sellerId: ids.approvedSeller });
-    expect(antes).toBeGreaterThan(0); // el seed ya sembró horarios
+    expect(antes).toBeGreaterThan(0); // the seed already planted schedules
 
     const response = await schedulesRoute.POST(
       post({
@@ -316,9 +316,9 @@ describe('POST /api/pqrs · validación', () => {
       post({ type: 'Sugerencia', description: 'Pongan más opciones veganas', email: '' })
     );
 
-    // El handler original devolvía NextResponse.json({ status: 201 }) sin
-    // segundo argumento: el status HTTP real quedaba en 200 y el 201 era solo
-    // un campo suelto en el cuerpo de la respuesta.
+    // The original handler returned NextResponse.json({ status: 201 }) with no
+    // second argument: the real HTTP status stayed 200 and the 201 was just a
+    // stray field in the response body.
     expect(response.status).toBe(201);
     expect(await Pqrs.countDocuments()).toBe(1);
   });

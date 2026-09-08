@@ -24,9 +24,9 @@ describe('GET /api/products · paginación (T-23)', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
 
-    // 5 productos propios, aislados del resto del seed por el prefijo del
-    // nombre: asi el test no depende de cuantos productos siembre seed.mjs
-    // hoy (3 antojos visibles), y no se rompe si esa cantidad cambia.
+    // 5 products of our own, kept apart from the rest of the seed by their
+    // name prefix: that way the test doesn't depend on how many products
+    // seed.mjs plants today (3 visible antojos), and doesn't break if it changes.
     for (let i = 1; i <= 5; i++) {
       await Product.create({
         name: `Paginado ${i}`,
@@ -36,7 +36,7 @@ describe('GET /api/products · paginación (T-23)', () => {
         section: 'antojos',
         category: ['Otros'],
         sellerId: ids.approvedSeller,
-        availability: i % 2 === 0, // mezcla de disponibles/no disponibles
+        availability: i % 2 === 0, // a mix of available/unavailable
       });
     }
   });
@@ -72,7 +72,7 @@ describe('GET /api/products · paginación (T-23)', () => {
       const body = await (await get(query)).json();
 
       for (const product of body.products) {
-        expect(vistos.has(product._id)).toBe(false); // nunca un repetido
+        expect(vistos.has(product._id)).toBe(false); // never a duplicate
         vistos.add(product._id);
       }
 
@@ -136,8 +136,8 @@ describe('GET /api/products · sort (T-70)', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
 
-    // Precios bien separados para que ningun desempate por precio dependa
-    // del orden de insercion.
+    // Prices kept well apart so no price tie-break depends on the insertion
+    // order.
     const precios = [500, 4000, 1500, 3000, 2500];
     for (let i = 0; i < precios.length; i++) {
       await Product.create({
@@ -194,7 +194,7 @@ describe('GET /api/products · sort (T-70)', () => {
 
   it('newest ordena por mas reciente primero', async () => {
     const nombres = await collectAllPages('newest');
-    // Se crearon en orden 1..5, asi que el mas nuevo es el ultimo creado.
+    // They were created in order 1..5, so the newest is the last created.
     expect(nombres).toEqual([
       'Ordenado 5',
       'Ordenado 4',
@@ -218,7 +218,7 @@ describe('GET /api/products · sort (T-70)', () => {
 
   it('sin sort, el orden por default no cambia (availability desc, createdAt desc)', async () => {
     const nombres = await collectAllPages('default');
-    // El default no depende del precio: los 5 son availability:true, asi que
+    // The default doesn't depend on price: all 5 are availability:true, so
     // el desempate es createdAt desc - el ultimo creado aparece primero.
     expect(nombres).toEqual([
       'Ordenado 5',

@@ -50,7 +50,7 @@ describe('T-74 · sitemap contra la base', () => {
     const pendingProducts = await Product.find({ sellerId: ids.pendingSeller })
       .select('_id')
       .lean();
-    expect(pendingProducts.length).toBeGreaterThan(0); // el seed sí le puso productos
+    expect(pendingProducts.length).toBeGreaterThan(0); // the seed did give it products
 
     const urls = await urlsOf();
     for (const product of pendingProducts) {
@@ -58,8 +58,8 @@ describe('T-74 · sitemap contra la base', () => {
     }
   });
 
-  // T-71: pausar esconde la tienda del listado publico, así que el sitemap no
-  // puede seguir mandándole crawlers.
+  // T-71: pausing hides the store from the public listing, so the sitemap
+  // can't keep sending crawlers to it.
   it('un vendedor en pausa desaparece, junto con sus productos', async () => {
     expect((await urlsOf()).some(url => url.includes(ids.approvedSeller))).toBe(true);
 
@@ -70,8 +70,8 @@ describe('T-74 · sitemap contra la base', () => {
     expect(urls.some(url => url.endsWith(`/antojos/${ids.approvedProduct}`))).toBe(false);
   });
 
-  // Los vendedores anteriores a T-71 no tienen el campo `paused`; si el filtro
-  // usara `paused: false` desaparecerian todos del sitemap.
+  // Sellers predating T-71 have no `paused` field; if the filter used
+  // `paused: false` they would all vanish from the sitemap.
   it('un vendedor viejo, sin el campo paused, sigue anunciandose', async () => {
     await Seller.collection.updateOne(
       { businessName: 'Arepas El Parche' },
@@ -87,7 +87,7 @@ describe('T-74 · sitemap contra la base', () => {
       section: 'marketplace',
     }).select('_id').lean();
 
-    if (!product) return; // el seed puede no traer uno; el unitario ya cubre la forma
+    if (!product) return; // the seed may not carry one; the unit test already covers the shape
     expect((await urlsOf()).some(url => url.endsWith(`/marketplace/${product._id}`))).toBe(true);
   });
 });

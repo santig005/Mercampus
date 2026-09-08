@@ -43,9 +43,9 @@ describe('scripts/seed', () => {
   });
 
   it('apunta los productos a un Seller, no a un User', async () => {
-    // El schema declara `ref: 'User'` pero el valor real es un Seller: las
-    // rutas pueblan con `model: 'Seller'` explícito. Si alguien "arregla" el
-    // ref sin migrar los datos, este test lo delata.
+    // The schema declares `ref: 'User'` but the actual value is a Seller: the
+    // routes populate with an explicit `model: 'Seller'`. If somebody "fixes"
+    // the ref without migrating the data, this test catches it.
     const sellerIds = (await Seller.find()).map(seller => seller._id.toString());
 
     for (const product of await Product.find()) {
@@ -57,7 +57,7 @@ describe('scripts/seed', () => {
     expect(await Product.countDocuments({ section: 'antojos' })).toBeGreaterThan(0);
     expect(await Product.countDocuments({ section: 'marketplace' })).toBeGreaterThan(0);
 
-    // validateSync() aplica el validador de categorías por sección.
+    // validateSync() applies the per-section category validator.
     for (const product of await Product.find()) {
       expect(product.validateSync()).toBeUndefined();
     }

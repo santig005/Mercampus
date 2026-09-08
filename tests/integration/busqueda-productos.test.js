@@ -25,7 +25,7 @@ describe('GET /api/products · búsqueda (T-24)', () => {
   });
 
   it('un termino sin tilde encuentra el producto sembrado con eñe', async () => {
-    // Del seed: "Buñuelo".
+    // From the seed: "Buñuelo".
     const nombres = await namesFrom(await get('section=antojos&product=bunuelo'));
     expect(nombres).toContain('Buñuelo');
   });
@@ -41,7 +41,7 @@ describe('GET /api/products · búsqueda (T-24)', () => {
   });
 
   it('la busqueda respeta el filtro de vendedor aprobado', async () => {
-    // "Brownie de chocolate" es del vendedor pendiente de aprobacion.
+    // "Brownie de chocolate" belongs to the seller awaiting approval.
     const nombres = await namesFrom(await get('section=antojos&product=brownie'));
     expect(nombres).toEqual([]);
   });
