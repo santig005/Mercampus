@@ -9,20 +9,24 @@ import React from 'react';
 
 const Antojos = () => {
   const { session } = useSession();
+  const firstName = session?.publicUserData?.firstName;
   return (
     <div className='flex flex-col gap-4'>
       <div className='flex flex-col gap-4'>
-        {session ? (
+        {/* T-88 (audit finding F22): signed out this read "Hola, calma tus antojos" -
+            the comma was there for a name that never arrives. The greeting
+            only exists when there is somebody to greet, and a Clerk account
+            with no first name falls into the same branch as a visitor rather
+            than rendering "Hola , ...". */}
+        {firstName ? (
           <h2 className='title !font-normal px-2'>
             Hola{' '}
-            <span className='text-primary font-bold'>
-              {session.publicUserData.firstName}
-            </span>
+            <span className='text-primary font-bold'>{firstName}</span>
             , <span className='font-semibold'>calma tus antojos</span>
           </h2>
         ) : (
           <h2 className='title !font-normal px-2'>
-            Hola, <span className='font-semibold'>calma tus antojos</span>
+            <span className='font-semibold'>Calma tus antojos</span>
           </h2>
         )}
         <div className='px-2'>

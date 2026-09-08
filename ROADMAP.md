@@ -2103,6 +2103,34 @@ header (`src/components/layout/Layout.jsx`) is not sticky and was not
 touched.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-88 · Listing header copy: dangling greeting and wrong placeholder (F21, F22)
+**Why:** third follow-up out of the T-67 audit. Two copy bugs in the same
+four lines of header, shared by `/antojos` and `/marketplace`.
+F22: signed out, the greeting read "Hola, calma tus antojos" - the comma is
+there for a name that never arrives. F21: `/marketplace` asked for "Busca tu
+antojo más deseado", because `SearchBox`'s placeholder was hardcoded to the
+section it was first written for.
+**Done when:** the signed-out greeting stands on its own, and each section's
+search box asks for what that section actually sells.
+**Done:** the greeting now renders only when there is a name to greet
+("Hola **Ana**, calma tus antojos"), and otherwise drops to "Calma tus
+antojos" / "Explora el marketplace". `SearchBox` takes the same `section`
+prop `CategoryGrid` and `ProductGrid` already take, and picks its
+placeholder from it. Three tests in `tests/e2e/listing-copy.spec.js`.
+**Found while there, and fixed in the same branch:** the signed-in branch
+keyed off `session`, not off the name, so a Clerk account with no
+`firstName` rendered "Hola , calma tus antojos" - comma adrift, with a space
+in front of it. It now falls into the signed-out branch. Not in the audit;
+nobody had looked at a nameless account.
+**This is product copy, so it is the human's call.** The wording here is the
+minimum that removes the bug; if "Calma tus antojos" is not the greeting you
+want on the signed-out listing, change the string, not the structure.
+**Only half testable:** Playwright has no Clerk session (T-84), so the
+signed-in greeting - the branch that actually interpolates the name - has no
+coverage. The tests assert the signed-out copy and that no `h2` on either
+page contains "Hola,".
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on
