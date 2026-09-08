@@ -50,9 +50,15 @@ see the findings).
 ## Not covered
 
 The authenticated screens (seller registration, profile edit, product CRUD,
-schedules, admin) are not here: Playwright has no Clerk session, so every one of
-them redirects to `/auth/login`. T-84 (signed-in Playwright fixture) is filed
-to unblock that half of the audit.
+schedules, admin) are not here: when these were taken, Playwright had no Clerk
+session, so every one of them redirected to `/auth/login`.
+
+**That is no longer the blocker.** T-84 built the fixture: a spec placed in
+`tests/e2e/signed-in/` starts signed in as the seeded approved seller, and
+`tests/e2e/signed-in/seller-screens.spec.js` shows the shape. Walking those
+screens and writing up what is wrong with them is **T-94**, still open. Admin is
+still out of reach - the fixture account is a seller, and the admin role lives in
+Clerk's `publicMetadata`.
 
 ## Follow-up status
 

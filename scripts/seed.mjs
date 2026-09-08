@@ -168,6 +168,10 @@ export async function seedDatabase() {
     // seller's appear in the public listing.
     ids: {
       approvedSeller: approvedSeller._id.toString(),
+      // T-84: the signed-in fixture rewrites this user's clerkId with the id of
+      // a real Clerk account, because the one seeded below exists in no
+      // instance and would resolve to nobody.
+      approvedOwner: approvedOwner._id.toString(),
       pendingSeller: pendingSeller._id.toString(),
       approvedProduct: products
         .find(product => product.sellerId.equals(approvedSeller._id))
