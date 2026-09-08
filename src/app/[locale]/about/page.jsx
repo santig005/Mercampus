@@ -12,7 +12,14 @@ const InfoPage = () => {
   return (
     <div className="bg-base-100 text-gray-800 dark:text-base-content min-h-screen !w-full">
       {/* Hero Section */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-25 w-full pt-20">
+      {/* T-75 follow-up: the dark: stops are not decoration. The text on this
+          hero carries dark:text-base-content (light in the dark theme), and
+          without them it sat on this same light gradient - light on light,
+          unreadable. Found by the T-67 audit. The scan that drove T-75 only
+          looked for the bg-white, bg-gray and text-gray families, so a
+          gradient built from from-orange-50 via-white was invisible to it:
+          gradients need eyes, not the scan. */}
+      <header className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-25 dark:from-base-200 dark:via-base-100 dark:to-base-200 w-full pt-20">
         {/* Subtle background elements */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-orange-200/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-300/20 rounded-full blur-3xl"></div>
