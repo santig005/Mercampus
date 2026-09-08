@@ -1749,6 +1749,16 @@ for batches c and d — it aborts with NO_FCP on this machine, on the base
 branch too (see the note above). `/about` is in the budget's page list and
 batch c rewrote it, so its contrast is the one thing here confirmed only
 by reading the diff. Worth a re-run wherever the budget works.
+**Regression found afterwards by the T-67 audit, fixed in #275:** the
+`/about` hero is `bg-gradient-to-br from-orange-50 via-white to-orange-25`,
+and batch c2 gave the text on top of it `dark:text-base-content` without
+touching that gradient - light text on a light gradient, unreadable. It
+was *worse* than before the migration, where dark text sat on the same
+light gradient and at least read. The scan driving T-75 only looked at the
+`bg-white`, `bg-gray` and `text-gray` families, so a gradient built out of
+`from-orange-50 via-white` was invisible to it, and so is it to the guard
+test from d. **Gradients need eyes, not the scan** - worth checking by
+hand wherever one carries migrated text.
 **Depends on:** T-73
 **Model:** `sonnet` · **Nightly:** yes
 
