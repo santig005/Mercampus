@@ -2062,6 +2062,47 @@ deciding what the hamburger should be, which is its own task. F7/F8
 (accessible names and labels) likewise.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-87 · The /about sticky header has no background (F16)
+**Why:** second follow-up out of the T-67 audit
+(`docs/audits/t-67/findings.md`, F16). The `/about` topbar is `sticky` and
+`bg-transparent`, pulled up over the hero with `mt-[-72px]` so the gradient
+shows through it - which is the right call at the top of the page and the
+wrong one everywhere else. Past the hero the wordmark, the language
+switcher and the "Explorar Productos" CTA print directly on top of the
+section text (`about-header-overlap__desktop__dark.png`: "Conecta solo con
+estudiantes de tu universidad" runs straight through the logo).
+**Done when:** the bar keeps its transparency over the hero and picks up a
+surface once the page has scrolled, in both themes.
+**Done:** `src/components/general/StickyTopbar.jsx` - a small client
+component that reads `window.scrollY` and swaps `bg-transparent` for
+`bg-base-100/95 backdrop-blur-md border-b border-base-300 shadow-sm` past
+24px. The layout stays a Server Component and the bar's contents stay on
+the server (`LocaleSwitcher` is async and reads the locale there); they
+arrive through `children`, so the only thing that ships to the client is
+the scroll state. Tokens, not hardcoded colors, so it follows T-73's
+palette. Three tests in `tests/e2e/about-topbar.spec.js` read the computed
+background: transparent at the top, opaque after a wheel, transparent again
+on the way back up, plus the same round trip forced into dark.
+**A pure-CSS version was tried first and dropped:** a permanently
+translucent bar needs no JS, but a 95% veil over the hero gradient leaves a
+visible horizontal seam exactly where the header ends. The state is real,
+so it is a client component - `'use client'` for a scroll listener is what
+the convention in CLAUDE.md means by "effects", not a shortcut around it.
+**Worth knowing for the next e2e that scrolls `/about`:** `page.mouse.wheel()`
+is not enough. The page animates its sections in with framer-motion, so on a
+cold CI runner the document is still viewport-height when the wheel lands -
+the event goes nowhere, `scrollY` stays 0 and nothing flips. Two of these
+three tests passed locally and failed in CI for exactly that. They now poll
+`document.body.scrollHeight` until the page is scrollable, scroll with
+`window.scrollTo`, and poll `scrollY` until it moved.
+**Note on the markup:** the header carries `data-scrolled` so the state is
+inspectable from a test without asserting on a Tailwind class string. One
+attribute, and it is the component's actual state, not a test-only hook.
+**Not covered:** the `/about` topbar is its own thing - the app's other
+header (`src/components/layout/Layout.jsx`) is not sticky and was not
+touched.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on

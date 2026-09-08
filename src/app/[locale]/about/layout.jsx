@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import LocaleSwitcher from '@/components/general/LocaleSwitcher';
+import StickyTopbar from '@/components/general/StickyTopbar';
 
 export default async function layout({ children, params }) {
   const { locale } = await params;
@@ -12,7 +13,7 @@ export default async function layout({ children, params }) {
   return (
     <div className='w-full'>
       {/* Topbar */}
-      <header className="bg-transparent sticky top-0 z-50 mt-[-72px]">
+      <StickyTopbar>
         <div className="mx-auto px-4 sm:px-6 py-3 sm:py-4 container">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -41,7 +42,7 @@ export default async function layout({ children, params }) {
             </div>
           </div>
         </div>
-      </header>
+      </StickyTopbar>
 
       {children}
     </div>
