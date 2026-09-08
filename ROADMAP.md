@@ -1965,7 +1965,7 @@ product decision, not an i18n one.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
-### [ ] T-84 · Spanish left in test descriptions
+### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
 reads a failure rather than code comments. The human overruled that on
@@ -1983,6 +1983,10 @@ Spanish, so a test that checks a Spanish string keeps checking it.
 **Careful:** several tests match on rendered copy. Renaming an `it` is
 safe; changing a string a test *asserts on* is not, and is not what this
 task is for.
+**Not the same as T-84** (the signed-in Playwright fixture the T-67 audit
+needs): that one is test infrastructure, this one is language. They do
+touch: any `describe`/`it` T-84 adds should be written in English from the
+start rather than translated later.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-82 · Deleting a product leaves its images behind
