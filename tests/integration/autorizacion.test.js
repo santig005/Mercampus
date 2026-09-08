@@ -3,12 +3,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { seedDatabase } from '../../scripts/seed.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
-// Sesion de Clerk simulada. vi.hoisted porque vi.mock se eleva por encima de
-// todo lo demas y necesita leer este objeto.
+// A stubbed Clerk session. vi.hoisted because vi.mock is hoisted above
+// everything else and needs to read this object.
 //
-// Desde T-12c solo hace falta `auth()`: la identidad se resuelve con el
-// clerkId que ya trae el token. Antes habia que simular ademas clerkClient(),
-// porque cada mutacion le pedia el email a la Backend API de Clerk.
+// Since T-12c only `auth()` is needed: identity is resolved from the
+// clerkId the token already carries. clerkClient() had to be stubbed too,
+// because every mutation used to ask Clerk's Backend API for the email.
 const session = vi.hoisted(() => ({ userId: null }));
 
 vi.mock('@clerk/nextjs/server', () => ({
@@ -22,19 +22,19 @@ const signOut = () => {
   session.userId = null;
 };
 
-// Del seed.
+// From the seed.
 const OWNER = {
   clerkId: 'user_seed_carlos',
   email: 'carlos.mesa@example.test',
-}; // dueño del vendedor aprobado
+}; // owner of the approved seller
 const OTHER_SELLER = {
   clerkId: 'user_seed_laura',
   email: 'laura.gomez@example.test',
-}; // otro vendedor
+}; // a different seller
 const BUYER = {
   clerkId: 'user_seed_ana',
   email: 'ana.restrepo@example.test',
-}; // usuario sin perfil de vendedor
+}; // a user with no seller profile
 
 const jsonRequest = body =>
   new Request('http://localhost/api', {
@@ -61,8 +61,8 @@ let ids;
 
 describe('autorizacion en mutaciones', () => {
   beforeAll(async () => {
-    // connectDB lee MONGO_URI al importarse, asi que hay que fijarla antes de
-    // cargar los handlers, y con la misma cadena que ya uso startTestDb.
+    // connectDB reads MONGO_URI when imported, so it has to be set before
+    // loading the handlers, and with the same string startTestDb used.
     process.env.MONGO_URI = await startTestDb();
 
     productRoute = await import('@/app/api/products/[id]/route.js');
@@ -227,12 +227,12 @@ describe('autorizacion en mutaciones', () => {
     });
   });
 
-  // T-12c. Esta ruta no tenía ningún test y hacía dos cosas mal: el cuerpo
-  // entero vivía dentro de un `if (clerkUser)` sin `else`, así que una
-  // petición sin sesión salía del handler **sin devolver ninguna Response**
-  // (comprobado llamándolo: devolvía `undefined`, o sea un error del framework
-  // en vez de un 401); y `user._id` sobre un usuario inexistente en Mongo
-  // reventaba con TypeError antes de llegar a la comprobación de vendedor.
+  // T-12c. This route had no test at all and got two things wrong: the whole
+  // body lived inside an `if (clerkUser)` with no `else`, so a request
+  // without a session left the handler **returning no Response at all**
+  // (checked by calling it: it returned `undefined`, i.e. a framework error
+  // rather than a 401); and `user._id` on a user missing from Mongo blew up
+  // with a TypeError before ever reaching the seller check.
   describe('POST /api/products', () => {
     const productoValido = {
       name: 'Arepa nueva',
@@ -272,11 +272,11 @@ describe('autorizacion en mutaciones', () => {
     });
   });
 
-  // T-10b. La ruta reemplaza (borra e inserta) el horario completo del
-  // sellerId que venga en el cuerpo, asi que sin comprobar propiedad
-  // cualquiera con sesion podia vaciar el horario de un negocio ajeno.
+  // T-10b. The route replaces (deletes and re-inserts) the entire schedule of
+  // whatever sellerId arrives in the body, so without an ownership check
+  // anyone with a session could wipe another business's schedule.
   describe('POST /api/schedules', () => {
-    // El seed deja 3 franjas por vendedor.
+    // The seed leaves 3 slots per seller.
     const HORARIO_SEMBRADO = 3;
 
     const reemplazo = sellerId =>

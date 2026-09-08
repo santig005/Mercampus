@@ -8,9 +8,9 @@ import { startTestDb, stopTestDb } from '../setup.js';
 let productsRoute;
 let ids;
 
-// El schema pone section: 'antojos' por defecto, asi que un producto sin el
-// campo solo se puede crear escribiendo en la coleccion directamente. Es como
-// estan los productos viejos en produccion.
+// The schema defaults section to 'antojos', so a product without the field
+// can only be created by writing to the collection directly. That is how
+// the old products look in production.
 const insertLegacyProduct = sellerId =>
   mongoose.connection.db.collection('products').insertOne({
     name: 'Producto heredado',
@@ -65,8 +65,8 @@ describe('migracion de section fuera del handler', () => {
       new Request('http://localhost/api/products?section=antojos')
     );
 
-    // Antes, el handler corria la migracion en cada peticion. Si vuelve a
-    // colarse, este producto saldria con section puesta.
+    // The handler used to run the migration on every request. If that sneaks
+    // back in, this product would come out with section set.
     expect((await findLegacy()).section).toBeUndefined();
   });
 });

@@ -3,8 +3,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { seedDatabase } from '../../scripts/seed.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
-// Misma sesion de Clerk simulada que autorizacion.test.js: desde T-12c la
-// identidad se resuelve con el clerkId que ya trae el token.
+// The same stubbed Clerk session as autorizacion.test.js: since T-12c
+// identity is resolved from the clerkId the token already carries.
 const session = vi.hoisted(() => ({ userId: null }));
 
 vi.mock('@clerk/nextjs/server', () => ({
@@ -18,16 +18,16 @@ const signOut = () => {
   session.userId = null;
 };
 
-// Del seed.
-const OWNER_CLERK_ID = 'user_seed_carlos'; // dueño del vendedor aprobado
-const BUYER_CLERK_ID = 'user_seed_ana'; // usuario sin perfil de vendedor
+// From the seed.
+const OWNER_CLERK_ID = 'user_seed_carlos'; // owner of the approved seller
+const BUYER_CLERK_ID = 'user_seed_ana'; // a user with no seller profile
 
 let getSellerContextData;
 
 describe('getSellerContextData', () => {
   beforeAll(async () => {
-    // connectDB lee MONGO_URI al importarse, asi que hay que fijarla antes de
-    // cargar el modulo (mismo orden que autorizacion.test.js).
+    // connectDB reads MONGO_URI when imported, so it has to be set before
+    // loading the module (same order as autorizacion.test.js).
     process.env.MONGO_URI = await startTestDb();
     ({ getSellerContextData } = await import('@/utils/lib/auth'));
   }, 120_000);
@@ -49,8 +49,8 @@ describe('getSellerContextData', () => {
   });
 
   it('sesion de Clerk sin User en Mongo: user y seller en false', async () => {
-    // Webhook perdido (T-12b): hay clerkId en la sesion pero ningun User lo
-    // tiene. Debe tratarse igual que "no hay sesion", no lanzar.
+    // Lost webhook (T-12b): there is a clerkId in the session but no User
+    // carries it. It must be treated like "no session", not throw.
     signInAs('user_sin_webhook');
     expect(await getSellerContextData()).toEqual({
       user: false,

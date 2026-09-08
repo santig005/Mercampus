@@ -11,9 +11,9 @@ import { User } from '@/utils/models/userSchema';
 
 let ids;
 
-// Un plan puede anidar el IXSCAN a distinta profundidad segun la version de
-// Mongo y si hay sort o proyeccion. Buscarlo en el plan serializado es mas
-// robusto que asumir una forma concreta.
+// A plan can nest the IXSCAN at different depths depending on the Mongo
+// version and whether there is a sort or projection. Looking for it in the
+// serialised plan is sturdier than assuming a particular shape.
 const usesIndex = async query => {
   const plan = await query.explain('queryPlanner');
   return JSON.stringify(plan.queryPlanner.winningPlan).includes('IXSCAN');
@@ -28,7 +28,7 @@ describe('indices', () => {
   beforeAll(async () => {
     await startTestDb();
     ({ ids } = await seedDatabase());
-    // Los indices declarados en el schema se crean al arrancar el modelo.
+    // The indexes declared in the schema are created when the model starts.
     await Promise.all([
       Product.syncIndexes(),
       Schedule.syncIndexes(),

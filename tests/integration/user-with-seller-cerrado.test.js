@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * T-12d: GET /api/users/user-with-seller/[email] no tenia ninguna
- * autenticacion y respondia 200 con el User y el Seller completos a
- * cualquiera que probara un email - un oraculo de enumeracion de cuentas.
- * SellerContext ahora recibe user/seller resueltos en el servidor por
- * clerkId (getSellerContextData, T-12c), asi que la ruta ya no hace falta.
- * Confirma que el archivo no exista: sin `route.js`, Next responde 404 de
+ * authentication and answered 200 with the full User and Seller to anyone
+ * who tried an email - an account-enumeration oracle.
+ * SellerContext now receives user/seller resolved on the server by clerkId
+ * (getSellerContextData, T-12c), so the route is no longer needed.
+ * This confirms the file is gone: with no `route.js`, Next answers 404 on
  * verdad.
  */
 describe('GET /api/users/user-with-seller/[email]', () => {

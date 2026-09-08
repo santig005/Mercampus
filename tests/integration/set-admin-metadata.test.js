@@ -5,7 +5,7 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 let User;
 
-/** Clerk de mentira: publicMetadata por clerkId, mutable como el real. */
+/** A fake Clerk: publicMetadata by clerkId, mutable like the real one. */
 const clerkDeMentira = (inicial = {}) => {
   const metadata = new Map(Object.entries(inicial));
   return {
@@ -81,8 +81,8 @@ describe('syncAdminMetadata', () => {
   });
 
   it('un admin de Mongo sin clerkId no cuenta como pendiente', async () => {
-    // No puede iniciar sesion (T-12c), asi que no hay a quien escribirle
-    // publicMetadata: es trabajo de migrate:clerk-id, no de este script.
+    // They can't sign in (T-12c), so there is nobody to write publicMetadata
+    // to: that is migrate:clerk-id's job, not this script's.
     await crearUsuario('admin-sin-enlazar@example.test', { role: 'admin' });
     const clerk = clerkDeMentira();
 

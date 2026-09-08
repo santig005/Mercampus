@@ -115,7 +115,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(response.status).toBe(200);
     const seller = await Seller.findById(ids.approvedSeller).lean();
     expect(seller.paused).toBe(true);
-    expect(seller.approved).toBe(true); // sigue aprobado, solo escondido
+    expect(seller.approved).toBe(true); // still approved, just hidden
   });
 
   it('un vendedor no puede pausar la tienda de otro', async () => {
@@ -143,7 +143,7 @@ describe('T-71 · modo pausa del vendedor', () => {
       { $unset: { paused: '' } }
     );
     const raw = await Seller.collection.findOne({ businessName: 'Arepas El Parche' });
-    expect('paused' in raw).toBe(false); // de verdad quedo sin el campo
+    expect('paused' in raw).toBe(false); // the field really is gone
 
     expect(businessNames(await getSellers())).toContain('Arepas El Parche');
     expect((await getProducts('section=antojos')).products.length).toBeGreaterThan(0);
@@ -154,7 +154,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     await putSeller(ids.approvedSeller, { paused: true });
 
     const seller = await Seller.findById(ids.approvedSeller).lean();
-    expect(seller.availability).toBe(true); // el horario de hoy no se toca
+    expect(seller.availability).toBe(true); // today's schedule is untouched
     expect(seller.paused).toBe(true);
   });
 });
