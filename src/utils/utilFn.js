@@ -27,14 +27,14 @@ export const parseIfJSON = value => {
   try {
     return JSON.parse(value);
   } catch {
-    return value; // Si no es JSON válido, devolver el valor original
+    return value; // Not valid JSON: return the original value
   }
 };
 
 export const formatValue = value => (value > 0 ? priceFormat(value) : '');
 
 export const formatPhone = phone => {
-  if (!phone) return ''; // Si phone es null/undefined, retorna vacío
+  if (!phone) return ''; // null/undefined phone returns an empty string
 
   // The normaliser lives in `@/lib/phone` because the Zod schema validates
   // the phone by the same rule it is displayed with here.
@@ -48,6 +48,6 @@ export const formatPhone = phone => {
   } else if (cleanPhone.length > 3) {
     return `(${cleanPhone.slice(0, 3)}) ${cleanPhone.slice(3)}`;
   } else {
-    return cleanPhone; // Si tiene menos de 3 dígitos, solo muestra los números
+    return cleanPhone; // Under 3 digits, show the digits with no formatting
   }
 };

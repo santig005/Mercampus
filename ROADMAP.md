@@ -1852,7 +1852,7 @@ each note's exact technical meaning rather than translating word for word
 | b1 | `src/utils` | 16 | 100 | **done (#266)** |
 | b2 | `src/app/api` | 10 | 84 | **done (#267)** |
 | c1 | `src/components` | 17 | 91 | **done (#268)** |
-| c2 | the pages under `src/app`, plus what the old scan missed in a/b | 15 | 37 | pending |
+| c2 | the pages under `src/app`, plus what the old scan missed in a/b | 16 | 41 | **done (#269)** |
 | d | `tests/` | 36 | 232 | pending |
 | e | `scripts/` | 13 | 184 | pending |
 **Batch b was split in two (2026-09-07):** the estimate said ~19 files, the
@@ -1878,6 +1878,15 @@ keeps in Spanish, and deleting dead code is a separate call. Test
 `describe`/`it` descriptions stay Spanish too: they are prose for whoever
 reads a failure, not code comments, and every existing test file writes
 them that way.
+**`src/` is finished as of c2** - one line left, on purpose: `ShareButton`'s
+commented-out share text, which is product copy. `tests/` and `scripts/`
+remain.
+**A word on the scan itself.** It was widened twice while doing this task
+and the second widening went too far: adding `no` and `si` to the Spanish
+word list made it flag English comments containing "no", turning 41 real
+hits into 111 mostly-false ones. If you rebuild it, prefer accents, `ñ` and
+words with no English twin; then read the output rather than trusting the
+count.
 **Batch e needs a human, and should be last.** `scripts/` is where the
 dangerous notes live — `seed.mjs`'s "NUNCA apuntes esto a producción",
 `backup-db.mjs`, `reclaim-account.mjs`, `set-admin-metadata.mjs`. T-66

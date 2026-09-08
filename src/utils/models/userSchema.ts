@@ -12,9 +12,9 @@ const userSchema = new Schema(
     // ever created through that path.
     clerkId: {
       type: String,
-      required: false, // los usuarios anteriores al webhook no lo tienen
+      required: false, // users created before the webhook do not have it
       unique: true,
-      sparse: true, // necesario con unique para permitir varios sin el campo
+      sparse: true, // needed alongside unique so several documents may lack the field
     },
     name: {
       type: String,
@@ -43,9 +43,9 @@ const userSchema = new Schema(
     sellerId: {
       type: Schema.Types.ObjectId,
       ref: 'Seller',
-      required: false, // un usuario no tiene por que ser vendedor
-      unique: true, // pero solo puede tener un perfil de vendedor
-      sparse: true, // necesario con unique para permitir varios sin el campo
+      required: false, // a user is not necessarily a seller
+      unique: true, // but can only have one seller profile
+      sparse: true, // needed alongside unique so several documents may lack the field
     },
   },
   {

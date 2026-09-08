@@ -61,7 +61,7 @@ export default function EditPsroductPage({ params }) {
     }
   }, [id, router, seller, checkedSeller, sellerLoading]);
 
-  // Cargar categorías basadas en la sección del producto
+  // Load the categories for the product's section
   useEffect(() => {
     const loadCategories = async () => {
       if (product.section) {
@@ -155,7 +155,7 @@ export default function EditPsroductPage({ params }) {
                     setProduct({
                       ...product,
                       section: selectedOption.value,
-                      category: [] // Limpiar categorías al cambiar sección
+                      category: [] // Clear the categories when the section changes
                     });
                   }}
                   className='basic-multi-select w-full'

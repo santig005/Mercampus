@@ -3,9 +3,9 @@ import React from 'react'
 import { getProductForMetadata } from '@/server/products/getProductForMetadata'
 import { buildProductMetadata } from '@/lib/metadata'
 
-// T-69: sin esto, compartir un producto (WhatsApp, Instagram) mostraba la
-// metadata generica del layout raiz - mismo titulo/imagen para cualquier
-// producto.
+// T-69: without this, sharing a product (WhatsApp, Instagram) showed the
+// root layout's generic metadata - the same title and image for every
+// product.
 export async function generateMetadata({ params }) {
   const product = await getProductForMetadata(params.id);
   if (!product) return {};

@@ -24,7 +24,7 @@ const AddProduct = () => {
     price: '',
     description: '',
     images: [],
-    section: 'antojos', // Por defecto antojos
+    section: 'antojos', // antojos by default
   });
 
   const [categories, setCategories] = useState([]); // State for storing categories
@@ -38,7 +38,7 @@ const AddProduct = () => {
     label: category,
   }));
 
-  // Cargar categorías según la sección seleccionada
+  // Load the categories for the selected section
   useEffect(() => {
     const loadCategories = async () => {
       const categoriesData = await getCategoriesBySection(formData.section);
@@ -181,7 +181,7 @@ const AddProduct = () => {
                       setFormData({
                         ...formData,
                         section: selectedOption.value,
-                        category: [] // Limpiar categorías al cambiar sección
+                        category: [] // Clear the categories when the section changes
                       });
                     }}
                     className='basic-multi-select w-full'
