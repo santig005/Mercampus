@@ -2221,6 +2221,31 @@ awaits without understanding what reads them.
 **Model:** `opus` - it is a rendering/streaming question with an auth
 context in the middle · **Nightly:** no
 
+### [x] T-92 · A shared search URL comes back unfiltered (F3)
+**Why:** the T-67 audit's number two. `/antojos?product=arepa` returned the
+complete listing, with an empty search box, and the param gone from the
+address bar. `SearchBox` rebuilds the query string from its own state in an
+effect, and on mount that state is an empty string, so it pushed a URL with
+no `product` - wiping the param `ProductGrid` reads one line later. The
+search box wrote a URL the app could not read back: shared links and
+reloads both broke, and the app has a share button.
+**Done when:** a URL carrying `product` arrives with the box filled, the
+listing filtered, and the param still in the address bar after the debounce
+has had time to fire.
+**Done:** `search` is seeded from `searchParams.get('product')` instead of
+`''`, and the effect skips its first run behind a `hasMounted` ref - the
+two halves the audit prescribed. Four tests in
+`tests/e2e/search-url.spec.js`: a shared URL, a reload, the round trip of
+typing and clearing (the behaviour the mount push was there to provide, so
+it had to keep working), and a search that matches nothing.
+**Left as it was, deliberately:** the effect still rebuilds the query string
+from the three params it knows about, so any param it does not know is
+still dropped on the next keystroke. That is why `sort` is local state in
+`ProductGrid` rather than a URL param - there is a comment there saying so.
+Making the push preserve unknown params would let `sort` move into the URL,
+which is a shareable-sort feature and its own decision, not this fix.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on

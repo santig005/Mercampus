@@ -8,6 +8,7 @@ how they were taken.
 
 Findings are numbered F1–F27; a few already have follow-up tasks:
 - F1 and F2 (dead ends on unknown product/seller ids) → fixed in T-90.
+- F3 (a shared search URL loses the search) → fixed in T-92.
 - F5 (no visible focus indicator) → fixed in T-86.
 - F16 (`/about` sticky header has no background) → fixed in T-87.
 - F21 (marketplace reuses the antojos placeholder) and F22 (dangling
