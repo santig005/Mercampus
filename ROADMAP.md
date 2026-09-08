@@ -1946,6 +1946,26 @@ product decision, not an i18n one.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
+### [ ] T-84 · Spanish left in test descriptions
+**Why:** T-80 translated the comments and deliberately left the `describe`
+/ `it` strings in Spanish, on the argument that they are prose for whoever
+reads a failure rather than code comments. The human overruled that on
+2026-09-07: Spanish is for talking to the human, for product copy and for
+route names that already exist; everything else written into the repo goes
+in English, because that is what an external collaborator or anyone
+looking at the portfolio reads. A test report is squarely in that second
+group.
+**Done when:** the `describe`/`it` strings across `tests/` read in
+English, batch by batch like T-80 (36 files, so at least two PRs).
+Assertion messages and the `reason` fields in fixtures count too.
+**Not in scope:** the seeded product names ("Arepa de queso", "Buñuelo")
+and anything asserting on UI copy — those are product data and stay
+Spanish, so a test that checks a Spanish string keeps checking it.
+**Careful:** several tests match on rendered copy. Renaming an `it` is
+safe; changing a string a test *asserts on* is not, and is not what this
+task is for.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on

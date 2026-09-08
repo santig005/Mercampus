@@ -122,14 +122,25 @@ tests/            unitarios (Vitest) y e2e (Playwright)
 
 ## Cómo reportar en el PR
 
-Título: `[T-XX] descripción corta`
+**En inglés: título, cuerpo, mensajes de commit y comentarios en issues.**
+Es la misma decisión de T-66 y por la misma razón — un PR es lo primero que
+lee un colaborador externo o alguien mirando el portafolio. Esta sección
+estaba escrita en español y con la plantilla en español, así que el agente
+la seguía al pie de la letra y escribía PRs en español mientras traducía el
+código; corregido el 2026-09-07.
 
-Cuerpo:
-- Qué cambió y por qué (2-3 líneas).
-- Qué se verificó (salida de `npm run verify`).
-- Capturas de Playwright si tocaste UI.
-- Riesgos o cosas que dejaste pendientes.
-- Marca la tarea en `ROADMAP.md` en el mismo PR.
+En español queda solo: la conversación con el humano, el copy de producto
+(lo que ve el estudiante en la UI) y los nombres de rutas ya existentes
+(`/antojos`).
+
+Title: `[T-XX] short description`
+
+Body:
+- What changed and why (2-3 lines).
+- What was verified (`npm run verify` output).
+- Playwright screenshots if you touched the UI.
+- Risks or anything left pending.
+- Mark the task in `ROADMAP.md` in the same PR.
 
 ## Qué NO hacer sin preguntar
 
