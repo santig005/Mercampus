@@ -1,7 +1,8 @@
 # T-67 — UI/UX audit screenshots (2026-09-07)
 
-Evidence for the findings list in the T-67 pull request. Diagnosis only: no
-product code changed in that PR.
+Evidence for [`findings.md`](findings.md) — the full 27-item list (screen +
+issue + suggested fix), also in [PR #275](https://github.com/santig005/Mercampus/pull/275).
+Diagnosis only: no product code changed in that PR.
 
 ## How these were taken
 
@@ -9,7 +10,7 @@ A throwaway stack, never production: `MongoMemoryServer` + `scripts/seed.mjs` +
 `npx next build` + `npx next start`, the same recipe as `scripts/e2e.mjs`, driven
 by Playwright. The audit harness itself lives outside the repo (agent
 scratchpad) — it is a one-off, and everything it found that matters is written
-down in the PR.
+down in [`findings.md`](findings.md).
 
 Two things worth knowing before reading a shot:
 
@@ -50,4 +51,10 @@ see the findings).
 
 The authenticated screens (seller registration, profile edit, product CRUD,
 schedules, admin) are not here: Playwright has no Clerk session, so every one of
-them redirects to `/auth/login`. See the PR for the proposed follow-up.
+them redirects to `/auth/login`. T-84 (signed-in Playwright fixture) is filed
+to unblock that half of the audit.
+
+## Follow-up status
+
+F17 (`/about` hero unreadable in dark) is fixed, in T-75. The rest of
+`findings.md` has no task yet.
