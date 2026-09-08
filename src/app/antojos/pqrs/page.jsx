@@ -77,7 +77,7 @@ export default function PqrsForm() {
         <div>
           <label className="block text-lg font-semibold mb-2">Tipo de Solicitud</label>
           <select
-            className="w-full px-4 py-2 border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-base-300 rounded-lg"
             value={pqrs.type}
             onChange={(e) => setPqrs({ ...pqrs, type: e.target.value })}
             required
