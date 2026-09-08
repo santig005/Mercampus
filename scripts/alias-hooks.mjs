@@ -1,12 +1,12 @@
-// Hooks de resolución para el alias '@/' de jsconfig.json.
+// Resolution hooks for jsconfig.json's '@/' alias.
 //
-// Los modelos de Mongoose importan '@/utils/resources/...' (productSchema y
-// sellerSchema2). Next y Vitest resuelven ese alias por su cuenta, pero Node
-// plano no, así que cualquier script de scripts/ que importe un modelo falla
-// sin esto. Las migraciones futuras (T-11, T-20) van a necesitarlo igual.
+// The Mongoose models import '@/utils/resources/...' (productSchema and
+// sellerSchema2). Next and Vitest resolve that alias on their own, plain
+// Node does not, so any script in scripts/ that imports a model fails
+// without this. Future migrations (T-11, T-20) will need it just the same.
 //
-// Node tampoco añade extensiones en ESM, cosa que los bundlers sí hacen: hay
-// que probar los candidatos a mano o '@/utils/models/x' no resuelve a 'x.js'.
+// Node does not add extensions in ESM either, which bundlers do: the
+// candidates have to be tried by hand or '@/utils/models/x' won't resolve
 
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -24,13 +24,13 @@ export function resolve(specifier, context, nextResolve) {
   for (const suffix of CANDIDATE_SUFFIXES) {
     const candidate = new URL(base.href + suffix);
     if (existsSync(fileURLToPath(candidate))) {
-      // Declarar el formato evita que Node intente parsear estos .js como
-      // CommonJS, falle y los reparse (MODULE_TYPELESS_PACKAGE_JSON). Todo
-      // src/ es ESM. La alternativa sería "type": "module" en package.json,
-      // que cambiaría la interpretación de todos los .js del repo.
-      // Declarar el formato evita que Node intente parsear estos archivos como
-      // CommonJS, falle y los reparse (MODULE_TYPELESS_PACKAGE_JSON). Los .ts
-      // los quita de tipos el propio Node (22.18+); de ahi el formato distinto.
+      // Declaring the format keeps Node from parsing these .js as CommonJS,
+      // failing, and reparsing them (MODULE_TYPELESS_PACKAGE_JSON). All of src/
+      // is ESM. The alternative would be "type": "module" in package.json,
+      // which would change how every .js in the repo is interpreted.
+      // Declaring the format keeps Node from parsing these files as CommonJS,
+      // failing, and reparsing them (MODULE_TYPELESS_PACKAGE_JSON). Node itself
+      // strips the types from .ts (22.18+); hence the different format.
       return {
         url: candidate.href,
         format: candidate.href.endsWith('.ts') ? 'module-typescript' : 'module',

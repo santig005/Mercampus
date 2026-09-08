@@ -6,14 +6,14 @@
 // merged PR targeting agent/develop exists for them. Never touches main,
 // develop, agent/develop itself, or any of the many non-agent branches in
 // this repo (feature branches, old contributor work) — those need a human
-// to judge, not a script. "Cierre de PRs sin actividad" and "revisión
-// mensual del roadmap" (the other two parts of T-62) are deliberately left
+// to judge, not a script. Closing inactive PRs and the monthly roadmap
+// review (the other two parts of T-62) are deliberately left
 // for T-62b/T-62c: closing someone else's PR is a different kind of call
 // than deleting a branch this pipeline created and already merged.
 //
 // Dry-run by default, same guard as seed.mjs / migrate-product-section.mjs:
-//   node scripts/cleanup-agent-branches.mjs          # solo muestra
-//   node scripts/cleanup-agent-branches.mjs --yes    # borra de verdad
+//   node scripts/cleanup-agent-branches.mjs          # shows only
+//   node scripts/cleanup-agent-branches.mjs --yes    # actually deletes
 
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
@@ -21,10 +21,10 @@ import { pathToFileURL } from 'node:url';
 const PROTECTED = new Set(['agent/develop']);
 
 /**
- * Decide si una rama agent/* es segura de borrar.
+ * Decides whether an agent/* branch is safe to delete.
  *
- * `pr` es el resultado de `gh pr list --head <branch>` (o null/undefined si
- * no hay ninguno): { state, baseRefName, number }.
+ * `pr` is the result of `gh pr list --head <branch>` (or null/undefined if
+ * there is none): { state, baseRefName, number }.
  */
 export function isSafeToDeleteAgentBranch(branchName, pr) {
   if (!branchName.startsWith('agent/')) return false;

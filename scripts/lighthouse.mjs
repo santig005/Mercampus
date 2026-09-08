@@ -11,12 +11,12 @@
 //   npm run budget:lighthouse:dark   (T-73 - mismas paginas, en modo oscuro)
 //
 // Thresholds live in lighthouserc.json. `lhci autorun` exits non-zero (and
-// so does this script) when a page misses its budget. Con
-// LIGHTHOUSE_THEME=dark, cada URL se visita con ?theme=dark - el script
-// anti-FOUC de layout.jsx lo lee y aplica data-theme="dark" para esa carga
-// sin depender de localStorage (Lighthouse arranca cada visita con un
-// perfil de Chrome nuevo, sin nada guardado). Los resultados van a una
-// carpeta separada para no pisar los de modo claro.
+// so does this script) when a page misses its budget. With
+// LIGHTHOUSE_THEME=dark each URL is visited with ?theme=dark - layout.jsx's
+// anti-FOUC script reads it and applies data-theme="dark" for that load
+// without relying on localStorage (Lighthouse starts every visit with a
+// fresh Chrome profile, nothing stored). Results go to a separate folder so
+// they do not overwrite the light-mode ones.
 
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';

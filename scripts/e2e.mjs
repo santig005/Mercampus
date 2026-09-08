@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-// Orquesta el e2e: Mongo en memoria + seed, build con el entorno de prueba, y
-// Playwright encima.
+// Orchestrates the e2e run: in-memory Mongo + seed, a build with the test
+// environment, and Playwright on top.
 //
-// Tres cosas que no son negociables aqui:
-//  - MONGO_URI SIEMPRE se sobreescribe con la base en memoria. El .env local
-//    apunta a una base real y el e2e no debe tocarla jamas.
-//  - El build tiene que llevar NEXT_PUBLIC_URL con el mismo puerto en el que
-//    va a arrancar: las NEXT_PUBLIC_* se inyectan al compilar, no en runtime.
-//  - Clerk necesita una publishable key de verdad. Su middleware hace un
-//    handshake contra los servidores de Clerk y con una clave falsa devuelve
-//    400 en TODAS las rutas, asi que la app entera queda inalcanzable.
+// Three things are non-negotiable here:
+//  - MONGO_URI is ALWAYS overwritten with the in-memory database. The local
+//    .env points at a real database and the e2e must never touch it.
+//  - The build has to carry NEXT_PUBLIC_URL with the same port it will
+//    start on: NEXT_PUBLIC_* are injected at compile time, not at runtime.
+//  - Clerk needs a real publishable key. Its middleware performs a
+//    handshake against Clerk's servers and with a fake key returns 400 on
+//    EVERY route, leaving the whole app unreachable.
 
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -22,8 +22,8 @@ import { Product } from '@/utils/models/productSchema';
 
 const PORT = Number(process.env.E2E_PORT || 3100);
 
-// Next carga .env por su cuenta, pero este script tambien necesita leerlo para
-// validar la clave de Clerk antes de gastar dos minutos en un build inutil.
+// Next loads .env on its own, but this script needs to read it too, to
+// validate the Clerk key before spending two minutes on a useless build.
 function readDotEnv() {
   if (!existsSync('.env')) return {};
   return Object.fromEntries(
@@ -36,7 +36,7 @@ function readDotEnv() {
 }
 
 const dotEnv = readDotEnv();
-// process.env manda sobre .env, igual que hace Next.
+// process.env wins over .env, the same way Next does it.
 const baseEnv = { ...dotEnv, ...process.env };
 
 if (!baseEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
@@ -63,13 +63,12 @@ try {
   await mongoose.connect(uri);
   const summary = await seedDatabase();
 
-  // T-23: el scroll infinito necesita mas de una pagina (PAGE_SIZE=12 en
-  // ProductGrid.jsx) para poder probarse, y seedDatabase() solo deja 3
-  // antojos visibles - sembrar mas ahi rompe otros tests que verifican
-  // exactamente esos 3 por nombre. Se agregan aqui, solo para el e2e, con
-  // availability:false y un createdAt viejo para que ordenen DESPUES de los
-  // 3 originales (availability desc, createdAt desc) y no les quiten su
-  // lugar en la primera pagina.
+  // T-23: infinite scroll needs more than one page (PAGE_SIZE=12 in
+  // ProductGrid.jsx) to be testable, and seedDatabase() only leaves 3 visible
+  // antojos - seeding more there breaks other tests that check exactly those
+  // 3 by name. They are added here, for the e2e only, with availability:false
+  // and an old createdAt so they sort AFTER the original 3 (availability
+  // desc, createdAt desc) and do not take their place on the first page.
   const scrollFillers = await Product.insertMany(
     Array.from({ length: 15 }, (_, i) => ({
       name: `Antojo de scroll ${i + 1}`,
@@ -82,10 +81,10 @@ try {
       availability: false,
     }))
   );
-  // .collection.updateMany (driver nativo), no Product.updateMany: el
-  // middleware de timestamps de Mongoose pisa createdAt con la hora actual
+  // .collection.updateMany (native driver), not Product.updateMany: the
+  // Mongoose's timestamps middleware overwrites createdAt with the current
   // en cualquier update, incluso viniendo en un $set explicito - confirmado
-  // corriendo esto con Product.updateMany, que dejaba a los filler con
+  // running this with Product.updateMany, which left the filler with
   // createdAt "ahora" en vez de la fecha vieja pedida.
   await Product.collection.updateMany(
     { _id: { $in: scrollFillers.map(product => product._id) } },

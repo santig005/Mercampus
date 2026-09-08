@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// Migracion de una sola vez: pone section: 'antojos' a los productos que no
-// tienen el campo.
+// One-off migration: sets section: 'antojos' on the products that lack the
+// field.
 //
-// Vivia dentro de `GET /api/products` y corria en CADA peticion. Una migracion
-// de una vez llevaba un año ejecutandose en cada carga de pagina.
+// It used to live inside `GET /api/products` and ran on EVERY request. A
+// one-off migration had been running on every page load for a year.
 //
-// A diferencia del seed, esta SI esta pensada para correr contra la base de
-// produccion: es su destino natural. Por eso no se niega en produccion, pero
-// exige --yes siempre, porque escribe.
+// Unlike the seed, this one IS meant to run against the production
+// database: that is its natural target. So it does not refuse to run there,
+// but it always demands --yes, because it writes.
 
 import { pathToFileURL } from 'node:url';
 
@@ -31,7 +31,7 @@ export async function migrateProductSection() {
 }
 
 function describeTarget(uri) {
-  // Sin imprimir la URI: lleva usuario y contraseña.
+  // Without printing the URI: it carries a username and password.
   const { host, pathname } = new URL(uri.replace(/^mongodb\+srv:/, 'mongodb:'));
   return { host, database: pathname.replace(/^\//, '') || '(por defecto)' };
 }

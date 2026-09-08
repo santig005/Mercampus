@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-// Puerta única de calidad: el mismo comando en local y en CI.
+// The single quality gate: the same command locally and in CI.
 //
-// Correr los pasos por separado invita a recortarlos por criterio propio
-// ("este PR no toca código, me salto el build"), que es justo como se cuelan
-// los fallos. Aquí el alcance no es negociable: o pasan todos, o falla.
+// Running the steps separately invites trimming them by personal judgement
+// ("this PR doesn't touch code, I'll skip the build"), which is exactly how
+// failures slip through. Here the scope is not negotiable: all of them pass,
 
 import { spawn } from 'node:child_process';
 
 const STEPS = [
   { name: 'lint', command: 'npm run lint' },
-  // Solo rompe por archivos muertos. Las dependencias sin usar son de T-35 y
-  // los exports sin usar de T-30: quedan como avisos hasta que toque.
+  // Only fails on dead files. Unused dependencies belong to T-35 and unused
+  // exports to T-30: they stay as warnings until their turn comes.
   { name: 'deadcode', command: 'npx knip' },
   { name: 'typecheck', command: 'npm run typecheck' },
   { name: 'test', command: 'npm run test' },
@@ -23,8 +23,8 @@ const runStep = step =>
   new Promise(resolve => {
     const startedAt = Date.now();
     console.log(`\n──── ${step.name} ────`);
-    // shell: true porque en Windows npm es npm.cmd, que Node no ejecuta
-    // directamente. Los comandos son constantes de este archivo.
+    // shell: true because on Windows npm is npm.cmd, which Node cannot run
+    // directly. The commands are constants in this file.
     const child = spawn(step.command, { shell: true, stdio: 'inherit', env });
     child.on('error', () => resolve({ ...step, code: 1, ms: Date.now() - startedAt }));
     child.on('close', code =>
