@@ -1858,7 +1858,7 @@ root layout down with it, and log the pathname when it happens. That turns
 an invisible error into something with an address on it.
 **Model:** `opus` — a bug that doesn't reproduce on demand · **Nightly:** no
 
-### [ ] T-80 · Translate the existing code comments to English
+### [x] T-80 · Translate the existing code comments to English
 **Why:** the 2026-09-05 decision (see T-66) says code, comments and the
 ROADMAP go in English. T-66 delivered exactly what its own "Done when"
 asked for — `ROADMAP.md` — and CLAUDE.md's rule was updated, but the
@@ -1884,7 +1884,7 @@ each note's exact technical meaning rather than translating word for word
 | c2 | the pages under `src/app`, plus what the old scan missed in a/b | 16 | 41 | **done (#269)** |
 | d1 | `tests/integration` | 20 | 143 | **done (#271)** |
 | d2 | `tests/unit`, `tests/e2e`, `tests/setup.js` | 16 | 92 | **done (#272)** |
-| e | `scripts/` | 13 | 213 | **PR #273, awaiting human review** |
+| e | `scripts/` | 13 | 213 | merged (#273), human-reviewed |
 **Batch b was split in two (2026-09-07):** the estimate said ~19 files, the
 real count is 25 (169 lines) - over CLAUDE.md's ~15 guideline, so `src/utils`
 and `src/app/api` became b1 and b2.
@@ -1931,7 +1931,14 @@ re-run of the same commit, with only comment changes in the tree. Worth
 knowing before anyone reads a red e2e as a real regression — and worth its
 own look if it repeats, since a flaky suite that cries wolf is how a real
 break gets waved through.
-**Batch e needs a human, and should be last.** `scripts/` is where the
+**Batch e went last and was reviewed by the human before merging**, as
+this ticket required from the day it was filed.
+**Closed 2026-09-07.** All eight batches landed: 8 PRs, ~1,000 comment
+lines across `src/`, `tests/` and `scripts/`. Two comments stay Spanish on
+purpose and are listed in the guard's ALLOWED-style notes above:
+`ShareButton`'s commented-out share text (product copy) and an English
+comment quoting the product name "Buñuelo". The `describe`/`it` strings
+are a separate task, T-85. `scripts/` is where the
 dangerous notes live — `seed.mjs`'s "NUNCA apuntes esto a producción",
 `backup-db.mjs`, `reclaim-account.mjs`, `set-admin-metadata.mjs`. T-66
 already made this point about the ROADMAP: a translation that softens or
