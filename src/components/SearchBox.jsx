@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -27,16 +27,33 @@ const PLACEHOLDERS = {
 };
 
 export default function SearchBox({ section = 'antojos' }) {
-  const [search, setSearch] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // T-92 (audit finding F3): seeded from the URL, not from an empty string.
+  // ProductGrid reads `product` off the query string one line later, so a
+  // shared or reloaded /antojos?product=arepa has to arrive with the box
+  // already holding "arepa" - otherwise the box and the listing disagree
+  // about what is being searched.
+  const [search, setSearch] = useState(() => searchParams.get('product') ?? '');
   const category = searchParams.get('category') || '';
   const sellerId = searchParams.get('sellerId') || '';
 
   const debouncedSearchValue = useDebounce(search, 500);
 
+  // The other half of F3. This effect rebuilds the query string from the
+  // component's own state, and on mount that state has not been typed by
+  // anyone - so it used to push a URL with no `product` at all, wiping the
+  // param it had just been handed. The search box wrote a URL the app could
+  // not read back: shared links and reloads both came back unfiltered.
+  const hasMounted = useRef(false);
+
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+
     const params = new URLSearchParams();
 
     if (debouncedSearchValue.length >= 2) {
