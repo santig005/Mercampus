@@ -26,8 +26,8 @@ describe('logger', () => {
     logger.warn('no deberia verse');
     logger.error('no deberia verse');
 
-    // Los tests provocan 401, 403 y payloads invalidos a proposito: ese ruido
-    // tapaba los fallos de verdad en la salida.
+    // The tests provoke 401s, 403s and invalid payloads on purpose: that noise
+    // used to bury the real failures in the output.
     expect(log).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
   });
@@ -61,9 +61,9 @@ describe('logger', () => {
 
 describe('sin console.* en src', () => {
   it('ningun archivo de src usa console directamente', () => {
-    // Deliberadamente estricto: casa tambien dentro de comentarios, para que no
+    // Deliberately strict: it matches inside comments too, so a commented-out
     // se acumulen `// console.log(...)` de depuracion. El unico permitido es el
-    // propio logger, que es quien llama a console de verdad.
+    // logger itself, which is the one that really calls console.
     const conConsole = walk('src')
       .filter(file => /\.(js|jsx|ts|tsx)$/.test(file))
       .filter(file => !file.endsWith(join('lib', 'logger.ts')))
@@ -102,7 +102,7 @@ describe('normalizacion del contexto', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     process.env.LOG_LEVEL = 'error';
 
-    // Los sitios que venian de console.log('algo', valor) pasan strings y
+    // The call sites that came from console.log('something', value) pass
     // numeros, no objetos.
     logger.error('id procesado', 'abc123');
 

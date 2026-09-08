@@ -87,8 +87,8 @@ describe('T-75 · tokens de tema en toda la app', () => {
   it('no queda ninguna clase sin migrar fuera de las excepciones documentadas', () => {
     const unexpected = scan().filter(hit => !isAllowed(hit));
 
-    // El mensaje lista archivo y clase: si esto falla, dice exactamente que
-    // migrar, no solo que algo se rompio.
+    // The message lists file and class: if this fails it says exactly what to
+    // migrate, not just that something broke.
     expect(
       unexpected.map(hit => `${hit.file}: ${hit.className}`),
       'clases sin migrar (ver la regla de T-75 en ROADMAP.md)'

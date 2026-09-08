@@ -31,8 +31,8 @@ describe('buildProductMetadata', () => {
     image: 'https://ik.imagekit.io/seed/arepa.jpg',
   };
 
-  // T-76: era un title.absolute con el sufijo escrito a mano, para saltarse el
-  // template roto del layout raiz. Ahora el sufijo lo pone el template.
+  // T-76: this used to be a title.absolute with the suffix written by hand, to
+  // step around the root layout's broken template. Now the template adds it.
   it('deja el nombre del producto solo, para que el template le ponga el sufijo', () => {
     const metadata = buildProductMetadata(product);
     expect(metadata.title).toBe('Arepa de queso');

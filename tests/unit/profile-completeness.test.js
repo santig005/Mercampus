@@ -11,10 +11,10 @@ const complete = {
 };
 
 describe('hasCustomLogo (T-72)', () => {
-  // El caso que hace falta acertar: el schema le pone un logo por defecto a
-  // TODO vendedor, asi que preguntar `if (seller.logo)` da true siempre.
-  // Medido contra la base real: 6 de los 7 aprobados sin logo propio tienen
-  // exactamente este placeholder.
+  // The case that has to be right: the schema gives EVERY seller a default
+  // logo, so asking `if (seller.logo)` is always true. Measured against the
+  // real database: 6 of the 7 approved sellers without a logo of their own
+  // carry exactly this placeholder.
   it('el logo por defecto no cuenta como logo propio', () => {
     expect(hasCustomLogo(DEFAULT_SELLER_LOGO)).toBe(false);
   });
@@ -80,7 +80,7 @@ describe('buildProfileChecklist (T-72)', () => {
 
     expect(byId.schedule.href).toBe('/antojos/sellers/schedules');
     expect(byId.product.href).toBe('/antojos/product/add');
-    // Logo y descripcion se editan en el propio formulario, debajo del
+    // Logo and description are edited in this very form, below the
     // checklist: no tienen a donde navegar.
     expect(byId.logo.href).toBeUndefined();
     expect(byId.description.href).toBeUndefined();

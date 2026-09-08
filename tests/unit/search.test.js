@@ -21,7 +21,7 @@ describe('buildAccentInsensitiveRegex', () => {
   });
 
   it('sigue matcheando por prefijo/substring, no por palabra completa', () => {
-    // El caso que $text de Mongo no cubre: buscar mientras se escribe.
+    // The case Mongo's $text does not cover: searching as you type.
     expect(buildAccentInsensitiveRegex('bro').test('Brownie de chocolate')).toBe(true);
     expect(buildAccentInsensitiveRegex('are').test('Arepa de queso')).toBe(true);
   });

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { productCardClassName, sellerCardClassName } from '@/lib/card-variant';
 
-// La variante 'embedded' solo la usan pantallas autenticadas (edición de
-// productos, admin de vendedores) que el e2e todavía no puede visitar: no hay
-// sesión de Clerk simulada en Playwright. Estos tests son la única red que
-// cubre esa variante hasta que exista.
+// The 'embedded' variant is only used by authenticated screens (product
+// editing, seller admin) that the e2e cannot visit yet: there is no
+// simulated Clerk session in Playwright. These tests are the only net
+// covering that variant until there is one.
 
 describe('productCardClassName', () => {
   it('standalone trae fondo, sombra y cursor-pointer', () => {
@@ -33,7 +33,7 @@ describe('productCardClassName', () => {
       expect(className).not.toContain('drop-shadow-md');
       expect(className).not.toContain('scale-');
     }
-    // El layout base sigue igual en las dos variantes.
+    // The base layout stays the same in both variants.
     expect(sinClick).toContain('flex gap-2');
   });
 });

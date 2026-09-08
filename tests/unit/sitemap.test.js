@@ -20,9 +20,9 @@ describe('productPath (T-74)', () => {
     expect(productPath({ id: 'x', section: 'antojos' })).toBe('/antojos/x');
   });
 
-  // Los productos anteriores a la migracion de T-19 no tienen `section`; el
-  // schema pone 'antojos' por defecto, y esto acompaña ese default en vez de
-  // dejar la URL sin seccion.
+  // Products predating T-19's migration have no `section`; the schema
+  // defaults it to 'antojos', and this follows that default rather than
+  // leaving the URL without a section.
   it('sin seccion cae en antojos, como el default del schema', () => {
     expect(productPath({ id: 'x', section: undefined })).toBe('/antojos/x');
   });
@@ -48,7 +48,7 @@ describe('buildSitemap (T-74)', () => {
   });
 
   // `/` redirige permanente a /antojos (next.config.mjs): anunciar la raiz
-  // manda al crawler a un 308 en vez de a la pagina.
+  // sends the crawler to a 308 instead of to the page.
   it('no anuncia la raiz, que es un redirect permanente', () => {
     expect(urls(buildSitemap({ sellers: [], products: [] }))).not.toContain(`${SITE_URL}/`);
   });

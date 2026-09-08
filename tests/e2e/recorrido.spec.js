@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-// Un screenshot por pantalla, numerado para que se lean en orden al abrir el
-// artefacto del CI.
+// One screenshot per screen, numbered so they read in order when the CI
+// artifact is opened.
 const shot = (page, name) =>
   page.screenshot({ path: `test-results/${name}.png`, fullPage: true });
 
-// Ids del seed. Solo el vendedor aprobado y sus productos salen en publico.
+// Seed ids. Only the approved seller and its products show up publicly.
 const PRODUCT_ID = process.env.E2E_PRODUCT_ID;
 const SELLER_ID = process.env.E2E_SELLER_ID;
 
@@ -22,20 +22,20 @@ test.describe('recorrido publico', () => {
   test('el listado muestra solo los productos publicables', async ({ page }) => {
     await page.goto('/antojos');
 
-    // Si la parrilla falla, la app pinta un error en su lugar y estos nombres
-    // no aparecen. Son los tres antojos del vendedor aprobado.
+    // If the grid fails, the app paints an error in its place and these names
+    // do not appear. They are the approved seller's three antojos.
     await expect(page.getByText('Arepa de queso').first()).toBeVisible();
     await expect(page.getByText('Buñuelo').first()).toBeVisible();
     await expect(page.getByText('Jugo de mango').first()).toBeVisible();
 
-    // Del vendedor pendiente de aprobacion no debe salir nada.
+    // Nothing from the seller awaiting approval should show up.
     await expect(page.getByText('Brownie de chocolate')).toHaveCount(0);
     await expect(page.getByText('Galletas de avena')).toHaveCount(0);
 
-    // Y el producto de marketplace no pertenece a esta seccion.
+    // And the marketplace product does not belong to this section.
     await expect(page.getByText('Termo Mercampus')).toHaveCount(0);
 
-    // Ningun modal debe quedar abierto al cargar.
+    // No modal should be left open on load.
     await expect(page.locator('dialog[open]')).toHaveCount(0);
 
     await shot(page, '02-listado-antojos');
@@ -45,12 +45,12 @@ test.describe('recorrido publico', () => {
     await page.goto(`/antojos/${PRODUCT_ID}`);
 
     await expect(page.getByText('Arepa de queso').first()).toBeVisible();
-    // Precio en pesos colombianos: separador de miles con punto, no con coma.
+    // Price in Colombian pesos: thousands separated by a dot, not a comma.
     await expect(page.getByText(/\$\s*6\.000/).first()).toBeVisible();
     await expect(page.getByText('6,000')).toHaveCount(0);
 
-    // T-69: el link que se comparte tiene que traer su propia preview, no la
-    // generica del layout raiz (mismo titulo/imagen para cualquier pagina).
+    // T-69: a shared link has to carry its own preview, not the root layout's
+    // generic one (the same title and image for every page).
     await expect(page).toHaveTitle('Arepa de queso · Mercampus');
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       'content',
@@ -65,11 +65,11 @@ test.describe('recorrido publico', () => {
     await page.goto(`/antojos/sellers/${SELLER_ID}`);
 
     await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
-    // Sus productos, no los del otro vendedor.
+    // Its own products, not the other seller's.
     await expect(page.getByText('Arepa de queso').first()).toBeVisible();
     await expect(page.getByText('Brownie de chocolate')).toHaveCount(0);
 
-    // T-69: mismo caso que el detalle de producto, para el perfil del vendedor.
+    // T-69: same case as the product detail, for the seller profile.
     await expect(page).toHaveTitle('Arepas El Parche · Mercampus');
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       'content',
@@ -81,17 +81,17 @@ test.describe('recorrido publico', () => {
   });
 
   test('el listado de vendedores muestra las tarjetas de negocio', async ({ page }) => {
-    // Única pantalla pública que renderiza SellerCard (via SellerGrid). El
-    // detalle de producto y el perfil de vendedor no la usan.
+    // The only public screen that renders SellerCard (via SellerGrid). The
+    // product detail and the seller profile do not use it.
     await page.goto('/antojos/sellers/list');
 
     await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
     await expect(page.getByText('De la plancha a tu clase').first()).toBeVisible();
 
-    // El vendedor pendiente no sale en esta vista, pero el filtro vive en
+    // The pending seller does not show in this view, but the filter lives in
     // SellerGrid.jsx (cliente), no en GET /api/sellers: la API sigue
-    // devolviendo todos los vendedores sin filtrar por `approved`. Cualquiera
-    // que llame la API directo (no por esta página) los ve. Ver la nota en el
+    // returning every seller without filtering by `approved`. Anyone calling
+    // the API directly (not through this page) sees them. See the note in the
     // ROADMAP.
     await expect(page.getByText('Postres Laura')).toHaveCount(0);
 
