@@ -1544,8 +1544,10 @@ and auth (login/register) — takes screenshots, and writes up a findings
 list (screen + issue + suggested fix) in the PR description. No code
 changes in this task; it's diagnosis, not repair. Concrete follow-ups get
 their own tasks from that list.
-**Done:** 27 findings written up in the PR (screen + issue + suggested
-fix), with 24 screenshots in `docs/audits/t-67/`. The walkthrough used a
+**Done:** 27 findings (screen + issue + suggested fix) in
+`docs/audits/t-67/findings.md`, numbered F1–F27 for follow-up tasks to
+reference; also in PR #275, which is where they were first written up.
+24 screenshots in the same folder. The walkthrough used a
 throwaway stack — `MongoMemoryServer` + `scripts/seed.mjs` + build + serve,
 the recipe from `scripts/e2e.mjs` — on 1280x900 and 390x844, in both
 themes. No product code changed.
