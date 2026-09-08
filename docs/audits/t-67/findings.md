@@ -11,6 +11,7 @@ Findings are numbered F1–F27; a few already have follow-up tasks:
 - F16 (`/about` sticky header has no background) → fixed in T-87.
 - F21 (marketplace reuses the antojos placeholder) and F22 (dangling
   greeting) → fixed in T-88.
+- F26 (sidebar's current item is not a link) → fixed in T-89.
 - F17 (`/about` hero unreadable in dark) → fixed in T-75.
 - The "authenticated screens not covered" gap → T-84 (signed-in Playwright
   fixture), filed but not yet done.

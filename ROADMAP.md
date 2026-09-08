@@ -2131,6 +2131,35 @@ coverage. The tests assert the signed-out copy and that no `h2` on either
 page contains "Hola,".
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-89 · The sidebar's current item is not a link (F26)
+**Why:** fourth follow-up out of the T-67 audit. `SidebarBtn` branched on
+`pathname === goto` and rendered the current item as an `<a>` whose `href`
+was **commented out** - a leftover pointing at `/scripts/clientes` and a
+`lastActiveURL` variable, neither of which exists anywhere in this repo. An
+`<a>` without `href` is not a link to the browser: no link role, not
+focusable, not in the tab order. So the one item a keyboard user most needs
+to locate - the page they are on - was the only one they could not reach,
+and nothing but a background color said it was current.
+**Done when:** every sidebar item is a real link, and the current one is
+marked `aria-current="page"`.
+**Done:** the two branches collapsed into one `Link`. `aria-current` carries
+the state for a screen reader, `btn-nav-active` still carries it visually.
+Three tests in `tests/e2e/sidebar-nav.spec.js` - they would have failed
+before the change, because `getByRole('link')` does not match an `<a>`
+without an `href`.
+**Two things fixed by the collapse, not separately:** clicking the current
+item now closes the drawer (only the inactive branch wired
+`handleSidebarClose`, so tapping the page you were on did nothing at all on
+mobile), and the inactive branch's `pathname === goto && 'btn-nav-active'`
+was dead by construction - it could only ever render in the branch where
+that comparison is false.
+**Left alone deliberately:** `handleSidebarClose` now null-checks the
+toggle, since only the `/antojos` and `/marketplace` layouts render a
+drawer. And `btn-nav` is not defined anywhere in `main.css` - only
+`btn-nav-active` is - so it is doing nothing today. Not removed: it reads
+like a hook someone may still want, and this task is about the link.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on
