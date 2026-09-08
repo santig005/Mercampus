@@ -52,3 +52,6 @@ next-env.d.ts
 /backups
 
 .env*
+
+# playwright: signed-in session state (T-84)
+/tests/e2e/.auth

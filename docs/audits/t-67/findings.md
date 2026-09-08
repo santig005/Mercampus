@@ -18,7 +18,8 @@ Findings are numbered F1–F27; a few already have follow-up tasks:
 - F26 (sidebar's current item is not a link) → fixed in T-89.
 - F17 (`/about` hero unreadable in dark) → fixed in T-75.
 - The "authenticated screens not covered" gap → T-84 (signed-in Playwright
-  fixture), filed but not yet done.
+  fixture) is **done**: a spec in `tests/e2e/signed-in/` starts signed in as the
+  seeded approved seller. Walking those screens is T-94, still open.
 
 The rest have no task yet. To act on one, write it up as a normal ROADMAP
 entry (one screen/behavior, one PR) and reference its F-number.

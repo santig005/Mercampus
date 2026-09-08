@@ -1977,7 +1977,7 @@ product decision, not an i18n one.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
-### [ ] T-84 · A signed-in Playwright fixture
+### [x] T-84 · A signed-in Playwright fixture
 **Why:** T-67 audited the public screens and could not touch the
 authenticated half its own "Done when" asked for — seller registration,
 profile edit, product CRUD, schedules, admin — because Playwright has no
@@ -1998,8 +1998,61 @@ a user that does not exist in the instance the keys belong to will either
 fail or, worse, pass against nothing. Read T-64 and
 `scripts/backfill-clerk-id.mjs`'s instance guard before designing it.
 **Unblocks:** the second half of T-67, and real coverage for T-71/T-72.
+**Done (2026-09-08):** `scripts/clerk-e2e-user.mjs` creates a throwaway Clerk
+account per run, `scripts/e2e.mjs` writes its real id onto the seeded owner of
+"Arepas El Parche", and `tests/e2e/auth.setup.js` signs in with it and parks
+the session for a new `signed-in` Playwright project. The suite went from 16
+tests to 57.
+**How the instance trap was handled:** measured first, not assumed.
+`GET /v1/instance` says the keys in `.env` **and** the ones in CI are the same
+`development` instance (`sacred-shrew-44`, 11 accounts) — the one CLAUDE.md
+describes. The guard in `clerk-e2e-user.mjs` is the **mirror image** of
+`backfill-clerk-id.mjs`'s: that script refuses to run anywhere but production,
+because it writes ids onto real people; this one refuses to run anywhere but
+development, because it creates and deletes accounts. Neither can be pointed
+at the other's instance by accident.
+**Why the account is real and not a stub:** the seed writes
+`clerkId: 'user_seed_carlos'`, which exists in no instance. Anything built on
+top of that signs in as nobody. The link is what the specs assert on — the
+profile form comes back holding "Arepas El Parche", and T-72's checklist
+renders at all, which only happens when `getProfileChecklist()` resolves a
+seller from `auth()` on the server.
+**The control matters as much as the fixture:** `tests/e2e/auth-gate.spec.js`
+runs in the signed-out project and asserts the same four routes redirect to
+the login. Without it, every signed-in assertion is equally well explained by
+"the gate is open to everyone".
+**Housekeeping that came with it:** the fixture email is unique per run
+(`GITHUB_RUN_ID`, so two CI jobs cannot collide), the account is deleted in a
+`finally`, and a run killed in between is swept by the next one. Measured
+after a full run: the instance is back to exactly 11 users, 0 leftovers.
+`npm run test:e2e` also passes its arguments through to Playwright now, so a
+single spec can be run without waiting on the whole suite.
+**CLERK_SECRET_KEY is now required** to run the e2e at all, the same way the
+publishable key already was. A suite that quietly skips its authenticated half
+is the failure this task exists to prevent. CI already had the secret.
 **Model:** `opus` — auth in a test harness, with a known history of
 instance mix-ups · **Nightly:** no
+
+### [ ] T-94 · The other half of the T-67 audit: the seller screens
+**Why:** T-67's own "Done when" asked for seller registration, profile edit,
+product CRUD, schedules and admin, and it could not reach any of them —
+Playwright had no session, so all five redirected to the login. It said so
+and left them. T-84 built the way in; nobody has walked through them yet.
+The public half produced 27 findings, three of them serious. There is no
+reason to think the screens nobody has ever audited are cleaner.
+**Done when:** the same walkthrough T-67 did — desktop and mobile, both
+themes, screenshots — over the seller screens, written up as numbered
+findings in `docs/audits/t-67/` (continue the F-numbering; these are the same
+audit, not a new one). Diagnosis only, no product changes, follow-ups get
+their own tasks.
+**Read first:** `docs/audits/t-67/README.md` for the harness recipe, and
+`tests/e2e/signed-in/seller-screens.spec.js` for how to get a session. A spec
+in `tests/e2e/signed-in/` starts signed in as the seeded approved seller.
+**Not covered by the fixture:** admin. The session is a seller, not an admin —
+the role lives in Clerk's `publicMetadata` (T-12), so auditing `/admin/*` needs
+the fixture account to carry it. Decide whether that is this task or another
+one before starting.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
