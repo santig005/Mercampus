@@ -1965,6 +1965,30 @@ product decision, not an i18n one.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
+### [ ] T-84 · A signed-in Playwright fixture
+**Why:** T-67 audited the public screens and could not touch the
+authenticated half its own "Done when" asked for — seller registration,
+profile edit, product CRUD, schedules, admin — because Playwright has no
+Clerk session and every one of them redirects to `/auth/login`. That is
+also why `card-variants.test.js` says its unit tests are "the only net"
+covering the `embedded` variant, and why T-72's checklist and T-71's pause
+toggle were verified by probe rather than by a walkthrough. The gap is
+wider than one audit.
+**Done when:** the e2e harness can start a run already signed in as a
+seeded seller, so a spec can visit an authenticated screen. Whatever shape
+it takes, it has to work with the harness as it stands: `scripts/e2e.mjs`
+builds against an in-memory Mongo and needs a real Clerk publishable key,
+because Clerk's middleware rejects every route without one.
+**Careful — this is where the Clerk instance trap bites again.** A seeded
+Mongo user is not a Clerk account, and a `clerkId` only means anything
+inside its own instance (T-12h/T-64). A fixture that invents a session for
+a user that does not exist in the instance the keys belong to will either
+fail or, worse, pass against nothing. Read T-64 and
+`scripts/backfill-clerk-id.mjs`'s instance guard before designing it.
+**Unblocks:** the second half of T-67, and real coverage for T-71/T-72.
+**Model:** `opus` — auth in a test harness, with a known history of
+instance mix-ups · **Nightly:** no
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
