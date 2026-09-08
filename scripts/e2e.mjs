@@ -130,6 +130,16 @@ try {
     // sign-in token, so it does not depend on which first factor the instance
     // has enabled (this one advertises email_code, not password).
     E2E_CLERK_EMAIL: fixtureUser.email,
+    // Pinned, not inherited. These are NEXT_PUBLIC_, so they are baked into the
+    // build, and they decide where Clerk sends a signed-out visitor who hits a
+    // gated route: the app's own screens, or Clerk's hosted account portal at
+    // <instance>.accounts.dev. `.env` sets them locally and the CI workflow does
+    // not, so until T-84 the same suite was running against two differently
+    // configured apps - CI never saw /auth/login at all. Caught by
+    // tests/e2e/auth-gate.spec.js, which is the first spec to assert on where
+    // the redirect lands.
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/auth/login',
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/auth/register',
   };
 
   console.log('\n──── build ────');

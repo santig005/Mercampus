@@ -2027,6 +2027,15 @@ the login. Without it, every signed-in assertion is equally well explained by
 after a full run: the instance is back to exactly 11 users, 0 leftovers.
 `npm run test:e2e` also passes its arguments through to Playwright now, so a
 single spec can be run without waiting on the whole suite.
+**Found by the control spec, and it predates this task:** CI and local were
+running the e2e against two differently configured apps. `NEXT_PUBLIC_CLERK_
+SIGN_IN_URL` is baked into the build and decides where a signed-out visitor
+hitting a gated route lands — `.env` sets it to `/auth/login`, the CI workflow
+never set it, so in CI every redirect went to Clerk's hosted portal at
+`sacred-shrew-44.accounts.dev` and the app's own login screen was never
+exercised there at all. Nothing noticed until a spec asserted on where the
+redirect lands. `scripts/e2e.mjs` now pins both URLs, so the suite tests the
+same app everywhere.
 **CLERK_SECRET_KEY is now required** to run the e2e at all, the same way the
 publishable key already was. A suite that quietly skips its authenticated half
 is the failure this task exists to prevent. CI already had the secret.
