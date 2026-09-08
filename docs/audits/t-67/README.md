@@ -56,5 +56,6 @@ to unblock that half of the audit.
 
 ## Follow-up status
 
-F5 (no visible focus indicator) is fixed, in T-86; F17 (`/about` hero
-unreadable in dark) in T-75. The rest of `findings.md` has no task yet.
+F5 (no visible focus indicator) is fixed, in T-86; F16 (`/about` sticky header
+over the section text) in T-87; F17 (`/about` hero unreadable in dark) in T-75.
+The rest of `findings.md` has no task yet.
