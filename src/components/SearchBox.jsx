@@ -73,8 +73,12 @@ export default function SearchBox({ section = 'antojos' }) {
 
   return (
     <label className='input input-bordered flex items-center gap-2'>
+      {/* T-93: the placeholder was the only thing naming this field, and a
+          placeholder is not an accessible name - it also vanishes as soon as
+          you type. Same string, so the label and the hint cannot drift. */}
       <input
         type='text'
+        aria-label={PLACEHOLDERS[section] ?? PLACEHOLDERS.antojos}
         className='grow'
         value={search}
         onChange={e => setSearch(e.target.value)}

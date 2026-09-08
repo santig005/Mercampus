@@ -153,7 +153,11 @@ export default function SignInForm() {
           id='register-bg'
           className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center`}
         >
-          <Link href='/' className='btn btn-circle absolute top-4 left-4'>
+          <Link
+            href='/'
+            aria-label='Volver al inicio'
+            className='btn btn-circle absolute top-4 left-4'
+          >
             <TbChevronLeft className='icon' />
           </Link>
           <h2 className='text-2xl font-semibold text-white'>Inicia Sesión</h2>

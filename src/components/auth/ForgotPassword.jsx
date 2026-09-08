@@ -235,6 +235,7 @@ export default function ForgotPassword({ setForgotPassword }) {
               <form method='dialog'>
                 <button
                   className='btn btn-circle'
+                  aria-label='Volver a iniciar sesión'
                   onClick={() => setForgotPassword(false)}
                 >
                   <TbChevronLeft className='icon' />

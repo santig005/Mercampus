@@ -2,7 +2,7 @@
 
 import { formatPhone, formatValue, parseIfJSON } from '@/utils/utilFn';
 import Flag from '@public/images/Flag_of_Colombia.svg';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 
 export default function InputFields({
   title,
@@ -13,8 +13,18 @@ export default function InputFields({
   value,
   onChange,
   name,
+  id,
   ...props
 }) {
+  // T-93 (audit finding F8): the title used to render as a <p>, so every form
+  // built on this component - login, register, PQRS, seller registration,
+  // product add and edit - showed label text that was associated with nothing.
+  // The field leaned on `placeholder` for its accessible name, and a
+  // placeholder disappears the moment you type. useId() because the same
+  // component renders many times on one page; an explicit `id` prop still
+  // wins, so a caller that needs a known id keeps working.
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
   const [inputValue, setInputValue] = useState(value || '');
   const [validNumber, setValidNumber] = useState(true);
   const [displayPrice, setDisplayPrice] = useState(
@@ -86,11 +96,14 @@ export default function InputFields({
 
   return (
     <div className='flex flex-col gap-1'>
-      <p className='text'>{title}</p>
+      <label className='text' htmlFor={fieldId}>
+        {title}
+      </label>
       <div className='flex justify-center items-center gap-2'>
         {title.includes('Instagram') && <p>@</p>}
         {type === 'textarea' ? (
           <textarea
+            id={fieldId}
             className={`bg-[#f0f5fa] min-h-10 px-4 py-3 rounded-lg input resize-none w-full overflow-hidden ${className}`}
             placeholder={placeholder}
             value={parseIfJSON(inputValue)}
@@ -106,6 +119,7 @@ export default function InputFields({
               <img src={Flag.src} alt='' className='h-full w-full' />
             </div>
             <input
+              id={fieldId}
               type={type}
               className={`bg-[#f0f5fa] min-h-10 px-4 rounded-none rounded-r-md input w-full ${
                 validNumber
@@ -124,6 +138,7 @@ export default function InputFields({
           </div>
         ) : (
           <input
+            id={fieldId}
             name={name}
             type={type}
             className={`bg-[#f0f5fa] min-h-10 px-4 rounded-lg input w-full ${className} ${

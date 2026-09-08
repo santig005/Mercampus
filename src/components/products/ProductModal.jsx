@@ -67,6 +67,7 @@ function ProductModal({ product, theKey }) {
                   <div className='modal-action m-0 justify-between p-2'>
                     <button
                       className='btn btn-circle'
+                      aria-label='Cerrar'
                       onClick={() => {
                         document
                           .getElementById(`product_modal_${theKey}`)
@@ -165,11 +166,15 @@ function ProductModal({ product, theKey }) {
             <div className='absolute w-full z-10'>
               <div className='modal-action m-0 justify-between p-2'>
                 <form method='dialog'>
-                  <button className='btn btn-circle'>
+                  <button className='btn btn-circle' aria-label='Cerrar'>
                     <TbChevronLeft className='icon' />
                   </button>
                 </form>
-                <button className='btn btn-circle'>
+                {/* T-93: named, not wired. This heart has no onClick and never
+                    had one - favourites are T-68, blocked on a product
+                    decision. A screen reader could already reach it and heard
+                    "button"; now it hears what it is. */}
+                <button className='btn btn-circle' aria-label='Guardar en favoritos'>
                   <TbHeart className='icon' />
                 </button>
               </div>
