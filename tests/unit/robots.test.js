@@ -6,7 +6,7 @@ import robots, { PRIVATE_PATHS } from '@/app/robots';
 
 const rule = robots().rules[0];
 
-// Las URLs que el sitemap sí anuncia, incluidas un vendedor y un producto de
+// The URLs the sitemap does advertise, including a sample seller and
 // ejemplo, en forma de path.
 const publicPaths = buildSitemap({
   sellers: [{ id: '6a9f0000000000000000aaaa' }],
@@ -32,8 +32,8 @@ describe('robots.txt (T-78)', () => {
     }
   });
 
-  // La trampa: `/antojos/sellers/` como prefijo unico habría desindexado los
-  // perfiles publicos de vendedor y el directorio - justo lo que el sitemap
+  // The trap: `/antojos/sellers/` as a single prefix would have deindexed
+  // every public seller profile and the directory - exactly what the sitemap
   // acaba de empezar a anunciar.
   it('ninguna regla tapa una URL que el sitemap anuncia', () => {
     const tapadas = publicPaths.filter(path =>

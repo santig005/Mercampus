@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-// T-73. El switcher vive en el menu lateral (SideBar), detras del boton de
-// hamburguesa - no hay una ruta directa a el.
+// T-73. The switcher lives in the side menu (SideBar), behind the hamburger
+// button - there is no direct route to it.
 const openSidebar = async page => {
   await page.locator('label[for="my-dibujador"]').first().click();
 };
@@ -32,9 +32,9 @@ test.describe('modo oscuro (T-73)', () => {
     await themeToggle(page).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-    // addInitScript corre antes que cualquier script de la pagina, asi que
-    // esto observa lo mismo que ve un visitante real: el atributo puesto por
-    // el script anti-FOUC de layout.jsx, antes de que React hidrate.
+    // addInitScript runs before any of the page's own scripts, so this observes
+    // what a real visitor sees: the attribute set by layout.jsx's anti-FOUC
+    // script, before React hydrates.
     await page.addInitScript(() => {
       window.__themeAtDOMContentLoaded = null;
       document.addEventListener('DOMContentLoaded', () => {
