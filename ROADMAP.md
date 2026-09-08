@@ -2125,6 +2125,39 @@ the test.
 **Model:** `opus` — it is auth in a harness, the same reason T-84 was
 · **Nightly:** no
 
+### [x] T-96 · Dark mode: unreadable values across every InputFields form
+**Why:** T-94's own "three worst" list put this first — **F45**, and its root
+cause **F19** on the auth screens. `InputFields` hardcoded `bg-[#f0f5fa]`, a
+light panel colour, on every input and textarea, while the typed value kept
+the theme's text colour. In dark mode that is light text on a light box —
+measured at **1.13:1** on the seller forms — so a signed-in seller could not
+read their own business name, slogan or phone number back. F19 is the same
+bug on login, register and PQRS, just measured first.
+**Done when:** `InputFields` uses a themed background instead of the hardcoded
+hex, checked against dark and light in a real build, on every one of the 7
+screens the component renders on (not only the profile-edit form F45 measured):
+`/auth/login` (+ its `ForgotPassword` modal), `/auth/register`, `/antojos/pqrs`,
+`/antojos/sellers/register`, `/antojos/sellers/profile/edit`,
+`/antojos/sellers/products/edit/[id]`, `/antojos/product/add`.
+**Done (2026-09-08):** one component, three occurrences of the same class
+string (`InputFields.jsx`'s textarea, `tel` input and default input all
+repeated it). `bg-[#f0f5fa]` → `bg-base-200 text-base-content`, the same
+daisyUI tokens every other themed surface in the app already uses (`PqrsForm`,
+`ProductModal`, `SellerModal`, `Hambtn`, …) — no new pattern introduced.
+Verified all 7 usages read the same `className` merge with no caller passing a
+conflicting `bg-*` override (one caller, the register password field, adds
+`border-*` only). Before/after screenshots, light and dark, in
+`docs/audits/t-96/` — `login`/`auth-register`/`pqrs` from a fresh `next build`
+with the fields filled in (the bug is in the *typed value*, an empty field
+hides it), the four seller screens signed in through T-84's fixture
+(`npm run test:e2e`), reusing the `docs/audits/t-67/` shots already committed
+as the seller-side `before`.
+**Not re-shot:** `/antojos/sellers/register` — reaching it signed in needs the
+account-swap trick T-94's README describes (an approved seller is bounced off
+that route). Confirmed by reading the file instead: same component, same
+unconflicting `className`.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
