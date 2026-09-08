@@ -2042,7 +2042,7 @@ is the failure this task exists to prevent. CI already had the secret.
 **Model:** `opus` — auth in a test harness, with a known history of
 instance mix-ups · **Nightly:** no
 
-### [ ] T-94 · The other half of the T-67 audit: the seller screens
+### [x] T-94 · The other half of the T-67 audit: the seller screens
 **Why:** T-67's own "Done when" asked for seller registration, profile edit,
 product CRUD, schedules and admin, and it could not reach any of them —
 Playwright had no session, so all five redirected to the login. It said so
@@ -2061,7 +2061,69 @@ in `tests/e2e/signed-in/` starts signed in as the seeded approved seller.
 the role lives in Clerk's `publicMetadata` (T-12), so auditing `/admin/*` needs
 the fixture account to carry it. Decide whether that is this task or another
 one before starting.
+**Done (2026-09-08):** seven screens walked on both viewports in both themes —
+register, approving, profile edit, schedules, the product list, product edit and
+product add — 24 screenshots and **26 findings, F28–F53**, appended to
+`docs/audits/t-67/findings.md`. No product code changed.
+**The admin decision: another task, T-95.** Not scope creep avoidance — the
+fixture would have to be given `publicMetadata.role = 'admin'`, which means
+`clerk-e2e-user.mjs` starts minting privileged accounts in a real Clerk
+instance. That is a change to the harness with its own instance-safety
+questions (T-12h/T-64), not a corner of a diagnosis task, and mixing it in
+would have put a security-shaped change inside a PR that otherwise touches
+nothing but Markdown and PNGs.
+**The three worst:** (1) **F45** — `InputFields` hardcodes `bg-[#f0f5fa]` while
+the text colour comes from the theme, so in dark mode every value on every
+seller form renders at **1.13:1**: a seller cannot read their own business name,
+slogan or phone number. (2) **F28** — `GET /api/products/[id]` populates the
+owner with `match: { approved: true }` and then dereferences the result, so it
+answers **500** for any product whose seller is not approved; the edit screen
+falls back to one bare line of text, which means an approved seller who is later
+un-approved loses access to every one of their own products. (3) **F32/F33** —
+the product list, the screen a seller uses daily, has twenty tab stops that are
+all unnamed checkboxes, and the card that opens a product for editing is a
+`<div onClick>` with no `tabIndex`, so changing a price is mouse-only.
+**How the two unreachable screens were reached:** registration and the approval
+notice both bounce an approved seller, and the fixture *is* the approved seller.
+The harness moved the fixture's `clerkId` onto another seeded user (the buyer,
+then the pending seller) in the run's in-memory database and reloaded. Worth
+knowing before reading the shots: the avatar still draws the fixture account's
+initials, so a page greeting "Postres Laura" shows "CM". Noted in the README.
+**One measurement was wrong and got redone:** the first contrast pass reported
+grey-on-`#393939` for text that is plainly on a white card. daisyUI 4 declares
+its themes in `oklch()`, so a checker whose regex only understands `rgb()` reads
+every themed surface as transparent and keeps walking up to the nearest hex
+background. Second pass normalises every colour through a 1x1 canvas; the
+numbers in F48 are from that one. The lesson generalises: this project's
+surfaces are daisyUI tokens, so anything that parses computed colours by regex
+is measuring something else.
 **Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-95 · Audit `/admin/*`, the last unaudited screen
+**Why:** the one route T-67 and T-94 both left alone. `/admin/sellers` is where
+a seller gets approved — the gate between "registered" and "visible to buyers" —
+and nobody has looked at it since T-12 fixed its authorisation. T-94 walked
+everything else behind a session and found 26 problems; there is no reason to
+expect the screen nobody has audited to be cleaner.
+**Blocked on the fixture, and that is the real work.** The T-84 account is a
+seller. The admin role lives in Clerk's `publicMetadata` (T-12), so auditing
+this means `scripts/clerk-e2e-user.mjs` creating an account with
+`publicMetadata: { role: 'admin' }` — a privileged account, minted per run, in a
+real Clerk instance. Read T-64 and the instance guard in `clerk-e2e-user.mjs`
+before touching it: that guard exists because a `clerkId` only means anything
+inside its own instance, and this makes the stakes of pointing it at the wrong
+one higher, not lower. The account is deleted in a `finally` and swept by the
+next run — keep both.
+**Done when:** the fixture can start a run as an admin (with the guard intact
+and the sweep proven, the way T-84 proved it), and `/admin/sellers` is walked
+the way T-94 walked the rest: desktop and mobile, both themes, screenshots,
+findings numbered from F54 in `docs/audits/t-67/`. Diagnosis only.
+**Careful:** the middleware calls Clerk's Backend API on every admin request
+(`esAdmin`), so this is also the first e2e that exercises that path. If it is
+slow or flaky, say so in the PR — that is a finding about production, not about
+the test.
+**Model:** `opus` — it is auth in a harness, the same reason T-84 was
+· **Nightly:** no
 
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
