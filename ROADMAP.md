@@ -2246,6 +2246,46 @@ Making the push preserve unknown params would let `sort` move into the URL,
 which is a shareable-sort feature and its own decision, not this fix.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-93 · Accessible names and real labels (F7, F8)
+**Why:** the T-67 audit's number three, minus the focus ring (T-86) and the
+drawer tab stops (F6, still open). F7: the header account link, the modal
+back and close buttons, the favourite heart and the auth back arrow are
+icon-only, and a screen reader announced all of them as "button". F8: the
+login, register and PQRS fields showed label text that was a `<p>`, not a
+`<label for>`, so the association did not exist and the fields leaned on
+`placeholder` - which disappears the moment you type.
+**Done when:** every visible form control on the public forms has a real
+label, and every icon-only control has a name.
+**Done:** F8 turned out to be one component.
+`src/components/auth/register/InputFields.jsx` rendered its `title` as a
+`<p>`, and **nine** forms are built on it - login, register, PQRS, seller
+registration, product add, product edit, the seller profile edit, and the
+password recovery flow. One `useId()` and a `<label htmlFor>` fixed all of
+them at once. The two PQRS controls that do not go through it (the
+`Anónimo` checkbox and the `Tipo de Solicitud` select) got `htmlFor`/`id`
+directly. F7 is six `aria-label`s across `Navbar`, `ProductModal` (x3),
+`ProductPage`, both auth forms and `ForgotPassword`.
+**Found by the test, not in the audit:** the search box on `/antojos` and
+`/marketplace` had a placeholder and nothing else - the same defect F8
+describes, on the busiest screen in the app. The sweep test caught it the
+first time it ran. It now carries an `aria-label` built from the same string
+as the placeholder, so the two cannot drift.
+**The test is a sweep, not a list:** `tests/e2e/accessible-names.spec.js`
+walks every visible `input`/`select`/`textarea` on the four public screens
+and fails on any that has no `aria-label`, no `aria-labelledby`, no
+`label[for]` pointing at it and no wrapping `<label>`. `placeholder` and
+`title` deliberately do not count. A new unlabelled field fails the suite
+without anyone remembering to add an assertion.
+**Named but not wired:** the heart button in `ProductModal`'s error branch
+has an `aria-label` now and still has no `onClick` - it never had one.
+Favourites are T-68, blocked on a product decision. Naming it does not make
+it more reachable (it always was); it just stops it announcing as "button".
+**Still open from this group:** F6, the two invisible drawer-toggle
+checkboxes that are every keyboard visit's first two tab stops. Fixing it
+means deciding what the hamburger should be - it is a CSS-checkbox drawer
+today - so it is its own task.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on

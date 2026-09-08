@@ -51,8 +51,11 @@ export default function PqrsForm() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="flex items-center mb-4">
-          <label className="text-lg font-semibold mr-4">Anónimo</label>
+          <label className="text-lg font-semibold mr-4" htmlFor="pqrs-anonymous">
+            Anónimo
+          </label>
           <input
+            id="pqrs-anonymous"
             type="checkbox"
             checked={isAnonymous}
             onChange={() => setIsAnonymous(!isAnonymous)}
@@ -75,8 +78,11 @@ export default function PqrsForm() {
         )}
 
         <div>
-          <label className="block text-lg font-semibold mb-2">Tipo de Solicitud</label>
+          <label className="block text-lg font-semibold mb-2" htmlFor="pqrs-type">
+            Tipo de Solicitud
+          </label>
           <select
+            id="pqrs-type"
             className="w-full px-4 py-2 border border-base-300 rounded-lg"
             value={pqrs.type}
             onChange={(e) => setPqrs({ ...pqrs, type: e.target.value })}

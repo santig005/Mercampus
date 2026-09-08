@@ -72,6 +72,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                     <div className='modal-action m-0 justify-between p-2'>
                       <button
                         className='btn btn-circle'
+                        aria-label='Volver'
                         onClick={() => {
                           //document.getElementById('product_modal').close();
                           router.push(`/${section}`);
