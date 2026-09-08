@@ -2025,6 +2025,43 @@ touch: any `describe`/`it` T-84 adds should be written in English from the
 start rather than translated later.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-86 · A visible keyboard focus ring (F5)
+**Why:** first follow-up out of the T-67 audit
+(`docs/audits/t-67/findings.md`, F5). Tabbing through the app showed
+nothing: the focused element computed to `outline: solid 2px rgba(0, 0, 0, 0)`
+- a real outline, fully transparent - with no ring shadow behind it, on the
+university selector, the category chips, the sort control and the cards.
+A keyboard user could not tell where they were on any screen.
+**Cause:** `public/css/main.css` line 6. The project's own `.btn` override
+ended in `focus-visible:outline-none`, which erased daisyUI's stock focus
+outline on every button in the app, and `.input` did the same with
+`focus-within:outline-0`. Nothing replaced either.
+**Done when:** one token-based `:focus-visible` ring in the global
+stylesheet, visible in both themes, with an e2e test that reads the
+computed outline off a focused control rather than trusting the CSS.
+**Done:** the two overrides dropped, and a single ring
+(`outline: 2px solid hsl(var(--bc))` at a 2px offset) added at the top of
+`main.css`, repeated for `.btn`/`.input`/`.select`/`.textarea`/`.checkbox`/
+`.toggle` so it outranks daisyUI's equally-specific component focus styles.
+`--bc` (base-content) is the theme's text color, so the ring follows T-73's
+palette into dark mode instead of hardcoding one; the offset keeps it on the
+page background rather than drawing `currentColor` white-on-orange inside a
+filled button. `:focus-visible` means a mouse click still draws nothing.
+Five per-component overrides went with it - the university selector button
+and its info button (`UniGraphicSelector.jsx`), the PQRS type `select` (its
+`focus:ring-blue-500` was also an off-palette hardcoded color), and the OTP
+boxes in `ForgotPassword.jsx` and `SignUpForm.jsx` - because a
+`focus:outline-none` utility on the element outranks a global rule and
+would have left exactly the controls the audit named still ringless.
+Two tests in `tests/e2e/keyboard-nav.spec.js` tab to a `.btn-primary` and to
+a form field and assert the outline is not `none`, not a hairline, and not
+`rgba(..., 0)`.
+**Not in scope:** F6 (the first two tab stops are invisible drawer-toggle
+checkboxes) - the ring makes them no more visible, and fixing it means
+deciding what the hamburger should be, which is its own task. F7/F8
+(accessible names and labels) likewise.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-82 · Deleting a product leaves its images behind
 **Why:** rescued from GitHub issue #133 (2025-03-05, "que se borren las
 imagenes y todo asociado a ese producto"), and confirmed still true on

@@ -34,7 +34,7 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
       <div className='relative flex-grow'>
         <button
           type='button'
-          className={`flex items-center justify-between w-full pl-3 pr-8 py-2 text-sm border rounded-md bg-base-100 text-base-content shadow-sm focus:outline-none ${value !== 'Seleccionar Universidad' ? 'border-orange-500' : 'border-base-300 focus:ring-indigo-500 focus:border-indigo-500'}`}
+          className={`flex items-center justify-between w-full pl-3 pr-8 py-2 text-sm border rounded-md bg-base-100 text-base-content shadow-sm ${value !== 'Seleccionar Universidad' ? 'border-orange-500' : 'border-base-300 focus:ring-indigo-500 focus:border-indigo-500'}`}
           onClick={() => setIsOpen(!isOpen)}
         >
           <span className='truncate mr-2'>{value}</span>
@@ -58,7 +58,7 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
         <button
           type='button'
           onClick={toggleTooltip}
-          className='absolute right-1 top-1/2 transform -translate-y-1/2 p-1 focus:outline-none'
+          className='absolute right-1 top-1/2 transform -translate-y-1/2 p-1'
           aria-label='Información'
         >
           <IoInformationCircle

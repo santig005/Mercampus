@@ -245,7 +245,7 @@ export default function SignUpForm() {
               <div className='flex gap-2 justify-center mt-4'>
                 {[0, 1, 2, 3, 4, 5].map(index => (
                   <input
-                    className='text-2xl size-12 p-2 rounded-lg border border-base-300 focus-within:outline-0 focus-within:shadow-md focus-within:border-primary text-center'
+                    className='text-2xl size-12 p-2 rounded-lg border border-base-300 focus-within:shadow-md focus-within:border-primary text-center'
                     key={index}
                     type='number'
                     maxLength={1}

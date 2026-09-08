@@ -7,6 +7,7 @@ access to read. See [README.md](README.md) for what the screenshots show and
 how they were taken.
 
 Findings are numbered F1–F27; a few already have follow-up tasks:
+- F5 (no visible focus indicator) → fixed in T-86.
 - F17 (`/about` hero unreadable in dark) → fixed in T-75.
 - The "authenticated screens not covered" gap → T-84 (signed-in Playwright
   fixture), filed but not yet done.
