@@ -2427,6 +2427,43 @@ own guard. `npm run verify` green again after the fix; the four corrected
 screenshots are what's committed in `docs/audits/t-100/`.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-102 · The forgot-password modal was unreadable in dark mode
+**Why:** not from a walkthrough — found by grepping the whole codebase for
+other bare `bg-primary` usages right after T-100's regression (the CLAUDE.md
+note it left behind), to check whether the same trap existed anywhere else.
+`ForgotPassword.jsx` (opened from `/auth/login` → "¿Has olvidado tu
+contraseña?", a public route, no session needed) used bare `bg-primary` with
+no `dark:` pairing on both its modal-box divs — unlike `ProductModal.jsx`,
+`SellerModal.jsx`, `SellerPage.jsx` and `ProductPage.jsx`, which all correctly
+pair the same trick with `dark:bg-base-100`. Measured before the fix: the
+"Ingresa tu correo..." paragraph rendered at **1.04:1** in dark mode — the
+modal box stayed fixed at `#f8f8f8` while its ambient text correctly followed
+the theme, so the surface and its own text moved in opposite directions.
+Never audited: T-67/T-94 shot `/auth/login` from the outside; nobody had
+clicked through to this specific sub-modal in dark mode before.
+**Done when:** the modal responds to the theme the same way its siblings do,
+verified with a real screenshot and a measured contrast ratio, not a
+source-string test (CLAUDE.md, rule 3).
+**Done (2026-09-08):** added `dark:bg-base-100` next to both `bg-primary`
+occurrences in `src/components/auth/ForgotPassword.jsx`, matching the
+existing `ProductModal`/`SellerModal` convention exactly rather than
+inventing a new one. No text-colour changes were needed: every text element
+in this modal already used either an ambient/theme-following colour or a
+real daisyUI token (`text-secondary`) — the bug was entirely the surface
+failing to move with the theme, not the text. Confirmed no hardcoded
+dark-only text colour (`text-gray-800`, `text-black`, …) exists in the file
+that the now-dark surface could clash with instead.
+**Verified:** `npm run verify` green. Re-measured the same paragraph after
+the fix: **13.44:1**, resolving against the correct (now dark) modal
+background — the probe's first pass had accidentally grabbed F9's always-
+mounted, closed error dialog (`#fde6e6`) instead of the modal actually open,
+which is why the number is worth double-checking rather than trusting a
+single reading; screenshot confirms the whole modal legible.
+**Not given its own F-number.** `docs/audits/t-67/findings.md` reserves
+F54+ for T-95's admin audit; this was found by a targeted grep, not a
+screen-by-screen walkthrough, so it doesn't compete for that range.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever

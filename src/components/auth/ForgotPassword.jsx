@@ -229,7 +229,12 @@ export default function ForgotPassword({ setForgotPassword }) {
   return (
     <div>
       <dialog id='forgot_password' className='modal modal-open modal-bottom'>
-        <div className='modal-box w-full h-dvh rounded-none bg-primary p-0 relative'>
+        {/* bg-primary rinde un blanco fijo (override en main.css, ver
+            CLAUDE.md) - no el naranja de marca ni algo que siga el tema.
+            dark:bg-base-100 es el mismo patrón que ProductModal/SellerModal
+            ya usan para esta misma trampa; sin él, el texto de este modal
+            (que sí sigue el tema) quedaba casi invisible en oscuro. */}
+        <div className='modal-box w-full h-dvh rounded-none bg-primary dark:bg-base-100 p-0 relative'>
           <div className='absolute w-full z-10'>
             <div className='modal-action m-0 justify-between p-4'>
               <form method='dialog'>
@@ -255,7 +260,7 @@ export default function ForgotPassword({ setForgotPassword }) {
           </div>
 
           <div className='relative h-auto w-full'>
-            <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>
+            <div className='bg-primary dark:bg-base-100 rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>
               <div className='flex flex-col p-6 gap-2'>
                 {/*! forgot pass */}
                 <div>
