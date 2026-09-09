@@ -2404,6 +2404,27 @@ already built to open directly. Left for whoever promotes this to `develop`:
 capture the four shots (`product-add` × 2 themes with the Categoría menu open,
 `approving` × 2 themes) the way T-96 did, in a session that can run
 `npm run test:e2e`.
+**Follow-up (2026-09-08): the screenshots were taken, and they caught a real
+regression.** A session that could run `npm run test:e2e` captured the four
+shots — `docs/audits/t-100/README.md` — and the first `approving` render came
+back with **white text on a near-white card**, barely legible. The merged fix
+had swapped the card's `bg-[#FF7622]` for `bg-primary`, expecting daisyUI's
+real orange; `public/css/main.css` (line 62) overrides `.bg-primary` to
+`bg-[#f8f8f8]` **app-wide, in both themes** — the same trap
+`components/layout/Layout.jsx` already has a comment about, for the same
+class. The source-level test added alongside this fix asserted `bg-primary`
+was present, which it was — the assertion never checked what that class
+actually renders as, so it passed straight over the regression.
+**Fixed the same day**, before this reached `develop`: the card now uses
+`bg-primary-orange` — the class every other branded-orange surface in the app
+already uses (`Loading`'s spinner, `ProfileChecklist`'s progress bar,
+`Carousel`'s active dot), none of which differ by theme either — with
+`text-white` to pair with it. The page background (`bg-base-200`) was correct
+as merged and untouched. `tests/unit/dark-mode-t100.test.js` now asserts the
+specific class rather than mere presence, stripping JSX comments first so a
+comment that has to *name* the broken class to warn against it can't trip its
+own guard. `npm run verify` green again after the fix; the four corrected
+screenshots are what's committed in `docs/audits/t-100/`.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-85 · Spanish left in test descriptions
