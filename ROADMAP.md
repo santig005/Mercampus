@@ -2464,6 +2464,58 @@ F54+ for T-95's admin audit; this was found by a targeted grep, not a
 screen-by-screen walkthrough, so it doesn't compete for that range.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-103 · Hotfix: intermittent 500 on /antojos and /marketplace
+**Why:** reported live by the human on the `agent/develop` Vercel preview:
+signing out threw `Application error: a server-side exception has occurred`,
+digest `2226905661`. Pulled the real Vercel function logs (`vercel logs
+--branch agent/develop --level error`) rather than guessing from the digest
+alone: `MissingSchemaError: Schema hasn't been registered for model "Seller"`,
+thrown from inside a `.populate()` call, on `GET /marketplace` and on
+`OPTIONS /antojos` (any request to `/antojos` renders through the root
+layout regardless of method, since Next.js doesn't reject other methods for
+a page route). Both routes go through `getSellerContextData()`
+(`src/utils/lib/auth.ts`), called by the root layout on **every** request,
+which populates `sellerId` by the string `'Seller'`.
+**Measured, not assumed, that it's intermittent:** aggregated three hours of
+logs by status code - `/antojos` 54×200 vs. 12×500, `/marketplace` 36×200 vs.
+6×500 (~15-18% failure). Not a permanent break, which is why it doesn't
+reproduce on every request and why nobody had filed it yet - a cold-start-
+dependent registration race, not a deterministic one.
+**Root cause:** `getSellerContextData()` relies on an `import { Seller } from
+'@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars` purely
+for its side effect (`mongoose.model()` runs at import time) - the import
+itself is never referenced by name in that file. The codebase already knew
+this pattern was fragile and had patched it **twice more**,
+`api/products/route.js` and `api/products/[id]/route.js`, each with its own
+copy of the identical comment and import. Each copy only protects the one
+file carrying it; there is no way to grep for a file that's *missing* one,
+so the bug stays invisible until a request actually reaches an unprotected
+populate.
+**Fix:** `connectDB()` (`src/utils/connectDB.js`) is the one function every
+Mongo-touching code path already calls before running a query - now it
+imports all six model files (`orderSchema`, `pqrsSchema`, `productSchema`,
+`scheduleSchema`, `sellerSchema2`, `userSchema`) for that same side effect,
+so every model is registered unconditionally, once, regardless of what else
+the calling file imports. The three existing per-file defensive imports are
+untouched (harmless, safer left alone while this is fresh) - no new file
+should ever need a fourth.
+**Verified:** `npm run verify` green. New
+`tests/integration/connect-db-model-registration.test.js`, deliberately
+narrow - it imports *only* `connectDB`, never a model file by name - so a
+regression that drops one of the six imports fails here instead of shipping
+to some fraction of production requests. Confirmed the test is a real
+regression guard, not a tautology: reverted the fix locally, watched the
+first assertion fail (`mongoose.models.Order: expected undefined to be
+defined`), then restored it and watched it pass again.
+**Not yet resolved: "no me dejó adjuntar imagen."** The same incident report
+described an image attach failing on the seller-registration form. Vercel
+logs show one `POST /api/images` around the same time with no accompanying
+error-level log (a controlled 4xx, or it may have succeeded) - no smoking
+gun found in the time spent on this hotfix. Left open; needs more detail
+from whoever hit it (what the UI showed, if anything) or a repro.
+**Model:** `opus` — production incident, subtle serverless bug
+· **Nightly:** no
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
