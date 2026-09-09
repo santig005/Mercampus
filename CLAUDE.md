@@ -40,6 +40,12 @@ de producción tiene ~70. Un `clerkId` solo vale dentro de su instancia, así qu
    revisable vale más que uno grande y correcto.
 3. **Si no puedes verificar el cambio, no lo hagas.** Cada PR debe pasar
    `npm run verify`. Si la tarea no es verificable todavía, escoge otra.
+   **Para color, tema o layout, "verificado" significa una captura real,
+   no un test que solo lee el string de la clase.** Pasó en T-100: el test
+   comprobaba que `bg-primary` apareciera en el código, y pasó en verde
+   mientras esa clase renderizaba casi blanco (ver la convención de abajo).
+   Si no puedes tomar la captura en esta sesión (falta `.env`, no hay
+   navegador), dilo explícito en el PR — no lo des por verificado.
 4. **No inventes migraciones de datos en caliente.** Nada de `updateMany` en
    handlers de lectura. Los scripts de migración van en `scripts/`.
 5. **No borres código que no entiendas.** Si algo parece muerto, confírmalo con
@@ -99,6 +105,15 @@ ninguna aplica, termina sin abrir PR en vez de inventar trabajo.
   decisión.
 - **Sin `console.log` en código que se mergea.** Usa el logger de
   `src/lib/logger`.
+- **`bg-primary` no es el naranja de marca.** `public/css/main.css` (línea 62)
+  define `.bg-primary { @apply bg-[#f8f8f8]; }`, que gana por orden de cascada
+  sobre la utilidad de Tailwind/daisyUI del mismo nombre — en **toda la app,
+  en los dos temas**. Para una superficie naranja de marca usa
+  `bg-primary-orange` (el que ya usan `Loading`, `ProfileChecklist`,
+  `Carousel`; no cambia entre temas, ninguno de esos lo hace). Causó una
+  regresión real en T-100: tarjeta y texto casi invisibles en modo claro,
+  mergeada con `quality` en verde porque el test solo miraba el string, no el
+  render (ver `docs/audits/t-100/README.md`).
 - **Nombres y comentarios en inglés en el código y en el ROADMAP.** Decisión
   2026-09-05 (ver T-66): antes decía "comentarios en español"; se revirtió
   porque el portafolio y cualquier colaborador externo leen inglés, no
