@@ -23,6 +23,12 @@ export default function InputFields({
   // placeholder disappears the moment you type. useId() because the same
   // component renders many times on one page; an explicit `id` prop still
   // wins, so a caller that needs a known id keeps working.
+  // T-96 (audit findings F19/F45): every input and textarea used to hardcode
+  // `bg-[#f0f5fa]`, a light panel colour, while the typed value kept the
+  // theme's text colour. In dark mode that put light text on a light box -
+  // 1.13:1 on the seller forms - so a signed-in seller couldn't read their
+  // own business name or phone number. `bg-base-200`/`text-base-content`
+  // flip with the theme like every other surface in the app.
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   const [inputValue, setInputValue] = useState(value || '');
@@ -104,7 +110,7 @@ export default function InputFields({
         {type === 'textarea' ? (
           <textarea
             id={fieldId}
-            className={`bg-[#f0f5fa] min-h-10 px-4 py-3 rounded-lg input resize-none w-full overflow-hidden ${className}`}
+            className={`bg-base-200 text-base-content min-h-10 px-4 py-3 rounded-lg input resize-none w-full overflow-hidden ${className}`}
             placeholder={placeholder}
             value={parseIfJSON(inputValue)}
             onChange={handleChange}
@@ -121,7 +127,7 @@ export default function InputFields({
             <input
               id={fieldId}
               type={type}
-              className={`bg-[#f0f5fa] min-h-10 px-4 rounded-none rounded-r-md input w-full ${
+              className={`bg-base-200 text-base-content min-h-10 px-4 rounded-none rounded-r-md input w-full ${
                 validNumber
                   ? 'focus-within:border-green-500 border-green-500'
                   : 'focus-within:border-red-500 border-red-500'
@@ -141,7 +147,7 @@ export default function InputFields({
             id={fieldId}
             name={name}
             type={type}
-            className={`bg-[#f0f5fa] min-h-10 px-4 rounded-lg input w-full ${className} ${
+            className={`bg-base-200 text-base-content min-h-10 px-4 rounded-lg input w-full ${className} ${
               secureText ? 'tracking-wide' : ''
             }`}
             placeholder={placeholder}
