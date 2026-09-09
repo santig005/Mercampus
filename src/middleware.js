@@ -9,6 +9,7 @@ const isProtectedRoute = createRouteMatcher([
   '/antojos/sellers/profile/edit(.*)',
   '/antojos/sellers/products/edit(.*)',
   '/antojos/sellers/schedule(.*)',
+  '/antojos/sellers/approving(.*)',
   '/antojos/product/add(.*)',
 ]);
 
