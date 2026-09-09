@@ -2287,6 +2287,30 @@ than assuming which one Mongo's unsorted `find()` returns first, presses
 Enter, and asserts the edit form loads prefilled with that same product.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-99 · Gate `/antojos/sellers/approving` at the middleware (F30)
+**Why:** `isProtectedRoute` in `src/middleware.js` listed `register`,
+`profile/edit`, `products/edit`, `schedule` and `product/add`, but not
+`approving` — the one seller route the audit found the middleware did not
+match. Measured signed out: every other route in the list already lands on
+`/auth/login?redirect_url=...` before any HTML ships; `approving` rendered
+itself first and only bounced to `/auth/login` about a second later, when
+`useCheckSeller` ran client-side — and with no `redirect_url`, so signing in
+did not return the visitor to where they were headed.
+**Done when:** a signed-out visit to `/antojos/sellers/approving` redirects at
+the edge, with a `redirect_url`, same as the other four seller routes.
+**Done (2026-09-08):** added `'/antojos/sellers/approving(.*)'` to the
+`isProtectedRoute` matcher, next to `schedule`. The middleware only enforces
+that matcher when there is no `userId` (`if (!userId && isProtectedRoute(req))`),
+so a signed-in seller's visit is unaffected regardless of the matcher —
+confirmed `tests/e2e/signed-in/seller-screens.spec.js` does not currently
+navigate to `approving` at all (checked with a repo-wide search), so this
+change touches no signed-in path.
+**Verified:** `npm run verify` green. Extended the existing `gatedRoutes` array
+in `tests/e2e/auth-gate.spec.js` (T-84) with `/antojos/sellers/approving`
+rather than adding a new spec — same one `describe`, same assertion the other
+four routes already use. Full `npm run test:e2e` green.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
