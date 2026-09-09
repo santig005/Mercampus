@@ -2287,6 +2287,35 @@ than assuming which one Mongo's unsorted `find()` returns first, presses
 Enter, and asserts the edit form loads prefilled with that same product.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-101 · The schedule row's end time is cut off on mobile (F42)
+**Why:** on `/antojos/sellers/schedules` at 390px, each schedule row's time
+group (`Hora Inicial` label + input, `Hora Final` label + input) was one
+`flex gap-2` row with no wrapping below `md:`. Measured: the row's content
+was 411px wide inside a ~279px box, and the second `input[type=time]`
+(`Hora Final`) landed at x=311-467 — 77px past the 390px viewport — inside a
+container whose computed `overflow-x` is `hidden` (`Layout.jsx`'s
+`hide-scrollbar` scroller). There is no horizontal scroll to reach it; the
+field stayed technically usable only because the visible sliver happened to
+include the hour, and the value cut off mid-string (`04:00 p`).
+**Done when:** both time inputs are fully visible and reachable within a
+390px viewport, the desktop layout (not flagged in the audit) is unchanged,
+and an e2e pins the `Hora Final` input's bounding box to the viewport at
+390px so a regression fails the build.
+**Done (2026-09-08):** in `src/components/seller/Schedule.jsx`, the time
+group's single `flex` row is now `flex flex-col md:flex-row md:items-center`
+wrapping two sub-rows (`Hora Inicial` label+input, `Hora Final` label+input),
+each its own `flex items-center gap-2` pair. Below `md:` the sub-rows stack
+vertically, so each pair gets the row's full width instead of splitting it
+four ways; at `md:` and above the sub-rows sit side by side exactly as
+before (same classes on the `select`/button group and on both inputs).
+**Verified:** `npm run verify` green. New
+`tests/e2e/signed-in/schedule-mobile.spec.js` sets a 390x844 viewport,
+navigates to the seeded seller's schedules screen, locates the `Hora Final`
+input by its adjacent label (it isn't wired to it with `htmlFor`/`id` —
+F41's sibling problem, out of this task's scope), and asserts its bounding
+box's right edge stays within the viewport width.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [x] T-99 · Gate `/antojos/sellers/approving` at the middleware (F30)
 **Why:** `isProtectedRoute` in `src/middleware.js` listed `register`,
 `profile/edit`, `products/edit`, `schedule` and `product/add`, but not
