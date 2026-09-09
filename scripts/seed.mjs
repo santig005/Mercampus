@@ -176,6 +176,13 @@ export async function seedDatabase() {
       approvedProduct: products
         .find(product => product.sellerId.equals(approvedSeller._id))
         ._id.toString(),
+      // T-97: the product of the seller who is NOT approved. GET
+      // /api/products/[id] used to answer 500 for exactly this shape - the
+      // populate filters the owner out and the next line read `._id` off the
+      // null - and 17 of the 112 products in the real database are it.
+      pendingProduct: products
+        .find(product => product.sellerId.equals(pendingSeller._id))
+        ._id.toString(),
     },
   };
 }

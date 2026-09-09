@@ -41,9 +41,13 @@ export const getSellerProducts = async (sellerId, section = '') => {
   return await fetchAPI(url);
 };
 
-export const getProductById = async id => {
-  return await fetchAPI(`/products/${id}`);
-};
+// T-97: getProductById() lived here and was the edit screen's only caller.
+// That screen resolves its own product on the server now (getProductForEdit),
+// so the function had no references left - checked across src/, tests/ and
+// scripts/ - and it was one more fetch to our own API from a Server Action,
+// the antipattern CLAUDE.md says is being removed. The public product detail
+// does not use it either: ProductPage calls /api/products/[id] with fetch
+// directly.
 
 export const createProduct = async productData => {
   return await fetchAPI('/products', {
