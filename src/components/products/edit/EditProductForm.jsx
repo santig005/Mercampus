@@ -12,6 +12,7 @@ import { useSeller } from '@/context/SellerContext';
 import { getCategoriesBySection } from '@/utils/resources/categories';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
+import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
 
 // T-97 (audit finding F28): this was the page itself, and it resolved the
 // product on the client - `getProductById(id)` on mount, then
@@ -37,6 +38,7 @@ export default function EditProductForm({ product: initialProduct }) {
     'sellerApproved',
     '/antojos/sellers/approving'
   );
+  const selectStyles = useReactSelectStyles();
 
   const categoryOptions = categories.map(category => ({
     value: category,
@@ -150,6 +152,7 @@ export default function EditProductForm({ product: initialProduct }) {
                   className='basic-multi-select w-full'
                   classNamePrefix='Selecciona'
                   isSearchable={false}
+                  styles={selectStyles}
                 />
               </div>
 
@@ -199,6 +202,7 @@ export default function EditProductForm({ product: initialProduct }) {
                   onChange={handleCategoryChange}
                   className='basic-multi-select w-full'
                   classNamePrefix='select'
+                  styles={selectStyles}
                 />
               </>
 

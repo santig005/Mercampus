@@ -15,19 +15,19 @@ const SellerApprovalStatus = () => {
   const whatsappUrl = `https://wa.me/573197139921?text=Holaa,%20soy%20el%20vendedor%20${seller?.businessName},%20me%20registré%20en%20Mercampus,%20podrías%20revisar%20mi%20solicitud%20para%20aprobarme?`;
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#F2F2F2] p-8">
-      <div className="bg-[#FF7622] rounded-lg p-6 text-center">
-      <h1 className="text-3xl font-bold mb-4 text-white">
+    <div className="flex flex-col items-center justify-center h-screen bg-base-200 p-8">
+      <div className="bg-primary rounded-lg p-6 text-center">
+      <h1 className="text-3xl font-bold mb-4 text-primary-content">
           <span>Hola {seller?.businessName}</span>.
         </h1>
-        <h1 className="text-3xl font-bold mb-4 text-white">
+        <h1 className="text-3xl font-bold mb-4 text-primary-content">
           Tu estado de vendedor está en proceso de aprobación
         </h1>
-        <p className="text-lg mb-4 text-white">
+        <p className="text-lg mb-4 text-primary-content">
           Por favor, espera mientras revisamos la información de tu negocio.
           Entra más tarde.
         </p>
-        <p className="text-sm text-white mb-4">
+        <p className="text-sm text-primary-content mb-4">
         Para más agilidad, o si tienes alguna pregunta, puedes contactarnos directamente.
         </p>
         <a
