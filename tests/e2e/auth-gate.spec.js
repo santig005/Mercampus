@@ -10,6 +10,7 @@ const gatedRoutes = [
   '/antojos/sellers/profile/edit',
   '/antojos/product/add',
   '/antojos/sellers/products/edit',
+  '/antojos/sellers/approving',
 ];
 
 test.describe('the seller screens are gated (T-84)', () => {
