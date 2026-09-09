@@ -15,15 +15,38 @@ describe('T-100 · F47 - /antojos/sellers/approving responds to the theme', () =
     'utf8'
   );
 
+  // The assertions below are about className strings, not prose - stripped so
+  // a comment that has to *name* the class it warns against (see the one
+  // above the card's div) can't trip its own regression guard.
+  const codeOnly = source.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+
   it('no longer hardcodes the page/card hex colours the finding measured', () => {
-    expect(source).not.toContain('#F2F2F2');
-    expect(source).not.toContain('#FF7622');
+    expect(codeOnly).not.toContain('#F2F2F2');
+    expect(codeOnly).not.toContain('#FF7622');
   });
 
-  it('uses daisyUI tokens instead, so data-theme reaches it', () => {
-    expect(source).toContain('bg-base-200');
-    expect(source).toContain('bg-primary');
-    expect(source).toContain('text-primary-content');
+  it('the page background uses a daisyUI token, so data-theme reaches it', () => {
+    expect(codeOnly).toContain('bg-base-200');
+  });
+
+  it('the card uses the same branded-orange class every other surface does, not `bg-primary`', () => {
+    // Not a mistake, and not a partial fix: `bg-primary` is a real daisyUI
+    // token, but public/css/main.css (line 62) overrides `.bg-primary` to
+    // `bg-[#f8f8f8]` unconditionally, in both themes - the first version of
+    // this fix used `bg-primary` and rendered a near-white card with white
+    // text, illegible in light mode (worse than the bug F47 reported).
+    // `bg-primary-orange` is the class every other branded-orange surface in
+    // the app uses (Loading's spinner, ProfileChecklist's progress bar,
+    // Carousel's active dot) - none of them differ by theme either, so this
+    // matches the app's existing convention instead of inventing a new one.
+    expect(codeOnly).toContain('bg-primary-orange');
+    expect(codeOnly).not.toMatch(/\bbg-primary\b(?!-orange)/);
+    // `text-primary-content` is the daisyUI content-token paired with the
+    // real `bg-primary` - pairing it with a class that isn't a daisyUI token
+    // would be a second, independent bug. `text-white` matches the rest of
+    // the app's `bg-primary-orange` convention instead.
+    expect(codeOnly).not.toContain('text-primary-content');
+    expect(codeOnly).toContain('text-white');
   });
 });
 
