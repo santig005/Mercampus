@@ -221,29 +221,33 @@ const Schedule = () => {
                     Eliminar
                   </button>
                 </div>
-                <div className='flex gap-2 w-full md:w-auto'>
-                  <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
-                    Hora Inicial
-                  </label>
-                  <input
-                    type='time'
-                    className='input input-bordered w-full md:w-24'
-                    value={schedule.startTime}
-                    onChange={e =>
-                      handleScheduleChange(index, 'startTime', e.target.value)
-                    }
-                  />
-                  <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
-                    Hora Final
-                  </label>
-                  <input
-                    type='time'
-                    className='input input-bordered w-full md:w-24'
-                    value={schedule.endTime}
-                    onChange={e =>
-                      handleScheduleChange(index, 'endTime', e.target.value)
-                    }
-                  />
+                <div className='flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto'>
+                  <div className='flex items-center gap-2'>
+                    <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
+                      Hora Inicial
+                    </label>
+                    <input
+                      type='time'
+                      className='input input-bordered w-full md:w-24'
+                      value={schedule.startTime}
+                      onChange={e =>
+                        handleScheduleChange(index, 'startTime', e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
+                      Hora Final
+                    </label>
+                    <input
+                      type='time'
+                      className='input input-bordered w-full md:w-24'
+                      value={schedule.endTime}
+                      onChange={e =>
+                        handleScheduleChange(index, 'endTime', e.target.value)
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             ))}
