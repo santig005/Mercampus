@@ -301,6 +301,11 @@ causes, which are two different bugs behind one symptom:
 *Fix:* same shape as F1/F2 — resolve the product server-side, `notFound()` when
 it is missing, `403` when it is not yours, and guard the populate result before
 dereferencing it.
+**Fixed in T-97**, with one deviation: missing and not-yours render the same
+404 rather than a distinguishable 403 — a page cannot answer 403 in Next 14,
+and a shared answer does not confirm that somebody else's product id exists.
+The real 403 is still on PUT/DELETE. See the T-97 entry for the measurement
+(17 of 112 products) and for the correction to the last paragraph above.
 `deadend-product-edit-bad-id__desktop__light.png`
 
 **F29 — a malformed id returns 500 with the Mongoose error in the body.**
@@ -309,6 +314,9 @@ dereferencing it.
 \"_id\" for model \"Product\""}`. The client is handed the internal model name
 and the driver's message. *Fix:* validate the id at the edge (Zod, like every
 other param) and answer `400`; never pass a driver message to the client.
+**Fixed in T-97**, in all three handlers: the PUT and the DELETE passed the
+same unvalidated id to `verifyOwnershipAndGetSellerId` and leaked the same
+CastError.
 
 **F30 — `/antojos/sellers/approving` is the one seller route the middleware does
 not match.** `isProtectedRoute` in `src/middleware.js` lists `register`,
@@ -545,8 +553,11 @@ Roughly in the order I would take them:
 1. **Dark mode on the seller forms** (F45, F46, F47) — the only finding in this
    half where a seller cannot read data they typed. One hardcoded colour in
    `InputFields` accounts for most of it.
-2. **The product edit dead end and the 500s** (F28, F29) — a seller who is
-   un-approved loses access to their own products.
+2. ~~**The product edit dead end and the 500s** (F28, F29)~~ — fixed in T-97.
+   Read that entry for the correction to this line: the un-approved seller is
+   stopped by `useCheckSeller` before the fetch, not by the 500. The 500 was
+   reached by an approved seller opening a product owned by an un-approved (or
+   deleted) seller — 17 of the 112 products in the real database.
 3. **Names for the availability switches and a real link on the card** (F32,
    F33) — the product list is the screen a seller uses daily, and half of it is
    unreachable without a mouse.

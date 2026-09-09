@@ -2158,6 +2158,101 @@ that route). Confirmed by reading the file instead: same component, same
 unconflicting `className`.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-97 · The product edit dead end and the 500s (F28, F29)
+**Why:** second on T-94's own follow-up list, and the only finding in the
+seller half that answers a **500**. `GET /api/products/[id]` populated the
+owner with `match: { approved: true }` and then read `product.sellerId._id` on
+the very next line, so a product whose seller is not visible got
+`Cannot read properties of null` — never an answer. The edit screen read that
+route from the client, so all of it arrived as
+`Error al cargar los detalles del producto.` in a naked paragraph: no header
+band, no form, no link back, and a URL still claiming to be editing a product.
+And `GET /api/products/not-an-id` answered 500 with Mongoose's own CastError in
+the body — `for model "Product"`, the path it is keyed by, the value.
+**Measured read-only against the real database (2026-09-08), before writing
+any code:** **17 of 112 products** answer 500 on that route today.
+- **14** belong to **10 of the 18 unapproved sellers** (36 of 54 are approved).
+- **3** more point at a `sellerId` that matches **no seller at all** — 2
+  distinct dangling ids. The populate yields null for the same reason, so they
+  fail identically; nobody can legitimately edit them either.
+- **0 paused.** No seller document carries `paused` yet (0 of 54): T-71 shipped
+  the field and nobody has used it, so the paused half of this moves no row.
+- 16 of the 17 have `availability: true`, i.e. they look live.
+**Correcting F28's reasoning, which the finding got one step wrong:** it says
+"an approved seller who is later un-approved can no longer open any of their
+own." True in effect, but not through this 500 — `useCheckSeller('sellerApproved',
+'/antojos/sellers/approving')` gates add, list *and* edit, so an unapproved
+seller is redirected before the fetch happens. The 500 is reached by an
+*approved* seller opening the URL of a product owned by an unapproved (or
+deleted) seller. The gate is left exactly as it was: whether an unapproved
+seller should be allowed to edit is a product decision, not part of fixing a
+500. What did change is that ownership no longer depends on the owner being
+publicly visible — `getProductForEdit` has no `approved`/`paused` filter, and
+two tests pin that.
+**Done when:** the route answers 400 for a malformed id with no driver message
+in the body, never 500 for a product whose owner is not visible, and the edit
+screen resolves its own product on the server — 404 when it is missing, and
+nothing rendered around nothing.
+**Done:** same shape as T-90's fix for F1/F2.
+- `productIdSchema` in `lib/validators/product.ts`, applied in **all three**
+  handlers. F29 named the GET, but the same malformed id reached Mongoose
+  through `verifyOwnershipAndGetSellerId` in the PUT and the DELETE. Those two
+  also stopped hand-rolling their catch: `errorResponse` keeps an AppError's
+  4xx message and never returns a 500's, which is the other half of F29.
+- The GET still populates behind a filter, but the result is checked before
+  being dereferenced, and the filter is now `publicSellerFilter()` instead of a
+  fourth hand-written copy of the visibility rule (T-74's note). This route was
+  the copy that disagreed: it left `paused` out, so a paused seller's product
+  stayed reachable by direct link while the listing, the seller list and the
+  sitemap all hid it. 0 rows affected today, measured.
+- Missing and not-public answer the *same* 404, body included, with a test
+  pinning that they are byte-identical: telling them apart would answer "this
+  exists but you may not see it" to anybody trying ids.
+- `src/server/products/getProductForEdit.ts` resolves the product and the
+  answer to "may this session edit it?" server-side, returning
+  `ok`/`not-found`/`forbidden` rather than throwing. The page is a Server
+  Component now and the form moved to
+  `components/products/edit/EditProductForm.jsx`, taking the product as a prop
+  — there is no load left to fail, and no ownership check that can be skipped
+  because the request 500'd on the way to it.
+- A failed *save* no longer replaces the screen either. `if (error) return
+  <p>{error}</p>` was the same bare line, and it took the seller's unsaved
+  edits with it; it reports next to the form now.
+**Both failures render the same 404, deliberately.** Next 14 gives a page no
+way to answer 403 — and `notFound()` answers 200 here anyway, which is T-91 and
+app-wide — so the only real choice is what the visitor sees. A 404 does not
+confirm that somebody else's product id exists, and `app/not-found.jsx` (T-90)
+already offers a way back, which is the half of F28 the bare paragraph had
+none of. The authorization that matters is unchanged and still a real 403: PUT
+and DELETE verify ownership themselves.
+**Verified:** `npm run verify` green. 17 new integration tests in
+`tests/integration/product-by-id.test.js` (the 200, the 400 and what its body
+must not contain, and 404 for each of the four ways the owner can be invisible
+— unapproved, orphan, paused, missing — plus the nine `getProductForEdit`
+cases). 6 e2e in `tests/e2e/signed-in/product-edit.spec.js` on T-84's session;
+`scripts/e2e.mjs` now exports `E2E_PENDING_PRODUCT_ID`, because a product that
+exists and belongs to somebody else cannot be reached through the UI, which is
+the point. Full `npm run test:e2e`: 61 passed, 1 unrelated flake
+(`about-topbar.spec.js`'s T-87 scroll-back assertion, which passes on its own —
+reported, not fixed here).
+**Confirmed dead and removed:** `getProductById` in `services/productService.js`
+had no callers left across `src/`, `tests/` and `scripts/` once the edit screen
+stopped using it — it was also one more `fetch` to our own API from a Server
+Action, the antipattern CLAUDE.md is removing. `ProductPage` calls
+`/api/products/[id]` with `fetch` directly and is untouched.
+**Left for its own task, measured not guessed:** those same 17 products still
+paint F1's fake chrome on the **public** page. `ProductPage` hands any JSON
+body to `setProduct`, so a 404 (or the 500 before it) is truthy and renders the
+full product frame — `$ NaN`, a live "Contactar por WhatsApp" — around an error
+object. T-90 fixed that for ids that resolve to nothing; it never covered a
+product whose *owner* is invisible, and the client has no error state at all
+(the same gap F2 left behind). Fixing it means either a server-side visibility
+guard on `antojos/[id]` and `marketplace/[id]` — which would 404 those 17
+products publicly, a real change to production behaviour that deserves its own
+decision — or an error state in `ProductPage`. Not smuggled in here.
+**Model:** `opus` — it is a 500 with an authorization check behind it
+· **Nightly:** yes
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
