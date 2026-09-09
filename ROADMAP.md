@@ -2253,6 +2253,40 @@ decision — or an error state in `ProductPage`. Not smuggled in here.
 **Model:** `opus` — it is a 500 with an authorization check behind it
 · **Nightly:** yes
 
+### [x] T-98 · Keyboard access on the product list: unnamed switches and an unreachable card (F32, F33)
+**Why:** on `/antojos/sellers/products/edit`, every one of the 20 tab stops
+after "Añadir Producto" was a checkbox with no accessible name (**F32** —
+`ToggleSwitch` renders a bare `<input type=checkbox>` inside a `<label>` with
+no text of its own; the visible "Disponibilidad" beside it is a `<p>`, not a
+`<label for>`) and the card that opens a product for editing was a `<div
+onClick>` with no `role`, no `tabIndex` and no `href` (**F33**), so tabbing
+went straight from the button into the toggles. A seller could flip a
+product's availability with a keyboard but could not open it to change its
+price, description or photos.
+**Done when:** the switches on that screen carry a name that identifies which
+row they belong to and its state, the card is a real, focusable link to
+`/antojos/sellers/products/edit/<id>`, and an e2e reaches a product's edit
+form using the keyboard alone.
+**Done (2026-09-08):**
+- `ToggleSwitch` takes an optional `label` prop rendered as `aria-label` on the
+  checkbox. Only `/antojos/sellers/products/edit` passes it (the seller's own
+  switch names the business, each product's switch names the product and its
+  state) — the other two callers (`EditSellerForm`, `EditProductForm`) are
+  unchanged, out of this task's scope.
+- The card wrapper is a `next/link` `<Link>` to
+  `/antojos/sellers/products/edit/<id>` instead of a `<div onClick>`, which is
+  what the handler already did — `handleProductClick` is gone, dead once the
+  `Link` took over its one call site (confirmed with a repo-wide search).
+**Verified:** `npm run verify` green. New
+`tests/e2e/signed-in/product-list-keyboard.spec.js` on T-84's session: one test
+asserts both switches (seller and a named product) resolve by accessible
+name; the other tabs from "Añadir Producto" until focus lands on a product
+card's `href` (bounded, so a regression back to an unfocusable `div` fails the
+assertion instead of hanging), reads the product's name off the card rather
+than assuming which one Mongo's unsorted `find()` returns first, presses
+Enter, and asserts the edit form loads prefilled with that same product.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever

@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { getSellerProducts, updateProduct } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
@@ -46,9 +47,6 @@ export default function EditProductsPage() {
     }
   }, [seller, sellerLoading]);
 
-  const handleProductClick = id => {
-    router.push(`/antojos/sellers/products/edit/${id}`);
-  };
   const handleAvailabilityToggle = async (id, currentAvailability) => {
     try {
       setProducts(prevProducts =>
@@ -124,6 +122,9 @@ export default function EditProductsPage() {
           <ToggleSwitch
             isOn={sellerAvailability}
             onToggle={handleSellerAvailability}
+            label={`Disponibilidad de ${seller?.businessName || 'tu negocio'}: ${
+              sellerAvailability ? 'disponible' : 'no disponible'
+            }`}
           />
         </div>
 
@@ -161,9 +162,12 @@ export default function EditProductsPage() {
                     key={product._id}
                     className='bg-base-100 text-base-content drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
                   >
-                    <div onClick={() => handleProductClick(product._id)}>
+                    <Link
+                      href={`/antojos/sellers/products/edit/${product._id}`}
+                      className='block'
+                    >
                       <ProductCard product={product} variant='embedded' />
-                    </div>
+                    </Link>
                     <div className='flex justify-between'>
                       <p>Disponibilidad</p>
                       <ToggleSwitch
@@ -171,6 +175,9 @@ export default function EditProductsPage() {
                         onToggle={() =>
                           handleAvailabilityToggle(product._id, product.availability)
                         }
+                        label={`Disponibilidad de ${product.name}: ${
+                          product.availability ? 'disponible' : 'no disponible'
+                        }`}
                       />
                     </div>
                   </div>
