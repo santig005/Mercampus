@@ -2340,6 +2340,72 @@ rather than adding a new spec — same one `describe`, same assertion the other
 four routes already use. Full `npm run test:e2e` green.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-100 · Dark mode for react-select and the approving screen (F46, F47)
+**Why:** the two dark-mode findings T-96 explicitly left for their own task.
+**F46** — the "Sección" and "Categoría" comboboxes on `/antojos/product/add`
+and the product edit form stay pure white with dark text in dark mode:
+`react-select` paints control/menu/option colours as inline styles, so neither
+Tailwind's `dark:` variants nor daisyUI's `data-theme` switch ever reach it.
+**F47** — `/antojos/sellers/approving` hardcodes `bg-[#F2F2F2]` for the page and
+`bg-[#FF7622]` for the card, so the screen is pixel-identical in both themes.
+**Done when:** both comboboxes repaint on a theme flip with no full reload, and
+the approving screen uses daisyUI tokens instead of the two hardcoded hexes.
+**Done (2026-09-08):**
+- `src/utils/hooks/useReactSelectTheme.js`: `useReactSelectStyles()`, a hook
+  returning react-select's `styles` prop (one function per part - `control`,
+  `menu`, `option`, `singleValue`, `multiValue`, …). It tracks `<html
+  data-theme>` with a `MutationObserver` (the same attribute `ThemeToggle`
+  flips and `layout.jsx`'s anti-FOUC script sets - see both files), so it
+  updates on a toggle click with no page reload. Colours are not a second,
+  hand-copied palette: a hidden probe carries the same `bg-base-100
+  text-base-content`/`bg-base-200`/`bg-primary` classes the rest of the app
+  uses, and `getComputedStyle` resolves whatever daisyUI actually renders them
+  as today (raw `oklch()` components behind CSS variables - confirmed by
+  compiling the real `tailwind.config.js` through `postcss` and reading the
+  generated rules), so a future palette edit in `tailwind.config.js` keeps
+  matching instead of drifting out of sync.
+- Wired into both `<Select>` usages ("Sección" and "Categoría") in
+  `src/app/antojos/product/add/page.jsx` and
+  `src/components/products/edit/EditProductForm.jsx` (T-97 moved the edit
+  form here) via `styles={selectStyles}` - four call sites, not two: F46 named
+  both comboboxes and both screens.
+- `src/app/antojos/sellers/approving/page.jsx`: `bg-[#F2F2F2]` → `bg-base-200`
+  on the page, `bg-[#FF7622]` → `bg-primary` on the card, `text-white` →
+  `text-primary-content` on its three headings/paragraphs - the same daisyUI
+  token swap T-96 used for `InputFields`, no new pattern. The WhatsApp link's
+  `bg-green-500 text-white` is untouched: it is not one of the two hex
+  literals the finding named, and the same pair is used unconditionally for
+  every WhatsApp CTA in the app (`ToggleSwitch`, `about/page.jsx`), a
+  deliberate, theme-independent brand colour rather than this bug.
+- **Deliberately not touched:** the WhatsApp button's own contrast (2.28:1,
+  measured in F47) and the rest of the seller screens' contrast failures are
+  **F48**, its own future task - this one is scoped to "responds to
+  `data-theme`", not "passes AA".
+**Verified:** `npm run verify` green (lint, `knip`, `tsc --noEmit`, `vitest`,
+`next build`). New `tests/unit/dark-mode-t100.test.js`: a source-level
+regression guard, same spirit as `theme-tokens.test.js`'s T-75 scan - asserts
+the two hex literals are gone from the approving screen and the daisyUI tokens
+are there instead, that the hook's source actually observes `data-theme` via
+`MutationObserver` (not a one-time read), and that every `<Select>` in both
+product-add and product-edit carries `styles={selectStyles}`.
+**Not captured this round: before/after screenshots.** Getting real ones needs
+either `npm run test:e2e` (F47's approving screen needs T-94's account-swap
+trick, moving the session's `clerkId` onto the seeded pending seller) or a
+`next dev`/`next start` server to shoot the auth-gated `/antojos/product/add`
+directly - every server-starting command was refused by this session's
+sandbox itself (its auto-mode classifier blocks anything that starts a
+listening process, `npx next dev` included, independent of Clerk secrets: a
+bare `next dev` with no Clerk keys involved was refused the same way). A
+static render without a server was ruled out too: no bundler is a project
+dependency to compile `react-select` for a standalone page, and `next build`
+does not emit static HTML for either route (`/antojos/product/add` needs a
+session; `.../approving` is behind `useCheckSeller`), so there is nothing
+already built to open directly. Left for whoever promotes this to `develop`:
+capture the four shots (`product-add` × 2 themes with the Categoría menu open,
+`approving` × 2 themes) the way T-96 did, in a session that can run
+`npm run test:e2e`.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever

@@ -11,6 +11,7 @@ import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
+import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
 
 const AddProduct = () => {
   const router = useRouter();
@@ -18,6 +19,7 @@ const AddProduct = () => {
     'sellerApproved',
     '/antojos/sellers/approving'
   );
+  const selectStyles = useReactSelectStyles();
   const [formData, setFormData] = useState({
     name: '',
     category: [],
@@ -187,9 +189,10 @@ const AddProduct = () => {
                     className='basic-multi-select w-full'
                     classNamePrefix='Selecciona'
                     isSearchable={false}
+                    styles={selectStyles}
                   />
                 </div>
-                
+
                 <div>
                   <label>Categoría</label>
                   <Select
@@ -202,6 +205,7 @@ const AddProduct = () => {
                     onChange={handleCategoryChange}
                     className='basic-multi-select w-full'
                     classNamePrefix='Selecciona'
+                    styles={selectStyles}
                   />
                 </div>
                 <InputFields
