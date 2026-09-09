@@ -5,6 +5,24 @@ import { marketplaceCategories } from '@/utils/resources/marketplaceCategories';
 
 const SECTIONS = ['antojos', 'marketplace'] as const;
 
+const objectIdRegex = /^[a-f\d]{24}$/i;
+
+// The `[id]` segment of a product route, validated before it reaches Mongoose.
+//
+// T-97 (audit finding F29): `GET /api/products/not-an-id` answered **500**
+// with the driver's own text in the body - `Cast to ObjectId failed for value
+// "not-an-id" (type string) at path "_id" for model "Product"` - handing the
+// client the internal model name and the field it is keyed by. A malformed id
+// is invalid input, so it belongs in the same place as every other param: a
+// Zod schema at the edge, answered with a 400.
+//
+// Declared up here, not next to the cursor schemas that also use the regex:
+// these are `const`, so the regex has to be initialised before the schemas
+// below close over it.
+export const productIdSchema = z
+  .string()
+  .regex(objectIdRegex, 'El id del producto no es válido');
+
 const categoriesFor = (section: (typeof SECTIONS)[number]) =>
   section === 'marketplace' ? marketplaceCategories : antojosCategories;
 
@@ -69,8 +87,6 @@ export const updateProductSchema = z
 // the default.
 export const SORT_OPTIONS = ['default', 'newest', 'price_asc', 'price_desc'] as const;
 export type ProductSort = (typeof SORT_OPTIONS)[number];
-
-const objectIdRegex = /^[a-f\d]{24}$/i;
 
 // --- Cursor pagination --------------------------------------------------------
 //

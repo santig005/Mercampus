@@ -126,6 +126,11 @@ try {
     E2E_PORT: String(PORT),
     E2E_PRODUCT_ID: summary.ids.approvedProduct,
     E2E_SELLER_ID: summary.ids.approvedSeller,
+    // T-97: a product that exists and belongs to somebody else - the
+    // unapproved seller's. Opening it in the edit screen is the shape that
+    // used to answer 500 (F28), and there is no way to reach it through the
+    // UI, which is the point.
+    E2E_PENDING_PRODUCT_ID: summary.ids.pendingProduct,
     // T-84: auth.setup.js signs in as this address through a backend-issued
     // sign-in token, so it does not depend on which first factor the instance
     // has enabled (this one advertises email_code, not password).
