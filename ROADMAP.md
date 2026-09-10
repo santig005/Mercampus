@@ -2516,6 +2516,68 @@ from whoever hit it (what the UI showed, if anything) or a repro.
 **Model:** `opus` — production incident, subtle serverless bug
 · **Nightly:** no
 
+### [ ] T-104 · T-12's admin migration was never finished (finding, not a fix)
+**Status: discovery only.** Filed while chasing T-103 live with the human.
+No refactor here - the human wants to keep exploring this interactively
+before anything gets touched. Do not pick this up as a normal "implement
+the fix" task; read it, then ask.
+**Why:** T-12's own comment in `src/middleware.js` says "for 'admin', Clerk
+is the only source of truth" - and then a grep across `src/` for
+`role === 'admin'` (searching for Mongo's field, not Clerk's) turns up
+**four** places that never got the memo:
+- `src/utils/lib/auth.ts:133` (`verifySellerId`) - gates the actual seller
+  approve/reject mutation.
+- `src/components/seller/index/SellerGrid.jsx:56,83` - a second, complete
+  approve/reject UI, parallel to `/admin/sellers`.
+- `src/components/seller/SideBar.jsx:50` - shows/hides the "Gestionar" nav
+  section.
+Only `src/middleware.js:38` checks Clerk's `publicMetadata.role`, which is
+the one place T-12 actually finished.
+**How this was found, live, not theoretical:** the human's own Clerk
+account (`sajhdg30@gmail.com`) has **two** Mongo `User` documents - one
+`role: admin` tied to a Clerk account in one instance, and a second one Mongo
+auto-created via the webhook (`role: buyer`, schema default) the moment the
+same person's browser session authenticated through a *different* Clerk
+instance for the first time (T-12h/T-64: instances are fully isolated, so a
+new instance means a brand-new Clerk user, no matter that it's the same
+person). Email has no unique index either (T-11), so nothing merges the two.
+Consequence, measured: `/admin/sellers`' list rendered fine (Clerk-gated),
+but clicking approve on a real pending seller answered
+`403 "No autorizado para este vendedor."` - `verifySellerId` resolved the
+*other* Mongo document, `role: buyer`, and rejected it. Unblocked by hand for
+this one document (`users._id: 6aa1fb344de64210563fb675`, `role` set to
+`admin`) - a single-field, single-document, easily-reversible write, not a
+fix for the underlying gap.
+**Not a bug in the "wrong" sense - a gap in a migration.** A user having both
+`role: admin` and a real `sellerId` (the human's older account does, on
+purpose, for testing) is fine either way: nothing in the current code treats
+admin-ness and seller-ness as mutually exclusive, so this isn't blocking
+anything by itself.
+**Raised and rejected: growing Mongo's role model** (an array, or a separate
+`isAdmin` boolean next to `role`) **to carry admin more richly.** Discussed
+with the human and the conclusion was no - that doubles the exact
+"two sources of truth can disagree" problem this finding just demonstrated
+live, in the other direction. `role`/`sellerId` in Mongo staying about
+buyer/seller, and admin-ness staying only in Clerk's `publicMetadata`
+(possibly as an array there later, if more than one admin tier is ever
+needed) was the human's own call, not just this note's opinion.
+**Open questions, for the human to decide before any of this becomes a
+task:**
+- Does fixing this mean `getSellerContextData()` (or a sibling) starts
+  calling `clerkClient().users.getUser()` to hand the client an `isAdmin`
+  flag sourced from Clerk - on every request, the same cost `esAdmin()`
+  already accepts for admin routes only? What's that cost across `/antojos`
+  and every other page this touches, given `getSellerContextData()` runs on
+  **every** request via the root layout, not just admin ones?
+- Is `SellerGrid.jsx`'s inline approve/reject UI (parallel to
+  `/admin/sellers`) something to keep at all, once it's admin-gated
+  correctly - or is having two separate approval surfaces itself worth
+  collapsing into one?
+- Does this fold into finally addressing T-11 (email uniqueness) at the same
+  time, since the duplicate-User-per-instance failure mode depends on it
+  too, or are they separate tasks?
+**Model:** n/a - discussion, not an implementation task yet · **Nightly:** no
+
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
