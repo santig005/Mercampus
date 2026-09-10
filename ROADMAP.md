@@ -2576,6 +2576,13 @@ task:**
 - Does this fold into finally addressing T-11 (email uniqueness) at the same
   time, since the duplicate-User-per-instance failure mode depends on it
   too, or are they separate tasks?
+**Sequencing with T-63, the human's own call:** do this one first. T-63
+splits Mongo per environment while Clerk stays one instance everywhere: if
+admin-ness is fully on Clerk's `publicMetadata` before that split happens,
+it needs zero reseeding in the new non-prod cluster - it already applies
+everywhere, same as every session does, because Clerk doesn't change
+between environments. Doing T-63 first means the same Mongo-role reseeding
+this incident needed gets repeated by hand in the new cluster too.
 **Model:** n/a - discussion, not an implementation task yet · **Nightly:** no
 
 ### [ ] T-85 · Spanish left in test descriptions
@@ -2936,6 +2943,58 @@ the working `.env` points at it; and `.env.example` documents which is
 which.
 **No longer applies:** the Clerk half of this task (a separate production
 instance) — see T-64. Point 1 (Mongo) is still the real, pending risk.
+
+**This table needs re-measuring.** Found live on 2026-09-10, chasing an
+unrelated seller-approval bug with the human: Vercel's `CLERK_SECRET_KEY`
+and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` for **Production** were updated
+**4 days ago** — no longer the same value as Preview's (530 days old), which
+is what this table's "identical" claim above was measured against. Querying
+both confirms two genuinely different Clerk instances now, one of them
+holding real historical users (the pre-T-64 production instance). Whether
+that was deliberate or accidental wasn't determined - worth the human
+confirming before anything here is acted on, since T-64's decision was to
+run everywhere on *development* on purpose, and this drift may be quietly
+undoing that.
+
+**A design sketch for the Mongo half** (Clerk staying exactly as T-64 left
+it - one instance, same keys, everywhere), worked through with the human
+2026-09-10, so executing this doesn't have to start from zero:
+
+- **Two clusters, not three:** `mercampus_production` (unchanged, real
+  data) and one shared `mercampus_dev` for **both** Preview and
+  Development - they carry the same risk profile (no real users), so
+  splitting them further can wait for a concrete reason to.
+- **`MONGO_URI` becomes environment-scoped** in Vercel (Production keeps
+  today's value; Preview + Development get the new cluster) and the
+  working `.env` moves to point at it too - which is what turns the
+  `npm run seed` `--yes` guard from "the only thing standing between a
+  routine `npm run dev` and wiping 54 real sellers" into an ordinary safety
+  net, not the sole one.
+- **No app code changes** - `connectDB()`, the models, the webhook, all
+  untouched. This is entirely env vars plus a new cluster.
+- **The one real wrinkle, designed for:** since Clerk stays *shared*, the
+  same `clerkId` will need its own separate Mongo `User` document in
+  `mercampus_dev` the first time each real account signs in there - the
+  webhook already does exactly this, unprompted (it's what created the
+  stray `role: buyer` document this same day's incident was about - see the
+  T-104 finding below). Two different seeding needs follow from that, not
+  one:
+  - Bulk, realistic fake data for general browsing/testing - already
+    solved: `scripts/seed.mjs` already does this for the e2e harness; the
+    same script would seed `mercampus_dev` for real once it exists.
+  - The handful of real team `clerkId`s that need admin/seller status in
+    `mercampus_dev` for manual testing - a short, explicit, idempotent
+    script in `scripts/`, keyed by clerkId (stable now, since Clerk is the
+    same instance everywhere - a real simplification over today).
+- **Sequencing with T-104, the human's own call:** do T-104 first if at
+  all possible. If admin-ness is fully on Clerk's `publicMetadata` (T-104's
+  whole point) before this cluster split happens, admin needs zero seeding
+  in the new `mercampus_dev` at all - it already applies everywhere, same
+  as everyone's session does, because Clerk doesn't change between
+  environments. Splitting Mongo before finishing T-104 means the same
+  Mongo-role reseeding this incident needed has to be repeated by hand in
+  the new cluster too - workable, but carrying the exact gap forward
+  instead of closing it first.
 **Model:** `opusplan` · **Nightly:** no (infrastructure and cost)
 
 ### [x] T-12h · Instance guard in the backfill
