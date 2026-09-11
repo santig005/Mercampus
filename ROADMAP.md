@@ -79,6 +79,13 @@ already warns about, and getting it wrong wastes a PR:
   CLAUDE.md rule 3 means a real screenshot, not a test that greps for a class
   name. If you cannot render it in your session, say so in the PR instead of
   calling it verified.
+- **T-77** · `auth()` without Clerk's middleware context. Re-filed here on
+  2026-09-10: it used to say "does not reproduce on demand", and it does now -
+  36 times per `lighthouse` CI run, every run. Only the **defensive half** is
+  agent-sized: wrap the `auth()` call so a throw degrades to the "no session"
+  state that function already models, and log the pathname so the error has an
+  address. Diagnosing the root cause, or changing what the root layout awaits,
+  is not - that is T-91/T-12d territory.
 
 ### Needs the human before an agent can start
 
@@ -87,7 +94,6 @@ already warns about, and getting it wrong wastes a PR:
 - **T-62b** · closing inactive PRs - a community policy call.
 - **T-80 batch e** - `scripts/`, where the dangerous warnings live; PR #273 is
   already open awaiting review.
-- **T-77** · a bug that does not reproduce on demand.
 - **T-30/31/32**, and the feature epics (**T-41/42/43/45/50/51/52/53/68**) -
   architecture and product shape, `opusplan` in an interactive session.
 
@@ -1979,7 +1985,34 @@ call in `getSellerContextData()` so a throw degrades to "no session" — a
 state that function already models and returns — instead of taking the
 root layout down with it, and log the pathname when it happens. That turns
 an invisible error into something with an address on it.
-**Model:** `opus` — a bug that doesn't reproduce on demand · **Nightly:** no
+**It reproduces after all — in CI, every time (found 2026-09-10).** The
+`lighthouse` job logs it **36 times per run**, and it did so in three
+consecutive runs: 34554978872 (T-104's source PR), 34556229494 and
+34557100075 (both docs-only). Same count regardless of what the PR changed,
+so it is not content-dependent. The investigation above was local; the
+reproduction is the CI job, and anyone can re-read it with
+`gh run view <id> --job <lighthouse job id> --log`.
+**This kills the leading hypothesis.** The entry guessed the errors might be
+an artifact of a Chrome that never paints, since both runs that showed them
+were also failing with `NO_FCP`. But run 34554978872's `lighthouse` job
+**passed**, all budgets green, and still logged the same 36. The errors are
+independent of whether Lighthouse fails: the run where they appeared with a
+failure (34557100075) failed on `categories.performance 0.34 vs 0.35` on
+`/antojos`, which is the ordinary threshold noise T-73's entry already warns
+about, not `NO_FCP`.
+**So the "which request is it" job just got much cheaper** - it is a fixed
+set of 6 budgeted URLs, on a machine that can be re-run at will, producing a
+stable count. The defensive step this entry already proposes (wrap `auth()`
+in `getSellerContextData()` so a throw degrades to the "no session" state it
+already models, and log the pathname) is now verifiable rather than
+speculative: with a stable 36, a run that logs 36 pathnames tells you which
+requests they are, and a later run tells you whether the fix moved the
+number.
+**Careful, same as T-91:** that wrap is inside the root layout. Making it
+degrade gracefully is safe; restructuring what the root layout awaits is
+T-12d/T-91 territory and is not this task.
+**Model:** `opus` — subtle, and it runs through the root layout · **Nightly:**
+no
 
 ### [ ] T-80 · Translate the existing code comments to English
 **Why:** the 2026-09-05 decision (see T-66) says code, comments and the
