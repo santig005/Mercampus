@@ -7,8 +7,15 @@ import { startTestDb, stopTestDb } from '../setup.js';
 // the clerkId in the token, so mocking auth() is enough.
 const session = vi.hoisted(() => ({ userId: null }));
 
+// T-104: clerkClient is stubbed because verifySellerId now asks Clerk for
+// admin-ness whenever the session is not the seller's owner - which is
+// exactly the path 'un vendedor no puede pausar la tienda de otro' takes.
+// No publicMetadata here: none of these sessions is an admin.
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
+  clerkClient: () => ({
+    users: { getUser: async () => ({ publicMetadata: {} }) },
+  }),
 }));
 
 const OWNER = 'user_seed_carlos'; // owns the approved seller

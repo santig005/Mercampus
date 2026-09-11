@@ -2516,7 +2516,7 @@ from whoever hit it (what the UI showed, if anything) or a repro.
 **Model:** `opus` — production incident, subtle serverless bug
 · **Nightly:** no
 
-### [ ] T-104 · T-12's admin migration was never finished (finding, not a fix)
+### [x] T-104 · T-12's admin migration was never finished
 **Status: discovery only.** Filed while chasing T-103 live with the human.
 No refactor here - the human wants to keep exploring this interactively
 before anything gets touched. Do not pick this up as a normal "implement
@@ -2583,7 +2583,104 @@ it needs zero reseeding in the new non-prod cluster - it already applies
 everywhere, same as every session does, because Clerk doesn't change
 between environments. Doing T-63 first means the same Mongo-role reseeding
 this incident needed gets repeated by hand in the new cluster too.
-**Model:** n/a - discussion, not an implementation task yet · **Nightly:** no
+**Decided with the human 2026-09-10, and done.** The three stragglers now
+read Clerk, and there is a single definition of admin-ness to read:
+`src/utils/lib/isClerkAdmin.ts`. It imports Clerk and nothing else, which is
+why it is not in `utils/lib/auth.ts` next to the other auth helpers -
+`middleware.js` shares it, and importing `auth.ts` there would pull Mongoose
+and `connectDB` into the edge bundle. `middleware.js`'s local `esAdmin()` is
+gone in favour of it, so the correct check and the three fixed ones cannot
+drift apart again.
+- **Server (`verifySellerId`)**: ownership is compared first and Clerk is
+  asked only if that fails. Comparing two ids the `User` document already
+  carries is free and covers the common case (a seller editing their own
+  profile); the roundtrip is paid by the rarer request, an admin acting on
+  somebody else's seller.
+- **Client (`SellerGrid`, `SideBar`)**: `useUser().user?.publicMetadata`.
+  Clerk exposes `publicMetadata` on the client in the user resource the
+  session has already loaded, so **this costs no extra request at all** -
+  which is the answer to the open question below.
+**The `getSellerContextData()` question, answered: no, and it must not.**
+Putting `isAdmin` in `SellerContext` was considered and rejected. That
+function runs on **every** request through the root layout, so it would have
+added a Clerk Backend API roundtrip to the critical path of every page for
+100% of signed-in traffic, to serve a boolean that matters to a handful of
+accounts. `esAdmin()` accepts that same cost on `/admin/*` only, which is a
+rounding error of the traffic by comparison. Since the client already has
+`publicMetadata` for free, the expensive option bought nothing. Customising
+the Clerk session token (the genuinely cheapest option - it would remove the
+middleware's roundtrip too) was rejected separately: it is a dashboard
+change, invisible from the repo, applied by hand per instance (T-12h), and
+exactly the class of out-of-repo change that caused T-64.
+**On UI gating vs authorisation:** the two client changes are cosmetic by
+design. A non-admin who forces either branch open in their own browser
+renders the toggles and gets a 403 from every one of them, because
+`verifySellerId` reads the same `publicMetadata` server-side. Hiding a nav
+item is a convenience, never the gate.
+**Verified:** `npm run verify` green (lint, deadcode, typecheck, test,
+build). Two new tests in `tests/integration/autorizacion.test.js` pin *which*
+store the admin exception comes from, and both were confirmed to fail against
+the old code in the right direction: the Clerk admin got **403** (the
+incident this finding opened with) and the Mongo-only admin got **200** (the
+hole nobody had noticed). `clerkClient` had to be stubbed in
+`seller-pause.test.js` too - its "one seller cannot pause another's shop"
+case takes the new non-owner branch.
+**Still to measure before promoting to `develop` - not done in this PR.**
+`npm run set-admin-metadata` (dry run, writes nothing) counts the Mongo
+admins whose Clerk account has no `publicMetadata.role`. Every one of them
+loses admin the day this merges. The script already exists, already has the
+instance guard (T-12h) and an idempotent `--apply`; it was simply not run in
+the session that wrote this PR. **Run the dry run, and `--apply` if it lists
+anybody, before this leaves `agent/develop`.** The human's own account is not
+at risk - `/admin/sellers` already renders for them and that gate is Clerk,
+so their `publicMetadata` already says admin.
+**The other two open questions, decided:** `SellerGrid`'s parallel UI gets
+collapsed into `/admin/sellers` (T-106) and T-11 stays a separate task -
+see both entries. Splitting `approved` out as T-105 is what the next entry
+is about, and it is why **this PR alone does not make approving work yet.**
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-105 · Approving a seller writes nothing
+**Why:** found while reading T-104's four files, and it sits behind the same
+403. Both approval surfaces send `updateSeller(id, { approved })` to
+`PUT /api/sellers/[id]`, whose `updateSellerSchema` **does not declare
+`approved`** (`src/lib/validators/seller.ts`). Zod strips what it does not
+declare - which is T-13's deliberate anti-mass-assignment behaviour, working
+as intended - so `findByIdAndUpdate` receives an object without the field and
+writes nothing. The client flips the toggle optimistically, sees no
+`response.error` (the response is the seller JSON), and the UI lies until the
+next refresh. There is no approval endpoint anywhere: `/api/sellers/admin`
+only has a `GET`. **So T-104 fixed the gate and approving still does not
+work.**
+**Not a matter of adding `approved` to `updateSellerSchema`:** that is the
+self-service edit path a seller uses on their own profile, and putting
+`approved` in it hands every seller self-approval - the exact hole T-13
+closed. It needs its own admin-only edge.
+**Done when:** an admin-only endpoint actually flips `approved`, with an
+integration test that reads Mongo after the write rather than trusting the
+response, and the client surfaces a failed write instead of leaving the
+optimistic flip standing.
+**Worth knowing:** putting it under `/api/sellers/admin/...` means the
+middleware's `/api/(.*)/admin(.*)` matcher gates it for free, which is the
+one pattern in this repo that was already right.
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
+**Why:** decided with the human alongside T-104. There is a stronger argument
+than duplication: that inline grid is the only reason `GET /api/sellers` - a
+public, unauthenticated endpoint - returns **unapproved** sellers to
+everybody. The comment at `src/app/api/sellers/route.js:22-38` says so
+outright, and T-74 pinned it with a test. The pending queue is being shipped
+to every visitor's browser so that an admin's copy of the page can filter it
+back in client-side.
+**Done when:** the approve/reject UI lives only at `/admin/sellers`,
+`GET /api/sellers` filters `approved: true` in the Mongo query, and T-74's
+test is updated with the reason it changed. That turns a rendering choice
+into a server-side authorisation boundary.
+**Order matters:** after T-105. Collapsing onto `/admin/sellers` while the
+only approval path still writes nothing would leave no working surface at
+all.
+**Model:** `sonnet` · **Nightly:** no
 
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
