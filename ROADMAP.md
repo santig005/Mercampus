@@ -2625,18 +2625,32 @@ incident this finding opened with) and the Mongo-only admin got **200** (the
 hole nobody had noticed). `clerkClient` had to be stubbed in
 `seller-pause.test.js` too - its "one seller cannot pause another's shop"
 case takes the new non-owner branch.
-**Still to measure before promoting to `develop` - not done in this PR.**
-`npm run set-admin-metadata` (dry run, writes nothing) counts the Mongo
-admins whose Clerk account has no `publicMetadata.role`. Every one of them
-loses admin the day this merges. The script already exists, already has the
-instance guard (T-12h) and an idempotent `--apply`; it was simply not run in
-the session that wrote this PR. **Run the dry run, and `--apply` if it lists
-anybody, before this leaves `agent/develop`.** The human's own account is not
-at risk - `/admin/sellers` already renders for them and that gate is Clerk,
-so their `publicMetadata` already says admin.
+**Measured afterwards, read-only: nobody loses admin, and `--apply` must
+NOT be run.** The check this needed is "which Mongo admins have no
+`publicMetadata.role` in Clerk", and `npm run set-admin-metadata`'s dry run
+answers it misleadingly on its own - see T-108. Resolved id by id against
+`GET /v1/users/:id` on the instance the deployed site actually authenticates
+against (`ins_2mH0ZTsikZ8SSYtT1h3WhwJB5Cd`, development - T-64):
+- **5** `User` documents carry `role: 'admin'` in Mongo.
+- **3** of them have a `clerkId` that **404s** on that instance: they are
+  production-instance ids (T-12h). Nobody can present them to the live site,
+  so there is no working admin there to lose. Had they signed in, the webhook
+  would have minted them a fresh development-instance `User` with the schema
+  default `role: 'buyer'` anyway - which is precisely the duplicate this
+  finding opened with. Their Mongo `role: 'admin'` was already inert before
+  this change, because `/admin/*` was already gated on Clerk.
+- **1** (`test@example.com`) has no `clerkId` at all: nobody can sign in as it.
+- **1** - the human's working account, `users._id 6aa1fb344de64210563fb675`,
+  the very document unblocked by hand during the incident - already has
+  `publicMetadata.role: 'admin'`. It keeps working.
+So the promotion to `develop` is not blocked. **Do not run `--apply`:** with
+these keys it writes to the development instance (the script's guard refuses
+it anyway), and with production keys it would write into the instance T-64
+established the site does not use.
 **The other two open questions, decided:** `SellerGrid`'s parallel UI gets
-collapsed into `/admin/sellers` (T-106) and T-11 stays a separate task -
-see both entries. Splitting `approved` out as T-105 is what the next entry
+collapsed into `/admin/sellers` (T-106), and email uniqueness stays separate -
+T-11 deleted `/api/register` but explicitly left the unique index pending, so
+it is now filed on its own as T-107 with the duplicates measured. Splitting `approved` out as T-105 is what the next entry
 is about, and it is why **this PR alone does not make approving work yet.**
 **Model:** `opus` · **Nightly:** no
 
@@ -2681,6 +2695,51 @@ into a server-side authorisation boundary.
 only approval path still writes nothing would leave no working surface at
 all.
 **Model:** `sonnet` · **Nightly:** no
+
+### [ ] T-107 · The unique index on `email`, and the duplicates in the way
+**Why:** T-11 deleted `/api/register` and said in its own entry that the
+unique index on `email` "stays pending separately - it needs migrating the
+duplicates already in Mongo". Nothing has picked it up since, and T-104's
+incident depended on it: one person, two `User` documents, nothing merging
+them.
+**Measured read-only 2026-09-10, so the size is known:** **4** emails carry
+more than one `User` document, 2 documents each (one of them the human's
+own - the pair T-104 describes, one document per Clerk instance). So the
+migration is 4 cases, not 79.
+**Careful, and this is the whole task:** merging two documents means deciding
+which `clerkId` survives, and after T-64 the answer is not obvious - one id
+belongs to the instance the site authenticates against and the other to the
+instance holding the real accounts (T-64b is about exactly those people).
+Picking wrong silently locks somebody out of their own seller profile.
+**Done when:** the duplicates are merged by a script in `scripts/` with a dry
+run by default, `unique: true` is restored on `email` in `userSchema`, and a
+test proves a second document with the same email is refused. Rule 8 applies
+in full: measure against the real base first, ship the migration with the
+change.
+**Not the same as T-104:** that one made admin-ness immune to this (admin
+lives in Clerk now, so a stray document no longer grants or denies it).
+Seller-ness is still not immune, which is why this is still worth doing.
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-108 · `set-admin-metadata`'s dry run can't tell "wrong instance" from "missing role"
+**Why:** found while running it for T-104. `obtenerMetadataDeClerk` returns
+`{}` when the user lookup fails (`if (!ok) return {}`), so a `clerkId` that
+**404s** - because it belongs to a different Clerk instance - is reported as
+`actualizado`, the same state as an account that genuinely exists and just
+lacks the role. Its dry run said "3 admin(s) por actualizar"; resolving the
+ids by hand showed all 3 were 404s and the real answer was zero.
+**Why it matters more than a cosmetic label:** the two states want opposite
+actions. "Missing role" wants `--apply`. "Another instance's id" wants
+nothing at all - and running `--apply` on that list with production keys is
+the T-12h mistake, writing metadata against ids the site will never see.
+The global instance warning does not cover this: it fires on the instance,
+while this is per id, and a database can hold ids from both.
+**Done when:** a third state (`otra-instancia`) is distinguished from
+`actualizado`, `pendientes` counts only accounts that really exist and lack
+the role, and `--check` is not failed by ids from another instance. The
+existing tests already inject `obtenerMetadataDeClerk`, so this is testable
+without touching Clerk - the seam is there.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
