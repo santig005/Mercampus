@@ -1,8 +1,9 @@
-import { clerkClient, clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { decideAdminAccess } from './utils/lib/adminAccess';
+import { isClerkAdmin } from './utils/lib/isClerkAdmin';
 
 const isProtectedRoute = createRouteMatcher([
   '/antojos/sellers/register(.*)',
@@ -28,16 +29,6 @@ const isIntlRoute = createRouteMatcher(['/about(.*)', '/en/about(.*)']);
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-// clerkClient() goes out to Clerk's Backend API (publicMetadata doesn't
-// travel in the session JWT unless the session token is customised in the
-// dashboard - an infrastructure change this repo avoids after the T-64
-// incident). It's only called once there is a userId, i.e. only for someone
-// trying to reach an admin route, not on every public request.
-async function esAdmin(userId) {
-  const user = await clerkClient().users.getUser(userId);
-  return user.publicMetadata?.role === 'admin';
-}
-
 export default clerkMiddleware(async (auth, req) => {
   if (isIntlRoute(req)) {
     return intlMiddleware(req);
@@ -56,7 +47,12 @@ export default clerkMiddleware(async (auth, req) => {
       isAdminRoute: true,
       isApi: req.nextUrl.pathname.startsWith('/api'),
       userId,
-      isAdmin: userId ? await esAdmin(userId) : false,
+      // isClerkAdmin() is a roundtrip to Clerk's Backend API, so it is only
+      // called once there is a userId AND the route is an admin one - not on
+      // every public request. T-104 moved it out of this file so the server
+      // side (utils/lib/auth.ts) gates on the same definition instead of on
+      // Mongo's `role`.
+      isAdmin: userId ? await isClerkAdmin(userId) : false,
     });
 
     if (decision.action === 'signin') {

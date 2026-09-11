@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 
 import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
+import { isClerkAdmin } from '@/utils/lib/isClerkAdmin';
 import { Product } from '@/utils/models/productSchema';
 import { User } from '@/utils/models/userSchema';
 // Not used by name, but the import registers the model with Mongoose:
@@ -126,15 +127,31 @@ export const verifyOwnershipAndGetSellerId = async (productId: string) => {
 /**
  * Checks that the authenticated user owns the given seller, or is an admin.
  * Returns the user.
+ *
+ * T-104: admin-ness is read from Clerk, not from Mongo's `user.role`. This is
+ * the gate on approving and rejecting a seller, and it is the *only* one:
+ * `PUT /api/sellers/[id]` does not match the middleware's `/api/(.*)/admin(.*)`
+ * pattern, so the one place that already checked Clerk correctly never runs
+ * here. Reading Mongo meant a person with two `User` documents - one per Clerk
+ * instance, which the webhook creates unprompted (T-12h) - was authorised by
+ * whichever document the session's `clerkId` happened to resolve to, and was
+ * refused with a 403 on their own admin panel.
  */
 export const verifySellerId = async (sellerId: string) => {
   const user = await getAuthenticatedUser();
-
-  const isAdmin = user.role === 'admin';
   const isOwner = user.sellerId?.toString() === sellerId;
 
-  if (!isAdmin && !isOwner) {
-    throw new AppError('No autorizado para este vendedor.', 403);
+  // Ownership first, and Clerk only if that fails: comparing two ids the User
+  // document already carries costs nothing and covers the common case (a
+  // seller editing their own profile), while isClerkAdmin() is a roundtrip to
+  // Clerk's Backend API. So the request that pays for it is the rarer one: an
+  // admin acting on somebody else's seller.
+  if (!isOwner) {
+    const isAdmin = await isClerkAdmin(await getClerkUserId());
+
+    if (!isAdmin) {
+      throw new AppError('No autorizado para este vendedor.', 403);
+    }
   }
 
   return user;

@@ -4,17 +4,26 @@ import { getSellers } from '@/services/sellerService';
 import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';
 import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
-import { useSeller } from '@/context/SellerContext';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import { updateSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 
 export default function SellerGrid({ section = 'antojos' }) {
   const [sellers, setSellers] = useState([]);
-  const {dbUser} = useSeller();
   const {university} = useUniversity();
   const { getToken } = useAuth();
+  const { user } = useUser();
+
+  // T-104: Clerk's publicMetadata, not Mongo's `role` (T-12 retired that field
+  // as the source of truth for admin). It arrives with the user resource the
+  // session already loaded, so there is no extra request for it.
+  //
+  // This only decides what gets drawn. The approve/reject toggle below is
+  // authorised server-side by verifySellerId, which now reads the same
+  // publicMetadata: a non-admin who forced this branch open in their own
+  // browser would render the toggles and get a 403 from every one of them.
+  const isAdmin = user?.publicMetadata?.role === 'admin';
 
   useEffect(() => {
     async function fetchSellers() {
@@ -52,10 +61,9 @@ export default function SellerGrid({ section = 'antojos' }) {
     }
   };
 
-  const visibleSellers =
-    dbUser?.role === 'admin'
-      ? sellers
-      : sellers.filter(seller => seller.approved);
+  const visibleSellers = isAdmin
+    ? sellers
+    : sellers.filter(seller => seller.approved);
 
   return (
     <SellerModalHandler>
@@ -80,7 +88,7 @@ export default function SellerGrid({ section = 'antojos' }) {
             </div>
           ) : (
             <>
-              {dbUser?.role === 'admin' ? (
+              {isAdmin ? (
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                   {sellers.map(seller => (
                     <div key={seller._id} className='bg-base-100 text-base-content shadow-md rounded-lg'>

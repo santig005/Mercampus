@@ -1,6 +1,5 @@
 'use client';
-import { logger } from '@/lib/logger';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SignOutButton, useUser } from '@clerk/nextjs';
 import SidebarBtn from '@/components/header/SidebarBtn';
 import ThemeToggle from '@/components/header/ThemeToggle';
@@ -43,23 +42,18 @@ import {
 } from 'react-icons/fa6';
 
 const SideBar = ({ userId }) => {
-  const { seller, dbUser, loading: sellerLoading } = useSeller();
+  const { seller } = useSeller();
   const { user } = useUser();
-  const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => {
-    if(dbUser?.role === 'admin') {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
-    logger.debug('🔍 SideBar - isAdmin actualizado:', isAdmin);
-    logger.debug('🔍 SellerContext - Estado actual:', {
-      seller: seller,
-      dbUser: dbUser,
-      isAdmin: isAdmin,
-      loading: sellerLoading
-    });
-  }, [dbUser]);
+
+  // T-104: read from Clerk's publicMetadata, not from Mongo's `role` - T-12
+  // retired that field as the source of truth for admin. Clerk exposes
+  // publicMetadata on the client in the user resource the session already
+  // loaded, so this costs no extra request.
+  //
+  // Showing a nav item is cosmetic: the real gate is middleware.js, which
+  // checks the same publicMetadata server-side before /admin/* renders at
+  // all. Hiding the link is a convenience, never the authorisation.
+  const isAdmin = user?.publicMetadata?.role === 'admin';
 
   return (
     <div className='drawer-side'>

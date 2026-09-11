@@ -9,17 +9,32 @@ import { startTestDb, stopTestDb } from '../setup.js';
 // Since T-12c only `auth()` is needed: identity is resolved from the
 // clerkId the token already carries. clerkClient() had to be stubbed too,
 // because every mutation used to ask Clerk's Backend API for the email.
-const session = vi.hoisted(() => ({ userId: null }));
+//
+// T-104: `publicMetadata` is stubbed too, because admin-ness is now read from
+// Clerk (the source of truth T-12 chose) instead of from Mongo's `role`.
+const session = vi.hoisted(() => ({ userId: null, publicMetadata: {} }));
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
+  clerkClient: () => ({
+    users: {
+      getUser: async id => {
+        if (id !== session.userId) {
+          throw new Error(`getUser called with ${id}, not the session's id.`);
+        }
+        return { publicMetadata: session.publicMetadata };
+      },
+    },
+  }),
 }));
 
-const signInAs = usuario => {
+const signInAs = (usuario, { admin = false } = {}) => {
   session.userId = usuario.clerkId;
+  session.publicMetadata = admin ? { role: 'admin' } : {};
 };
 const signOut = () => {
   session.userId = null;
+  session.publicMetadata = {};
 };
 
 // From the seed.
@@ -57,6 +72,7 @@ let productsRoute;
 let Product;
 let Seller;
 let Schedule;
+let User;
 let ids;
 
 describe('autorizacion en mutaciones', () => {
@@ -72,6 +88,7 @@ describe('autorizacion en mutaciones', () => {
     ({ Product } = await import('@/utils/models/productSchema'));
     ({ Seller } = await import('@/utils/models/sellerSchema2'));
     ({ Schedule } = await import('@/utils/models/scheduleSchema'));
+    ({ User } = await import('@/utils/models/userSchema'));
   }, 120_000);
 
   afterAll(async () => {
@@ -223,6 +240,45 @@ describe('autorizacion en mutaciones', () => {
       expect(response.status).toBe(200);
       expect((await Seller.findById(ids.approvedSeller)).slogan).toBe(
         'Con mi propio email'
+      );
+    });
+
+    // T-104. These two are the whole point of the task: they pin *which*
+    // store the admin exception is read from. This route is the only gate on
+    // approving a seller - it does not match the middleware's
+    // `/api/(.*)/admin(.*)`, so nothing else checks admin-ness here.
+    it('lets an admin edit a seller they do not own', async () => {
+      // A buyer with no seller profile at all: the only thing authorising
+      // this is the admin role in Clerk.
+      signInAs(BUYER, { admin: true });
+
+      const response = await sellerRoute.PUT(
+        jsonRequest({ slogan: 'Aprobado por un admin' }),
+        { params: { id: ids.approvedSeller } }
+      );
+
+      expect(response.status).toBe(200);
+      expect((await Seller.findById(ids.approvedSeller)).slogan).toBe(
+        'Aprobado por un admin'
+      );
+    });
+
+    it('refuses a Mongo-only admin whose Clerk account has no role', async () => {
+      // The exact shape of the T-104 incident: the `role: admin` field sits in
+      // Mongo (here, on the session's own User) and Clerk knows nothing about
+      // it. Before T-104 this returned 200 - Mongo's field was what the gate
+      // read, so a stray document could grant or deny admin on its own.
+      await User.findOneAndUpdate({ clerkId: BUYER.clerkId }, { role: 'admin' });
+      signInAs(BUYER);
+
+      const response = await sellerRoute.PUT(
+        jsonRequest({ slogan: 'Robado' }),
+        { params: { id: ids.approvedSeller } }
+      );
+
+      expect(response.status).toBe(403);
+      expect((await Seller.findById(ids.approvedSeller)).slogan).not.toBe(
+        'Robado'
       );
     });
   });
