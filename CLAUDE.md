@@ -91,6 +91,12 @@ el workflow nocturno: el modo plan solo existe en sesión interactiva.
 El agente programado toma **únicamente** tareas marcadas `Nocturno: sí`. Si
 ninguna aplica, termina sin abrir PR en vez de inventar trabajo.
 
+**Si abres una sesión nueva sin contexto y vas a escoger tarea tú mismo**, lee
+antes la sección "Starting a fresh session? Read this first" al principio de
+`ROADMAP.md`. Dice qué se puede tomar en solitario y qué no se toca sin el
+humano delante (el trabajo de rol admin y la separación de entornos, entre
+otras). Es un índice: la entrada de cada tarea sigue siendo el contrato.
+
 ## Convenciones de código
 
 - **Server Components por defecto.** `'use client'` solo cuando haya estado,

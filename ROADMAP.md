@@ -19,6 +19,80 @@ executing it.
 
 ---
 
+## Starting a fresh session? Read this first
+
+Written 2026-09-10, for an agent opening a new conversation with no context
+beyond this file. It answers one question: **what can I safely pick up on my
+own right now?** Re-check it against the entries themselves before starting -
+this index goes stale, the entries are the contract.
+
+### Do not touch these without the human in the conversation
+
+Not because they are hard, but because getting them wrong costs real user
+data or real access, and the human has asked for them to wait:
+
+- **The admin-role work: T-105, T-106, T-107, T-108**, and anything else that
+  reads or writes `publicMetadata`, `User.role`, or the seller approval path.
+  T-104 closed the gate; the rest of that chain is half-finished on purpose
+  and the sequencing matters (T-105 before T-106).
+- **Environment separation: T-63**, and T-64/T-12h's Clerk instance work. One
+  Mongo cluster and one Clerk instance serve Production, Preview and
+  Development today. Until that is split, a careless write lands on real
+  users.
+- **T-95** (audit `/admin/*`) - it needs minting a privileged Clerk account
+  per run, which is both of the above at once.
+- **T-82** (deleting a product's images) - irreversible deletes against an
+  external service.
+- **T-91** (`notFound()` soft-404s) - the fix runs through the root layout and
+  `SellerContext`; read T-12d first, and do it with the human.
+
+Everything below still assumes **rule 1**: branch from `agent/develop`, PR
+into `agent/develop`, never push to `main` or `develop`.
+
+### Safe to take alone
+
+One per PR, per rule 2. Ordered by how little can go wrong.
+
+| Task | Why it is safe | How you know it worked |
+|---|---|---|
+| **T-85** · Spanish left in test descriptions | Renames `describe`/`it` strings only. No source, no behaviour. The entry names the trap: renaming a test is safe, changing a string a test *asserts on* is not. | `npm run verify`. The same tests pass, with English names. |
+| **T-36** · A real README | Touches no source at all. The human explicitly delegated it to an agent and said it gets rewritten by hand if it does not land, so a mediocre attempt costs nothing. | It builds, and it answers: what this is, stack, env vars, how to run it and the tests, the agentic pipeline. |
+| **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
+| **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
+
+### Fine for an agent, but read the caveat in the entry first
+
+Not risky in the "loses data" sense - they each carry one decision the entry
+already warns about, and getting it wrong wastes a PR:
+
+- **T-83** · Extraordinary availability. `Nightly: yes` and well specified,
+  but it adds a field to a document, so **rule 8 applies**: measure against
+  the real base read-only first, and remember the `$ne: true` trap T-71 hit -
+  existing sellers have no such field, and an equality filter drops every one
+  of them.
+- **T-81** · i18n, one zone per PR. The copy moves are mechanical; the risk is
+  that every zone widens the middleware matcher, which has to keep coexisting
+  with `clerkMiddleware`. That is the part that can break auth on routes with
+  nothing to do with i18n. If a zone needs the matcher rethought, stop and
+  ask.
+- **T-44** · Seller panel. Unblocked (T-40 is done), but it is new UI, and
+  CLAUDE.md rule 3 means a real screenshot, not a test that greps for a class
+  name. If you cannot render it in your session, say so in the PR instead of
+  calling it verified.
+
+### Needs the human before an agent can start
+
+- **T-35** · choosing the image provider (T-109 carves out the safe half).
+- **T-60** · Observability - needs a Sentry account and a DSN.
+- **T-62b** · closing inactive PRs - a community policy call.
+- **T-80 batch e** - `scripts/`, where the dangerous warnings live; PR #273 is
+  already open awaiting review.
+- **T-77** · a bug that does not reproduce on demand.
+- **T-30/31/32**, and the feature epics (**T-41/42/43/45/50/51/52/53/68**) -
+  architecture and product shape, `opusplan` in an interactive session.
+
+---
+
 ## Model and effort
 
 Two different dials:
@@ -1136,7 +1210,54 @@ route. `next-auth`, `bcryptjs`, `jsonwebtoken`, and `cookies` are also
 leftovers from before Clerk.
 **Done when:** one is chosen, the other is removed along with its route
 and dependency; `package.json` with no unused dependencies.
+**The dead pre-Clerk dependencies were split out as T-109**, because that
+half needs no decision from anybody. What is left here is the provider
+choice.
 **Model:** `sonnet` · **Nightly:** no (choosing the provider is yours)
+
+### [ ] T-109 · Drop the pre-Clerk dead dependencies
+**Why:** carved out of T-35 on 2026-09-10 so an agent can take it alone.
+T-35 bundles two things: *which image provider to keep*, which is the
+human's call, and *deleting the leftovers from before Clerk*, which is
+nobody's call - `next-auth`, `bcryptjs`, `jsonwebtoken` and `cookies` are
+listed there as leftovers of an auth stack this app no longer uses.
+**Done when:** each one is confirmed unimported across `src/`, `scripts/`
+and `tests/`, then removed from `package.json` with the lockfile updated;
+`npm run verify` green.
+**Rule 5 is the whole job:** do not delete on the strength of the name.
+Quote the reference search for each package in the PR, and if one turns out
+to be imported somewhere, leave it and say where. Being a transitive
+dependency of something else is also a reason to stop.
+**Not in scope:** the image provider. And do not confuse the `cookies`
+package with `next/headers`' `cookies()`, which is Next's own and is
+certainly in use.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-110 · Stabilise the flaky e2e specs
+**Why:** the suite has now cried wolf three times on record, which is how a
+real regression gets waved through. T-80 logged two seller specs (`el perfil
+del vendedor carga su negocio`, `el listado de vendedores muestra las
+tarjetas`) failing and then passing 16/16 on an immediate re-run of the same
+commit, with only comment changes in the tree. T-104's PR (#301) hit a third:
+`about-topbar.spec.js:53`, T-87's "scrolling back to the top puts the hero
+back behind it", red on the first run and green on a re-run of the same
+commit.
+**The cause is probably already written down.** T-87's own entry explains the
+class for `/about`: the page animates its sections in with framer-motion, so
+on a cold runner the document is still viewport-height when a scroll lands,
+the event goes nowhere and `scrollY` stays 0. Its other two tests poll
+`document.body.scrollHeight` until the page is scrollable and then poll
+`scrollY` until it moved - the failing one is the scroll-back-*up* direction,
+which has no such poll.
+**Done when:** the named specs pass on repeated runs of the same commit, and
+each fix waits on a real condition rather than a fixed timeout. A
+`waitForTimeout` added to make a race go away is not a fix and will rot.
+**Careful:** do not "stabilise" a spec by weakening what it asserts. T-87's
+test exists because the header printed on top of the section text; a version
+that no longer checks the background is worse than a flaky one.
+**Worth knowing:** `--grep` narrows `npm run test:e2e` to one spec, which is
+what makes "run it ten times" cheap enough to actually prove the fix.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-36 · A real README
 **Why:** it's still `create-next-app`'s, with a stray `## Yes`.
