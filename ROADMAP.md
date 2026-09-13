@@ -2869,6 +2869,14 @@ minting an admin one is exactly T-95, which is parked. The route handler is
 covered against a real Mongo instead. No screenshots: no colour, theme or
 layout changed - the markup both components render is identical, only the
 endpoint they call and where the rollback lives.
+**Corrected the same day by T-105b, before it was ever exercised:** the
+client called it through `fetchAPIToken`, which is `'use server'` - so the
+request left the *server* with a Bearer token and no cookies, and had to
+survive the middleware's admin gate on a server-to-server hop that nothing
+in this repo exercises. The integration tests cannot see that seam: they
+call the handler directly with the middleware mocked out. It is a plain
+relative browser fetch now, matching the sibling `GET /api/sellers/admin`
+that has always worked. See T-105b.
 **This is not live until the promotion happens.** Measured 2026-09-13:
 `agent/develop` is **133 commits** ahead of `develop`, and `develop` equals
 `main`; both last moved 2026-09-05. Production still runs the old
@@ -2876,6 +2884,35 @@ endpoint they call and where the rollback lives.
 approving is still broken there for both reasons. T-104 and T-105 together
 are what make it work end to end, and a human promoting `agent/develop` is
 what makes it real.
+**Model:** `opus` · **Nightly:** no
+
+### [x] T-105b · Approve through a relative fetch, not a Server Action
+**Why:** caught while the `develop -> main` promotion was already running, so
+before anyone had clicked the new toggle. T-105's client called the endpoint
+through `fetchAPIToken`, and that helper is `'use server'`: the call becomes a
+Server Action that fetches `NEXT_PUBLIC_URL + '/api'` **from the server**,
+carrying `Authorization: Bearer` and no cookies. Two things wrong with that,
+and only here:
+- It is the first call through that helper to a path the middleware gates as
+  an admin route (`/api/(.*)/admin(.*)`). Whether Clerk resolves that Bearer
+  on a server-to-server hop is a seam nothing else in this repo exercises, and
+  the integration tests structurally cannot cover it - they call the route
+  handler directly with the middleware mocked out. It very likely works;
+  "very likely" is not what an authorisation path should rest on when the
+  alternative is free.
+- It is the `NEXT_PUBLIC_URL + '/api'` antipattern CLAUDE.md says is being
+  removed.
+**Done:** `approveSeller` does a plain relative `fetch('/api/sellers/admin/:id')`
+from the browser, which carries Clerk's cookie - exactly what the sibling
+`GET /api/sellers/admin` in the same panel has always done. It still throws on
+a non-2xx, so the optimistic rollback contract is unchanged. The
+`getToken({ skipCache: true })` dance and the now-unused `useAuth` import went
+with it from both call sites.
+**Verified:** `npm run verify` green; the 11 T-105 tests are untouched and
+still pass, since the route itself did not change.
+**Still not provable in CI:** the browser hop through the real middleware
+needs a signed-in admin Playwright fixture, which is T-95. The check is one
+click in the deployed panel: approve somebody, refresh, see it stick.
 **Model:** `opus` · **Nightly:** no
 
 ### [ ] T-106 · Collapse SellerGrid's approval UI into /admin/sellers

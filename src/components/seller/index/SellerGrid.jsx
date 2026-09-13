@@ -7,12 +7,11 @@ import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import { approveSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
-import { useAuth, useUser } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 
 export default function SellerGrid({ section = 'antojos' }) {
   const [sellers, setSellers] = useState([]);
   const {university} = useUniversity();
-  const { getToken } = useAuth();
   const { user } = useUser();
 
   // T-104: Clerk's publicMetadata, not Mongo's `role` (T-12 retired that field
@@ -51,8 +50,7 @@ export default function SellerGrid({ section = 'antojos' }) {
       // T-105: the admin-only endpoint that actually writes `approved`. This
       // used to send it to PUT /sellers/:id, where Zod dropped the field and
       // the write silently did nothing.
-      const token = await getToken({ skipCache: true });
-      await approveSeller(sellerId, !isOn, token);
+      await approveSeller(sellerId, !isOn);
     } catch (error) {
       logger.error('Error updating seller:', error);
       // fetchAPIToken throws on a non-2xx, so the undo belongs here. It used
