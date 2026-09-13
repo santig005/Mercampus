@@ -31,3 +31,18 @@ export const updateSeller = async (id, data,token) => {
   });
 };
 
+// T-105. Approving is its own endpoint, not a field on updateSeller: `PUT
+// /sellers/:id` is the seller's own self-service edit, and `approved` is
+// stripped there by design (T-13). This one is admin-only, gated by the
+// middleware's /api/(.*)/admin(.*) matcher and again inside the handler.
+//
+// fetchAPIToken throws on a non-2xx rather than returning `{ error }`, so a
+// caller doing an optimistic update has to roll back in its `catch`, not
+// only on an error field in the response.
+export const approveSeller = async (id, approved, token) => {
+  return await fetchAPIToken(`/sellers/admin/${id}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ approved }),
+  });
+};
+
