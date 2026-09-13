@@ -4,11 +4,11 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
 import { productCardClassName } from '@/lib/card-variant';
 
-// variant='standalone' (por defecto): tarjeta suelta sobre el fondo de la
-// página, con su propio sombreado y la animación de escala al hacer click.
-// variant='embedded': sin fondo ni sombreado, para cuando el contenedor que la
-// envuelve ya provee esa apariencia (p. ej. la fila de edición de productos).
-// La lógica del className vive en src/lib/card-variant.js: ver ahí por qué.
+// variant='standalone' (the default): a loose card on the page background,
+// with its own shadow and the scale animation on click.
+// variant='embedded': no background or shadow, for when the wrapping container
+// already provides that look (the product editing row, for instance).
+// The className logic lives in src/lib/card-variant.js: see there for why.
 export default function ProductCard({ product, isClicked, variant = 'standalone' }) {
   const { name, availability, category, price, images, owner } = product;
 

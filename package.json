@@ -15,11 +15,14 @@
     "test": "vitest run",
     "verify": "node scripts/verify.mjs",
     "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
+    "budget:lighthouse": "node --import ./scripts/register-alias.mjs ./scripts/lighthouse.mjs",
+    "budget:lighthouse:dark": "node --import ./scripts/register-alias.mjs ./scripts/lighthouse-dark.mjs",
     "seed": "node --import ./scripts/register-alias.mjs ./scripts/seed.mjs",
     "migrate:product-section": "node --import ./scripts/register-alias.mjs ./scripts/migrate-product-section.mjs",
     "migrate:clerk-id": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backfill-clerk-id.mjs",
     "backup:db": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs",
-    "reclaim:account": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/reclaim-account.mjs"
+    "reclaim:account": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/reclaim-account.mjs",
+    "set-admin-metadata": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/set-admin-metadata.mjs"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
@@ -38,6 +41,7 @@
     "next": "^14.2.24",
     "next-auth": "^5.0.0-beta.20",
     "next-cloudinary": "^6.13.0",
+    "next-intl": "^4.14.2",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",
@@ -49,6 +53,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.2.33",
     "@playwright/test": "^1.62.1",
     "@types/node": "^26.4.1",
     "@types/react": "^18.3.5",

@@ -1,68 +1,31 @@
 // SellerContext.js
 "use client";
-import { logger } from '@/lib/logger';
 import { createContext, useContext, useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { getUserWithSellerByEmail } from "@/services/userService";
 import { useRouter } from "next/navigation";
 
 const SellerContext = createContext(null);
 
-export const SellerProvider = ({ children }) => {
-  const { user, isLoaded } = useUser();
-  const [seller, setSeller] = useState("Loading");
-  const [dbUser, setDbUser] = useState("Loading");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSeller = async () => {
-      if (!isLoaded) {
-        return;
-      }
-      if (!user) {
-        setLoading(false);
-        setSeller(false);
-        setDbUser(false);
-        return;
-      }
-
-      try {
-        const email = user.primaryEmailAddress?.emailAddress;
-        if (email) {
-            const response = await getUserWithSellerByEmail(email);
-          const { user: dbUser, seller } = response;
-          if (seller) {
-            setSeller(seller);
-          } else {
-            setSeller("None");
-          }
-          if (dbUser) {
-            setDbUser(dbUser);
-          } else {
-            setDbUser("None");
-          }
-        } else {
-          setSeller(false);
-        }
-      } catch (error) {
-        logger.error("Error fetching seller:", error);
-        setSeller(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSeller();
-  }, [user, isLoaded]);
+// user/seller arrive already resolved by the server (getSellerContextData in
+// src/utils/lib/auth.ts, called from the root layout) instead of being
+// fetched on mount. SellerContext used to hit
+// GET /api/users/user-with-seller/[email] from the client: that route had no
+// authentication at all and was an account-enumeration oracle (T-12d).
+// setSeller/setDbUser are kept because several screens use them for an
+// optimistic update after a PUT, without re-fetching the data.
+export const SellerProvider = ({ children, initialUser, initialSeller }) => {
+  const [seller, setSeller] = useState(initialSeller);
+  const [dbUser, setDbUser] = useState(initialUser);
 
   return (
-    <SellerContext.Provider value={{ seller, setSeller, loading, dbUser, setDbUser }}>
+    <SellerContext.Provider
+      value={{ seller, setSeller, loading: false, dbUser, setDbUser }}
+    >
       {children}
     </SellerContext.Provider>
   );
 };
 
-// Custom hook para consumir el contexto
+// Custom hook for consuming the context
 export const useSeller = () => {
   const context = useContext(SellerContext);
   if (context === undefined) {
@@ -70,74 +33,6 @@ export const useSeller = () => {
   }
   return context;
 };
-
-
-/* "use client";
-import { createContext, useContext, useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { getSellerByEmail } from "@/services/sellerService";
-import { getUserByEmail } from "@/services/userService";
-import { useRouter } from "next/navigation";
-const SellerContext = createContext(null);
-
-export const SellerProvider = ({ children }) => {
-  const { user,isLoaded } = useUser();
-  const [seller, setSeller] = useState("Loading");
-  const [dbUser, setDbUser] = useState("Loading");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSeller = async () => {
-      if(!isLoaded){
-        return;
-      }
-      if (!user) {
-        setLoading(false);
-        setSeller(false);
-        setDbUser(false);
-        return;
-      }
-
-      try {
-        // Retrieve the primary email address (if available)
-        const email = user.primaryEmailAddress?.emailAddress;
-        if (email) {
-          const sellerData = await getSellerByEmail(email);
-          if(sellerData)setSeller(sellerData.seller);
-          else setSeller("None")
-          
-          const userData = await getUserByEmail(email);
-          if(userData)setDbUser(userData);
-          else setDbUser("None")
-        } else {
-          setSeller(false);
-        }
-      } catch (error) {
-        logger.error("Error fetching seller:", error);
-        setSeller(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSeller();
-  }, [user,isLoaded]); // Only refetch when `user` changes
-
-  return (
-    <SellerContext.Provider value={{ seller, setSeller, loading, dbUser,setDbUser }}>
-      {children}
-    </SellerContext.Provider>
-  );
-};
-
-// Custom hook for easier context consumption.
-export const useSeller = () => {
-  const context = useContext(SellerContext);
-  if (context === undefined) {
-    throw new Error("useSeller must be used within a SellerProvider");
-  }
-  return context;
-}; */
 
 /**
  * Hook to check the seller's status and redirect based on their condition.
@@ -172,7 +67,7 @@ export const useCheckSeller = (sellerAllowed,routeIfNot) => {
       if (!dbUser) {
         router.push("/auth/login");
         return;
-      } 
+      }
       if (!sellerLoading) {
         if(sellerAllowed!=="userNotSeller"){
           if (seller) {

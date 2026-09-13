@@ -15,7 +15,7 @@ vi.mock('@clerk/nextjs/server', () => ({
 let User;
 let sellersRoute;
 
-/** Clerk de mentira: la lista de cuentas que devolveria la API. */
+/** A fake Clerk: the list of accounts the API would return. */
 const clerkCon =
   (...cuentas) =>
   async () =>
@@ -68,7 +68,7 @@ describe('backfill de clerkId', () => {
       apply: true,
     });
 
-    expect(informe.pendientes).toBe(1); // uno enlazado en esta pasada
+    expect(informe.pendientes).toBe(1); // one linked in this run
     expect((await User.findOne({})).clerkId).toBe('user_ana');
   });
 
@@ -85,9 +85,9 @@ describe('backfill de clerkId', () => {
   });
 
   it('con el email duplicado se queda con el que tiene perfil de vendedor', async () => {
-    // El caso real de producción: la misma persona dos veces, una copia con
-    // vendedor y otra vacía, porque el viejo POST /api/register creaba usuarios
-    // sin autenticación y el unique del email sigue comentado (T-11).
+    // The real production case: the same person twice, one copy with a seller
+    // and one empty, because the old POST /api/register created users with no
+    // authentication and the email's unique is still commented out (T-11).
     const vacio = await crearUsuario('ana@example.test');
     const conVendedor = await crearUsuario('ana@example.test', {
       role: 'seller',
@@ -117,8 +117,8 @@ describe('backfill de clerkId', () => {
   });
 
   it('no toca ni cuenta como pendientes los documentos sin cuenta en Clerk', async () => {
-    // 65 de estos hay en producción. No estan bloqueados: sin cuenta en Clerk
-    // no pueden ni iniciar sesion, asi que no son trabajo de esta migracion.
+    // There are 65 of these in production. They are not locked out: with no
+    // Clerk account they can't sign in, so they aren't this migration's job.
     await crearUsuario('fantasma1@example.test');
     await crearUsuario('fantasma2@example.test');
     await crearUsuario('ana@example.test');
@@ -129,12 +129,12 @@ describe('backfill de clerkId', () => {
     });
 
     expect(informe.huerfanos).toBe(2);
-    expect(informe.pendientes).toBe(1); // solo la cuenta de Clerk
+    expect(informe.pendientes).toBe(1); // the Clerk account only
     expect((await User.findOne({ email: 'fantasma1@example.test' })).clerkId).toBeUndefined();
   });
 
   it('no roba el usuario de otra cuenta ya enlazada', async () => {
-    // Si el documento ya tiene otro clerkId es otra persona: pisarlo mezclaria
+    // If the document already has a different clerkId it is another person:
     // dos cuentas y ademas reventaria el indice unique.
     await crearUsuario('compartido@example.test', { clerkId: 'user_primero' });
 
@@ -152,7 +152,7 @@ describe('backfill de clerkId', () => {
 
   it('deja al usuario pudiendo operar otra vez', async () => {
     // El recorrido entero: bloqueado como estaria en produccion, backfill, y
-    // vuelve a poder registrarse como vendedor.
+    // can register as a seller again.
     await crearUsuario('ana@example.test');
     session.userId = 'user_ana';
 
@@ -204,7 +204,7 @@ describe('guarda de instancia', () => {
     await expect(
       comprobarInstancia({
         describirInstancia: produccion,
-        comprobarClerkId: async () => false, // esta instancia no lo conoce
+        comprobarClerkId: async () => false, // this instance doesn't know it
       })
     ).rejects.toThrow(/otra instancia/);
   });

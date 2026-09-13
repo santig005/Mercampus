@@ -1,13 +1,13 @@
 import ImageKit from 'imagekit';
 
-// Las variables van SIN el prefijo NEXT_PUBLIC_ a proposito. Solo se usan en
-// route handlers, asi que nunca hacen falta en el navegador; con el prefijo,
-// bastaria que un componente 'use client' importara este modulo para publicar
-// la clave privada en el bundle del siguiente deploy.
+// These variables deliberately carry NO NEXT_PUBLIC_ prefix. They are only
+// used in route handlers, so they are never needed in the browser; with the
+// prefix, one 'use client' component importing this module would be enough to
+// publish the private key in the next deploy's bundle.
 //
-// La instancia es perezosa: creandola a nivel de modulo, `next build` reventaba
-// al recolectar los handlers si las variables no estaban definidas, y por eso
-// el CI arrastraba placeholders falsos.
+// The instance is lazy: created at module level, `next build` blew up while
+// collecting the handlers if the variables were undefined, which is why CI
+// used to carry fake placeholders.
 let client;
 
 export function getImageKit() {

@@ -1,25 +1,33 @@
 import { fetchAPI } from './api';
 import { fetchAPIToken } from './apiToken';
 
-export const getProducts = async (
+// T-23: limit/cursor replace offset - a numeric offset can't be kept stable
+// once the listing paginates in Mongo with a cursor (see GET /api/products).
+// An options object rather than positional arguments: there were already 7
+// parameters before the cursor was added.
+export const getProducts = async ({
   product,
   category,
   sellerId,
   university,
+  section = 'antojos',
+  sort,
   limit,
-  offset,
-  section = 'antojos'
-) => {
+  cursor,
+} = {}) => {
   const queryParams = new URLSearchParams();
 
   if (product) queryParams.append('product', product);
   if (category) queryParams.append('category', category);
   if (sellerId) queryParams.append('sellerId', sellerId);
   if (university) queryParams.append('university', university);
-  if (limit) queryParams.append('limit', limit);
-  if (offset) queryParams.append('offset', offset);
   if (section) queryParams.append('section', section);
-  
+  // 'default' is the backend's own fallback - leaving it out keeps the URL
+  // clean when nobody picked an explicit order.
+  if (sort && sort !== 'default') queryParams.append('sort', sort);
+  if (limit) queryParams.append('limit', limit);
+  if (cursor) queryParams.append('cursor', cursor);
+
   return await fetchAPI(`/products?${queryParams.toString()}`);
 };
 
@@ -33,9 +41,13 @@ export const getSellerProducts = async (sellerId, section = '') => {
   return await fetchAPI(url);
 };
 
-export const getProductById = async id => {
-  return await fetchAPI(`/products/${id}`);
-};
+// T-97: getProductById() lived here and was the edit screen's only caller.
+// That screen resolves its own product on the server now (getProductForEdit),
+// so the function had no references left - checked across src/, tests/ and
+// scripts/ - and it was one more fetch to our own API from a Server Action,
+// the antipattern CLAUDE.md says is being removed. The public product detail
+// does not use it either: ProductPage calls /api/products/[id] with fetch
+// directly.
 
 export const createProduct = async productData => {
   return await fetchAPI('/products', {

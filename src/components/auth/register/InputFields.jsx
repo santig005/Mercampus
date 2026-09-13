@@ -2,7 +2,7 @@
 
 import { formatPhone, formatValue, parseIfJSON } from '@/utils/utilFn';
 import Flag from '@public/images/Flag_of_Colombia.svg';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 
 export default function InputFields({
   title,
@@ -13,8 +13,24 @@ export default function InputFields({
   value,
   onChange,
   name,
+  id,
   ...props
 }) {
+  // T-93 (audit finding F8): the title used to render as a <p>, so every form
+  // built on this component - login, register, PQRS, seller registration,
+  // product add and edit - showed label text that was associated with nothing.
+  // The field leaned on `placeholder` for its accessible name, and a
+  // placeholder disappears the moment you type. useId() because the same
+  // component renders many times on one page; an explicit `id` prop still
+  // wins, so a caller that needs a known id keeps working.
+  // T-96 (audit findings F19/F45): every input and textarea used to hardcode
+  // `bg-[#f0f5fa]`, a light panel colour, while the typed value kept the
+  // theme's text colour. In dark mode that put light text on a light box -
+  // 1.13:1 on the seller forms - so a signed-in seller couldn't read their
+  // own business name or phone number. `bg-base-200`/`text-base-content`
+  // flip with the theme like every other surface in the app.
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
   const [inputValue, setInputValue] = useState(value || '');
   const [validNumber, setValidNumber] = useState(true);
   const [displayPrice, setDisplayPrice] = useState(
@@ -25,10 +41,10 @@ export default function InputFields({
   );
 
   const handlePriceChange = e => {
-    const rawValue = e.target.value.replace(/\D/g, ''); // Elimina caracteres no numéricos
+    const rawValue = e.target.value.replace(/\D/g, ''); // Strip non-numeric characters
     const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
 
-    // Formatea el número con comas y símbolo de dólar
+    // Format the number with thousands separators and a currency symbol
     const formattedValue = formatValue(numericValue);
 
 
@@ -40,7 +56,7 @@ export default function InputFields({
     handleResize(e);
     setInputValue(e.target.value);
     if (onChange) {
-      onChange(e); // Si el componente padre maneja el estado, se lo pasamos.
+      onChange(e); // If the parent component owns the state, hand it over.
     }
   };
 
@@ -54,9 +70,9 @@ export default function InputFields({
   // make a function to handle the phone number input field
   const handlePhoneChange = e => {
     let { value } = e.target;
-    let phone = value.replace(/\D/g, ''); // Elimina caracteres no numéricos
+    let phone = value.replace(/\D/g, ''); // Strip non-numeric characters
 
-    // Si el usuario está borrando, evita dejar caracteres sueltos
+    // While the user is deleting, avoid leaving stray characters behind
     if (phone.length === 0) {
       setDisplayNumber('');
       setValidNumber(false);
@@ -70,28 +86,31 @@ export default function InputFields({
 
     setDisplayNumber(formattedPhone);
 
-    // Verificar si el número es válido (10 dígitos)
+    // Check the number is valid (10 digits)
     setValidNumber(phone.length === 10);
 
     if (onChange) {
-      onChange(e); // Envía solo números
+      onChange(e); // Send digits only
     }
   };
 
   useEffect(() => {
-    // Ejecuta handleResize para cada textarea cuando el componente se monta
+    // Run handleResize for every textarea when the component mounts
     const textAreas = document.querySelectorAll('textarea');
     textAreas.forEach(textarea => handleResize({ target: textarea }));
   }, []);
 
   return (
     <div className='flex flex-col gap-1'>
-      <p className='text'>{title}</p>
+      <label className='text' htmlFor={fieldId}>
+        {title}
+      </label>
       <div className='flex justify-center items-center gap-2'>
         {title.includes('Instagram') && <p>@</p>}
         {type === 'textarea' ? (
           <textarea
-            className={`bg-[#f0f5fa] min-h-10 px-4 py-3 rounded-lg input resize-none w-full overflow-hidden ${className}`}
+            id={fieldId}
+            className={`bg-base-200 text-base-content min-h-10 px-4 py-3 rounded-lg input resize-none w-full overflow-hidden ${className}`}
             placeholder={placeholder}
             value={parseIfJSON(inputValue)}
             onChange={handleChange}
@@ -106,8 +125,9 @@ export default function InputFields({
               <img src={Flag.src} alt='' className='h-full w-full' />
             </div>
             <input
+              id={fieldId}
               type={type}
-              className={`bg-[#f0f5fa] min-h-10 px-4 rounded-none rounded-r-md input w-full ${
+              className={`bg-base-200 text-base-content min-h-10 px-4 rounded-none rounded-r-md input w-full ${
                 validNumber
                   ? 'focus-within:border-green-500 border-green-500'
                   : 'focus-within:border-red-500 border-red-500'
@@ -124,9 +144,10 @@ export default function InputFields({
           </div>
         ) : (
           <input
+            id={fieldId}
             name={name}
             type={type}
-            className={`bg-[#f0f5fa] min-h-10 px-4 rounded-lg input w-full ${className} ${
+            className={`bg-base-200 text-base-content min-h-10 px-4 rounded-lg input w-full ${className} ${
               secureText ? 'tracking-wide' : ''
             }`}
             placeholder={placeholder}

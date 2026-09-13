@@ -1,0 +1,45 @@
+name: Monthly ROADMAP review reminder
+
+# T-62c. Opens a reminder issue once a month so a human revisits
+# ROADMAP.md — stale tasks, duplicates, tasks that no longer apply, or that
+# need re-flagging. Only ever opens an issue; never closes or edits
+# anything on its own.
+#
+# `schedule` only fires off the default branch, so this stays behind the
+# same human promotion gate (agent/develop -> develop -> main) as the rest
+# of the pipeline until it's promoted that far.
+
+on:
+  schedule:
+    - cron: '0 9 1 * *' # 1st of each month, 09:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open reminder issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Monthly ROADMAP.md review — ${today}`,
+              body: [
+                'Time for the monthly pass over `ROADMAP.md` (see T-62c).',
+                '',
+                'Check for:',
+                '- Tasks that no longer apply, or were finished outside this process',
+                '- Duplicate or overlapping tasks',
+                '- Tasks that should be split, reprioritized, or re-flagged (Nightly yes/no)',
+                '- Stale investigation notes that could be trimmed',
+                '',
+                'This issue is only a reminder — nothing here edits or closes',
+                '`ROADMAP.md` automatically.',
+              ].join('\n'),
+            });

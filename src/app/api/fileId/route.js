@@ -13,11 +13,11 @@ export async function GET(req) {
       );
     }
 
-    // Extraer el nombre de la imagen desde la URL
+    // Pull the image name out of the URL
     const urlParts = imageUrl.split('/');
-    const fileName = urlParts[urlParts.length - 1]; // Última parte de la URL
+    const fileName = urlParts[urlParts.length - 1]; // last segment of the URL
 
-    // Buscar la imagen por nombre
+    // Look the image up by name
     const files = await getImageKit().listFiles({ name: fileName });
 
     if (!files.length) {

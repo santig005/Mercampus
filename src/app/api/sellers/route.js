@@ -12,41 +12,59 @@ import { invalidPayload } from '@/lib/api-response';
 
 export async function GET(req) {
   try {
-    // Connnect to the database
+    // Connect to the database
     await connectDB();
     const url = new URL(req.url);
     const university = url.searchParams.get('university') || '';
     const section = url.searchParams.get('section') || '';
 
-    // Get all sellers
-    var sellers = await Seller.find();
+    // T-71: paused sellers are hidden from the public listing here, in the
+    // Mongo query, not in the browser - SellerGrid's client-side `approved`
+    // filter is a rendering choice (an admin browsing this page sees the
+    // pending ones so they can approve them), and a store the seller took
+    // down on purpose shouldn't ship to the client at all.
+    //
+    // `$ne: true` and not `false`: existing sellers have no `paused` field,
+    // and an equality filter would drop every one of them. Same note as in
+    // api/products/route.js.
+    //
+    // Admins keep the full list, paused included, at GET /api/sellers/admin
+    // (the /admin/sellers panel), which is the one that deliberately returns
+    // every seller.
+    //
+    // T-74: deliberately NOT publicSellerFilter(), which also requires
+    // `approved: true`. This endpoint returns pending sellers on purpose -
+    // SellerGrid hides them from ordinary visitors client-side but shows them
+    // to an admin, who approves them from that very grid. Adding `approved`
+    // here empties the admin's approval queue; there is a test for it now.
+    var sellers = await Seller.find({ paused: { $ne: true } });
     if (university) {
       sellers = sellers.filter(
         seller => seller.university.toLowerCase() === university.toLowerCase()
       );
     }
 
-    // Si se especifica una sección, filtrar vendedores que tengan productos en esa sección
+    // If a section is given, keep only sellers with products in it
     if (section) {
       const { Product } = await import('@/utils/models/productSchema');
 
-      // Obtener IDs de vendedores que tengan productos en la sección especificada
+      // Ids of the sellers that have products in the given section
       const sellersWithProducts = await Product.distinct('sellerId', {
         section: section,
       });
 
-      // Si no hay productos en la sección, verificar si hay productos sin sección
+      // If nothing matched the section, look for products with no section
       if (sellersWithProducts.length === 0 && section === 'antojos') {
         const sellersWithoutSection = await Product.distinct('sellerId', {
           section: { $exists: false },
         });
-        // Usar estos IDs si no hay productos con sección específica
+        // Fall back to those ids when no product carries an explicit section
         if (sellersWithoutSection.length > 0) {
           sellersWithProducts.push(...sellersWithoutSection);
         }
       }
 
-      // Filtrar sellers para incluir solo los que tienen productos en la sección
+      // Keep only the sellers that have products in the section
       sellers = sellers.filter(seller => {
         const sellerIdString = seller._id.toString();
         const isIncluded = sellersWithProducts.some(
@@ -59,7 +77,7 @@ export async function GET(req) {
       return NextResponse.json({ sellers: [] }, { status: 200 });
     }
 
-    // Una sola consulta para todos los vendedores, en vez de una por vendedor.
+    // A single query for every seller, instead of one per seller.
     const schedulesBySeller = await getSchedulesBySeller(
       sellers.map(seller => seller._id)
     );
@@ -89,12 +107,13 @@ export async function POST(req) {
       return NextResponse.json({ message: 'No autenticado.' }, { status: 401 });
     }
 
-    // Por clerkId, no por email: no hace falta pedirle el usuario a la API de
-    // Clerk solo para traducir el id, y el email ni es estable ni es único.
+    // By clerkId, not by email: there is no need to ask Clerk's API for the
+    // whole user just to translate the id, and email is neither stable nor
+    // unique.
     const usuario = await User.findOne({ clerkId });
     if (!usuario) {
-      // El webhook de Clerk crea este User (T-12b); si falta, es que su evento
-      // se perdió.
+      // Clerk's webhook creates this User (T-12b); if it is missing, its
+      // event was lost.
       return NextResponse.json(
         { message: 'No se encontró un usuario para esta sesión.' },
         { status: 404 }
@@ -106,7 +125,7 @@ export async function POST(req) {
       return invalidPayload(parsed.error);
     }
 
-    // userId sale de la sesión, nunca del cuerpo.
+    // userId comes from the session, never from the body.
     const newSeller = new Seller({ ...parsed.data, userId: usuario._id });
     await newSeller.save();
 
@@ -122,77 +141,6 @@ export async function POST(req) {
     logger.error('Error creating seller', error);
     return NextResponse.json(
       { message: 'Error creating seller', error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT method to update a seller
-export async function PUT(req) {
-  try {
-    // Connect to the database
-    await connectDB();
-
-    // Get the seller ID from the request query
-    const { id } = req.query;
-
-    // Get the updated data from the request body
-    const updatedData = await req.json();
-
-    // Find the seller by ID and update it with the new data
-    const updatedSeller = await Seller.findByIdAndUpdate(id, updatedData, {
-      new: true,
-    });
-
-    if (!updatedSeller) {
-      return NextResponse.json(
-        { message: 'Seller not found' },
-        { status: 404 }
-      );
-    }
-
-    // Return a successful response with the updated seller
-    return NextResponse.json(
-      { message: 'Seller updated successfully', seller: updatedSeller },
-      { status: 200 }
-    );
-  } catch (error) {
-    // Handle errors and return a response with the message
-    return NextResponse.json(
-      { message: 'Error updating seller', error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE method to delete a seller
-export async function DELETE(req) {
-  try {
-    // Connect to the database
-    await connectDB();
-
-    // Get the seller ID from the request query
-    const { id } = req.query;
-
-    // Find the seller by ID and delete it
-    const deletedSeller = await Seller.findByIdAndDelete(id);
-
-    if (!deletedSeller) {
-      return NextResponse.json(
-        { message: 'Seller not found' },
-        { status: 404 }
-      );
-    }
-
-    // Return a successful response
-    return NextResponse.json(
-      { message: 'Seller deleted successfully' },
-      { status: 200 }
-    );
-  } catch (error) {
-    // Handle errors and return a response with the message
-    return NextResponse.json(
-      { message: 'Error deleting seller', error: error.message },
       { status: 500 }
     );
   }

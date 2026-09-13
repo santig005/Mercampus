@@ -1,0 +1,88 @@
+{
+  "LocaleSwitcher": {
+    "es": "Español",
+    "en": "English"
+  },
+  "AboutLayout": {
+    "logoAlt": "Logo de Mercampus",
+    "exploreLong": "Explorar Productos",
+    "exploreShort": "Explorar"
+  },
+  "About": {
+    "hero": {
+      "badge": "La plataforma #1 para estudiantes",
+      "subtitle": "Conecta, compra y vende dentro de tu universidad",
+      "description": "La plataforma donde los estudiantes ofrecen y descubren productos, alimentos, servicios y mucho más.",
+      "ctaPrimary": "Únete ahora",
+      "ctaSecondary": "Explorar productos",
+      "statStudents": "+100 estudiantes",
+      "statSecure": "100% seguro",
+      "imageAlt": "Mercampus - Plataforma universitaria"
+    },
+    "problem": {
+      "heading": "Problema que resolvemos",
+      "subheading": "Los estudiantes universitarios enfrentan desafíos diarios que Mercampus soluciona",
+      "search": { "title": "Búsqueda ineficiente", "quote": "\"No encuentro lo que busco en el campus de manera rápida y organizada.\"" },
+      "time": { "title": "Pérdida de tiempo", "quote": "\"No tengo tiempo para estar ofreciendo mis productos por WhatsApp.\"" },
+      "trust": { "title": "Falta de confianza", "quote": "\"Falta un espacio confiable y organizado para comprar y vender.\"" }
+    },
+    "what": {
+      "heading": "¿Qué es Mercampus?",
+      "description": "Mercampus centraliza los productos y servicios de estudiantes universitarios en un solo lugar. Desde snacks y postres, hasta servicios como tutorías, búsqueda de roommates y artículos varios.",
+      "mobile": { "title": "Plataforma móvil", "text": "Acceso rápido y fácil desde cualquier dispositivo móvil" },
+      "community": { "title": "Comunidad universitaria", "text": "Conecta solo con estudiantes de tu universidad" },
+      "quality": { "title": "Calidad garantizada", "text": "Perfil de vendedor para que sepas a quién le estás comprando" },
+      "cardOnline": "En línea",
+      "cardApp": "Mercampus App",
+      "cardText": "Descubre productos y servicios cerca de ti"
+    },
+    "categories": {
+      "heading": "Categorías principales",
+      "subheading": "Todo lo que necesitas en un solo lugar",
+      "food": { "title": "Alimentos", "text": "Snacks, postres y más" },
+      "services": { "title": "Servicios", "text": "Tutorías y asesorías" },
+      "campusLife": { "title": "Vida universitaria", "text": "Roommates y artículos" },
+      "events": { "title": "Eventos", "text": "Experiencias únicas" }
+    },
+    "benefits": {
+      "heading": "Beneficios",
+      "subheading": "Diseñado para satisfacer las necesidades de todos los estudiantes",
+      "buyersHeading": "Para compradores",
+      "buyer1": { "title": "Acceso rápido desde el celular", "text": "Navega y encuentra lo que buscas en segundos" },
+      "buyer2": { "title": "Filtros y búsqueda optimizada", "text": "Encuentra exactamente lo que necesitas" },
+      "buyer3": { "title": "Contacto directo y confiable", "text": "Comunícate directamente con vendedores verificados" },
+      "sellersHeading": "Para vendedores",
+      "seller1": { "title": "Más visibilidad en el campus", "text": "Llega a más estudiantes de tu universidad" },
+      "seller2": { "title": "Perfil de vendedor con reseñas", "text": "Construye tu reputación en la comunidad" },
+      "seller3": { "title": "Gestión simple de productos y horarios", "text": "Administra tu negocio de manera eficiente" }
+    },
+    "howItWorks": {
+      "heading": "Cómo funciona",
+      "subheading": "En solo 3 pasos simples",
+      "step1": { "title": "Regístrate gratis", "text": "Crea tu cuenta en menos de 2 minutos con tu correo universitario" },
+      "step2": { "title": "Publica o busca", "text": "Ofrece tus productos o encuentra lo que necesitas" },
+      "step3": { "title": "Conecta y transacciona", "text": "Realiza la compra o venta de manera segura" }
+    },
+    "community": {
+      "heading": "Comunidad y testimonios",
+      "subheading": "Lo que dicen nuestros usuarios",
+      "testimonial1": { "role": "Estudiante de Ingeniería", "quote": "\"Con Mercampus encontré a mi roommate ideal en 2 días. La plataforma es súper fácil de usar y confiable.\"" },
+      "testimonial2": { "role": "Vendedor de postres", "quote": "\"Pude vender mis postres en toda la U sin usar 10 grupos de WhatsApp. Mercampus me dio la visibilidad que necesitaba.\"" }
+    },
+    "vision": {
+      "heading": "Crecimiento y visión",
+      "quote": "\"Más de 10 millones de estudiantes en LATAM tienen esta necesidad. Mercampus está aquí para transformar la forma en que nos conectamos dentro del campus.\"",
+      "statStudents": "Estudiantes en LATAM",
+      "statUniversities": "Universidades",
+      "statSecure": "Seguro y confiable"
+    },
+    "finalCta": {
+      "heading": "Sé parte de Mercampus",
+      "mascotAlt": "Ardilla mascota de Mercampus",
+      "description": "Únete y empieza a conectar hoy con estudiantes de tu universidad",
+      "cta": "Regístrate ahora",
+      "instagram": "Síguenos en Instagram"
+    },
+    "footer": "© 2025 Mercampus. Todos los derechos reservados."
+  }
+}

@@ -3,21 +3,20 @@ import { z } from 'zod';
 import { isNationalPhone, toNationalPhone } from '@/lib/phone';
 import { universities } from '@/utils/resources/universities';
 
-// El formulario manda el teléfono como string —a veces ya formateado, como
-// "(300) 123-4567"— mientras que Mongoose lo guarda como Number. Pedir
-// `z.number()` a secas hacía que el alta de vendedor respondiera 400 siempre.
-// Se normaliza en el borde: se dejan los dígitos, se descarta el indicativo
-// +57 y se valida antes de convertir, así que a Mongoose siempre le llega un
-// número nacional de 10 dígitos.
+// The form sends the phone as a string - sometimes already formatted, like
+// "(300) 123-4567" - while Mongoose stores it as a Number. Asking for a plain
+// `z.number()` made seller sign-up answer 400 every time. It is normalised at
+// the edge: keep the digits, drop the +57 country code, and validate before
+// converting, so Mongoose always receives a 10-digit national number.
 const phoneNumber = z
   .union([z.string(), z.number()])
   .transform(toNationalPhone)
   .refine(isNationalPhone, 'El teléfono debe tener 10 dígitos')
   .transform(Number);
 
-// userId, clerkId y approved NO se declaran: los pone el servidor. Antes
-// `new Seller(body)` dejaba que el cliente mandara approved: true y se
-// autoaprobara.
+// userId, clerkId and approved are NOT declared: the server sets them.
+// `new Seller(body)` used to let the client send approved: true and
+// self-approve.
 const sellerFields = {
   businessName: z.string().trim().min(1, 'El nombre del negocio es obligatorio').max(120),
   slogan: z.string().trim().max(160).optional(),
@@ -30,4 +29,33 @@ const sellerFields = {
 };
 
 export const createSellerSchema = z.object(sellerFields);
-export const updateSellerSchema = z.object(sellerFields).partial();
+
+// `paused` (T-71) is an update-only field: a seller that doesn't exist yet has
+// nothing to hide from the listings, and leaving it out of the create schema
+// keeps the sign-up payload as narrow as it was. The ownership check for
+// writing it is the one PUT /api/sellers/[id] already runs (verifySellerId),
+// the same one every other field here goes through.
+export const updateSellerSchema = z
+  .object({ ...sellerFields, paused: z.boolean() })
+  .partial();
+
+// The `[id]` segment of a seller route, validated before it reaches Mongoose -
+// same reasoning and same shape as `productIdSchema` (T-97/F29): a malformed
+// id is invalid input, and letting it through answers 500 with the driver's
+// own `Cast to ObjectId failed ... for model "Seller"` in the body.
+export const sellerIdSchema = z
+  .string()
+  .regex(/^[a-f\d]{24}$/i, 'El id del vendedor no es válido');
+
+// T-105. `approved` is deliberately absent from every schema above, and stays
+// absent: those describe what a seller may send about their own shop, and
+// putting `approved` among them hands every seller self-approval - the mass
+// assignment T-13 closed. It lives here on its own, for the admin-only route
+// that is the sole writer of it (`PATCH /api/sellers/admin/[id]`).
+//
+// `strict()` rather than Zod's default of dropping unknown keys: this is the
+// one endpoint that can flip a seller's visibility, so a body carrying
+// anything else is a mistake worth reporting, not worth silently ignoring.
+export const approveSellerSchema = z
+  .object({ approved: z.boolean({ error: '`approved` debe ser true o false' }) })
+  .strict();

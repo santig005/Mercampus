@@ -5,13 +5,13 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 const session = vi.hoisted(() => ({ userId: null }));
 
-// Desde T-12c la identidad es el clerkId del token: no hay que simular ni
+// Since T-12c identity is the token's clerkId: there is no need to stub
 // clerkClient() ni currentUser().
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
 }));
 
-const OWNER = 'user_seed_carlos'; // del seed: dueño del vendedor aprobado
+const OWNER = 'user_seed_carlos'; // from the seed: owner of the approved seller
 
 const put = body =>
   new Request('http://localhost/api', {
@@ -84,8 +84,8 @@ describe('validacion en el borde', () => {
 
     expect(response.status).toBe(200);
     const despues = await Product.findById(ids.approvedProduct);
-    // sellerId no esta declarado en el schema de validacion, asi que Zod lo
-    // descarta antes de que llegue a Mongoose.
+    // sellerId is not declared in the validation schema, so Zod drops it
+    // before it ever reaches Mongoose.
     expect(despues.sellerId.toString()).toBe(antes.sellerId.toString());
   });
 

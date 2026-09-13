@@ -114,7 +114,7 @@ describe('reclamo de cuenta', () => {
     });
 
     expect(resultado.estado).toBe(CONFLICTO);
-    // No debe haber tocado a ninguno de los dos.
+    // It must not have touched either of them.
     expect((await User.findOne({ email: 'ana@example.test' }).lean()).clerkId).toBe(
       'user_prod_ana'
     );

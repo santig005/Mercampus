@@ -1,18 +1,18 @@
-// Mongo en memoria para los tests que necesitan base de datos.
+// An in-memory Mongo for the tests that need a database.
 //
-// No es un setupFile global a propósito: los tests de tests/unit/ son funciones
-// puras y validación de schemas en memoria, y arrancar un mongod para ellos los
-// volvería lentos sin ganar nada. Solo lo usan los tests que de verdad
-// consultan la base.
+// Deliberately not a global setupFile: the tests in tests/unit/ are pure
+// functions and in-memory schema validation, and starting a mongod for them
+// would only make them slow. Only the tests that really query the database
+// use this.
 
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
 let server;
 
-// Devuelve la URI exacta con la que conecto. Los tests que cargan codigo de la
-// app tienen que poner esa misma cadena en MONGO_URI: si connectDB llama a
-// mongoose.connect() con una URI distinta a la ya activa, Mongoose lanza.
+// Returns the exact URI it connected with. Tests that load app code have to
+// put that same string in MONGO_URI: if connectDB calls mongoose.connect()
+// with a URI different from the active one, Mongoose throws.
 export async function startTestDb() {
   server = await MongoMemoryServer.create();
   const uri = server.getUri();

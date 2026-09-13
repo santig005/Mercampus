@@ -1,0 +1,88 @@
+{
+  "LocaleSwitcher": {
+    "es": "Español",
+    "en": "English"
+  },
+  "AboutLayout": {
+    "logoAlt": "Mercampus logo",
+    "exploreLong": "Explore Products",
+    "exploreShort": "Explore"
+  },
+  "About": {
+    "hero": {
+      "badge": "The #1 platform for students",
+      "subtitle": "Connect, buy, and sell within your university",
+      "description": "The platform where students offer and discover products, food, services, and much more.",
+      "ctaPrimary": "Join now",
+      "ctaSecondary": "Explore products",
+      "statStudents": "+100 students",
+      "statSecure": "100% secure",
+      "imageAlt": "Mercampus - University platform"
+    },
+    "problem": {
+      "heading": "The problem we solve",
+      "subheading": "University students face daily challenges that Mercampus solves",
+      "search": { "title": "Inefficient search", "quote": "\"I can't find what I'm looking for on campus quickly and in an organized way.\"" },
+      "time": { "title": "Wasted time", "quote": "\"I don't have time to keep offering my products over WhatsApp.\"" },
+      "trust": { "title": "Lack of trust", "quote": "\"There's no reliable, organized space to buy and sell.\"" }
+    },
+    "what": {
+      "heading": "What is Mercampus?",
+      "description": "Mercampus brings together university students' products and services in one place. From snacks and desserts to services like tutoring, roommate search, and miscellaneous items.",
+      "mobile": { "title": "Mobile platform", "text": "Quick, easy access from any mobile device" },
+      "community": { "title": "University community", "text": "Connect only with students from your university" },
+      "quality": { "title": "Guaranteed quality", "text": "Seller profiles so you know who you're buying from" },
+      "cardOnline": "Online",
+      "cardApp": "Mercampus App",
+      "cardText": "Discover products and services near you"
+    },
+    "categories": {
+      "heading": "Main categories",
+      "subheading": "Everything you need in one place",
+      "food": { "title": "Food", "text": "Snacks, desserts, and more" },
+      "services": { "title": "Services", "text": "Tutoring and consulting" },
+      "campusLife": { "title": "University life", "text": "Roommates and items" },
+      "events": { "title": "Events", "text": "Unique experiences" }
+    },
+    "benefits": {
+      "heading": "Benefits",
+      "subheading": "Designed to meet the needs of every student",
+      "buyersHeading": "For buyers",
+      "buyer1": { "title": "Quick access from your phone", "text": "Browse and find what you need in seconds" },
+      "buyer2": { "title": "Filters and optimized search", "text": "Find exactly what you need" },
+      "buyer3": { "title": "Direct, reliable contact", "text": "Message verified sellers directly" },
+      "sellersHeading": "For sellers",
+      "seller1": { "title": "More visibility on campus", "text": "Reach more students at your university" },
+      "seller2": { "title": "Seller profile with reviews", "text": "Build your reputation in the community" },
+      "seller3": { "title": "Simple product and schedule management", "text": "Run your business efficiently" }
+    },
+    "howItWorks": {
+      "heading": "How it works",
+      "subheading": "In just 3 simple steps",
+      "step1": { "title": "Sign up for free", "text": "Create your account in under 2 minutes with your university email" },
+      "step2": { "title": "Post or browse", "text": "Offer your products or find what you need" },
+      "step3": { "title": "Connect and transact", "text": "Buy or sell safely" }
+    },
+    "community": {
+      "heading": "Community and testimonials",
+      "subheading": "What our users say",
+      "testimonial1": { "role": "Engineering student", "quote": "\"With Mercampus I found my ideal roommate in 2 days. The platform is super easy to use and reliable.\"" },
+      "testimonial2": { "role": "Dessert seller", "quote": "\"I was able to sell my desserts across the whole university without using 10 WhatsApp groups. Mercampus gave me the visibility I needed.\"" }
+    },
+    "vision": {
+      "heading": "Growth and vision",
+      "quote": "\"More than 10 million students in Latin America share this need. Mercampus is here to transform the way we connect on campus.\"",
+      "statStudents": "Students in Latin America",
+      "statUniversities": "Universities",
+      "statSecure": "Secure and reliable"
+    },
+    "finalCta": {
+      "heading": "Be part of Mercampus",
+      "mascotAlt": "Mercampus mascot squirrel",
+      "description": "Join and start connecting today with students at your university",
+      "cta": "Sign up now",
+      "instagram": "Follow us on Instagram"
+    },
+    "footer": "© 2025 Mercampus. All rights reserved."
+  }
+}

@@ -38,7 +38,7 @@ describe('toNationalPhone', () => {
 describe('isNationalPhone', () => {
   it('acepta 10 digitos', () => {
     expect(isNationalPhone('3001234567')).toBe(true);
-    expect(isNationalPhone('6011234567')).toBe(true); // fijo, empieza por 60
+    expect(isNationalPhone('6011234567')).toBe(true); // a landline, starts with 60
   });
 
   it('rechaza longitudes distintas de 10', () => {
@@ -49,7 +49,7 @@ describe('isNationalPhone', () => {
 
   it('rechaza el cero delante', () => {
     // El telefono se guarda como Number: '0300123456' se convertiria en
-    // 300123456 y perderia un digito sin que nadie se entere.
+    // 300123456 and would lose a digit without anyone noticing.
     expect(isNationalPhone('0300123456')).toBe(false);
   });
 
@@ -63,9 +63,9 @@ describe('createSellerSchema · phoneNumber', () => {
     createSellerSchema.safeParse({ businessName: 'Arepas Ana', phoneNumber });
 
   it('entrega un number aunque el formulario mande un string', () => {
-    // El schema de Mongoose declara Number. Que Mongoose sepa convertir el
-    // string por su cuenta no vale: el contrato del validador es entregar el
-    // dato ya con el tipo del modelo.
+    // The Mongoose schema declares Number. Mongoose being able to cast the
+    // string on its own does not count: the validator's contract is to hand
+    // over the value already in the model's type.
     const parsed = parse('3001234567');
 
     expect(parsed.success).toBe(true);

@@ -3,10 +3,10 @@ import { parseIfJSON } from '@/utils/utilFn';
 import React from 'react';
 import { sellerCardClassName } from '@/lib/card-variant';
 
-// Mismo criterio de variant que ProductCard: 'standalone' (por defecto) trae
-// su propio fondo, sombreado y animación de escala; 'embedded' se apoya en el
-// contenedor que la envuelve para esa apariencia. La lógica del className
-// vive en src/lib/card-variant.js: ver ahí por qué.
+// Same variant rule as ProductCard: 'standalone' (the default) brings its own
+// background, shadow and scale animation; 'embedded' leans on the wrapping
+// container for that look. The className logic lives in
+// src/lib/card-variant.js: see there for why.
 export default function SellerCard({
   seller,
   isClicked,

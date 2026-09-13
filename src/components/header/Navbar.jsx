@@ -31,7 +31,11 @@ export default function Navbar() {
       ) : (
         <>
         <UniversitySelector />
-        <Link href='/auth/login' className='btn-icon !bg-slate-700'>
+        <Link
+          href='/auth/login'
+          aria-label='Iniciar sesión'
+          className='btn-icon !bg-slate-700'
+        >
           <p className=''>
             <TbUserFilled className='icon text-primary' />
           </p>

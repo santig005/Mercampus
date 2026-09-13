@@ -3,12 +3,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import { startTestDb, stopTestDb } from '../setup.js';
 
-// Secreto de juguete con el formato que exige svix (whsec_ + base64). No es
-// ningún secreto real: se genera aquí y solo vive durante el test.
+// A toy secret in the format svix requires (whsec_ + base64). It is not a
+// real secret: it is generated here and only lives for the test.
 const WEBHOOK_SECRET = `whsec_${Buffer.from('mercampus-test-secret-32bytes!!').toString('base64')}`;
 
-// El handler lee las cabeceras con headers() de next/headers en vez de con
-// req.headers, así que hay que dárselas por ahí.
+// The handler reads the headers with next/headers' headers() rather than
+// req.headers, so they have to be handed over that way.
 const cabeceras = vi.hoisted(() => ({ actuales: new Map() }));
 
 vi.mock('next/headers', () => ({
@@ -18,7 +18,7 @@ vi.mock('next/headers', () => ({
 let webhookRoute;
 let User;
 
-/** Firma el cuerpo como lo haría Clerk y monta la petición. */
+/** Signs the body the way Clerk would and builds the request. */
 const eventoDeClerk = (payload, { firmaValida = true } = {}) => {
   const body = JSON.stringify(payload);
   const id = 'msg_2test';
@@ -102,7 +102,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
   });
 
   it('si el usuario cambia de email en Clerk, sigue siendo el mismo documento', async () => {
-    // Esta es la razón de unir por clerkId y no por email: el email cambia.
+    // This is the reason for joining by clerkId and not by email: email changes.
     await webhookRoute.POST(
       eventoDeClerk(usuarioCreado('user_2abc', 'ana@example.test'))
     );
@@ -122,8 +122,8 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
   });
 
   it('dos usuarios distintos de Clerk son dos documentos, aunque compartan email', async () => {
-    // El email no es unico en la base (el unique sigue comentado, T-11), asi
-    // que unir por email podria mezclar dos cuentas. Por clerkId no.
+    // Email is not unique in this database (the unique is still commented out,
+    // T-11), so joining by email could merge two accounts. By clerkId it can't.
     await webhookRoute.POST(
       eventoDeClerk(usuarioCreado('user_2abc', 'compartido@example.test'))
     );
@@ -145,7 +145,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     );
 
     expect(response.status).toBe(200);
-    // `name` es obligatorio en el schema: sin respaldo entraria como null.
+    // `name` is required by the schema: with no fallback it would go in as null.
     expect((await User.findOne({ clerkId: 'user_2sinnombre' })).name).toBe(
       'sinnombre'
     );
@@ -177,8 +177,8 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
 
   it('400 si el evento no trae email, en vez de responder 200 sin crear nada', async () => {
     // El try/catch de createOrUpdateUser se tragaba cualquier fallo y el
-    // webhook contestaba 200: Clerk daba el evento por entregado y no lo
-    // reintentaba nunca.
+    // webhook answered 200: Clerk considered the event delivered and never
+    // retried it.
     const response = await webhookRoute.POST(
       eventoDeClerk({
         type: 'user.created',
