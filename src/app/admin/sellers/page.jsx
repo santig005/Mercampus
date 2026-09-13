@@ -1,7 +1,7 @@
 'use client';
 import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
-import { useSession, useAuth } from '@clerk/nextjs';
+import { useSession } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import SellerCard from '@/components/seller/index/SellerCard';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
@@ -10,7 +10,6 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 export default function AdminSellersPage() {
   const { session, isLoaded } = useSession();
-  const { getToken } = useAuth();
   const router = useRouter();
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,8 +81,7 @@ export default function AdminSellersPage() {
       // send it to PUT /sellers/:id, where Zod dropped the field and the
       // write never happened. A failure throws, so the catch below is
       // what rolls the optimistic flip back.
-      const token = await getToken({ skipCache: true });
-      await approveSeller(sellerId, !isOn, token);
+      await approveSeller(sellerId, !isOn);
     } catch (error) {
       logger.error('Error updating seller:', error);
       // Roll the change back on error
