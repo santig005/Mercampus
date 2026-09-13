@@ -3014,7 +3014,7 @@ normalises that value.
 **Model:** `opusplan` - it is an infrastructure question before it is a code
 one · **Nightly:** no (needs the dashboard)
 
-### [ ] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
+### [x] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
 **Why:** decided with the human alongside T-104. There is a stronger argument
 than duplication: that inline grid is the only reason `GET /api/sellers` - a
 public, unauthenticated endpoint - returns **unapproved** sellers to
@@ -3029,7 +3029,86 @@ into a server-side authorisation boundary.
 **Order matters:** after T-105 - **which is now done**, so this is unblocked.
 Collapsing onto `/admin/sellers` while the only approval path still wrote
 nothing would have left no working surface at all; it now writes.
+**Measured read-only 2026-09-13, before the change (rule 8):** 55 sellers,
+**37 approved, 18 pending** - and all 55 carry an explicit boolean `approved`,
+**0 missing and 0 null**. So the equality filter drops nobody, which is the
+`$ne: true` trap T-71 hit with `paused` and this does not hit. (37, not the 36
+counted for T-105 earlier the same day: somebody was approved in between.)
+**Done:** three changes, and the third is the point of the other two.
+- `GET /api/sellers` uses `publicSellerFilter()` - the T-74 helper already
+  shared by `GET /api/products` and the sitemap. This endpoint was the single
+  exception to that definition, and it no longer is.
+- `SellerGrid.jsx` lost its admin branch entirely: the `isAdmin` check, the
+  second card layout, the per-card `ToggleSwitch`, `handleSellerApproval` and
+  the client-side `.filter(seller => seller.approved)`. It is the public
+  listing and nothing else - it no longer needs to know who is looking. The
+  `useUser`, `ToggleSwitch` and `approveSeller` imports went with it.
+  `/admin/sellers` keeps the toggle, and it was always the better of the two
+  copies: it shows registration date and approval status, which the grid never
+  did.
+- **What that adds up to:** the pending queue is no longer shipped to every
+  visitor's browser. Before this, a render decision in a client component was
+  the only thing between an anonymous caller and the list of unapproved
+  sellers - `curl /api/sellers` returned all 55.
+**T-74's test, updated and not deleted** (`tests/integration/seller-pause.test.js`):
+it asserted `un vendedor sin aprobar SI se devuelve`, deliberately, because
+SellerGrid was where an admin approved pending sellers and it read this
+endpoint. T-106 removes that dependency, so the assertion is inverted with the
+reason written above it, and two tests were added next to it: that the pending
+seller is still visible at `GET /api/sellers/admin` (they moved, they did not
+vanish), and that a seller with the `approved` field *unset* falls outside the
+listing - the deliberate opposite of the `paused` trade-off, because a missing
+`paused` means nobody paused the store while a missing `approved` means nobody
+approved it.
+**One more test needed the change:** `horarios-n-mas-1.test.js`'s seller
+listing case asserted `sellers.length > 1` to tell "one query per seller" from
+"one query"; the seed has one approved seller and one pending, so the filter
+left it with a single seller and nothing to measure. It now approves both
+first, the same line the product listing case in the same file already had.
+**Who else consumes `GET /api/sellers`:** searched before filtering. Exactly
+one caller - `getSellers()` in `sellerService.js`, used only by `SellerGrid`.
+`/admin/sellers` reads `GET /api/sellers/admin`, and the seller's own pending
+screen (`/antojos/sellers/approving`) reads `SellerContext`. Nothing else
+expected to see pending sellers here.
+**Verified:** `npm run verify` green (lint, deadcode, typecheck, test, build),
+and the full Playwright suite, 66 passed - including a **real screenshot** of
+`/antojos/sellers/list` (`test-results/05-listado-vendedores.png`), which is
+what rule 3 asks for on a layout change. It renders the approved seller only,
+in the public card layout, with no toggles. The public layout's markup is
+byte-identical to before; what changed is that the admin branch is gone.
 **Model:** `sonnet` · **Nightly:** no
+
+### [ ] T-113 · `GET /api/sellers/admin` is now the only approval surface, and it shows
+**Why:** found while doing T-106 (rule 9 - this is reported, not fixed here,
+because fixing it would have broken rule 2). Collapsing the approval UI onto
+`/admin/sellers` makes this endpoint the *only* way anybody approves a seller,
+and three things about it were tolerable as a second copy and are not as the
+only one:
+1. **One gate, where its sibling deliberately has two.** `PATCH
+   /api/sellers/admin/[id]` (T-105) checks the middleware matcher *and*
+   `isClerkAdmin()` inside the handler, and T-105's entry says why: the second
+   check is what keeps the handler safe on its own if the matcher ever
+   changes. This `GET` has no handler-level check at all - it trusts
+   `/api/(.*)/admin(.*)` entirely. It returns every seller in the database.
+2. **It is the N+1 that T-74 fixed next door.** `Schedule.find()` once per
+   seller inside a `Promise.all`, where `GET /api/sellers` calls
+   `getSchedulesBySeller()` once for all of them. With 55 sellers that is 55
+   queries per page load of the admin panel, and this is now the page an admin
+   actually uses.
+3. **It hand-rolls `daysES[schedule.day - 1]`** instead of the shared
+   `withDayNames()`, which is the same kind of fourth-copy drift T-74 called
+   out for the visibility filter.
+**Done when:** 1 is fixed (it is an authorisation boundary, and it is three
+lines), and 2 and 3 are either fixed alongside or split off - they are
+performance and tidiness, not security.
+**Also noticed, and deliberately left alone:** `src/app/api/sellers/route.js`
+imports `Schedule` and `daysES` and uses neither (both were superseded by
+`getSchedulesBySeller`/`withDayNames` and the imports stayed). Lint does not
+flag them. Two dead lines, worth deleting in whatever PR next touches that
+file. And `src/app/antojos/sellers/approving/page.jsx:12` carries a
+commented-out `useCheckSeller` call that the two lines above it supersede -
+same shape as the `api.js` draft T-111 found.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-107 · The unique index on `email`, and the duplicates in the way
 **Why:** T-11 deleted `/api/register` and said in its own entry that the

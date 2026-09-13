@@ -4,25 +4,29 @@ import { getSellers } from '@/services/sellerService';
 import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';
 import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
-import ToggleSwitch from '@/components/availability/ToggleSwitch';
-import { approveSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
-import { useUser } from '@clerk/nextjs';
 
+// The public seller listing. Nothing more.
+//
+// T-106: this used to be two components in one. An admin got a second layout
+// with an approve/reject toggle per card, and everybody else got the same list
+// with the unapproved sellers filtered out in the browser. Both are gone:
+//
+//  - The approval UI lives only at /admin/sellers now. That panel already had
+//    the same toggle, reads GET /api/sellers/admin (gated by the middleware's
+//    /api/(.*)/admin(.*) matcher) and shows registration date and status, which
+//    this grid never did. There was no reason for a second, worse copy of it.
+//  - The `approved` filter moved into the Mongo query in GET /api/sellers. It
+//    was the client-side filter here that forced that endpoint - public and
+//    unauthenticated - to ship the whole pending queue to every visitor so that
+//    an admin's copy of this page could filter it back in. A render decision
+//    was standing in for an authorisation boundary.
+//
+// So there is no `isAdmin` branch left, and no reason for this component to
+// know who is looking: the server already decided what it may see.
 export default function SellerGrid({ section = 'antojos' }) {
   const [sellers, setSellers] = useState([]);
-  const {university} = useUniversity();
-  const { user } = useUser();
-
-  // T-104: Clerk's publicMetadata, not Mongo's `role` (T-12 retired that field
-  // as the source of truth for admin). It arrives with the user resource the
-  // session already loaded, so there is no extra request for it.
-  //
-  // This only decides what gets drawn. The approve/reject toggle below is
-  // authorised server-side by verifySellerId, which now reads the same
-  // publicMetadata: a non-admin who forced this branch open in their own
-  // browser would render the toggles and get a 403 from every one of them.
-  const isAdmin = user?.publicMetadata?.role === 'admin';
+  const { university } = useUniversity();
 
   useEffect(() => {
     async function fetchSellers() {
@@ -38,40 +42,11 @@ export default function SellerGrid({ section = 'antojos' }) {
     fetchSellers();
   }, [university, section]);
 
-  const handleSellerApproval = async (isOn, sellerId) => {
-    // Optimistic: flip it now, undo it if the write fails.
-    setSellers(prevSellers =>
-      prevSellers.map(seller =>
-        seller._id === sellerId ? { ...seller, approved: !isOn } : seller
-      )
-    );
-
-    try {
-      // T-105: the admin-only endpoint that actually writes `approved`. This
-      // used to send it to PUT /sellers/:id, where Zod dropped the field and
-      // the write silently did nothing.
-      await approveSeller(sellerId, !isOn);
-    } catch (error) {
-      logger.error('Error updating seller:', error);
-      // fetchAPIToken throws on a non-2xx, so the undo belongs here. It used
-      // to sit behind `if (response.error)`, which that helper never returns.
-      setSellers(prevSellers =>
-        prevSellers.map(seller =>
-          seller._id === sellerId ? { ...seller, approved: isOn } : seller
-        )
-      );
-    }
-  };
-
-  const visibleSellers = isAdmin
-    ? sellers
-    : sellers.filter(seller => seller.approved);
-
   return (
     <SellerModalHandler>
       {showModal => (
         <div className='flex flex-col gap-4'>
-          {visibleSellers.length === 0 ? (
+          {sellers.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-12 text-center'>
               <div className='text-gray-400 dark:text-base-content/70 mb-4'>
                 <svg className='w-16 h-16 mx-auto' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -82,48 +57,24 @@ export default function SellerGrid({ section = 'antojos' }) {
                 No hay vendedores disponibles
               </h3>
               <p className='text-gray-500 dark:text-base-content/70 max-w-md'>
-                {section === 'marketplace' 
+                {section === 'marketplace'
                   ? 'No hay vendedores registrados en el marketplace para tu universidad en este momento.'
                   : 'No hay vendedores registrados en antojos para tu universidad en este momento.'
                 }
               </p>
             </div>
           ) : (
-            <>
-              {isAdmin ? (
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                  {sellers.map(seller => (
-                    <div key={seller._id} className='bg-base-100 text-base-content shadow-md rounded-lg'>
-                      <div className='w-full' onClick={() => showModal(seller)}>
-                        <SellerCard seller={seller} variant='embedded' />
-                      </div>
-                      <div className='flex justify-between p-2 w-full'>
-                        <p>Activo:</p>
-                        <ToggleSwitch
-                          isOn={seller.approved || false}
-                          onToggle={() =>
-                            handleSellerApproval(seller.approved, seller._id)
-                          }
-                        />
-                      </div>
-                    </div>
-                  ))}
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+              {sellers.map(seller => (
+                <div
+                  key={seller._id}
+                  onClick={() => showModal(seller)}
+                  className='cursor-pointer'
+                >
+                  <SellerCard seller={seller} />
                 </div>
-              ) : (
-                // Layout for ordinary visitors (approved sellers only)
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  {visibleSellers.map(seller => (
-                    <div
-                      key={seller._id}
-                      onClick={() => showModal(seller)}
-                      className='cursor-pointer'
-                    >
-                      <SellerCard seller={seller} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </div>
       )}
