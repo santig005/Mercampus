@@ -59,6 +59,7 @@ One per PR, per rule 2. Ordered by how little can go wrong.
 | **T-36** · A real README | Touches no source at all. The human explicitly delegated it to an agent and said it gets rewritten by hand if it does not land, so a mediocre attempt costs nothing. | It builds, and it answers: what this is, stack, env vars, how to run it and the tests, the agentic pipeline. |
 | **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
 | **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
+| **T-111** (items 1-3 only) · Tidy `src/services/api.js` | Deleting a commented-out draft that the function below it supersedes, and a `credentials` option that is inert server-side. The audit is already written in the entry, so the reference search is done. | `npm run verify`, `deadcode` green. Item 4 is **not** in this bucket. |
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -91,6 +92,8 @@ already warns about, and getting it wrong wastes a PR:
 
 - **T-35** · choosing the image provider (T-109 carves out the safe half).
 - **T-60** · Observability - needs a Sentry account and a DSN.
+- **T-112** · a preview calling production's API - the first step is reading
+  the Vercel dashboard, which an agent cannot do.
 - **T-62b** · closing inactive PRs - a community policy call.
 - **T-80 batch e** - `scripts/`, where the dangerous warnings live; PR #273 is
   already open awaiting review.
@@ -2914,6 +2917,102 @@ still pass, since the route itself did not change.
 needs a signed-in admin Playwright fixture, which is T-95. The check is one
 click in the deployed panel: approve somebody, refresh, see it stick.
 **Model:** `opus` · **Nightly:** no
+
+### [ ] T-111 · `src/services/api.js` and `apiToken.js`, audited
+**Why:** the human asked, while reviewing T-105b, whether `apiToken.js` was an
+abandoned experiment - it was written long before this backlog, to carry
+identity to the API with a Bearer token, and they no longer remembered
+whether anything used it. Audited 2026-09-13. **It is used, and the Bearer is
+load-bearing** - so the answer to the question is "keep it", and what follows
+is the list of what is genuinely wrong with these two files.
+**Both files are `'use server'`, which is why the token exists.** A `fetch()`
+from the server carries no browser cookies, so in the three mutations that go
+through `fetchAPIToken` (`updateProduct`, `deleteProduct`, `updateSeller`) the
+Bearer is the only thing that gets the caller's identity to `auth()`. Removing
+it breaks them. `fetchAPI` has 8 call sites across `productService`,
+`scheduleService` and `sellerService`, all of them public GETs, which is why
+its lack of a token has never hurt.
+**What is actually wrong, in rising order of how much thought it needs:**
+1. **A superseded draft left commented out** - `api.js` lines 6-33 are an
+   older `fetchAPI` sitting directly above the live one. The difference is
+   real and settles it: the old one swallowed the error and returned
+   `undefined`, the live one checks `content-type`, throws with detail and
+   re-throws for the caller. It was fixed and the previous version was left
+   alongside. Nothing references it. Delete.
+2. **`credentials: "include"` does nothing** in either file. It is a browser
+   option; in a server-side fetch (undici) it is ignored. Cargo cult.
+3. **These two files *are* the `NEXT_PUBLIC_URL + '/api'` antipattern**
+   CLAUDE.md says is being removed, and T-30/31/32 are the tasks that remove
+   it. Neither file says so. At minimum they should carry a note pointing at
+   those tasks, so the next person does not invest in them.
+4. **Worth a proper look, not asserted here: the Server Action surface.**
+   `'use server'` makes every export a Server Action callable from the
+   browser, and `fetchAPI(endpoint, options)` takes both the path *and* the
+   request options from its caller. That is an action which makes the server
+   issue a request to an arbitrary path of its own origin with arbitrary
+   method, headers and body. It is not a classic SSRF - the path is
+   concatenated onto a fixed prefix so it cannot leave the origin, and the
+   request carries no cookies, so it is not privilege escalation on its own.
+   But nobody designed that surface on purpose, and "not exploitable in the
+   ways I checked" is not the same as safe.
+**Done when:** 1-3 are done (they are small and need no decision), and 4 is
+either ruled out with the reasoning written down, or split into its own task.
+**Where the Bearer came from, since it explains why it must stay** (dug out
+of `git log` 2026-09-13, because the human no longer remembered and guessing
+would have got it wrong): on **2025-03-28** the base URL was replaced with a
+per-environment one - localhost in dev, `mercampus.vercel.app` in production,
+`VERCEL_URL` for previews (`4888e00`, 11:32) - to stop a preview deployment
+calling production's API. It then grew an `x-internal-fetch: true` header and,
+at 12:59, a matching middleware bypass: `if (req.headers.get("x-internal-fetch")
+=== "true") return;` (`a675bf6`). That is an unauthenticated door - any caller
+sending the header skipped Clerk entirely - and it was reverted 20 minutes
+later along with the whole URL change (`2cc58aa`, 13:19). **All three commits
+live only on `origin/universities` and never reached `main`**, so the hole
+never shipped. A month later `2991401` (2025-04-22) added `apiToken.js`, and
+the Bearer is the *correct* answer to the problem that killed the March
+attempt: a server-side `fetch` carries no cookies, so identity travels in a
+header instead of a hole in the middleware.
+**Careful:** do not "simplify" by dropping the token. It looks redundant next
+to `credentials: 'include'` precisely because that option is inert - the
+token is the half that works. And do not reintroduce anything shaped like
+`x-internal-fetch`: it has been tried, on a branch, and it is an auth bypass.
+**Model:** `opus` for 4, `sonnet` for 1-3 · **Nightly:** yes for 1-3
+
+### [ ] T-112 · A preview deployment calls production's API
+**Why:** the other half of the 2025-03-28 attempt described in T-111 - the
+half that was *correct* and was reverted along with the auth bypass that
+wasn't. `src/services/api.js` and `apiToken.js` build their base URL as
+`process.env.NEXT_PUBLIC_URL + '/api'`, an absolute origin, and **nothing in
+this repo reads `VERCEL_URL`** (checked 2026-09-13). If that variable is a
+single unscoped value in Vercel - which is what T-12g describes for every
+other variable in this project - then a preview deployment's server-side
+fetches go to **production's** API, not its own.
+**The symptom the human described from memory, and it matches the commit:**
+add an endpoint on a branch, open that branch's preview, and anything routed
+through these services fails - because the request is answered by production,
+where the endpoint does not exist yet. Silent, and it makes a preview useless
+for exactly the changes worth previewing.
+**Not confirmed, and here is the honest gap:** whether `NEXT_PUBLIC_URL` is
+environment-scoped in Vercel cannot be read from this repo. **First step is
+one look at the Vercel dashboard**: if Preview has its own value, this is
+already fine and the task closes with a note; if not, it is real.
+**Careful - the fix is not the 2025 one.** That version bypassed Clerk with a
+header because a server-side fetch has no cookies (see T-111). Whatever
+lands here has to keep the Bearer that `apiToken.js` introduced, or drop the
+self-fetch entirely, which is the actual direction: T-30/31/32 replace these
+services with direct `src/server/` reads and Server Actions, and T-105b
+already did it for one endpoint with a plain relative fetch. The cheapest
+correct fix for what remains may be a **relative** `/api` base for
+browser-side callers rather than any absolute origin.
+**Related:** T-63 (no environment separation) is the same family of problem -
+preview and production sharing what should be separate - and the two should
+be read together.
+**Small thing found alongside:** `.env` has `NEXT_PUBLIC_URL = http://localhost:3000/`
+with a trailing slash, so every one of these builds a double slash
+(`http://localhost:3000//api/...`). Harmless today, but it means nothing
+normalises that value.
+**Model:** `opusplan` - it is an infrastructure question before it is a code
+one · **Nightly:** no (needs the dashboard)
 
 ### [ ] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
 **Why:** decided with the human alongside T-104. There is a stronger argument
