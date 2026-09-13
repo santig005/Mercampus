@@ -174,6 +174,11 @@ Body:
 - What was verified (`npm run verify` output).
 - Playwright screenshots if you touched the UI.
 - Risks or anything left pending.
+- **Anything that must happen outside the repo** for the change to work — an
+  env var in Vercel, a GitHub secret, a dashboard setting — as its own
+  explicit line, in the PR *and* in the ROADMAP entry. T-11b renamed six env
+  vars and T-14 required a secret; neither said so where a promoter looks,
+  and both broke production on 2026-09-13 (T-113).
 - Mark the task in `ROADMAP.md` in the same PR.
 
 ## Qué NO hacer sin preguntar

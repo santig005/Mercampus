@@ -60,6 +60,7 @@ One per PR, per rule 2. Ordered by how little can go wrong.
 | **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
 | **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
 | **T-111** (items 1-3 only) · Tidy `src/services/api.js` | Deleting a commented-out draft that the function below it supersedes, and a `credentials` option that is inert server-side. The audit is already written in the entry, so the reference search is done. | `npm run verify`, `deadcode` green. Item 4 is **not** in this bucket. |
+| **T-113** · Fail loudly on missing env, and a `.env.example` drift test | All in-repo: a config check that turns a generic 500 into a message naming the variable, and a unit test comparing source against `.env.example`. No setting outside the repo is touched. | `npm run verify`; the new tests fail with the variables unset. |
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -94,6 +95,9 @@ already warns about, and getting it wrong wastes a PR:
 - **T-60** · Observability - needs a Sentry account and a DSN.
 - **T-112** · a preview calling production's API - the first step is reading
   the Vercel dashboard, which an agent cannot do.
+- **The dashboard half of T-11b and T-14** - six renamed env vars in Vercel,
+  and `CRON_SECRET` in both Vercel and GitHub. Broke production on
+  2026-09-13; the names are in those entries.
 - **T-62b** · closing inactive PRs - a community policy call.
 - **T-80 batch e** - `scripts/`, where the dangerous warnings live; PR #273 is
   already open awaiting review.
@@ -353,6 +357,29 @@ instantiated lazily (which also removes the placeholders CI had been
 carrying since T-01, because the build no longer needs any values), and a
 test that fails if a `NEXT_PUBLIC_*` with SECRET or PRIVATE in the name
 ever reappears.
+**Correction (2026-09-13): "done" in the repo, never done where it runs, and
+it broke production.** Renaming a variable in code is half a change; the
+other half is renaming it wherever the value actually lives - Vercel's
+environment and every developer's `.env` - and this entry never said so.
+`.env.example` got the new names; nothing else did. It sat harmless for ten
+days on `agent/develop` and went live with the 136-commit promotion on
+2026-09-13, at which point every product image upload on
+mercampus.vercel.app answered **500** (`getCloudinary()` configured with
+three `undefined`s) - and the one approved seller that day could not add a
+first product, so could not become visible. The route's generic "Error al
+subir la imagen" hid the cause; see T-113. The renames Vercel needs, names
+only (values unchanged, nothing to rotate - this entry already proved no
+key reached the bundle):
+| Old name (still in Vercel and the human's `.env`) | Name the code reads |
+|---|---|
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | `CLOUDINARY_CLOUD_NAME` |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY` | `CLOUDINARY_API_KEY` |
+| `NEXT_PUBLIC_CLOUDINARY_API_SECRET` | `CLOUDINARY_API_SECRET` |
+| `NEXT_PUBLIC_IMAGEKIT_KEY` | `IMAGEKIT_PUBLIC_KEY` |
+| `PRIVATE_KEY_IMAGEKIT` | `IMAGEKIT_PRIVATE_KEY` |
+| `NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT` | `IMAGEKIT_URL_ENDPOINT` |
+The ImageKit two do not just lose a prefix, they change shape - an easy
+pair to rename wrong.
 **Model:** `sonnet` · **Nightly:** no
 
 ### [x] T-12b · Link Clerk to Mongo by `clerkId`
@@ -848,6 +875,26 @@ once a day (`0 5 * * *`, a redundant fallback) and
 scheduled GitHub Actions workflow, outside Vercel's cron system entirely,
 that calls the same protected route every 10 minutes with `curl` and a
 repo secret.
+**Went live 2026-09-13 and has failed every run since, measured:** the
+workflow only fires from the default branch, so it started with the
+`develop -> main` promotion (#306 merged 20:26 UTC). Runs at 20:37, 20:44
+and 20:52 all failed with `curl: (22) The requested URL returned error:
+401`. The repo has **no `CRON_SECRET` secret** (`gh secret list`: only
+`CLERK_SECRET_KEY` and `NEXT_PUBLIC_IMAGEKIT_KEY`), so the header goes out
+as an empty Bearer. The workflow file's own header predicted exactly this
+("calls will 401, harmlessly") - but a comment inside a YAML file is not a
+promotion checklist, which is the same gap T-11b fell into. **Not a
+regression:** in `main` before that promotion this route's handler was
+commented out entirely, so no cron had ever updated availability in
+production. **What it needs is two values that must match:** `CRON_SECRET`
+in Vercel's Production environment *and* a GitHub repo secret of the same
+name. Until both exist it fails ~144 times a day, and GitHub emails the
+repo owner about scheduled-workflow failures.
+**Worth knowing before wiring it up:** the first successful run will
+recompute `availability` for every seller from their `Schedule`, in
+production, for the first time ever. Stored values that disagree with a
+schedule will flip on the badge buyers see. That is the feature working,
+but it is a visible change and worth expecting.
 **Needs a human to actually turn on — can't be done from here:** the
 workflow's `${{ secrets.CRON_SECRET }}` has to be a GitHub Actions repo
 secret holding the *same* value as the `CRON_SECRET` environment variable
@@ -1240,6 +1287,16 @@ dependency of something else is also a reason to stop.
 **Not in scope:** the image provider. And do not confuse the `cookies`
 package with `next/headers`' `cookies()`, which is Next's own and is
 certainly in use.
+**Found alongside (2026-09-13), same leftovers one layer out:** the human's
+local `.env` still defines `AUTH_SECRET`, `AUTH_GOOGLE_ID` and
+`AUTH_GOOGLE_SECRET` - next-auth's variables - and nothing in `src/`,
+`scripts/` or `tests/` reads any of them. They are not in `.env.example`
+either. Dropping them from `.env` is the human's (it is not tracked); if
+any also exist in Vercel, same. Separately, the repo has a GitHub secret
+named `NEXT_PUBLIC_IMAGEKIT_KEY` that **no workflow references** (the
+workflows use only `CLERK_SECRET_KEY`, `CRON_SECRET` and the automatic
+`GITHUB_TOKEN`) - almost certainly the placeholder CI carried before T-11b.
+Deleting it is a settings change, so it is listed here, not done.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-110 · Stabilise the flaky e2e specs
@@ -2977,6 +3034,44 @@ to `credentials: 'include'` precisely because that option is inert - the
 token is the half that works. And do not reintroduce anything shaped like
 `x-internal-fetch`: it has been tried, on a branch, and it is an auth bypass.
 **Model:** `opus` for 4, `sonnet` for 1-3 · **Nightly:** yes for 1-3
+
+### [ ] T-113 · Environment drift: fail loudly, and catch renames before they ship
+**Why:** on 2026-09-13 the first promotion in eight days broke two things in
+production at once, and **neither was a code bug** - both were a change
+that needed a value set outside the repo, recorded somewhere no promoter
+reads:
+- **T-11b** renamed six image env vars in code. Vercel and the human's
+  `.env` kept the old names. Every product image upload answered 500.
+- **T-14** made the availability cron require `CRON_SECRET`. Neither Vercel
+  nor GitHub has it. The cron workflow has failed with 401 every ten
+  minutes since the merge.
+Both are fixed by a human in two dashboards (see T-11b and T-14 for the
+exact names). This task is what the repo can do so it does not happen a
+third time, and so it takes seconds to diagnose if it does.
+**Measured drift, `.env.example` vs the human's `.env`, names only:** the
+six image vars under old names; `CRON_SECRET` absent; three next-auth
+leftovers nothing reads (see T-109); and `NEXT_PUBLIC_CLERK_SIGN_IN_URL` /
+`NEXT_PUBLIC_CLERK_SIGN_UP_URL` present but undocumented - Clerk's SDK
+reads them straight from the environment, no file in `src/` names them,
+which is exactly why they were missing from the example.
+**Done when:**
+1. **The image routes say what is missing.** `getCloudinary()` and
+   `getImageKit()` check their three variables and throw an error naming
+   the absent one; the routes log it and answer with a message that says
+   "configuration", not "try again". Today the user is told to retry
+   something that cannot succeed, and the cause lives only in Vercel's
+   logs. A unit test per SDK, with the variables unset.
+2. **A test that `.env.example` and the code agree.** Every
+   `process.env.X` read under `src/` is documented in `.env.example`, and
+   every name in `.env.example` is read somewhere or explicitly marked as
+   read by a library (the Clerk URLs). `tests/unit/env-publico.test.js`
+   already scans source for `process.env` patterns, so the harness exists.
+   This would not have caught Vercel - nothing in the repo can - but it
+   catches a rename that forgets the example, and it makes `.env.example`
+   trustworthy as *the* list to compare a dashboard against.
+**Not in scope:** anything that reads or writes Vercel or GitHub settings.
+That is the human's, and listing it is what T-11b and T-14 now do.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-112 · A preview deployment calls production's API
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
