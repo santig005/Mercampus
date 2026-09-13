@@ -31,10 +31,10 @@ this index goes stale, the entries are the contract.
 Not because they are hard, but because getting them wrong costs real user
 data or real access, and the human has asked for them to wait:
 
-- **The admin-role work: T-105, T-106, T-107, T-108**, and anything else that
+- **The admin-role work: T-107, T-108, T-114**, and anything else that
   reads or writes `publicMetadata`, `User.role`, or the seller approval path.
-  T-104 closed the gate; the rest of that chain is half-finished on purpose
-  and the sequencing matters (T-105 before T-106).
+  T-104, T-105 and T-106 are done; what is left of that chain either guards
+  the only approval surface (T-114) or touches real user documents (T-107).
 - **Environment separation: T-63**, and T-64/T-12h's Clerk instance work. One
   Mongo cluster and one Clerk instance serve Production, Preview and
   Development today. Until that is split, a careless write lands on real
@@ -48,6 +48,14 @@ data or real access, and the human has asked for them to wait:
 
 Everything below still assumes **rule 1**: branch from `agent/develop`, PR
 into `agent/develop`, never push to `main` or `develop`.
+
+**Filing a new task? Take its number at the last moment, not the first.**
+Two sessions running in parallel on 2026-09-13 both read "the next free
+number is T-113" when they started, both filed it, and both PRs merged
+cleanly - they edited different parts of this file, so git had nothing to
+conflict on. Right before merging, `git fetch` and
+`grep -n "^### \[.\] T-NNN" ROADMAP.md` against `origin/agent/develop`; if
+the number is taken, bump it before the merge, not after.
 
 ### Safe to take alone
 
@@ -2973,6 +2981,16 @@ still pass, since the route itself did not change.
 **Still not provable in CI:** the browser hop through the real middleware
 needs a signed-in admin Playwright fixture, which is T-95. The check is one
 click in the deployed panel: approve somebody, refresh, see it stick.
+**Answered in production, 2026-09-13, and it settles the risk half of this
+entry.** The promotion that went live (#306) carried T-105, *not* this fix,
+so the click went through `fetchAPIToken`'s server-side Bearer hop. The
+human approved "Heladería Mercardi", reloaded, and it stayed approved; Mongo
+confirmed `approved: true` at 20:39 UTC, 13 minutes after the merge, and
+T-106's count of 37 approved (not 36) is that same write. So Clerk *does*
+resolve the Bearer through the middleware's admin gate - the seam this entry
+worried about works. The change still stands on its other reason: it
+removes the `NEXT_PUBLIC_URL + '/api'` antipattern from the one path it
+touched.
 **Model:** `opus` · **Nightly:** no
 
 ### [ ] T-111 · `src/services/api.js` and `apiToken.js`, audited
@@ -3173,7 +3191,14 @@ in the public card layout, with no toggles. The public layout's markup is
 byte-identical to before; what changed is that the admin branch is gone.
 **Model:** `sonnet` · **Nightly:** no
 
-### [ ] T-113 · `GET /api/sellers/admin` is now the only approval surface, and it shows
+### [ ] T-114 · `GET /api/sellers/admin` is now the only approval surface, and it shows
+**Renumbered from T-113 on 2026-09-13.** Two sessions running in parallel
+each took the next free number when they started, and both PRs merged
+cleanly because they edited different parts of this file - so git never
+flagged it. This one moved rather than the environment-drift T-113 because
+that one is referenced from `CLAUDE.md`, `.env.example`, T-11b and a merged
+commit title, which cannot be edited; this one lived only in this header and
+in #309's description. See the note on numbering at the top of this file.
 **Why:** found while doing T-106 (rule 9 - this is reported, not fixed here,
 because fixing it would have broken rule 2). Collapsing the approval UI onto
 `/admin/sellers` makes this endpoint the *only* way anybody approves a seller,
@@ -3203,7 +3228,10 @@ flag them. Two dead lines, worth deleting in whatever PR next touches that
 file. And `src/app/antojos/sellers/approving/page.jsx:12` carries a
 commented-out `useCheckSeller` call that the two lines above it supersede -
 same shape as the `api.js` draft T-111 found.
-**Model:** `sonnet` · **Nightly:** yes
+**Model:** `sonnet` · **Nightly:** no - item 1 is an authorisation check on
+the seller approval path, which the "Starting a fresh session?" index
+reserves for a session with the human. Items 2 and 3 alone would be
+nightly-safe; split them off if that is wanted.
 
 ### [ ] T-107 · The unique index on `email`, and the duplicates in the way
 **Why:** T-11 deleted `/api/register` and said in its own entry that the
