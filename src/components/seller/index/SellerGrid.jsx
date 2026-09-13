@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';
 import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
-import { updateSeller } from '@/services/sellerService';
+import { approveSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
 import { useAuth, useUser } from '@clerk/nextjs';
 
@@ -40,24 +40,28 @@ export default function SellerGrid({ section = 'antojos' }) {
   }, [university, section]);
 
   const handleSellerApproval = async (isOn, sellerId) => {
+    // Optimistic: flip it now, undo it if the write fails.
+    setSellers(prevSellers =>
+      prevSellers.map(seller =>
+        seller._id === sellerId ? { ...seller, approved: !isOn } : seller
+      )
+    );
+
     try {
-      //here we update the seller approval status
-      setSellers(prevSellers =>
-        prevSellers.map(seller =>
-          seller._id === sellerId ? { ...seller, approved: !isOn } : seller
-        )
-      );
-      const token = await getToken({ skipCache: true});
-      const response = await updateSeller(sellerId, { approved: !isOn },token);
-      if (response.error) {
-        setSellers(prevSellers =>
-          prevSellers.map(seller =>
-            seller._id === sellerId ? { ...seller, approved: isOn } : seller
-          )
-        );
-      }
+      // T-105: the admin-only endpoint that actually writes `approved`. This
+      // used to send it to PUT /sellers/:id, where Zod dropped the field and
+      // the write silently did nothing.
+      const token = await getToken({ skipCache: true });
+      await approveSeller(sellerId, !isOn, token);
     } catch (error) {
       logger.error('Error updating seller:', error);
+      // fetchAPIToken throws on a non-2xx, so the undo belongs here. It used
+      // to sit behind `if (response.error)`, which that helper never returns.
+      setSellers(prevSellers =>
+        prevSellers.map(seller =>
+          seller._id === sellerId ? { ...seller, approved: isOn } : seller
+        )
+      );
     }
   };
 

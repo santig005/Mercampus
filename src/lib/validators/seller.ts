@@ -38,3 +38,24 @@ export const createSellerSchema = z.object(sellerFields);
 export const updateSellerSchema = z
   .object({ ...sellerFields, paused: z.boolean() })
   .partial();
+
+// The `[id]` segment of a seller route, validated before it reaches Mongoose -
+// same reasoning and same shape as `productIdSchema` (T-97/F29): a malformed
+// id is invalid input, and letting it through answers 500 with the driver's
+// own `Cast to ObjectId failed ... for model "Seller"` in the body.
+export const sellerIdSchema = z
+  .string()
+  .regex(/^[a-f\d]{24}$/i, 'El id del vendedor no es válido');
+
+// T-105. `approved` is deliberately absent from every schema above, and stays
+// absent: those describe what a seller may send about their own shop, and
+// putting `approved` among them hands every seller self-approval - the mass
+// assignment T-13 closed. It lives here on its own, for the admin-only route
+// that is the sole writer of it (`PATCH /api/sellers/admin/[id]`).
+//
+// `strict()` rather than Zod's default of dropping unknown keys: this is the
+// one endpoint that can flip a seller's visibility, so a body carrying
+// anything else is a mistake worth reporting, not worth silently ignoring.
+export const approveSellerSchema = z
+  .object({ approved: z.boolean({ error: '`approved` debe ser true o false' }) })
+  .strict();

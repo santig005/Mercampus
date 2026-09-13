@@ -2808,7 +2808,7 @@ it is now filed on its own as T-107 with the duplicates measured. Splitting `app
 is about, and it is why **this PR alone does not make approving work yet.**
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-105 · Approving a seller writes nothing
+### [x] T-105 · Approving a seller writes nothing
 **Why:** found while reading T-104's four files, and it sits behind the same
 403. Both approval surfaces send `updateSeller(id, { approved })` to
 `PUT /api/sellers/[id]`, whose `updateSellerSchema` **does not declare
@@ -2831,6 +2831,51 @@ optimistic flip standing.
 **Worth knowing:** putting it under `/api/sellers/admin/...` means the
 middleware's `/api/(.*)/admin(.*)` matcher gates it for free, which is the
 one pattern in this repo that was already right.
+**Measured before doing it (read-only, 2026-09-13):** 55 sellers, 36
+approved, **19 pending** - and the most recent registered **2026-09-09**,
+four days before this was written. So this was not theoretical: somebody
+signed up and sat there while the only way to approve them did nothing.
+**Done:** `PATCH /api/sellers/admin/[id]`, a new route, because there was no
+approval edge at all - `/api/sellers/admin` had only a `GET`. It takes
+`approveSellerSchema` (`{ approved: boolean }`, `.strict()`) and writes that
+one field and nothing else.
+- **Two gates, on purpose.** The path matches the middleware's
+  `/api/(.*)/admin(.*)`, so Clerk's `publicMetadata` is checked before the
+  handler runs; the handler then checks it again with the same
+  `isClerkAdmin()` helper T-104 introduced. The second is not redundant - it
+  is what keeps the handler safe on its own if the matcher ever changes.
+- **`approved` stays out of `updateSellerSchema`.** That schema is the
+  seller's own self-service edit, and adding the field there would hand every
+  seller self-approval - the mass assignment T-13 closed. There is now exactly
+  one writer of `approved`, and it is admin-only.
+- **The client no longer lies.** `fetchAPIToken` *throws* on a non-2xx rather
+  than returning `{ error }`, so `SellerGrid`'s rollback - which sat behind
+  `if (response.error)` - could never have run. The undo moved into the
+  `catch`. `/admin/sellers` already rolled back correctly and only changed
+  endpoint.
+**Verified:** `npm run verify` green, plus 11 tests in
+`tests/integration/seller-approval.test.js`. Every one reads Mongo after the
+call instead of trusting the response body, which is the whole point: the old
+path answered **200** and wrote nothing, so a test asserting on the status
+would have passed against the bug. They cover the admin flipping it both
+ways, 401 without a session, 403 for a non-admin, **403 for the seller
+themselves** (owning a shop is not approving it), 400 for a missing,
+non-boolean or over-wide body, 400 on a malformed id instead of a CastError
+500, 404 on an unknown one, and a regression lock that the seller's own `PUT`
+still cannot approve them.
+**Not verified in a browser, and why:** proving the admin screen end to end
+needs a signed-in *admin* Playwright fixture. T-84's fixture is a seller, and
+minting an admin one is exactly T-95, which is parked. The route handler is
+covered against a real Mongo instead. No screenshots: no colour, theme or
+layout changed - the markup both components render is identical, only the
+endpoint they call and where the rollback lives.
+**This is not live until the promotion happens.** Measured 2026-09-13:
+`agent/develop` is **133 commits** ahead of `develop`, and `develop` equals
+`main`; both last moved 2026-09-05. Production still runs the old
+`verifySellerId` (Mongo's `role`) and the old `updateSellerSchema`, so
+approving is still broken there for both reasons. T-104 and T-105 together
+are what make it work end to end, and a human promoting `agent/develop` is
+what makes it real.
 **Model:** `opus` · **Nightly:** no
 
 ### [ ] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
@@ -2845,9 +2890,9 @@ back in client-side.
 `GET /api/sellers` filters `approved: true` in the Mongo query, and T-74's
 test is updated with the reason it changed. That turns a rendering choice
 into a server-side authorisation boundary.
-**Order matters:** after T-105. Collapsing onto `/admin/sellers` while the
-only approval path still writes nothing would leave no working surface at
-all.
+**Order matters:** after T-105 - **which is now done**, so this is unblocked.
+Collapsing onto `/admin/sellers` while the only approval path still wrote
+nothing would have left no working surface at all; it now writes.
 **Model:** `sonnet` · **Nightly:** no
 
 ### [ ] T-107 · The unique index on `email`, and the duplicates in the way

@@ -5,7 +5,7 @@ import { useSession, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import SellerCard from '@/components/seller/index/SellerCard';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
-import { updateSeller } from '@/services/sellerService';
+import { approveSeller } from '@/services/sellerService';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 export default function AdminSellersPage() {
@@ -77,19 +77,13 @@ export default function AdminSellersPage() {
         )
       );
       
-      // Call the API
+      // Call the API. T-105: the admin-only approval endpoint, which is
+      // the only thing that actually writes `approved` - this used to
+      // send it to PUT /sellers/:id, where Zod dropped the field and the
+      // write never happened. A failure throws, so the catch below is
+      // what rolls the optimistic flip back.
       const token = await getToken({ skipCache: true });
-      const response = await updateSeller(sellerId, { approved: !isOn }, token);
-      
-      if (response.error) {
-        // Roll the change back on error
-        setSellers(prevSellers =>
-          prevSellers.map(seller =>
-            seller._id === sellerId ? { ...seller, approved: isOn } : seller
-          )
-        );
-        setError('Error al actualizar el estado del vendedor');
-      }
+      await approveSeller(sellerId, !isOn, token);
     } catch (error) {
       logger.error('Error updating seller:', error);
       // Roll the change back on error
