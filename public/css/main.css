@@ -2,8 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* T-86 (audit finding F5): the keyboard focus ring.
+   `.btn` used to end in `focus-visible:outline-none` and `.input` in
+   `focus-within:outline-0`, which erased daisyUI's own focus outline on every
+   button and field in the app. Nothing replaced them, so a focused control
+   computed to `outline: solid 2px rgba(0, 0, 0, 0)` - a fully transparent
+   outline - and tabbing through the site was invisible.
+
+   One token-based ring for everything instead. `--bc` (base-content) is the
+   theme's text color, so it contrasts with the page in both light and dark,
+   and the 2px offset puts the ring on the page background rather than on top
+   of a filled button, where `currentColor` would sit white-on-orange.
+   The color is written exactly the way daisyUI 4.12 writes its own - oklch,
+   not hsl, with the `--fallback-bc` escape hatch - so it resolves and degrades
+   identically. `hsl(var(--bc))` parses but computes to an invalid color, which
+   drops the whole shorthand and leaves `outline-style: none`.
+
+   `:focus-visible` only matches keyboard/programmatic focus, so a mouse click
+   still does not draw a ring. The `.btn`/`.input`/`.select`/`.textarea` rules
+   below repeat it to outrank daisyUI's own component-level focus styles, which
+   are equally specific and would otherwise win by source order. */
+:focus-visible,
+.btn:focus-visible,
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible,
+.checkbox:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--fallback-bc, oklch(var(--bc) / 1));
+  outline-offset: 2px;
+}
+
 .btn {
-  @apply select-none hover:bg-primary/40 hover:border-transparent focus-visible:outline-none;
+  @apply select-none hover:bg-primary/40 hover:border-transparent;
 }
 
 .unselectable {
@@ -25,7 +56,7 @@ img {
 }
 
 .input {
-  @apply focus-within:outline-0 focus-within:shadow-md focus-within:border-primary;
+  @apply focus-within:shadow-md focus-within:border-primary;
 }
 
 .bg-primary {

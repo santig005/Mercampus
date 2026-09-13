@@ -4,19 +4,19 @@ import { logger } from '@/lib/logger';
 
 export async function POST(req) {
   try {
-    // Obtener los datos del cuerpo de la solicitud
+    // Read the request body
     const formData = await req.formData();
-    const file = formData.get('file');  // Obtén el archivo del FormData
+    const file = formData.get('file');  // the file out of the FormData
 
     if (!file) {
       return NextResponse.json({ error: 'No se proporcionó un archivo' }, { status: 400 });
     }
 
-    // Convertir el archivo a un buffer
+    // Turn the file into a buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Subir la imagen a Cloudinary como un buffer usando una promesa
+    // Upload the image to Cloudinary as a buffer, wrapped in a promise
     const result = await new Promise((resolve, reject) => {
       getCloudinary().uploader.upload_stream({ folder: formData.get('folder') }, (error, result) => {
         if (error) {
@@ -26,7 +26,7 @@ export async function POST(req) {
       }).end(buffer);
     });
 
-    // Devolver la URL de la imagen subida
+    // Return the uploaded image's URL
     return NextResponse.json({ url: result.secure_url }, { status: 200 });
 
   } catch (error) {
@@ -37,13 +37,13 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   try {
-    const { publicId } = await req.json();  // Obtener el publicId desde el cuerpo de la solicitud
+    const { publicId } = await req.json();  // publicId from the request body
 
     if (!publicId) {
       return NextResponse.json({ error: 'No se proporcionó publicId' }, { status: 400 });
     }
 
-    // Eliminar la imagen en Cloudinary usando el publicId
+    // Delete the image from Cloudinary by its publicId
     const result = await getCloudinary().uploader.destroy(publicId);
 
     if (result.result !== 'ok') {

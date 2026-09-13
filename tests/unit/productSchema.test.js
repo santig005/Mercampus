@@ -5,9 +5,9 @@ import { Product } from '@/utils/models/productSchema';
 import { antojosCategories } from '@/utils/resources/categories';
 import { marketplaceCategories } from '@/utils/resources/marketplaceCategories';
 
-// validateSync() valida en memoria: no hace falta conexion a Mongo. Ademas el
-// validador de `category` depende de `this.section`, y `this` solo esta ligado
-// al documento en la validacion de documento (no en las de update).
+// validateSync() validates in memory: no Mongo connection needed. On top of
+// that, `category`'s validator depends on `this.section`, and `this` is only
+// bound to the document in document validation (not in update validation).
 const buildProduct = overrides =>
   new Product({
     name: 'Arepa de queso',

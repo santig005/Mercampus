@@ -7,8 +7,8 @@ import {
   priceFormat,
 } from '@/utils/utilFn';
 
-// `es-CO` mete un espacio duro entre el simbolo y el importe. Se nombra aparte
-// para que los tests no dependan de un caracter invisible en el literal.
+// `es-CO` puts a non-breaking space between the symbol and the amount. It is
+// named separately so the tests do not depend on an invisible character.
 const NBSP = ' ';
 
 describe('priceFormat', () => {
@@ -23,8 +23,8 @@ describe('priceFormat', () => {
 
   it('redondea a pesos enteros', () => {
     // El precio es entero en el schema, y no circulan centavos de peso. El
-    // maximo de decimales va fijado en la funcion porque su valor por defecto
-    // para COP cambia con la version de ICU: sin fijarlo, 1500.5 sale
+    // the maximum fraction digits is pinned in the function because its default
+    // for COP changes with the ICU version: without pinning it, 1500.5 comes out
     // '$ 1.501' en el CI y '$ 1.500,5' en Node 22.20.
     expect(priceFormat(1500.5)).toBe(`$${NBSP}1.501`);
     expect(priceFormat(1500.567)).toBe(`$${NBSP}1.501`);
@@ -69,7 +69,7 @@ describe('parseIfJSON', () => {
   });
 
   it('convierte los strings que son JSON escalar valido', () => {
-    // Comportamiento actual: 'true' y '42' son JSON valido, asi que salen
+    // Current behaviour: 'true' and '42' are valid JSON, so they come back
     // convertidos a boolean y number. Documentado, no necesariamente deseado.
     expect(parseIfJSON('true')).toBe(true);
     expect(parseIfJSON('42')).toBe(42);
@@ -98,8 +98,8 @@ describe('formatPhone', () => {
   });
 
   it('no confunde con el indicativo un numero nacional de 10 digitos', () => {
-    // Ningun numero nacional empieza por 57, pero si llegara uno de 10 digitos
-    // se respeta entero: el 57 solo sobra cuando hay mas de 10.
+    // No national number starts with 57, but if one of 10 digits did arrive it
+    // is kept whole: the 57 is only surplus when there are more than 10.
     expect(formatPhone('5730012345')).toBe('(573) 001-2345');
   });
 

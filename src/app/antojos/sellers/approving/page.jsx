@@ -15,8 +15,20 @@ const SellerApprovalStatus = () => {
   const whatsappUrl = `https://wa.me/573197139921?text=Holaa,%20soy%20el%20vendedor%20${seller?.businessName},%20me%20registré%20en%20Mercampus,%20podrías%20revisar%20mi%20solicitud%20para%20aprobarme?`;
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#F2F2F2] p-8">
-      <div className="bg-[#FF7622] rounded-lg p-6 text-center">
+    <div className="flex flex-col items-center justify-center h-screen bg-base-200 p-8">
+      {/* T-100 (F47) used `bg-primary`/`text-primary-content` here, which
+          looked right in isolation but public/css/main.css:62 overrides
+          `.bg-primary` to `bg-[#f8f8f8]` app-wide, in both themes - Layout.jsx
+          has a comment explaining the same trap. That rendered this card as
+          near-white with white text: illegible in light mode, worse than the
+          bug it was fixing. `bg-primary-orange` is the class every other
+          branded-orange surface in the app actually uses (Loading's spinner,
+          ProfileChecklist's progress bar, Carousel's active dot) - none of
+          them differ by theme either, so this card matches that existing
+          convention instead of inventing a new one. `text-white` pairs with
+          it for the same reason: there is no daisyUI content-token for a
+          class that is not itself a daisyUI token. */}
+      <div className="bg-primary-orange rounded-lg p-6 text-center">
       <h1 className="text-3xl font-bold mb-4 text-white">
           <span>Hola {seller?.businessName}</span>.
         </h1>

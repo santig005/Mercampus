@@ -40,6 +40,12 @@ de producción tiene ~70. Un `clerkId` solo vale dentro de su instancia, así qu
    revisable vale más que uno grande y correcto.
 3. **Si no puedes verificar el cambio, no lo hagas.** Cada PR debe pasar
    `npm run verify`. Si la tarea no es verificable todavía, escoge otra.
+   **Para color, tema o layout, "verificado" significa una captura real,
+   no un test que solo lee el string de la clase.** Pasó en T-100: el test
+   comprobaba que `bg-primary` apareciera en el código, y pasó en verde
+   mientras esa clase renderizaba casi blanco (ver la convención de abajo).
+   Si no puedes tomar la captura en esta sesión (falta `.env`, no hay
+   navegador), dilo explícito en el PR — no lo des por verificado.
 4. **No inventes migraciones de datos en caliente.** Nada de `updateMany` en
    handlers de lectura. Los scripts de migración van en `scripts/`.
 5. **No borres código que no entiendas.** Si algo parece muerto, confírmalo con
@@ -85,6 +91,12 @@ el workflow nocturno: el modo plan solo existe en sesión interactiva.
 El agente programado toma **únicamente** tareas marcadas `Nocturno: sí`. Si
 ninguna aplica, termina sin abrir PR en vez de inventar trabajo.
 
+**Si abres una sesión nueva sin contexto y vas a escoger tarea tú mismo**, lee
+antes la sección "Starting a fresh session? Read this first" al principio de
+`ROADMAP.md`. Dice qué se puede tomar en solitario y qué no se toca sin el
+humano delante (el trabajo de rol admin y la separación de entornos, entre
+otras). Es un índice: la entrada de cada tarea sigue siendo el contrato.
+
 ## Convenciones de código
 
 - **Server Components por defecto.** `'use client'` solo cuando haya estado,
@@ -99,7 +111,22 @@ ninguna aplica, termina sin abrir PR en vez de inventar trabajo.
   decisión.
 - **Sin `console.log` en código que se mergea.** Usa el logger de
   `src/lib/logger`.
-- **Nombres en inglés en el código, comentarios y copy en español.**
+- **`bg-primary` no es el naranja de marca.** `public/css/main.css` (línea 62)
+  define `.bg-primary { @apply bg-[#f8f8f8]; }`, que gana por orden de cascada
+  sobre la utilidad de Tailwind/daisyUI del mismo nombre — en **toda la app,
+  en los dos temas**. Para una superficie naranja de marca usa
+  `bg-primary-orange` (el que ya usan `Loading`, `ProfileChecklist`,
+  `Carousel`; no cambia entre temas, ninguno de esos lo hace). Causó una
+  regresión real en T-100: tarjeta y texto casi invisibles en modo claro,
+  mergeada con `quality` en verde porque el test solo miraba el string, no el
+  render (ver `docs/audits/t-100/README.md`).
+- **Nombres y comentarios en inglés en el código y en el ROADMAP.** Decisión
+  2026-09-05 (ver T-66): antes decía "comentarios en español"; se revirtió
+  porque el portafolio y cualquier colaborador externo leen inglés, no
+  español. El copy de producto (lo que ve el estudiante en la UI) sigue en
+  español por defecto — es un idioma de negocio, no de código — con inglés
+  disponible donde ya se migró a `next-intl` (ver T-46). El español queda
+  para la conversación con el humano, no para lo que se escribe en el repo.
 
 ## Estructura objetivo
 
@@ -116,14 +143,25 @@ tests/            unitarios (Vitest) y e2e (Playwright)
 
 ## Cómo reportar en el PR
 
-Título: `[T-XX] descripción corta`
+**En inglés: título, cuerpo, mensajes de commit y comentarios en issues.**
+Es la misma decisión de T-66 y por la misma razón — un PR es lo primero que
+lee un colaborador externo o alguien mirando el portafolio. Esta sección
+estaba escrita en español y con la plantilla en español, así que el agente
+la seguía al pie de la letra y escribía PRs en español mientras traducía el
+código; corregido el 2026-09-07.
 
-Cuerpo:
-- Qué cambió y por qué (2-3 líneas).
-- Qué se verificó (salida de `npm run verify`).
-- Capturas de Playwright si tocaste UI.
-- Riesgos o cosas que dejaste pendientes.
-- Marca la tarea en `ROADMAP.md` en el mismo PR.
+En español queda solo: la conversación con el humano, el copy de producto
+(lo que ve el estudiante en la UI) y los nombres de rutas ya existentes
+(`/antojos`).
+
+Title: `[T-XX] short description`
+
+Body:
+- What changed and why (2-3 lines).
+- What was verified (`npm run verify` output).
+- Playwright screenshots if you touched the UI.
+- Risks or anything left pending.
+- Mark the task in `ROADMAP.md` in the same PR.
 
 ## Qué NO hacer sin preguntar
 

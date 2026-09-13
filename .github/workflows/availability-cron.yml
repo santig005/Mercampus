@@ -1,0 +1,35 @@
+name: Seller availability cron
+
+# T-14. GET /api/sellers/availability recalculates each seller's "open now"
+# badge from their schedule, but Vercel's Hobby plan caps native crons at
+# once a day (any more frequent schedule fails deployment - see
+# vercel.json, which keeps a once-daily cron as a fallback). This workflow
+# is the real, frequent trigger: it just calls the already-deployed,
+# already-protected route from outside Vercel's cron system entirely.
+#
+# Requires a repo secret CRON_SECRET with the SAME value as the CRON_SECRET
+# environment variable set on the Vercel project - nobody but a human with
+# access to both dashboards can wire that up, so this workflow does nothing
+# useful until that's done (calls will 401, harmlessly).
+#
+# Runs from whatever branch has this file as the default branch (GitHub only
+# fires `schedule` off the default branch), so it only goes live once this
+# is promoted past agent/develop by a human, same gate as everything else.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update seller availability
+        run: |
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://mercampus.vercel.app/api/sellers/availability"

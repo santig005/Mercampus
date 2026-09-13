@@ -1,7 +1,7 @@
 import { connectDB } from '../connectDB';
 import { User } from '../models/userSchema';
 
-// Forma del payload que manda el webhook de Clerk.
+// Shape of the payload Clerk's webhook sends.
 type ClerkEmailAddress = { email_address: string };
 
 export const createOrUpdateUser = async (
@@ -13,15 +13,16 @@ export const createOrUpdateUser = async (
 ) => {
   await connectDB();
 
-  // Clerk permite registrarse sin nombre, pero `name` es obligatorio en el
-  // schema. Sin este respaldo el documento entraría con `name: null`.
+  // Clerk allows signing up without a name, but `name` is required by the
+  // schema. Without this fallback the document would go in with
+  // `name: null`.
   const email = email_addresses?.[0]?.email_address;
   if (!email) {
     throw new Error('El evento de Clerk no trae ningún email.');
   }
 
-  // El upsert copia `clerkId` del filtro al documento nuevo, así que el
-  // usuario queda creado ya con su id de Clerk.
+  // The upsert copies `clerkId` from the filter into the new document, so
+  // the user is created already carrying its Clerk id.
   return User.findOneAndUpdate(
     { clerkId: id },
     {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 /**
- * T-11: POST /api/register creaba usuarios sin autenticación ni validación.
- * El alta de usuario depende únicamente del webhook de Clerk (T-12b) — esta
- * ruta se borró en vez de protegerse. Confirma que el archivo no exista: en
- * el App Router de Next, sin `route.js` la petición real responde 404.
+ * T-11: POST /api/register created users with no authentication and no
+ * validation. User creation depends solely on Clerk's webhook (T-12b) - this
+ * route was deleted rather than protected. This confirms the file is gone:
+ * in Next's App Router, with no `route.js` the real request answers 404.
  */
 describe('POST /api/register', () => {
   it('ya no existe', async () => {

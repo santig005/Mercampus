@@ -40,7 +40,7 @@ export default function SignUpForm() {
   const [verifying, setVerifying] = useState(false);
   const [verification, setVerification] = useState(false);
 
-  // Refs para cada input
+  // One ref per input
   const codeInputRefs = useRef([]);
   const [code, setCode] = useState('');
 
@@ -180,47 +180,47 @@ export default function SignUpForm() {
     setLoading(false);
   };
 
-  // Manejar el cambio en los inputs
+  // Handle a change in the inputs
   const handleInput = (e, index) => {
-    const value = e.target.value.slice(0, 1); // Solo permitir un dígito
-    if (!/^\d*$/.test(value)) return; // Solo permitir números
+    const value = e.target.value.slice(0, 1); // Only one digit
+    if (!/^\d*$/.test(value)) return; // Digits only
 
-    // Actualizar la cadena completa del código
+    // Update the whole code string
     const newCodeArray = code.split('');
     newCodeArray[index] = value;
     const newCode = newCodeArray.join('');
     setCode(newCode);
 
-    // Mover el foco al siguiente input si no es el último
+    // Move focus to the next input unless this is the last one
     if (value && index < 5) {
       codeInputRefs.current[index + 1].focus();
     }
 
-    // Verificar si todos los campos están completos y enviar el código automáticamente
+    // Check whether every field is filled and submit the code automatically
     // if (newCode.length === 6 && !newCode.includes('')) {
-    //   handleVerify(newCode); // Llama a la función de verificación pasando el código
+    //   handleVerify(newCode); // calls the verify function with the code
     // }
   };
 
   // Manejar el pegado de texto
   const handlePaste = e => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData('text').slice(0, 6); // Solo obtener los primeros 6 caracteres
+    const pasteData = e.clipboardData.getData('text').slice(0, 6); // Take only the first 6 characters
     setCode(pasteData);
 
-    // Llenar los inputs con los valores pegados
+    // Fill the inputs with the pasted values
     pasteData.split('').forEach((char, i) => {
       if (codeInputRefs.current[i]) {
         codeInputRefs.current[i].value = char;
       }
     });
 
-    // Enfocar el último input pegado
+    // Focus the last pasted input
     const lastIndex = Math.min(pasteData.length - 1, 5);
     codeInputRefs.current[lastIndex].focus();
   };
 
-  // Manejar las teclas (borrar y moverse)
+  // Handle keys (delete and navigation)
   const handleKeyDown = (e, index) => {
     if (e.key === 'Backspace' && !code[index] && index > 0) {
       codeInputRefs.current[index - 1].focus();
@@ -245,13 +245,13 @@ export default function SignUpForm() {
               <div className='flex gap-2 justify-center mt-4'>
                 {[0, 1, 2, 3, 4, 5].map(index => (
                   <input
-                    className='text-2xl size-12 p-2 rounded-lg border border-gray-300 focus-within:outline-0 focus-within:shadow-md focus-within:border-primary text-center'
+                    className='text-2xl size-12 p-2 rounded-lg border border-base-300 focus-within:shadow-md focus-within:border-primary text-center'
                     key={index}
                     type='number'
                     maxLength={1}
                     onChange={e => handleInput(e, index)}
                     ref={el => (codeInputRefs.current[index] = el)}
-                    value={code[index] || ''} // Mostrar el valor actual en cada input
+                    value={code[index] || ''} // Show the current value in each input
                     autoFocus={index === 0}
                     onKeyDown={e => handleKeyDown(e, index)}
                     onPaste={handlePaste}
@@ -262,7 +262,7 @@ export default function SignUpForm() {
               <button
                 type='button'
                 className='btn btn-primary mt-4 w-full'
-                onClick={() => handleVerify(code)} // Aquí también se pasa el código
+                onClick={() => handleVerify(code)} // The code is passed here too
                 disabled={loading}
               >
                 {loading ? (
@@ -318,14 +318,18 @@ export default function SignUpForm() {
             'h-1/4 bg-[#393939] flex flex-col justify-center items-center sticky top-0 left-0'
           }
         >
-          <Link href='/' className='btn btn-circle absolute top-4 left-4'>
+          <Link
+            href='/'
+            aria-label='Volver al inicio'
+            className='btn btn-circle absolute top-4 left-4'
+          >
             <TbChevronLeft className='icon' />
           </Link>
           <h2 className='text-2xl font-semibold text-white'>Regístrate</h2>
           <p className='text-white'>Por favor regístrate para comenzar</p>
         </div>
         <div className='h-full relative bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-max w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
+          <div className='bg-base-100 text-base-content rounded-t-3xl h-max w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
@@ -467,7 +471,7 @@ export default function SignUpForm() {
             </div> */}
             <div className='mt-4 flex justify-center'>
               <Link href='/auth/login' className='text-center text-primary'>
-                <span className='text-black'>¿Ya tienes una cuenta?</span>{' '}
+                <span className='text-black dark:text-base-content'>¿Ya tienes una cuenta?</span>{' '}
                 Inicia sesión
               </Link>
             </div>

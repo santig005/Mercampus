@@ -169,7 +169,7 @@ const Schedule = () => {
       </div>
 
       <div className='h-3/4 bg-[#393939]'>
-        <div className='bg-white rounded-t-3xl min-h-dvh h-max w-full absolute px-6 pt-6 pb-16'>
+        <div className='bg-base-100 text-base-content rounded-t-3xl min-h-dvh h-max w-full absolute px-6 pt-6 pb-16'>
           <div className='p-6'>
             <h1 className='text-xl font-bold mb-4'>Tus horarios</h1>
             <h2>
@@ -221,29 +221,33 @@ const Schedule = () => {
                     Eliminar
                   </button>
                 </div>
-                <div className='flex gap-2 w-full md:w-auto'>
-                  <label className='text-sm font-medium text-gray-600'>
-                    Hora Inicial
-                  </label>
-                  <input
-                    type='time'
-                    className='input input-bordered w-full md:w-24'
-                    value={schedule.startTime}
-                    onChange={e =>
-                      handleScheduleChange(index, 'startTime', e.target.value)
-                    }
-                  />
-                  <label className='text-sm font-medium text-gray-600'>
-                    Hora Final
-                  </label>
-                  <input
-                    type='time'
-                    className='input input-bordered w-full md:w-24'
-                    value={schedule.endTime}
-                    onChange={e =>
-                      handleScheduleChange(index, 'endTime', e.target.value)
-                    }
-                  />
+                <div className='flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto'>
+                  <div className='flex items-center gap-2'>
+                    <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
+                      Hora Inicial
+                    </label>
+                    <input
+                      type='time'
+                      className='input input-bordered w-full md:w-24'
+                      value={schedule.startTime}
+                      onChange={e =>
+                        handleScheduleChange(index, 'startTime', e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
+                      Hora Final
+                    </label>
+                    <input
+                      type='time'
+                      className='input input-bordered w-full md:w-24'
+                      value={schedule.endTime}
+                      onChange={e =>
+                        handleScheduleChange(index, 'endTime', e.target.value)
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             ))}

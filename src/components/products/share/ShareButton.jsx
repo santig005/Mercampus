@@ -38,13 +38,13 @@ export default function ShareButton({ data, type }) {
   // const productUrl = `${window.location.origin}/antojos/${product._id}`;
   // const shareText = `¡Mira este producto en Mercampus! \n${product.name} de ${product?.sellerId?.businessName}\n${productUrl}`;
 
-  // Función para compartir por WhatsApp
+  // Share via WhatsApp
   const shareOnWhatsApp = () => {
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     window.open(whatsappUrl, '_blank');
   };
 
-  // Función para copiar el enlace al portapapeles
+  // Copy the link to the clipboard
   const copyLink = () => {
     setCopied(false);
     navigator.clipboard

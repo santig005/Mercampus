@@ -3,7 +3,11 @@ import React from 'react';
 export default function TableSchema({ schedules }) {
   return (
     <div className='overflow-x-auto hide-scrollbar'>
-      <table className='table table-zebra text-nowrap bg-primary'>
+      {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre bg-primary
+          (rinde blanco fijo via override en main.css); esta tabla vive
+          siempre dentro del bg-primary/dark:bg-base-100 de ProductModal o
+          SellerModal, asi que tiene que seguirle el mismo tono. */}
+      <table className='table table-zebra text-nowrap bg-primary dark:bg-base-100'>
         {/* Head */}
         <thead>
           <tr>

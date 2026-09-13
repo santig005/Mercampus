@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -17,17 +17,43 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-export default function SearchBox() {
-  const [search, setSearch] = useState('');
+// T-88 (audit finding F21): the placeholder used to be hardcoded to the
+// antojos copy, so /marketplace asked for "tu antojo mas deseado" too. The
+// `section` prop is the same one CategoryGrid and ProductGrid already take,
+// so the three components on these pages are configured the same way.
+const PLACEHOLDERS = {
+  antojos: 'Busca tu antojo más deseado',
+  marketplace: 'Busca en el marketplace',
+};
+
+export default function SearchBox({ section = 'antojos' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // T-92 (audit finding F3): seeded from the URL, not from an empty string.
+  // ProductGrid reads `product` off the query string one line later, so a
+  // shared or reloaded /antojos?product=arepa has to arrive with the box
+  // already holding "arepa" - otherwise the box and the listing disagree
+  // about what is being searched.
+  const [search, setSearch] = useState(() => searchParams.get('product') ?? '');
   const category = searchParams.get('category') || '';
   const sellerId = searchParams.get('sellerId') || '';
 
   const debouncedSearchValue = useDebounce(search, 500);
 
+  // The other half of F3. This effect rebuilds the query string from the
+  // component's own state, and on mount that state has not been typed by
+  // anyone - so it used to push a URL with no `product` at all, wiping the
+  // param it had just been handed. The search box wrote a URL the app could
+  // not read back: shared links and reloads both came back unfiltered.
+  const hasMounted = useRef(false);
+
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+
     const params = new URLSearchParams();
 
     if (debouncedSearchValue.length >= 2) {
@@ -47,12 +73,16 @@ export default function SearchBox() {
 
   return (
     <label className='input input-bordered flex items-center gap-2'>
+      {/* T-93: the placeholder was the only thing naming this field, and a
+          placeholder is not an accessible name - it also vanishes as soon as
+          you type. Same string, so the label and the hint cannot drift. */}
       <input
         type='text'
+        aria-label={PLACEHOLDERS[section] ?? PLACEHOLDERS.antojos}
         className='grow'
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder='Busca tu antojo más deseado'
+        placeholder={PLACEHOLDERS[section] ?? PLACEHOLDERS.antojos}
       />
       <svg
         xmlns='http://www.w3.org/2000/svg'

@@ -7,12 +7,12 @@ type SellerId = string | Types.ObjectId;
 type LeanSchedule = ScheduleDoc & { _id: Types.ObjectId };
 
 /**
- * Horarios de varios vendedores en UNA sola consulta, agrupados por vendedor.
+ * Several sellers' schedules in ONE query, grouped by seller.
  *
- * Antes se hacia un Schedule.find() por cada producto y por cada vendedor: con
- * 50 productos eran 51 consultas. Devuelve una entrada por cada id pedido,
- * vacia si el vendedor no tiene horarios, para que quien la use no tenga que
- * comprobar si existe.
+ * This used to be a Schedule.find() per product and per seller: with 50
+ * products that was 51 queries. It returns an entry for every id asked for,
+ * empty when the seller has no schedules, so callers do not have to check
+ * whether it exists.
  */
 export async function getSchedulesBySeller(
   sellerIds: SellerId[]
@@ -41,7 +41,7 @@ export async function getSchedulesBySeller(
   return bySeller;
 }
 
-/** Cambia el numero de dia por su nombre en español, como espera la UI. */
+/** Swaps the day number for its Spanish name, as the UI expects. */
 export const withDayNames = (schedules: LeanSchedule[]) =>
   schedules.map(schedule => ({
     ...schedule,

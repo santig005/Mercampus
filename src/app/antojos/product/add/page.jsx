@@ -11,6 +11,7 @@ import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
+import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
 
 const AddProduct = () => {
   const router = useRouter();
@@ -18,13 +19,14 @@ const AddProduct = () => {
     'sellerApproved',
     '/antojos/sellers/approving'
   );
+  const selectStyles = useReactSelectStyles();
   const [formData, setFormData] = useState({
     name: '',
     category: [],
     price: '',
     description: '',
     images: [],
-    section: 'antojos', // Por defecto antojos
+    section: 'antojos', // antojos by default
   });
 
   const [categories, setCategories] = useState([]); // State for storing categories
@@ -38,7 +40,7 @@ const AddProduct = () => {
     label: category,
   }));
 
-  // Cargar categorías según la sección seleccionada
+  // Load the categories for the selected section
   useEffect(() => {
     const loadCategories = async () => {
       const categoriesData = await getCategoriesBySection(formData.section);
@@ -153,7 +155,7 @@ const AddProduct = () => {
           </p>
         </div>
         <div className='h-3/4 bg-[#393939]'>
-          <div className='bg-white rounded-t-3xl h-max w-full absolute px-6 pt-6 pb-16'>
+          <div className='bg-base-100 text-base-content rounded-t-3xl h-max w-full absolute px-6 pt-6 pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
@@ -167,7 +169,7 @@ const AddProduct = () => {
                 />
                 
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-sm font-medium text-gray-700 dark:text-base-content mb-2'>
                     Sección
                   </label>
                   <Select
@@ -181,15 +183,16 @@ const AddProduct = () => {
                       setFormData({
                         ...formData,
                         section: selectedOption.value,
-                        category: [] // Limpiar categorías al cambiar sección
+                        category: [] // Clear the categories when the section changes
                       });
                     }}
                     className='basic-multi-select w-full'
                     classNamePrefix='Selecciona'
                     isSearchable={false}
+                    styles={selectStyles}
                   />
                 </div>
-                
+
                 <div>
                   <label>Categoría</label>
                   <Select
@@ -202,6 +205,7 @@ const AddProduct = () => {
                     onChange={handleCategoryChange}
                     className='basic-multi-select w-full'
                     classNamePrefix='Selecciona'
+                    styles={selectStyles}
                   />
                 </div>
                 <InputFields

@@ -3,11 +3,11 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-// Next inyecta toda variable NEXT_PUBLIC_* en el bundle del cliente en el punto
-// donde se usa. Hoy imagekit.js y cloudinary.js solo los importan route
-// handlers, asi que sus claves no salen del servidor — pero basta que alguien
-// los importe desde un componente 'use client' para publicarlas sin aviso.
-// Este test impide que el nombre vuelva a prestarse a ello.
+// Next injects every NEXT_PUBLIC_* variable into the client bundle at the
+// point where it is used. Today only route handlers import imagekit.js and
+// cloudinary.js, so their keys never leave the server - but one 'use client'
+// component importing them would publish those keys with no warning.
+// This test keeps the naming from lending itself to that again.
 
 const walk = dir =>
   readdirSync(dir).flatMap(entry => {
@@ -36,14 +36,14 @@ describe('variables expuestas al cliente', () => {
 
   it('los SDK de imagenes no leen variables NEXT_PUBLIC_', () => {
     // Busca el uso, no la cadena: estos archivos mencionan el prefijo en sus
-    // comentarios para explicar por que NO lo llevan.
+    // comments to explain why they do NOT carry it.
     for (const file of ['src/utils/imagekit.js', 'src/utils/cloudinary.js']) {
       expect(readFileSync(file, 'utf8')).not.toMatch(/process\.\s*env\.\s*NEXT_PUBLIC_/);
     }
   });
 
   it('las que quedan son legitimamente publicas', () => {
-    // Si aparece una nueva, hay que decidir a conciencia si debe ir al bundle.
+    // If a new one shows up, deciding whether it belongs in the bundle is a
     expect([...publicEnvVars].sort()).toEqual([
       'NEXT_PUBLIC_GA_ID',
       'NEXT_PUBLIC_GTM_ID',

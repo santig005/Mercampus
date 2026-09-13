@@ -2,57 +2,28 @@ import { connectDB } from '@/utils/connectDB';
 import { NextResponse } from 'next/server';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { User } from '@/utils/models/userSchema';
-import { currentUser } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
 import { logger } from '@/lib/logger';
 
-// Cache en memoria para roles de usuario (evita consultas repetidas a BD)
-const userRoleCache = new Map();
+// T-12: who gets here was already decided by the middleware (Clerk's
+// publicMetadata, not Mongo's `role`) - this route used to reinvent its own
+// check with an in-memory Map+setInterval, which in serverless is a
+// per-instance cache and an interval that is never cleared.
+//
+// Without that check (which read currentUser()), the route touches nothing
+// request-specific and Next optimises it as static: it would be served
+// cached from the build instead of querying Mongo on every call.
+// force-dynamic keeps the admin panel from being handed stale sellers.
+export const dynamic = 'force-dynamic';
 
-// Limpiar cache cada 5 minutos para evitar crecimiento excesivo
-setInterval(() => {
-  userRoleCache.clear();
-}, 5 * 60 * 1000);
-
-export async function GET(req) {
+export async function GET() {
   try {
     // Connect to the database
     await connectDB();
 
-    // Verificar si el usuario actual es admin
-    let isAdmin = false;
-    try {
-      const user = await currentUser();
-      if (user) {
-        const userId = user.id;
-        const email = user.emailAddresses[0].emailAddress;
-        
-        // Verificar cache primero
-        const cachedRole = userRoleCache.get(userId);
-        if (cachedRole !== undefined) {
-          isAdmin = cachedRole === 'admin';
-        } else {
-          // Solo hacer consulta a BD si no está en cache
-          const dbUser = await User.findOne({ email: email });
-          const userRole = dbUser?.role || 'buyer';
-          userRoleCache.set(userId, userRole);
-          isAdmin = userRole === 'admin';
-        }
-      }
-    } catch (error) {
-      logger.error('Error verificando rol de admin:', error);
-      return NextResponse.json({ message: 'Error de autenticación' }, { status: 401 });
-    }
-
-    // Solo admins pueden acceder a este endpoint
-    if (!isAdmin) {
-      return NextResponse.json({ message: 'Acceso denegado. Solo administradores.' }, { status: 403 });
-    }
-
-    // Obtener TODOS los vendedores ordenados del más nuevo al más viejo
+    // ALL the sellers, newest first
     const sellers = await Seller.find()
-      .sort({ createdAt: -1 }) // Ordenar por fecha de creación descendente (más nuevo primero)
+      .sort({ createdAt: -1 }) // newest first
       .lean();
 
     if (!sellers || sellers.length === 0) {
@@ -63,7 +34,7 @@ export async function GET(req) {
       }, { status: 200 });
     }
     
-    // Poblar con horarios para cada vendedor
+    // Attach each seller's schedules
     const populatedSellers = await Promise.all(
       sellers.map(async seller => {
         const schedules = await Schedule.find({ sellerId: seller._id });
@@ -75,7 +46,7 @@ export async function GET(req) {
       })
     );
 
-    // Transformar horarios para mostrar nombres de días
+    // Turn the day numbers into day names for display
     const transformedSellers = populatedSellers.map(seller => {
       const transformedSchedules = seller.schedules.map(schedule => ({
         ...schedule,

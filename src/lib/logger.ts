@@ -8,8 +8,8 @@ const WEIGHT: Record<Level, number> = {
   silent: 100,
 };
 
-// En test no imprime nada. Los tests provocan errores a proposito —401, 403,
-// payloads invalidos— y ese ruido tapa los fallos de verdad en la salida.
+// Prints nothing under test. The tests provoke errors on purpose - 401, 403,
+// invalid payloads - and that noise buries the real failures in the output.
 function configuredLevel(): Level {
   const explicit = process.env.LOG_LEVEL as Level | undefined;
   if (explicit && explicit in WEIGHT) return explicit;
@@ -19,18 +19,18 @@ function configuredLevel(): Level {
 
 const shouldLog = (level: Level) => WEIGHT[level] >= WEIGHT[configuredLevel()];
 
-// El contexto va como objeto aparte, no interpolado en el mensaje: asi el
-// mensaje se puede agrupar y el contexto sigue siendo consultable cuando esto
-// vaya a un agregador de logs (T-60).
+// The context goes as a separate object, not interpolated into the message:
+// that way the message can be grouped and the context stays queryable once
+// this reaches a log aggregator (T-60).
 type Context = Record<string, unknown>;
 
 /**
- * Acepta cualquier valor y lo deja como objeto.
+ * Takes any value and turns it into an object.
  *
- * Los sitios que venian de `console.log('algo', valor)` pasan errores, strings o
- * numeros, no objetos. En vez de obligar a envolverlos a mano en ~70 llamadas,
- * se normaliza aqui: el log sigue saliendo estructurado y los `catch (error)`
- * —que en TS son `unknown`— no necesitan casts.
+ * The call sites that came from `console.log('something', value)` pass errors,
+ * strings or numbers, not objects. Rather than wrapping them by hand across
+ * ~70 calls, they're normalised here: the log still comes out structured and
+ * the `catch (error)` blocks - which are `unknown` in TS - need no casts.
  */
 function normalize(context: unknown): Context | undefined {
   if (context === undefined || context === null) return undefined;

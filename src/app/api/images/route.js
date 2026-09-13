@@ -51,7 +51,7 @@ export async function DELETE(req) {
       );
     }
 
-    await getImageKit().deleteFile(fileId); // Eliminamos la imagen usando el `fileId`
+    await getImageKit().deleteFile(fileId); // Delete the image by its `fileId`
 
     return NextResponse.json(
       { message: 'File deleted successfully' },

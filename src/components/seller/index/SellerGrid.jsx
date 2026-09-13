@@ -4,17 +4,26 @@ import { getSellers } from '@/services/sellerService';
 import React, { useEffect, useState } from 'react';
 import SellerCard from '@/components/seller/index/SellerCard';
 import SellerModalHandler from '@/components/seller/index/SellerModalHandler';
-import { useSeller } from '@/context/SellerContext';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
-import { updateSeller } from '@/services/sellerService';
+import { approveSeller } from '@/services/sellerService';
 import { useUniversity } from '@/context/UniversityContext';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 
 export default function SellerGrid({ section = 'antojos' }) {
   const [sellers, setSellers] = useState([]);
-  const {dbUser} = useSeller();
   const {university} = useUniversity();
   const { getToken } = useAuth();
+  const { user } = useUser();
+
+  // T-104: Clerk's publicMetadata, not Mongo's `role` (T-12 retired that field
+  // as the source of truth for admin). It arrives with the user resource the
+  // session already loaded, so there is no extra request for it.
+  //
+  // This only decides what gets drawn. The approve/reject toggle below is
+  // authorised server-side by verifySellerId, which now reads the same
+  // publicMetadata: a non-admin who forced this branch open in their own
+  // browser would render the toggles and get a 403 from every one of them.
+  const isAdmin = user?.publicMetadata?.role === 'admin';
 
   useEffect(() => {
     async function fetchSellers() {
@@ -31,31 +40,34 @@ export default function SellerGrid({ section = 'antojos' }) {
   }, [university, section]);
 
   const handleSellerApproval = async (isOn, sellerId) => {
+    // Optimistic: flip it now, undo it if the write fails.
+    setSellers(prevSellers =>
+      prevSellers.map(seller =>
+        seller._id === sellerId ? { ...seller, approved: !isOn } : seller
+      )
+    );
+
     try {
-      //here we update the seller approval status
-      setSellers(prevSellers =>
-        prevSellers.map(seller =>
-          seller._id === sellerId ? { ...seller, approved: !isOn } : seller
-        )
-      );
-      const token = await getToken({ skipCache: true});
-      const response = await updateSeller(sellerId, { approved: !isOn },token);
-      if (response.error) {
-        setSellers(prevSellers =>
-          prevSellers.map(seller =>
-            seller._id === sellerId ? { ...seller, approved: isOn } : seller
-          )
-        );
-      }
+      // T-105: the admin-only endpoint that actually writes `approved`. This
+      // used to send it to PUT /sellers/:id, where Zod dropped the field and
+      // the write silently did nothing.
+      const token = await getToken({ skipCache: true });
+      await approveSeller(sellerId, !isOn, token);
     } catch (error) {
       logger.error('Error updating seller:', error);
+      // fetchAPIToken throws on a non-2xx, so the undo belongs here. It used
+      // to sit behind `if (response.error)`, which that helper never returns.
+      setSellers(prevSellers =>
+        prevSellers.map(seller =>
+          seller._id === sellerId ? { ...seller, approved: isOn } : seller
+        )
+      );
     }
   };
 
-  const visibleSellers =
-    dbUser?.role === 'admin'
-      ? sellers
-      : sellers.filter(seller => seller.approved);
+  const visibleSellers = isAdmin
+    ? sellers
+    : sellers.filter(seller => seller.approved);
 
   return (
     <SellerModalHandler>
@@ -63,15 +75,15 @@ export default function SellerGrid({ section = 'antojos' }) {
         <div className='flex flex-col gap-4'>
           {visibleSellers.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-12 text-center'>
-              <div className='text-gray-400 mb-4'>
+              <div className='text-gray-400 dark:text-base-content/70 mb-4'>
                 <svg className='w-16 h-16 mx-auto' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={1} d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' />
                 </svg>
               </div>
-              <h3 className='text-lg font-semibold text-gray-600 mb-2'>
+              <h3 className='text-lg font-semibold text-gray-600 dark:text-base-content/70 mb-2'>
                 No hay vendedores disponibles
               </h3>
-              <p className='text-gray-500 max-w-md'>
+              <p className='text-gray-500 dark:text-base-content/70 max-w-md'>
                 {section === 'marketplace' 
                   ? 'No hay vendedores registrados en el marketplace para tu universidad en este momento.'
                   : 'No hay vendedores registrados en antojos para tu universidad en este momento.'
@@ -80,10 +92,10 @@ export default function SellerGrid({ section = 'antojos' }) {
             </div>
           ) : (
             <>
-              {dbUser?.role === 'admin' ? (
+              {isAdmin ? (
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                   {sellers.map(seller => (
-                    <div key={seller._id} className='bg-white shadow-md rounded-lg'>
+                    <div key={seller._id} className='bg-base-100 text-base-content shadow-md rounded-lg'>
                       <div className='w-full' onClick={() => showModal(seller)}>
                         <SellerCard seller={seller} variant='embedded' />
                       </div>
@@ -100,7 +112,7 @@ export default function SellerGrid({ section = 'antojos' }) {
                   ))}
                 </div>
               ) : (
-                // Diseño para usuarios normales (solo aprobados)
+                // Layout for ordinary visitors (approved sellers only)
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                   {visibleSellers.map(seller => (
                     <div

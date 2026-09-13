@@ -28,14 +28,14 @@ export default function Carousel({ images, _id: id }) {
   }, []);
 
   useEffect(() => {
-    setCurrentIndex(0); // Resetear índice al cambiar imágenes
+    setCurrentIndex(0); // Reset the index when the images change
   }, [images]);
 
   return (
     <div className='relative w-full h-80'>
       {/* Indicators */}
       {images.length > 1 && (
-        <div className='absolute bottom-14 left-1/2 transform -translate-x-1/2 flex gap-2 z-10 bg-white p-1 rounded-badge'>
+        <div className='absolute bottom-14 left-1/2 transform -translate-x-1/2 flex gap-2 z-10 bg-base-100 p-1 rounded-badge'>
           {images.map((_, index) => (
             <button
               key={id + '-indicator-' + index}

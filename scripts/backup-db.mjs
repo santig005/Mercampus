@@ -1,15 +1,15 @@
 /**
- * Copia de seguridad de la base a la que apunte `MONGO_URI`.
+ * Backup of whichever database `MONGO_URI` points at.
  *
- * Solo lee. Vuelca cada colección a `backups/<fecha>/<coleccion>.json`, que está
- * en `.gitignore` porque son datos reales de personas y no deben acabar en el
- * repositorio.
+ * Read-only. It dumps each collection to `backups/<date>/<collection>.json`,
+ * which is in `.gitignore` because this is real people's data and must not
+ * end up in the repository.
  *
  *   npm run backup:db
  *
- * Imprime el host y el nombre de la base, nunca la URI: lleva usuario y
- * contraseña. Si algún día hace falta restaurar, los ficheros son JSON con los
- * documentos tal cual salen de Mongo (`insertMany` los admite de vuelta).
+ * It prints the host and the database name, never the URI: that carries a
+ * username and password. If a restore is ever needed, the files are JSON
+ * with the documents exactly as Mongo returns them (`insertMany` takes them
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';

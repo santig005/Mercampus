@@ -22,7 +22,7 @@ export default function ForgotPassword({ setForgotPassword }) {
   const [verification, setVerification] = useState(false);
   const [parent] = useAutoAnimate();
 
-  // Refs para cada input
+  // One ref per input
   const codeInputRefs = useRef([]);
   const [code, setCode] = useState('');
 
@@ -179,47 +179,47 @@ export default function ForgotPassword({ setForgotPassword }) {
     setLoading(false);
   }
 
-  // Manejar el cambio en los inputs
+  // Handle a change in the inputs
   const handleInput = (e, index) => {
-    const value = e.target.value.slice(0, 1); // Solo permitir un dígito
-    if (!/^\d*$/.test(value)) return; // Solo permitir números
+    const value = e.target.value.slice(0, 1); // Only one digit
+    if (!/^\d*$/.test(value)) return; // Digits only
 
-    // Actualizar la cadena completa del código
+    // Update the whole code string
     const newCodeArray = code.split('');
     newCodeArray[index] = value;
     const newCode = newCodeArray.join('');
     setCode(newCode);
 
-    // Mover el foco al siguiente input si no es el último
+    // Move focus to the next input unless this is the last one
     if (value && index < 5) {
       codeInputRefs.current[index + 1].focus();
     }
 
-    // Verificar si todos los campos están completos y enviar el código automáticamente
+    // Check whether every field is filled and submit the code automatically
     // if (newCode.length === 6 && !newCode.includes('')) {
-    //   handleVerify(newCode); // Llama a la función de verificación pasando el código
+    //   handleVerify(newCode); // calls the verify function with the code
     // }
   };
 
   // Manejar el pegado de texto
   const handlePaste = e => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData('text').slice(0, 6); // Solo obtener los primeros 6 caracteres
+    const pasteData = e.clipboardData.getData('text').slice(0, 6); // Take only the first 6 characters
     setCode(pasteData);
 
-    // Llenar los inputs con los valores pegados
+    // Fill the inputs with the pasted values
     pasteData.split('').forEach((char, i) => {
       if (codeInputRefs.current[i]) {
         codeInputRefs.current[i].value = char;
       }
     });
 
-    // Enfocar el último input pegado
+    // Focus the last pasted input
     const lastIndex = Math.min(pasteData.length - 1, 5);
     codeInputRefs.current[lastIndex].focus();
   };
 
-  // Manejar las teclas (borrar y moverse)
+  // Handle keys (delete and navigation)
   const handleKeyDown = (e, index) => {
     if (e.key === 'Backspace' && !code[index] && index > 0) {
       codeInputRefs.current[index - 1].focus();
@@ -229,12 +229,18 @@ export default function ForgotPassword({ setForgotPassword }) {
   return (
     <div>
       <dialog id='forgot_password' className='modal modal-open modal-bottom'>
-        <div className='modal-box w-full h-dvh rounded-none bg-primary p-0 relative'>
+        {/* bg-primary rinde un blanco fijo (override en main.css, ver
+            CLAUDE.md) - no el naranja de marca ni algo que siga el tema.
+            dark:bg-base-100 es el mismo patrón que ProductModal/SellerModal
+            ya usan para esta misma trampa; sin él, el texto de este modal
+            (que sí sigue el tema) quedaba casi invisible en oscuro. */}
+        <div className='modal-box w-full h-dvh rounded-none bg-primary dark:bg-base-100 p-0 relative'>
           <div className='absolute w-full z-10'>
             <div className='modal-action m-0 justify-between p-4'>
               <form method='dialog'>
                 <button
                   className='btn btn-circle'
+                  aria-label='Volver a iniciar sesión'
                   onClick={() => setForgotPassword(false)}
                 >
                   <TbChevronLeft className='icon' />
@@ -254,7 +260,7 @@ export default function ForgotPassword({ setForgotPassword }) {
           </div>
 
           <div className='relative h-auto w-full'>
-            <div className='bg-primary rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>
+            <div className='bg-primary dark:bg-base-100 rounded-t-3xl w-full absolute -top-8 flex flex-col gap-2 pt-2'>
               <div className='flex flex-col p-6 gap-2'>
                 {/*! forgot pass */}
                 <div>
@@ -404,13 +410,13 @@ export default function ForgotPassword({ setForgotPassword }) {
                           <div className='flex gap-2 justify-center mt-4'>
                             {[0, 1, 2, 3, 4, 5].map(index => (
                               <input
-                                className='text-2xl size-12 p-2 rounded-lg border border-gray-300 focus-within:outline-0 focus-within:shadow-md focus-within:border-primary text-center'
+                                className='text-2xl size-12 p-2 rounded-lg border border-base-300 focus-within:shadow-md focus-within:border-primary text-center'
                                 key={index}
                                 type='number'
                                 maxLength={1}
                                 onChange={e => handleInput(e, index)}
                                 ref={el => (codeInputRefs.current[index] = el)}
-                                value={code[index] || ''} // Mostrar el valor actual en cada input
+                                value={code[index] || ''} // Show the current value in each input
                                 // autoFocus={index === 0}
                                 onKeyDown={e => handleKeyDown(e, index)}
                                 onPaste={handlePaste}

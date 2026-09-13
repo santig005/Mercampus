@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { getSellerProducts, updateProduct } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
@@ -46,9 +47,6 @@ export default function EditProductsPage() {
     }
   }, [seller, sellerLoading]);
 
-  const handleProductClick = id => {
-    router.push(`/antojos/sellers/products/edit/${id}`);
-  };
   const handleAvailabilityToggle = async (id, currentAvailability) => {
     try {
       setProducts(prevProducts =>
@@ -116,7 +114,7 @@ export default function EditProductsPage() {
         especifico para editar mas detalles
       </h2>
       <div>
-        <div className='flex justify-between items-center p-4 bg-white rounded-md shadow-md'>
+        <div className='flex justify-between items-center p-4 bg-base-100 text-base-content rounded-md shadow-md'>
           <div>
             <h3 className='text-lg font-semibold'>Mi disponibilidad</h3>
             <AvailabilityBadge availability={sellerAvailability} />
@@ -124,12 +122,15 @@ export default function EditProductsPage() {
           <ToggleSwitch
             isOn={sellerAvailability}
             onToggle={handleSellerAvailability}
+            label={`Disponibilidad de ${seller?.businessName || 'tu negocio'}: ${
+              sellerAvailability ? 'disponible' : 'no disponible'
+            }`}
           />
         </div>
 
         {/* Productos agrupados por sección */}
         {(() => {
-          // Agrupar productos por sección
+          // Group the products by section
           const productsBySection = products?.reduce((acc, product) => {
             const section = product.section || 'antojos';
             if (!acc[section]) {
@@ -139,7 +140,7 @@ export default function EditProductsPage() {
             return acc;
           }, {});
 
-          // Ordenar secciones para que antojos vaya primero
+          // Order the sections so antojos comes first
           const sortedSections = Object.entries(productsBySection || {}).sort(([a], [b]) => {
             if (a === 'antojos') return -1;
             if (b === 'antojos') return 1;
@@ -148,7 +149,7 @@ export default function EditProductsPage() {
 
           return sortedSections.map(([section, sectionProducts]) => (
             <div key={section} className='mt-6'>
-              <h3 className='text-xl font-bold mb-4 text-gray-800'>
+              <h3 className='text-xl font-bold mb-4 text-gray-800 dark:text-base-content'>
                 {section === 'antojos' ? (
                   <>🍕 Antojos ({sectionProducts.length} productos)</>
                 ) : (
@@ -159,11 +160,14 @@ export default function EditProductsPage() {
                 {sectionProducts.map(product => (
                   <div
                     key={product._id}
-                    className='bg-white drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
+                    className='bg-base-100 text-base-content drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
                   >
-                    <div onClick={() => handleProductClick(product._id)}>
+                    <Link
+                      href={`/antojos/sellers/products/edit/${product._id}`}
+                      className='block'
+                    >
                       <ProductCard product={product} variant='embedded' />
-                    </div>
+                    </Link>
                     <div className='flex justify-between'>
                       <p>Disponibilidad</p>
                       <ToggleSwitch
@@ -171,6 +175,9 @@ export default function EditProductsPage() {
                         onToggle={() =>
                           handleAvailabilityToggle(product._id, product.availability)
                         }
+                        label={`Disponibilidad de ${product.name}: ${
+                          product.availability ? 'disponible' : 'no disponible'
+                        }`}
                       />
                     </div>
                   </div>

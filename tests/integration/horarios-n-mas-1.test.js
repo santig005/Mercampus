@@ -30,9 +30,9 @@ describe('horarios sin N+1', () => {
   });
 
   it('el listado de productos consulta horarios una sola vez', async () => {
-    // Aprobar al segundo vendedor para que el listado traiga productos de dos
-    // vendedores distintos: asi el test detecta tanto una consulta por producto
-    // como una por vendedor.
+    // Approve the second seller so the listing carries products from two
+    // different sellers: that way the test catches both a query per product
+    // and a query per seller.
     await Seller.updateMany({}, { $set: { approved: true } });
 
     const spy = vi.spyOn(Schedule, 'find');
@@ -42,13 +42,13 @@ describe('horarios sin N+1', () => {
     );
     const { products } = await response.json();
 
-    // Varios productos, del mismo vendedor: antes eran tantas consultas como
+    // Several products from one seller: this used to be as many queries as
     // productos.
     expect(products.length).toBeGreaterThan(1);
     expect(new Set(products.map(p => p.sellerId._id)).size).toBeGreaterThan(1);
     expect(spy).toHaveBeenCalledTimes(1);
 
-    // Y los horarios siguen llegando, con el dia ya traducido.
+    // And the schedules still arrive, with the day already translated.
     expect(products[0].schedules.length).toBeGreaterThan(0);
     expect(products[0].schedules[0].day).toBe('Lunes');
   });

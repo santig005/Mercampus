@@ -51,14 +51,14 @@ export default function ImageGrid({
     const imageUrl = images[index];
     logger.debug('imageUrl', imageUrl);
     try {
-      // 1️⃣ Obtener el fileId a partir de la URL
+      // 1) Resolve the fileId from the URL
       const responseFileId = await fetch(
         `/api/fileId?url=${encodeURIComponent(imageUrl)}`
       );
       if (!responseFileId.ok) throw new Error('Error al obtener el fileId');
       const { fileId } = await responseFileId.json();
       logger.debug('fileId', fileId);
-      // 2️⃣ Enviar petición para eliminar la imagen usando el fileId
+      // 2) Ask to delete the image by that fileId
       const responseDelete = await fetch('/api/images', {
         method: 'DELETE',
         body: JSON.stringify({ fileId }),
@@ -66,7 +66,7 @@ export default function ImageGrid({
 
       if (!responseDelete.ok) throw new Error('Error al eliminar la imagen');
 
-      // 3️⃣ Actualizar el estado eliminando la imagen del arreglo
+      // 3) Update state, dropping the image from the array
       const updatedImages = images.filter((_, i) => i !== index);
       setImages(updatedImages);
       onUpdateImages(updatedImages);
@@ -102,12 +102,12 @@ export default function ImageGrid({
 
         {/* Botón para agregar imagen */}
         {images.length < maxImages && (
-          <div className='w-32 h-32 border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md'>
+          <div className='w-32 h-32 border-2 border-dashed border-base-300 flex items-center justify-center rounded-md'>
             {loading ? (
-              <p className='text-sm text-gray-500'>Subiendo...</p>
+              <p className='text-sm text-gray-500 dark:text-base-content/70'>Subiendo...</p>
             ) : (
               <label className='cursor-pointer'>
-                <span className='text-gray-500 text-sm font-medium'>
+                <span className='text-gray-500 dark:text-base-content/70 text-sm font-medium'>
                   + Agregar
                 </span>
                 <input

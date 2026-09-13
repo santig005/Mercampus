@@ -20,7 +20,7 @@ const scheduleSchema = new Schema({
   },
 });
 
-// Todas las consultas de horarios son por vendedor.
+// Every schedule query is by seller.
 scheduleSchema.index({ sellerId: 1 });
 
 export type ScheduleDoc = InferSchemaType<typeof scheduleSchema>;
