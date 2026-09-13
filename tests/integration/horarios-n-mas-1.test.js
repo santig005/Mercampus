@@ -54,6 +54,14 @@ describe('horarios sin N+1', () => {
   });
 
   it('el listado de vendedores consulta horarios una sola vez', async () => {
+    // T-106: the seed has one approved seller and one pending, and this
+    // endpoint now filters on `approved` in the Mongo query, so without this
+    // the listing would carry a single seller and the assertion below - which
+    // needs more than one to tell "a query per seller" from "one query" -
+    // would be measuring nothing. Same reason and same line as the product
+    // listing test above.
+    await Seller.updateMany({}, { $set: { approved: true } });
+
     const spy = vi.spyOn(Schedule, 'find');
 
     const response = await sellersRoute.GET(new Request('http://localhost/api/sellers'));
