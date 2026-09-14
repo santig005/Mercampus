@@ -52,7 +52,10 @@ type ImageFile = {
  * path in code - so the answer does not depend on how strictly the API applies
  * those filters.
  */
-export async function findImageFile(url: string): Promise<ImageFile | null> {
+export async function findImageFile(
+  url: string,
+  fileId?: string
+): Promise<ImageFile | null> {
   const filePath = imageFilePath(url, process.env.IMAGEKIT_URL_ENDPOINT ?? '');
   if (!filePath) return null;
 
@@ -63,6 +66,25 @@ export async function findImageFile(url: string): Promise<ImageFile | null> {
   const managedFolders = IMAGE_KINDS.map(kind => `/${imageFolder(kind)}/`);
   if (!managedFolders.includes(folder) || !FILE_NAME.test(name)) {
     return null;
+  }
+
+  // T-116b. ImageKit's search index lags a fresh upload by several seconds
+  // (about 7, measured against the real API on 2026-09-13), while a lookup by
+  // id is immediate. The form sends the fileId its own upload returned, so a
+  // photo removed right after being picked is found at once. The id is only a
+  // hint: it is accepted solely when that file sits at exactly this URL's
+  // path, so it can never redirect a delete to another file. Anything else -
+  // no id, an unknown id, an id for a different file - falls through to the
+  // path search below.
+  if (fileId) {
+    try {
+      const byId = (await getImageKit().getFileDetails(fileId)) as ImageFile;
+      if (byId && (byId.type === undefined || byId.type === 'file') && byId.filePath === filePath) {
+        return byId;
+      }
+    } catch {
+      // Unknown id: resolve by path like any other request.
+    }
   }
 
   const candidates = (await getImageKit().listFiles({
