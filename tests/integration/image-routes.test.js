@@ -14,6 +14,10 @@ const media = vi.hoisted(() => ({
   files: [],
   nextId: 1,
   failDelete: null,
+  // T-116b: while true, new uploads stay out of listFiles, like the real
+  // search index for a few seconds after an upload.
+  indexLag: false,
+  unindexed: new Set(),
 }));
 
 vi.mock('@clerk/nextjs/server', () => ({
@@ -45,11 +49,22 @@ const addFile = (filePath, tags = null) => {
 
 vi.mock('@/utils/imagekit', () => ({
   getImageKit: () => ({
-    upload: async ({ fileName, folder, tags }) => addFile(`/${folder}/${fileName}`, tags),
+    upload: async ({ fileName, folder, tags }) => {
+      const file = addFile(`/${folder}/${fileName}`, tags);
+      if (media.indexLag) media.unindexed.add(file.fileId);
+      return file;
+    },
     // As loose as the name search T-116 replaced: it ignores `path` and returns
     // every file with that name in the account. The handler has to pick the
     // right one on its own, not rely on the filter.
-    listFiles: async ({ name }) => media.files.filter(file => file.name === name),
+    listFiles: async ({ name }) =>
+      media.files.filter(file => file.name === name && !media.unindexed.has(file.fileId)),
+    // By id there is no lag, like the real API.
+    getFileDetails: async fileId => {
+      const file = media.files.find(candidate => candidate.fileId === fileId);
+      if (!file) throw new Error('The requested file does not exist.');
+      return file;
+    },
     deleteFile: async fileId => {
       if (media.failDelete) throw media.failDelete;
       media.files = media.files.filter(file => file.fileId !== fileId);
@@ -128,6 +143,8 @@ describe('T-116 · image routes', () => {
     signOut();
     media.files = [];
     media.failDelete = null;
+    media.indexLag = false;
+    media.unindexed = new Set();
 
     addFile(CARLOS_IMAGE);
     addFile(LAURA_LOGO);
@@ -306,6 +323,69 @@ describe('T-116 · image routes', () => {
       expect((await remove({ url: bare })).status).toBe(403);
     }
     expect(stillThere(whisk)).toBe(true);
+  });
+
+  // T-116b. Measured against the real API on 2026-09-13: a fresh upload took
+  // about 7 seconds to appear in listFiles, while getFileDetails found it at
+  // once. Before this, removing a photo straight after picking it answered 404
+  // and the form dropped it from the list, leaving the file in ImageKit.
+  describe('DELETE: right after an upload, before the search index catches up', () => {
+    it('the uploader deletes it at once with the fileId the upload returned', async () => {
+      media.indexLag = true;
+      signInAs(BUYER);
+      const { url, fileId } = await (await upload('products', 'recien.png')).json();
+
+      const response = await remove({ url, fileId });
+
+      expect(response.status).toBe(200);
+      expect(stillThere('/products/recien.png')).toBe(false);
+    });
+
+    it('without the fileId it is still 404, and nothing is deleted', async () => {
+      media.indexLag = true;
+      signInAs(BUYER);
+      const { url } = await (await upload('products', 'recien.png')).json();
+
+      const response = await remove({ url });
+
+      expect(response.status).toBe(404);
+      expect(stillThere('/products/recien.png')).toBe(true);
+    });
+
+    it('a fileId that belongs to another file is ignored, never followed', async () => {
+      signInAs(BUYER);
+      const { url } = await (await upload('products', 'mia.png')).json();
+      const carlos = media.files.find(file => file.filePath === CARLOS_IMAGE);
+
+      const response = await remove({ url, fileId: carlos.fileId });
+
+      // Resolved by path instead: BUYER's own upload goes, Carlos's photo stays.
+      expect(response.status).toBe(200);
+      expect(stillThere('/products/mia.png')).toBe(false);
+      expect(stillThere(CARLOS_IMAGE)).toBe(true);
+    });
+
+    it("sending someone else's URL with its real fileId gains nothing", async () => {
+      signInAs(LAURA);
+      const carlos = media.files.find(file => file.filePath === CARLOS_IMAGE);
+
+      const response = await remove({ url: carlos.url, fileId: carlos.fileId });
+
+      expect(response.status).toBe(403);
+      expect(stillThere(CARLOS_IMAGE)).toBe(true);
+    });
+
+    it('an unknown fileId falls back to the path, so a legacy owner still deletes', async () => {
+      signInAs(CARLOS);
+
+      const response = await remove({
+        url: `${media.endpoint}${CARLOS_IMAGE}`,
+        fileId: 'no_such_file',
+      });
+
+      expect(response.status).toBe(200);
+      expect(stillThere(CARLOS_IMAGE)).toBe(false);
+    });
   });
 
   describe('DELETE: what it resolves', () => {

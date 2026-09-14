@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 export default function ImageGrid({
   initialImages,
@@ -10,6 +10,12 @@ export default function ImageGrid({
 }) {
   const [images, setImages] = useState(initialImages || []);
   const [loading, setLoading] = useState(false);
+  // T-116b: the fileId each upload in this session returned, keyed by URL, and
+  // sent on delete - ImageKit's search lags an upload by several seconds, so a
+  // photo removed right after picking it would otherwise answer 404 and stay
+  // in ImageKit. Images that came in through initialImages have none and are
+  // resolved by URL, as before. The parent still receives plain URLs.
+  const uploadedFileIds = useRef(new Map());
 
   const handleAddImage = async (event) => {
     if (maxImages && images.length >= maxImages) {
@@ -35,6 +41,7 @@ export default function ImageGrid({
 
       const data = await response.json();
       const newImageUrl = data.url;
+      if (data.fileId) uploadedFileIds.current.set(newImageUrl, data.fileId);
 
       const updatedImages = [...images, newImageUrl];
       setImages(updatedImages);
@@ -55,7 +62,10 @@ export default function ImageGrid({
       const responseDelete = await fetch('/api/images', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: imageUrl }),
+        body: JSON.stringify({
+          url: imageUrl,
+          fileId: uploadedFileIds.current.get(imageUrl),
+        }),
       });
 
       // 403 (not yours alone to delete, e.g. the shared default logo) and 404
@@ -71,6 +81,7 @@ export default function ImageGrid({
         throw new Error(`Error al eliminar la imagen (${responseDelete.status})`);
       }
 
+      uploadedFileIds.current.delete(imageUrl);
       // Update state, dropping the image from the array
       const updatedImages = images.filter((_, i) => i !== index);
       setImages(updatedImages);

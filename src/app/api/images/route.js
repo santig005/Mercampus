@@ -16,7 +16,16 @@ import { AppError } from '@/utils/lib/errors';
 // T-116: neither verb checked identity, and the middleware does not cover
 // /api/images, so each handler stands on its own.
 
-const deleteImageSchema = z.object({ url: z.string().url() });
+// T-116b: `fileId` is optional and only a hint - findImageFile accepts it
+// solely when that file sits at exactly this URL's path. It exists to skip
+// ImageKit's search index, which lags a fresh upload by several seconds.
+const deleteImageSchema = z.object({
+  url: z.string().url(),
+  fileId: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,64}$/)
+    .optional(),
+});
 
 export async function POST(req) {
   try {
@@ -75,15 +84,16 @@ export async function DELETE(req) {
       // An unparseable body is reported like any other invalid one.
     }
 
-    // The URL, not a fileId: the server resolves the file itself, so a client
-    // can't point this at a file by id. This replaces GET /api/fileId.
+    // The URL identifies the file; a fileId is at most a hint that has to
+    // agree with it (T-116b), so a client still can't point this at a file by
+    // id. This replaces GET /api/fileId.
     const parsed = deleteImageSchema.safeParse(body);
     if (!parsed.success) {
       return invalidPayload(parsed.error);
     }
 
-    const { url } = parsed.data;
-    const file = await findImageFile(url);
+    const { url, fileId } = parsed.data;
+    const file = await findImageFile(url, fileId);
     if (!file) {
       throw new AppError('Imagen no encontrada.', 404);
     }
