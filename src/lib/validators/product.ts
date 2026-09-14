@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { antojosCategories } from '@/utils/resources/categories';
 import { marketplaceCategories } from '@/utils/resources/marketplaceCategories';
+import { toPesos } from '@/lib/price';
 
 const SECTIONS = ['antojos', 'marketplace'] as const;
 
@@ -30,9 +31,25 @@ const categoriesFor = (section: (typeof SECTIONS)[number]) =>
 // needed here: `new Product(body)` accepted any field from the client,
 // sellerId included. sellerId is deliberately not declared - the server sets
 // it from the session.
+// T-115. The add and edit forms send the price as the string their text input
+// holds, so a bare `z.number()` answered 400 to every product created from the
+// UI since T-13 put Zod on this edge. Not `z.coerce.number()`: in Colombia
+// "5.000" means five thousand, and coercion would store it as five. toPesos
+// reads the local format and turns anything ambiguous into NaN, which fails
+// here with a message naming the field - same approach as the seller's phone.
+const priceField = z
+  .union([z.string(), z.number()])
+  .transform(toPesos)
+  .pipe(
+    z
+      .number({ error: 'El precio debe ser un número de pesos, como 5000 o 5.000' })
+      .int('El precio debe ser un entero')
+      .nonnegative()
+  );
+
 const productFields = {
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(120),
-  price: z.number().int('El precio debe ser un entero').nonnegative(),
+  price: priceField,
   description: z.string().trim().min(1, 'La descripción es obligatoria').max(2000),
   images: z.array(z.string().url('Cada imagen debe ser una URL')).min(1),
   section: z.enum(SECTIONS).default('antojos'),

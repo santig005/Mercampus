@@ -88,11 +88,13 @@ test.describe('recorrido publico', () => {
     await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
     await expect(page.getByText('De la plancha a tu clase').first()).toBeVisible();
 
-    // The pending seller does not show in this view, but the filter lives in
-    // SellerGrid.jsx (cliente), no en GET /api/sellers: la API sigue
-    // returning every seller without filtering by `approved`. Anyone calling
-    // the API directly (not through this page) sees them. See the note in the
-    // ROADMAP.
+    // T-106: the pending seller does not show here, and now that is the
+    // server's doing - GET /api/sellers filters `approved: true` in the Mongo
+    // query. This assertion used to pass for a much weaker reason: the API
+    // returned every seller and SellerGrid.jsx dropped the pending ones in the
+    // browser, so anyone calling the endpoint directly instead of loading this
+    // page saw the whole queue. The assertion is unchanged; what it proves is
+    // not.
     await expect(page.getByText('Postres Laura')).toHaveCount(0);
 
     await shot(page, '05-listado-vendedores');

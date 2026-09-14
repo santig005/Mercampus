@@ -80,12 +80,52 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(businessNames(await getSellers())).not.toContain('Arepas El Parche');
   });
 
-  // T-74: nothing covered this and a refactor broke it - sharing the product
-  // listing's filter (which requires approved: true) with this endpoint empties
-  // the admin's approval queue, because SellerGrid is where an admin approves
-  // pending sellers. Pausing hides a seller here; being unapproved must not.
-  it('un vendedor sin aprobar SI se devuelve: el admin los aprueba desde ese listado', async () => {
-    expect(businessNames(await getSellers())).toContain('Postres Laura');
+  // T-74 wrote this test the other way round, and on purpose: it asserted that
+  // an unapproved seller IS returned here, because sharing the product
+  // listing's filter with this endpoint would have emptied the admin's
+  // approval queue - SellerGrid was where an admin approved pending sellers,
+  // and it read this endpoint.
+  //
+  // T-106 removed that reason. The approval UI lives only at /admin/sellers
+  // now, which reads GET /api/sellers/admin, so nothing needs the pending
+  // sellers from the public endpoint any more. What T-74's test was pinning
+  // was a real dependency at the time; with that dependency gone, what is left
+  // is a public, unauthenticated endpoint shipping the pending queue to every
+  // visitor so that one privileged page could filter it back in client-side.
+  // The assertion is inverted rather than deleted, so the file still records
+  // that this behaviour existed and why it stopped.
+  it('un vendedor sin aprobar NO se devuelve en el listado publico', async () => {
+    expect(businessNames(await getSellers())).not.toContain('Postres Laura');
+  });
+
+  // The other half of the same change: the pending seller did not vanish, they
+  // moved. T-106 is only defensible if the admin surface still sees them.
+  it('el vendedor sin aprobar sigue estando para el admin, en /api/sellers/admin', async () => {
+    const adminRoute = await import('@/app/api/sellers/admin/route.js');
+    const { sellers } = await (await adminRoute.GET()).json();
+
+    expect(sellers.map(seller => seller.businessName)).toContain('Postres Laura');
+  });
+
+  // Rule 8, as a test rather than a promise: every seller in the real base
+  // carries an explicit boolean `approved` (measured read-only 2026-09-13: 55
+  // documents, 37 true, 18 false, 0 missing), so an equality filter drops
+  // nobody. This locks that in for the case the measurement cannot cover - a
+  // document written before the field existed. `approved` has a schema
+  // default, so this has to unset it underneath Mongoose.
+  it('un vendedor sin el campo approved queda fuera, no dentro', async () => {
+    await Seller.collection.updateOne(
+      { businessName: 'Arepas El Parche' },
+      { $unset: { approved: '' } }
+    );
+    const raw = await Seller.collection.findOne({ businessName: 'Arepas El Parche' });
+    expect('approved' in raw).toBe(false); // the field really is gone
+
+    // Deliberately the strict reading: no approval on record is not approval.
+    // The opposite trade-off from `paused`, and for the opposite reason - a
+    // missing `paused` means nobody ever paused the store, while a missing
+    // `approved` means nobody ever approved it.
+    expect(businessNames(await getSellers())).not.toContain('Arepas El Parche');
   });
 
   it('pausar esconde tambien sus productos del listado', async () => {

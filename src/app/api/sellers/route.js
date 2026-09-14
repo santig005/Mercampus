@@ -9,6 +9,7 @@ import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 import { logger } from '@/lib/logger';
 import { createSellerSchema } from '@/lib/validators/seller';
 import { invalidPayload } from '@/lib/api-response';
+import { publicSellerFilter } from '@/lib/public-visibility';
 
 export async function GET(req) {
   try {
@@ -18,26 +19,29 @@ export async function GET(req) {
     const university = url.searchParams.get('university') || '';
     const section = url.searchParams.get('section') || '';
 
-    // T-71: paused sellers are hidden from the public listing here, in the
-    // Mongo query, not in the browser - SellerGrid's client-side `approved`
-    // filter is a rendering choice (an admin browsing this page sees the
-    // pending ones so they can approve them), and a store the seller took
-    // down on purpose shouldn't ship to the client at all.
+    // T-106: this is the public, unauthenticated listing, so it returns only
+    // sellers the public may see - `approved: true` and not paused - and it
+    // decides that in the Mongo query, not in the browser.
     //
-    // `$ne: true` and not `false`: existing sellers have no `paused` field,
-    // and an equality filter would drop every one of them. Same note as in
-    // api/products/route.js.
+    // It used to return unapproved sellers to everybody, on purpose: SellerGrid
+    // rendered the approve/reject toggles for an admin and filtered the pending
+    // ones out client-side for everyone else. That made a rendering choice into
+    // the only thing standing between a visitor and the pending queue - anyone
+    // calling this endpoint directly got the whole thing. The approval UI now
+    // lives only at /admin/sellers, behind GET /api/sellers/admin, so nothing
+    // needs the pending sellers here any more.
     //
-    // Admins keep the full list, paused included, at GET /api/sellers/admin
-    // (the /admin/sellers panel), which is the one that deliberately returns
-    // every seller.
+    // publicSellerFilter() and not a hand-written copy: T-74 made it the single
+    // definition of "visible to the public", shared with GET /api/products and
+    // the sitemap, precisely so these three cannot drift apart. This endpoint
+    // was the one exception, and this removes it.
     //
-    // T-74: deliberately NOT publicSellerFilter(), which also requires
-    // `approved: true`. This endpoint returns pending sellers on purpose -
-    // SellerGrid hides them from ordinary visitors client-side but shows them
-    // to an admin, who approves them from that very grid. Adding `approved`
-    // here empties the admin's approval queue; there is a test for it now.
-    var sellers = await Seller.find({ paused: { $ne: true } });
+    // `paused: { $ne: true }` inside that filter and never `paused: false`:
+    // sellers created before T-71 have no `paused` field and an equality filter
+    // doesn't match a missing one. `approved` is safe as an equality check -
+    // measured read-only against the real base on 2026-09-13, all 55 seller
+    // documents carry an explicit boolean, 37 true and 18 false.
+    var sellers = await Seller.find(publicSellerFilter());
     if (university) {
       sellers = sellers.filter(
         seller => seller.university.toLowerCase() === university.toLowerCase()
