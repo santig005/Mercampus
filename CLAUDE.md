@@ -61,6 +61,19 @@ de producción tiene ~70. Un `clerkId` solo vale dentro de su instancia, así qu
    la migración en `scripts/` con ensayo por defecto, y déjala anotada como
    requisito para promover a `develop`. Pasó en T-12c: el código era correcto y
    habría bloqueado a las 11 cuentas reales.
+9. **Cuestiona lo que ya está, no solo lo que te piden.** Cuando pases por
+   código viejo camino de otra cosa, respóndete tres preguntas y **anota la
+   respuesta**, aunque no lo arregles en ese PR: ¿se usa? (búsqueda de
+   referencias, no intuición); si no se usa, ¿debería borrarse?; si se usa,
+   ¿hay algo que claramente se puede mejorar? Un bloque comentado, una opción
+   que no hace nada, un patrón que este mismo archivo dice que se está
+   eliminando: eso se reporta con evidencia aunque no toque el PR de hoy. Una
+   entrada nueva en el ROADMAP o un párrafo en el PR basta — **no lo arregles
+   de paso**, que eso rompe la regla 2.
+   **Y no borres por sospecha:** la regla 5 sigue mandando. Pasó en T-111:
+   `apiToken.js` parecía un experimento abandonado y resultó ser lo único que
+   transporta la identidad en tres mutaciones. La historia de por qué existe
+   suele estar en `git log`, y vale más que una intuición.
 
 ## Comandos
 
@@ -161,6 +174,11 @@ Body:
 - What was verified (`npm run verify` output).
 - Playwright screenshots if you touched the UI.
 - Risks or anything left pending.
+- **Anything that must happen outside the repo** for the change to work — an
+  env var in Vercel, a GitHub secret, a dashboard setting — as its own
+  explicit line, in the PR *and* in the ROADMAP entry. T-11b renamed six env
+  vars and T-14 required a secret; neither said so where a promoter looks,
+  and both broke production on 2026-09-13 (T-113).
 - Mark the task in `ROADMAP.md` in the same PR.
 
 ## Qué NO hacer sin preguntar

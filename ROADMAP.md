@@ -31,10 +31,10 @@ this index goes stale, the entries are the contract.
 Not because they are hard, but because getting them wrong costs real user
 data or real access, and the human has asked for them to wait:
 
-- **The admin-role work: T-105, T-106, T-107, T-108**, and anything else that
+- **The admin-role work: T-107, T-108, T-114**, and anything else that
   reads or writes `publicMetadata`, `User.role`, or the seller approval path.
-  T-104 closed the gate; the rest of that chain is half-finished on purpose
-  and the sequencing matters (T-105 before T-106).
+  T-104, T-105 and T-106 are done; what is left of that chain either guards
+  the only approval surface (T-114) or touches real user documents (T-107).
 - **Environment separation: T-63**, and T-64/T-12h's Clerk instance work. One
   Mongo cluster and one Clerk instance serve Production, Preview and
   Development today. Until that is split, a careless write lands on real
@@ -45,9 +45,20 @@ data or real access, and the human has asked for them to wait:
   external service.
 - **T-91** (`notFound()` soft-404s) - the fix runs through the root layout and
   `SellerContext`; read T-12d first, and do it with the human.
+- **T-116** (unauthenticated image routes) and **T-117** (orphan images) -
+  authorisation and deletes against production media.
+- **T-118** (ImageKit per environment) - waits on T-63 and a dashboard key.
 
 Everything below still assumes **rule 1**: branch from `agent/develop`, PR
 into `agent/develop`, never push to `main` or `develop`.
+
+**Filing a new task? Take its number at the last moment, not the first.**
+Two sessions running in parallel on 2026-09-13 both read "the next free
+number is T-113" when they started, both filed it, and both PRs merged
+cleanly - they edited different parts of this file, so git had nothing to
+conflict on. Right before merging, `git fetch` and
+`grep -n "^### \[.\] T-NNN" ROADMAP.md` against `origin/agent/develop`; if
+the number is taken, bump it before the merge, not after.
 
 ### Safe to take alone
 
@@ -59,6 +70,9 @@ One per PR, per rule 2. Ordered by how little can go wrong.
 | **T-36** · A real README | Touches no source at all. The human explicitly delegated it to an agent and said it gets rewritten by hand if it does not land, so a mediocre attempt costs nothing. | It builds, and it answers: what this is, stack, env vars, how to run it and the tests, the agentic pipeline. |
 | **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
 | **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
+| **T-111** (items 1-3 only) · Tidy `src/services/api.js` | Deleting a commented-out draft that the function below it supersedes, and a `credentials` option that is inert server-side. The audit is already written in the entry, so the reference search is done. | `npm run verify`, `deadcode` green. Item 4 is **not** in this bucket. |
+| **T-119** · Show which field failed on the add-product page | A UI message change with no data or auth involved. | A real screenshot of the error state (rule 3). |
+| **T-113** · Fail loudly on missing env, and a `.env.example` drift test | All in-repo: a config check that turns a generic 500 into a message naming the variable, and a unit test comparing source against `.env.example`. No setting outside the repo is touched. | `npm run verify`; the new tests fail with the variables unset. |
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -91,6 +105,12 @@ already warns about, and getting it wrong wastes a PR:
 
 - **T-35** · choosing the image provider (T-109 carves out the safe half).
 - **T-60** · Observability - needs a Sentry account and a DSN.
+- **T-112** · a preview calling production's API - the first step is reading
+  the Vercel dashboard, which an agent cannot do.
+- **The dashboard half of T-11b** - six image env vars to rename in Vercel,
+  one of them spelled differently there than locally (see the table in
+  T-11b), then a redeploy. Image uploads are broken in production until then.
+  `CRON_SECRET` (T-14) is done and verified.
 - **T-62b** · closing inactive PRs - a community policy call.
 - **T-80 batch e** - `scripts/`, where the dangerous warnings live; PR #273 is
   already open awaiting review.
@@ -350,6 +370,47 @@ instantiated lazily (which also removes the placeholders CI had been
 carrying since T-01, because the build no longer needs any values), and a
 test that fails if a `NEXT_PUBLIC_*` with SECRET or PRIVATE in the name
 ever reappears.
+**Correction (2026-09-13): "done" in the repo, never done where it runs, and
+it broke production.** Renaming a variable in code is half a change; the
+other half is renaming it wherever the value actually lives - Vercel's
+environment and every developer's `.env` - and this entry never said so.
+`.env.example` got the new names; nothing else did. It sat harmless for ten
+days on `agent/develop` and went live with the 136-commit promotion on
+2026-09-13, at which point every product image upload on
+mercampus.vercel.app answered **500** (`getCloudinary()` configured with
+three `undefined`s) - and the one approved seller that day could not add a
+first product, so could not become visible. The route's generic "Error al
+subir la imagen" hid the cause; see T-113. The renames needed, names only
+(values unchanged, nothing to rotate - this entry already proved no key
+reached the bundle).
+**The first version of this table was built from the human's `.env` alone,
+and Vercel turned out to name one of them differently.** Re-read straight
+from Vercel with `vercel env ls` on 2026-09-13 (names and environments only,
+never values), so the Vercel column is measured, not inferred:
+| In Vercel (all three environments) | In the human's local `.env` | Name the code reads |
+|---|---|---|
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | same | `CLOUDINARY_CLOUD_NAME` |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY` | same | `CLOUDINARY_API_KEY` |
+| `NEXT_PUBLIC_CLOUDINARY_API_SECRET` | same | `CLOUDINARY_API_SECRET` |
+| `NEXT_PUBLIC_IMAGEKIT_KEY` | same | `IMAGEKIT_PUBLIC_KEY` |
+| **`NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT`** | `PRIVATE_KEY_IMAGEKIT` | `IMAGEKIT_PRIVATE_KEY` |
+| `NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT` | same | `IMAGEKIT_URL_ENDPOINT` |
+- **The ImageKit pair changes shape, not just prefix**, and the private key
+  had a *third* spelling in Vercel. Look it up by the Vercel column, not by
+  the local one - searching Vercel for `PRIVATE_KEY_IMAGEKIT` finds nothing.
+- **A private key named `NEXT_PUBLIC_*` is a trap, not a leak - yet.** Next.js
+  inlines a `NEXT_PUBLIC_` value into the browser bundle only where source
+  code names it, and nothing in this repo has ever named
+  `NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT`, which agrees with this entry's bundle
+  audit. But one `process.env.NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT` in a client
+  component would have shipped it on the next deploy. Renaming it closes that.
+- **All six are type `Config` in Vercel.** When recreating them under the new
+  names, mark `CLOUDINARY_API_SECRET` and `IMAGEKIT_PRIVATE_KEY` as
+  *Sensitive* - the other four are identifiers, not secrets.
+- **State on 2026-09-13, after the production redeploy for `CRON_SECRET`:**
+  still under the old names in Vercel, so uploads are still broken in
+  production. Renames only take effect on a new deployment - rename, then
+  redeploy once.
 **Model:** `sonnet` · **Nightly:** no
 
 ### [x] T-12b · Link Clerk to Mongo by `clerkId`
@@ -845,6 +906,38 @@ once a day (`0 5 * * *`, a redundant fallback) and
 scheduled GitHub Actions workflow, outside Vercel's cron system entirely,
 that calls the same protected route every 10 minutes with `curl` and a
 repo secret.
+**Went live 2026-09-13 and has failed every run since, measured:** the
+workflow only fires from the default branch, so it started with the
+`develop -> main` promotion (#306 merged 20:26 UTC). Runs at 20:37, 20:44
+and 20:52 all failed with `curl: (22) The requested URL returned error:
+401`. The repo has **no `CRON_SECRET` secret** (`gh secret list`: only
+`CLERK_SECRET_KEY` and `NEXT_PUBLIC_IMAGEKIT_KEY`), so the header goes out
+as an empty Bearer. The workflow file's own header predicted exactly this
+("calls will 401, harmlessly") - but a comment inside a YAML file is not a
+promotion checklist, which is the same gap T-11b fell into. **Not a
+regression:** in `main` before that promotion this route's handler was
+commented out entirely, so no cron had ever updated availability in
+production. **What it needs is two values that must match:** `CRON_SECRET`
+in Vercel's Production environment *and* a GitHub repo secret of the same
+name. Until both exist it fails ~144 times a day, and GitHub emails the
+repo owner about scheduled-workflow failures.
+**Resolved the same day, and verified end to end.** A fresh 64-hex value was
+generated locally with no trailing newline - a single stray byte of
+difference between the two stores keeps the Bearer from matching - and set,
+by CLI with the human's explicit authorisation, as the GitHub repo secret
+and as a *Sensitive* Production variable in Vercel. It was passed on stdin
+(never `--value`, which puts it on a command line), never printed, and the
+local file was deleted. The agent's own production redeploy was refused by
+the permission classifier, so the human redeployed from the dashboard
+(`mercampus-ggh3jj6ol`, 20:16 Bogotá). A manual `workflow_dispatch` run at
+01:21 UTC answered **success**. The scheduled run at 01:15 UTC still failed,
+and that is expected: it hit the previous deployment, and Vercel only applies
+an environment change to deployments created after it.
+**Worth knowing before wiring it up:** the first successful run will
+recompute `availability` for every seller from their `Schedule`, in
+production, for the first time ever. Stored values that disagree with a
+schedule will flip on the badge buyers see. That is the feature working,
+but it is a visible change and worth expecting.
 **Needs a human to actually turn on — can't be done from here:** the
 workflow's `${{ secrets.CRON_SECRET }}` has to be a GitHub Actions repo
 secret holding the *same* value as the `CRON_SECRET` environment variable
@@ -1219,6 +1312,12 @@ and dependency; `package.json` with no unused dependencies.
 **The dead pre-Clerk dependencies were split out as T-109**, because that
 half needs no decision from anybody. What is left here is the provider
 choice.
+**The data has mostly made it (measured 2026-09-13, read-only):** 150 product
+images and 53 seller logos are on ImageKit, against 2 legacy product images
+on Cloudinary, and every form uploads through `ImageGrid` -> `/api/images`,
+which is ImageKit. The Cloudinary route has no caller in the repo; see
+T-116. Keeping ImageKit is the path of least migration; the 2 Cloudinary
+URLs still render without any Cloudinary key, since they are public.
 **Model:** `sonnet` · **Nightly:** no (choosing the provider is yours)
 
 ### [ ] T-109 · Drop the pre-Clerk dead dependencies
@@ -1237,6 +1336,16 @@ dependency of something else is also a reason to stop.
 **Not in scope:** the image provider. And do not confuse the `cookies`
 package with `next/headers`' `cookies()`, which is Next's own and is
 certainly in use.
+**Found alongside (2026-09-13), same leftovers one layer out:** the human's
+local `.env` still defines `AUTH_SECRET`, `AUTH_GOOGLE_ID` and
+`AUTH_GOOGLE_SECRET` - next-auth's variables - and nothing in `src/`,
+`scripts/` or `tests/` reads any of them. They are not in `.env.example`
+either. Dropping them from `.env` is the human's (it is not tracked); if
+any also exist in Vercel, same. Separately, the repo has a GitHub secret
+named `NEXT_PUBLIC_IMAGEKIT_KEY` that **no workflow references** (the
+workflows use only `CLERK_SECRET_KEY`, `CRON_SECRET` and the automatic
+`GITHUB_TOKEN`) - almost certainly the placeholder CI carried before T-11b.
+Deleting it is a settings change, so it is listed here, not done.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-110 · Stabilise the flaky e2e specs
@@ -2869,6 +2978,14 @@ minting an admin one is exactly T-95, which is parked. The route handler is
 covered against a real Mongo instead. No screenshots: no colour, theme or
 layout changed - the markup both components render is identical, only the
 endpoint they call and where the rollback lives.
+**Corrected the same day by T-105b, before it was ever exercised:** the
+client called it through `fetchAPIToken`, which is `'use server'` - so the
+request left the *server* with a Bearer token and no cookies, and had to
+survive the middleware's admin gate on a server-to-server hop that nothing
+in this repo exercises. The integration tests cannot see that seam: they
+call the handler directly with the middleware mocked out. It is a plain
+relative browser fetch now, matching the sibling `GET /api/sellers/admin`
+that has always worked. See T-105b.
 **This is not live until the promotion happens.** Measured 2026-09-13:
 `agent/develop` is **133 commits** ahead of `develop`, and `develop` equals
 `main`; both last moved 2026-09-05. Production still runs the old
@@ -2878,7 +2995,323 @@ are what make it work end to end, and a human promoting `agent/develop` is
 what makes it real.
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
+### [x] T-105b · Approve through a relative fetch, not a Server Action
+**Why:** caught while the `develop -> main` promotion was already running, so
+before anyone had clicked the new toggle. T-105's client called the endpoint
+through `fetchAPIToken`, and that helper is `'use server'`: the call becomes a
+Server Action that fetches `NEXT_PUBLIC_URL + '/api'` **from the server**,
+carrying `Authorization: Bearer` and no cookies. Two things wrong with that,
+and only here:
+- It is the first call through that helper to a path the middleware gates as
+  an admin route (`/api/(.*)/admin(.*)`). Whether Clerk resolves that Bearer
+  on a server-to-server hop is a seam nothing else in this repo exercises, and
+  the integration tests structurally cannot cover it - they call the route
+  handler directly with the middleware mocked out. It very likely works;
+  "very likely" is not what an authorisation path should rest on when the
+  alternative is free.
+- It is the `NEXT_PUBLIC_URL + '/api'` antipattern CLAUDE.md says is being
+  removed.
+**Done:** `approveSeller` does a plain relative `fetch('/api/sellers/admin/:id')`
+from the browser, which carries Clerk's cookie - exactly what the sibling
+`GET /api/sellers/admin` in the same panel has always done. It still throws on
+a non-2xx, so the optimistic rollback contract is unchanged. The
+`getToken({ skipCache: true })` dance and the now-unused `useAuth` import went
+with it from both call sites.
+**Verified:** `npm run verify` green; the 11 T-105 tests are untouched and
+still pass, since the route itself did not change.
+**Still not provable in CI:** the browser hop through the real middleware
+needs a signed-in admin Playwright fixture, which is T-95. The check is one
+click in the deployed panel: approve somebody, refresh, see it stick.
+**Answered in production, 2026-09-13, and it settles the risk half of this
+entry.** The promotion that went live (#306) carried T-105, *not* this fix,
+so the click went through `fetchAPIToken`'s server-side Bearer hop. The
+human approved "Heladería Mercardi", reloaded, and it stayed approved; Mongo
+confirmed `approved: true` at 20:39 UTC, 13 minutes after the merge, and
+T-106's count of 37 approved (not 36) is that same write. So Clerk *does*
+resolve the Bearer through the middleware's admin gate - the seam this entry
+worried about works. The change still stands on its other reason: it
+removes the `NEXT_PUBLIC_URL + '/api'` antipattern from the one path it
+touched.
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-111 · `src/services/api.js` and `apiToken.js`, audited
+**Why:** the human asked, while reviewing T-105b, whether `apiToken.js` was an
+abandoned experiment - it was written long before this backlog, to carry
+identity to the API with a Bearer token, and they no longer remembered
+whether anything used it. Audited 2026-09-13. **It is used, and the Bearer is
+load-bearing** - so the answer to the question is "keep it", and what follows
+is the list of what is genuinely wrong with these two files.
+**Both files are `'use server'`, which is why the token exists.** A `fetch()`
+from the server carries no browser cookies, so in the three mutations that go
+through `fetchAPIToken` (`updateProduct`, `deleteProduct`, `updateSeller`) the
+Bearer is the only thing that gets the caller's identity to `auth()`. Removing
+it breaks them. `fetchAPI` has 8 call sites across `productService`,
+`scheduleService` and `sellerService`, all of them public GETs, which is why
+its lack of a token has never hurt.
+**What is actually wrong, in rising order of how much thought it needs:**
+1. **A superseded draft left commented out** - `api.js` lines 6-33 are an
+   older `fetchAPI` sitting directly above the live one. The difference is
+   real and settles it: the old one swallowed the error and returned
+   `undefined`, the live one checks `content-type`, throws with detail and
+   re-throws for the caller. It was fixed and the previous version was left
+   alongside. Nothing references it. Delete.
+2. **`credentials: "include"` does nothing** in either file. It is a browser
+   option; in a server-side fetch (undici) it is ignored. Cargo cult.
+3. **These two files *are* the `NEXT_PUBLIC_URL + '/api'` antipattern**
+   CLAUDE.md says is being removed, and T-30/31/32 are the tasks that remove
+   it. Neither file says so. At minimum they should carry a note pointing at
+   those tasks, so the next person does not invest in them.
+4. **Worth a proper look, not asserted here: the Server Action surface.**
+   `'use server'` makes every export a Server Action callable from the
+   browser, and `fetchAPI(endpoint, options)` takes both the path *and* the
+   request options from its caller. That is an action which makes the server
+   issue a request to an arbitrary path of its own origin with arbitrary
+   method, headers and body. It is not a classic SSRF - the path is
+   concatenated onto a fixed prefix so it cannot leave the origin, and the
+   request carries no cookies, so it is not privilege escalation on its own.
+   But nobody designed that surface on purpose, and "not exploitable in the
+   ways I checked" is not the same as safe.
+**Done when:** 1-3 are done (they are small and need no decision), and 4 is
+either ruled out with the reasoning written down, or split into its own task.
+**Where the Bearer came from, since it explains why it must stay** (dug out
+of `git log` 2026-09-13, because the human no longer remembered and guessing
+would have got it wrong): on **2025-03-28** the base URL was replaced with a
+per-environment one - localhost in dev, `mercampus.vercel.app` in production,
+`VERCEL_URL` for previews (`4888e00`, 11:32) - to stop a preview deployment
+calling production's API. It then grew an `x-internal-fetch: true` header and,
+at 12:59, a matching middleware bypass: `if (req.headers.get("x-internal-fetch")
+=== "true") return;` (`a675bf6`). That is an unauthenticated door - any caller
+sending the header skipped Clerk entirely - and it was reverted 20 minutes
+later along with the whole URL change (`2cc58aa`, 13:19). **All three commits
+live only on `origin/universities` and never reached `main`**, so the hole
+never shipped. A month later `2991401` (2025-04-22) added `apiToken.js`, and
+the Bearer is the *correct* answer to the problem that killed the March
+attempt: a server-side `fetch` carries no cookies, so identity travels in a
+header instead of a hole in the middleware.
+**Careful:** do not "simplify" by dropping the token. It looks redundant next
+to `credentials: 'include'` precisely because that option is inert - the
+token is the half that works. And do not reintroduce anything shaped like
+`x-internal-fetch`: it has been tried, on a branch, and it is an auth bypass.
+**Model:** `opus` for 4, `sonnet` for 1-3 · **Nightly:** yes for 1-3
+
+### [ ] T-113 · Environment drift: fail loudly, and catch renames before they ship
+**Why:** on 2026-09-13 the first promotion in eight days broke two things in
+production at once, and **neither was a code bug** - both were a change
+that needed a value set outside the repo, recorded somewhere no promoter
+reads:
+- **T-11b** renamed six image env vars in code. Vercel and the human's
+  `.env` kept the old names. Every product image upload answered 500.
+- **T-14** made the availability cron require `CRON_SECRET`. Neither Vercel
+  nor GitHub has it. The cron workflow has failed with 401 every ten
+  minutes since the merge.
+Both are fixed by a human in two dashboards (see T-11b and T-14 for the
+exact names). This task is what the repo can do so it does not happen a
+third time, and so it takes seconds to diagnose if it does.
+**Measured drift, `.env.example` vs the human's `.env`, names only:** the
+six image vars under old names; `CRON_SECRET` absent; three next-auth
+leftovers nothing reads (see T-109); and `NEXT_PUBLIC_CLERK_SIGN_IN_URL` /
+`NEXT_PUBLIC_CLERK_SIGN_UP_URL` present but undocumented - Clerk's SDK
+reads them straight from the environment, no file in `src/` names them,
+which is exactly why they were missing from the example.
+**Done when:**
+1. **The image routes say what is missing.** `getCloudinary()` and
+   `getImageKit()` check their three variables and throw an error naming
+   the absent one; the routes log it and answer with a message that says
+   "configuration", not "try again". Today the user is told to retry
+   something that cannot succeed, and the cause lives only in Vercel's
+   logs. A unit test per SDK, with the variables unset.
+2. **A test that `.env.example` and the code agree.** Every
+   `process.env.X` read under `src/` is documented in `.env.example`, and
+   every name in `.env.example` is read somewhere or explicitly marked as
+   read by a library (the Clerk URLs). `tests/unit/env-publico.test.js`
+   already scans source for `process.env` patterns, so the harness exists.
+   This would not have caught Vercel - nothing in the repo can - but it
+   catches a rename that forgets the example, and it makes `.env.example`
+   trustworthy as *the* list to compare a dashboard against.
+**Not in scope:** anything that reads or writes Vercel or GitHub settings.
+That is the human's, and listing it is what T-11b and T-14 now do.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-115 · Creating a product answered 400 for every price typed in the form
+**Why:** reported live on 2026-09-13, right after image uploads were fixed:
+the upload worked, then "Subir producto" answered `400 Datos inválidos`. The
+cause had been waiting ten days. `/antojos/product/add` takes the price in a
+`type='text'` input and sends the string it holds; T-13 (`1b2d030`,
+2026-09-03, in `main` since 2026-09-05) validated it as `z.number().int()`,
+and Zod never coerces. **Every product created from the UI since then was
+refused.** Nobody noticed because nobody had tried: the most recent product
+in the database was created on 2025-09-30. The edit form
+(`EditProductForm.jsx`) had the same bug on any change that included price.
+**The trap in the obvious fix:** `Number("5.000")` is `5`, and so is
+`z.coerce.number()`. In Colombia the dot is the thousands separator, so a
+seller typing five thousand the usual way would have had it stored as five
+pesos, with a 200 and no error anywhere.
+**Measured first (rule 8, read-only):** 112 products, prices from 1.212 to
+1.100.000, all whole numbers, none under 100. There are no cents to preserve,
+and "5.000" can only mean five thousand.
+**Done:** `src/lib/price.ts` exports `toPesos()`, which accepts a number,
+plain digits, or digits grouped in threes by one kind of separator (dots or
+commas), with optional `$`, `COP` and spaces - and returns NaN for anything
+it would have to guess at: "5,5", "5.50", "1.000,50". The product schema
+pipes the price through it into the same `int().nonnegative()` as before, so
+creation and edit are fixed in one place, and an ambiguous price fails with a
+message naming the field instead of being stored wrong. Same shape as the
+seller phone normalisation already in `src/lib/phone.ts`.
+**Verified:** `npm run verify` green. `tests/unit/price.test.js` covers
+`toPesos` and the schema with the exact payload the add form sends, plus a
+guard that "5.000" is never read as five; `tests/integration/validacion.test.js`
+gains a `PUT` with `"9.000"` that reads the stored document and finds 9000.
+The schema-level and integration tests were run against the old schema first
+and failed, then passed with the change - so they test the bug, not just the
+fix. The existing `price: 'gratis'` test still answers 400 naming `price`.
+**Nothing outside the repo.** It reaches production with the next promotion.
+**Also noticed (rule 9), left for their own PRs:** the add page shows only
+the generic `message` and drops the `fields` the API already returns, which
+is why this surfaced as "Datos inválidos" rather than "precio"; its price
+input has `value` commented out, so it is uncontrolled; and the image upload
+happens before the product is saved, so this very failure left two orphan
+files in ImageKit (see the image-routes entries).
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-116 · The image routes answer anyone: upload, look up and delete
+**Why:** found on 2026-09-13 while fixing image uploads in production, read
+from the code and **not** exercised against production. None of the three
+image routes checks identity, and the middleware does not cover them:
+- `DELETE /api/images` takes `{ fileId }` and calls ImageKit's `deleteFile`.
+- `GET /api/fileId?url=...` turns any image URL into its `fileId`, by listing
+  files whose *name* matches the URL's last segment.
+- Together: anyone who can see a product photo on the site can delete it
+  from ImageKit. `POST /api/images` also accepts any `folder` the caller
+  names, so the media library is writable by anybody, anywhere.
+- `src/app/api/uploadimageProduct/route.js` (Cloudinary) has the same shape
+  and **no caller anywhere in the repo** - dead, but still a live endpoint.
+- Every 500 returns `error.message` to the client, which `api-response.ts`'s
+  `errorResponse()` exists to prevent.
+**This predates the promotion** - the routes worked with the old env var
+names until T-11b's rename broke them, and renaming them back in Vercel
+(done 2026-09-13) restored the exposure exactly as it was.
+**The name lookup is its own bug:** `listFiles({ name })` searches the whole
+account and returns the first match, so two files called `arepa.jpg` in
+different folders means deleting a product image can remove the wrong one.
+**Done when:** `POST` requires a Clerk session and picks the folder
+server-side instead of trusting the client; `DELETE` requires the image to
+belong to a product or seller the caller owns (or the caller is an admin via
+`isClerkAdmin()`), and resolves the file by the exact stored URL or a stored
+`fileId` rather than by name; the dead Cloudinary route is deleted (rule 5:
+the reference search is above and should be repeated in the PR); errors go
+through `errorResponse()`. Integration tests for 401/403 on each verb, and
+for "deleting one product's `arepa.jpg` does not touch another's".
+**Model:** `opus` - authorisation plus a destructive external call ·
+**Nightly:** no
+
+### [ ] T-117 · A failed or abandoned product form leaves its images in ImageKit
+**Why:** reported by the human on 2026-09-13 and measured the same day. The
+image uploads the moment it is picked (`ImageGrid.jsx` -> `POST /api/images`),
+long before the product is saved. The "Subir producto" that answered 400
+(T-115) left **two files** in ImageKit's `products` folder, created 01:58 and
+01:59 UTC, that no product references - checked by listing the most recent
+files with the SDK and searching Mongo for each name, read-only. Closing
+the tab mid-form does the same. It is the mirror image of T-82, which is
+about deleting a product leaving its images behind.
+**Done when:** one of these is chosen and built -
+- **a cleanup script** in `scripts/`, dry run by default, that lists ImageKit
+  files older than a grace period (a day) and deletes the ones no product or
+  seller references. Covers every past orphan too. Destructive against
+  production media, so it needs the T-116 lookup fix first - matching by
+  name is exactly how it would delete the wrong file;
+- or **upload on save**: keep the picked file in the browser and upload it in
+  the same submit as the product, so nothing is stored for a form that fails.
+  Cleaner, but it changes `ImageGrid`'s contract and every form that uses it.
+**Not done here on purpose:** the two known orphans were left in place; they
+are the human's test images and cost nothing until a cleanup exists.
+**Model:** `opus` for the script (it deletes production files), `sonnet`
+for upload-on-save · **Nightly:** no
+
+### [ ] T-118 · ImageKit per environment: folders plus a restricted key
+**Why:** agreed with the human on 2026-09-13. Products and sellers will not
+live in both environments - after T-63, production keeps the real ones and
+the shared non-prod cluster gets seeded data - so images should follow the
+data: real images only in production, non-prod uploads disposable.
+**Measured first:** the real media is in ImageKit, not Cloudinary - 150
+product images under `products` and 53 logos under `sellerlogos`, against 2
+legacy product images on Cloudinary. The seed already uses fake URLs
+(`ik.imagekit.io/seed/...`) that point at no real account.
+**The plan:**
+- **Production is not touched.** `products` and `sellerlogos` stay at the
+  root; moving them would break the 203 URLs already stored in Mongo.
+- **Preview and Development upload under `dev/products` and
+  `dev/sellerlogos`**, from a server-side variable (empty in production,
+  `dev` elsewhere) applied by the route - never a folder the client names.
+- **A restricted ImageKit key outside production**, allowed to upload and
+  read but not delete. ImageKit supports restricted keys that limit which
+  APIs a key may call; no evidence was found that they can be scoped to a
+  folder, so the folders separate by convention and the key is what actually
+  protects production. That also neutralises the name-lookup hazard in
+  T-116 for non-prod.
+- **A second ImageKit account** would isolate harder, at the cost of another
+  dashboard, quota and key set. Not needed at this scale; the upgrade path
+  if it ever is.
+- Cleaning up non-prod becomes deleting the `dev/` folder.
+**Depends on:** T-63 - while Preview still writes to the production
+database, a preview upload would land in `dev/` but be referenced by real
+data. T-116 should land first regardless.
+**Tooling, looked at:** ImageKit's official CLI (`imagekit-cli`) only
+migrates from Cloudinary. The Node SDK, already a dependency, is what works
+from scripts. Its hosted MCP servers exist (DevTools needs no login; DAM and
+Admin act on the media library with the signed-in account, delete included)
+- if connected, grant view-only.
+**Model:** `opusplan` · **Nightly:** no (needs T-63 and an ImageKit
+dashboard key)
+
+### [ ] T-119 · The add-product page hides which field failed
+**Why:** found while diagnosing T-115. The API already answers a 400 with
+`fields` naming what was wrong; `/antojos/product/add` reads only
+`message` and shows "Datos inválidos". That is why a price-format bug
+looked like "something is invalid" for ten days instead of "precio". Its
+price input also has `value` commented out, so the field is uncontrolled.
+**Done when:** the page shows the per-field messages from `fields`, and the
+price input is controlled. Check `EditProductForm.jsx` for the same.
+**Careful:** this is a UI change, so rule 3 means a real screenshot of the
+error state, not a test that greps for a class name.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-112 · A preview deployment calls production's API
+**Why:** the other half of the 2025-03-28 attempt described in T-111 - the
+half that was *correct* and was reverted along with the auth bypass that
+wasn't. `src/services/api.js` and `apiToken.js` build their base URL as
+`process.env.NEXT_PUBLIC_URL + '/api'`, an absolute origin, and **nothing in
+this repo reads `VERCEL_URL`** (checked 2026-09-13). If that variable is a
+single unscoped value in Vercel - which is what T-12g describes for every
+other variable in this project - then a preview deployment's server-side
+fetches go to **production's** API, not its own.
+**The symptom the human described from memory, and it matches the commit:**
+add an endpoint on a branch, open that branch's preview, and anything routed
+through these services fails - because the request is answered by production,
+where the endpoint does not exist yet. Silent, and it makes a preview useless
+for exactly the changes worth previewing.
+**Not confirmed, and here is the honest gap:** whether `NEXT_PUBLIC_URL` is
+environment-scoped in Vercel cannot be read from this repo. **First step is
+one look at the Vercel dashboard**: if Preview has its own value, this is
+already fine and the task closes with a note; if not, it is real.
+**Careful - the fix is not the 2025 one.** That version bypassed Clerk with a
+header because a server-side fetch has no cookies (see T-111). Whatever
+lands here has to keep the Bearer that `apiToken.js` introduced, or drop the
+self-fetch entirely, which is the actual direction: T-30/31/32 replace these
+services with direct `src/server/` reads and Server Actions, and T-105b
+already did it for one endpoint with a plain relative fetch. The cheapest
+correct fix for what remains may be a **relative** `/api` base for
+browser-side callers rather than any absolute origin.
+**Related:** T-63 (no environment separation) is the same family of problem -
+preview and production sharing what should be separate - and the two should
+be read together.
+**Small thing found alongside:** `.env` has `NEXT_PUBLIC_URL = http://localhost:3000/`
+with a trailing slash, so every one of these builds a double slash
+(`http://localhost:3000//api/...`). Harmless today, but it means nothing
+normalises that value.
+**Model:** `opusplan` - it is an infrastructure question before it is a code
+one · **Nightly:** no (needs the dashboard)
+
+### [x] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
 **Why:** decided with the human alongside T-104. There is a stronger argument
 than duplication: that inline grid is the only reason `GET /api/sellers` - a
 public, unauthenticated endpoint - returns **unapproved** sellers to
@@ -2893,7 +3326,96 @@ into a server-side authorisation boundary.
 **Order matters:** after T-105 - **which is now done**, so this is unblocked.
 Collapsing onto `/admin/sellers` while the only approval path still wrote
 nothing would have left no working surface at all; it now writes.
+**Measured read-only 2026-09-13, before the change (rule 8):** 55 sellers,
+**37 approved, 18 pending** - and all 55 carry an explicit boolean `approved`,
+**0 missing and 0 null**. So the equality filter drops nobody, which is the
+`$ne: true` trap T-71 hit with `paused` and this does not hit. (37, not the 36
+counted for T-105 earlier the same day: somebody was approved in between.)
+**Done:** three changes, and the third is the point of the other two.
+- `GET /api/sellers` uses `publicSellerFilter()` - the T-74 helper already
+  shared by `GET /api/products` and the sitemap. This endpoint was the single
+  exception to that definition, and it no longer is.
+- `SellerGrid.jsx` lost its admin branch entirely: the `isAdmin` check, the
+  second card layout, the per-card `ToggleSwitch`, `handleSellerApproval` and
+  the client-side `.filter(seller => seller.approved)`. It is the public
+  listing and nothing else - it no longer needs to know who is looking. The
+  `useUser`, `ToggleSwitch` and `approveSeller` imports went with it.
+  `/admin/sellers` keeps the toggle, and it was always the better of the two
+  copies: it shows registration date and approval status, which the grid never
+  did.
+- **What that adds up to:** the pending queue is no longer shipped to every
+  visitor's browser. Before this, a render decision in a client component was
+  the only thing between an anonymous caller and the list of unapproved
+  sellers - `curl /api/sellers` returned all 55.
+**T-74's test, updated and not deleted** (`tests/integration/seller-pause.test.js`):
+it asserted `un vendedor sin aprobar SI se devuelve`, deliberately, because
+SellerGrid was where an admin approved pending sellers and it read this
+endpoint. T-106 removes that dependency, so the assertion is inverted with the
+reason written above it, and two tests were added next to it: that the pending
+seller is still visible at `GET /api/sellers/admin` (they moved, they did not
+vanish), and that a seller with the `approved` field *unset* falls outside the
+listing - the deliberate opposite of the `paused` trade-off, because a missing
+`paused` means nobody paused the store while a missing `approved` means nobody
+approved it.
+**One more test needed the change:** `horarios-n-mas-1.test.js`'s seller
+listing case asserted `sellers.length > 1` to tell "one query per seller" from
+"one query"; the seed has one approved seller and one pending, so the filter
+left it with a single seller and nothing to measure. It now approves both
+first, the same line the product listing case in the same file already had.
+**Who else consumes `GET /api/sellers`:** searched before filtering. Exactly
+one caller - `getSellers()` in `sellerService.js`, used only by `SellerGrid`.
+`/admin/sellers` reads `GET /api/sellers/admin`, and the seller's own pending
+screen (`/antojos/sellers/approving`) reads `SellerContext`. Nothing else
+expected to see pending sellers here.
+**Verified:** `npm run verify` green (lint, deadcode, typecheck, test, build),
+and the full Playwright suite, 66 passed - including a **real screenshot** of
+`/antojos/sellers/list` (`test-results/05-listado-vendedores.png`), which is
+what rule 3 asks for on a layout change. It renders the approved seller only,
+in the public card layout, with no toggles. The public layout's markup is
+byte-identical to before; what changed is that the admin branch is gone.
 **Model:** `sonnet` · **Nightly:** no
+
+### [ ] T-114 · `GET /api/sellers/admin` is now the only approval surface, and it shows
+**Renumbered from T-113 on 2026-09-13.** Two sessions running in parallel
+each took the next free number when they started, and both PRs merged
+cleanly because they edited different parts of this file - so git never
+flagged it. This one moved rather than the environment-drift T-113 because
+that one is referenced from `CLAUDE.md`, `.env.example`, T-11b and a merged
+commit title, which cannot be edited; this one lived only in this header and
+in #309's description. See the note on numbering at the top of this file.
+**Why:** found while doing T-106 (rule 9 - this is reported, not fixed here,
+because fixing it would have broken rule 2). Collapsing the approval UI onto
+`/admin/sellers` makes this endpoint the *only* way anybody approves a seller,
+and three things about it were tolerable as a second copy and are not as the
+only one:
+1. **One gate, where its sibling deliberately has two.** `PATCH
+   /api/sellers/admin/[id]` (T-105) checks the middleware matcher *and*
+   `isClerkAdmin()` inside the handler, and T-105's entry says why: the second
+   check is what keeps the handler safe on its own if the matcher ever
+   changes. This `GET` has no handler-level check at all - it trusts
+   `/api/(.*)/admin(.*)` entirely. It returns every seller in the database.
+2. **It is the N+1 that T-74 fixed next door.** `Schedule.find()` once per
+   seller inside a `Promise.all`, where `GET /api/sellers` calls
+   `getSchedulesBySeller()` once for all of them. With 55 sellers that is 55
+   queries per page load of the admin panel, and this is now the page an admin
+   actually uses.
+3. **It hand-rolls `daysES[schedule.day - 1]`** instead of the shared
+   `withDayNames()`, which is the same kind of fourth-copy drift T-74 called
+   out for the visibility filter.
+**Done when:** 1 is fixed (it is an authorisation boundary, and it is three
+lines), and 2 and 3 are either fixed alongside or split off - they are
+performance and tidiness, not security.
+**Also noticed, and deliberately left alone:** `src/app/api/sellers/route.js`
+imports `Schedule` and `daysES` and uses neither (both were superseded by
+`getSchedulesBySeller`/`withDayNames` and the imports stayed). Lint does not
+flag them. Two dead lines, worth deleting in whatever PR next touches that
+file. And `src/app/antojos/sellers/approving/page.jsx:12` carries a
+commented-out `useCheckSeller` call that the two lines above it supersede -
+same shape as the `api.js` draft T-111 found.
+**Model:** `sonnet` · **Nightly:** no - item 1 is an authorisation check on
+the seller approval path, which the "Starting a fresh session?" index
+reserves for a session with the human. Items 2 and 3 alone would be
+nightly-safe; split them off if that is wanted.
 
 ### [ ] T-107 · The unique index on `email`, and the duplicates in the way
 **Why:** T-11 deleted `/api/register` and said in its own entry that the
