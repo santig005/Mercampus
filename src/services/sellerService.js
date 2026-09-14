@@ -1,14 +1,17 @@
 import { logger } from '@/lib/logger';
 import { fetchAPI } from './api';
-import { fetchAPIToken } from './apiToken';	
+import { fetchAPIToken } from './apiToken';
+import { fetchFromApi } from './browserApi';
 
+// T-112: a relative browser fetch, not the `'use server'` fetchAPI - see
+// browserApi.js.
 export const getSellers = async (university, section = '') => {
   const queryParams = new URLSearchParams();
 
   if (university) queryParams.append('university', university);
   if (section) queryParams.append('section', section);
-  
-  return await fetchAPI(`/sellers?${queryParams.toString()}`);
+
+  return await fetchFromApi(`/sellers?${queryParams.toString()}`);
 };
 
 export const getSellerById = async id => {
