@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { errorResponse } from '@/lib/api-response';
 import { logger } from '@/lib/logger';
-import { AppError } from '@/utils/lib/errors';
+import { AppError, ConfigError } from '@/utils/lib/errors';
 
 // T-65. A 401/403 is an expected client-side rejection, not a server
 // failure: it shouldn't compete for attention with real 500s in the Vercel
@@ -95,5 +95,41 @@ describe('errorResponse · a plain-object rejection still logs its reason', () =
 
     const body = await response.json();
     expect(body.error).toBe('Error interno del servidor');
+  });
+});
+
+// T-113: a missing env var isn't a transient failure like the Mongo timeout
+// above - retrying does nothing until a human sets it in Vercel. The
+// response has to say so instead of the generic 500 text, which reads as
+// "try again".
+describe('errorResponse · ConfigError', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('logs a ConfigError as error, naming the missing variable', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+    errorResponse(new ConfigError('ImageKit no está configurado: falta IMAGEKIT_PRIVATE_KEY.'), '[test]');
+
+    expect(error).toHaveBeenCalledTimes(1);
+    const [, context] = error.mock.calls[0];
+    expect(context.message).toContain('IMAGEKIT_PRIVATE_KEY');
+  });
+
+  it('answers with a configuration message, not the generic 500 text', async () => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+    const response = errorResponse(
+      new ConfigError('ImageKit no está configurado: falta IMAGEKIT_PRIVATE_KEY.'),
+      '[test]'
+    );
+
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.error).not.toBe('Error interno del servidor');
+    expect(body.error.toLowerCase()).toContain('configuración');
+    // The specific variable name stays in the log, not in the response.
+    expect(body.error).not.toContain('IMAGEKIT_PRIVATE_KEY');
   });
 });
