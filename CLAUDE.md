@@ -20,9 +20,11 @@ mercampus.vercel.app.
 (proyecto de Atlas `Mercampus-db`); Preview, Development y el `.env` local usan
 `mercampus_dev` (proyecto `Mercampus-dev`), con un usuario que no abre
 producción. **No bajes la guardia:** lo que un preview manda por
-`src/services/api.js` sigue yendo a la API de producción (T-112), la credencial
-de producción todavía puede escribir cualquier base (T-63b), y Clerk e ImageKit
-siguen siendo uno solo para todos los entornos (T-64, T-118). `npm run seed`
+`src/services/api.js` sigue yendo a la API de producción (T-112), y Clerk e
+ImageKit siguen siendo uno solo para todos los entornos (T-64, T-118). La
+credencial de producción se rotó (T-63b): un deployment de Vercel anterior al
+2026-09-14 ya no llega a Mongo, así que **no hagas rollback a uno de esos,
+redespliega**. `npm run seed`
 sigue exigiendo `--yes` fuera de localhost — no le quites esa guarda.
 `npm run backup:db` ahora respalda **dev**; para producción:
 `node --env-file=.env --env-file=.env.prod-db --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs`.
