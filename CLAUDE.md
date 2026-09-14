@@ -14,15 +14,19 @@ calidad del código sobre nuevas funciones.
 **Corrección importante (T-12f): aquí decía "no hay usuarios en producción" y es
 falso.** Medido contra la base real: **54 vendedores, 79 documentos de usuario y
 11 cuentas de Clerk**, y los nombres coinciden con los que sirve
-mercampus.vercel.app. Además, **el `.env` local apunta a esa misma base de
-producción**, no a un cluster de desarrollo: `npm run seed` la borraría entera
-(por eso exige `--yes` fuera de localhost — no le quites esa guarda).
+mercampus.vercel.app.
 
-**Y no hay separación de entornos (T-12g):** Production, Preview y Development
-comparten **la misma base de Mongo** y **la misma instancia de Clerk**. Los
-deployments de preview escriben en producción. Antes de tocar datos, haz
-`npm run backup:db` (vuelca a `backups/`, que está ignorado), y antes de
-tocar ImageKit, `npm run backup:images` (T-121). Ver T-63.
+**Mongo separado desde el 2026-09-14 (T-63):** Production usa `mercampus_products`
+(proyecto de Atlas `Mercampus-db`); Preview, Development y el `.env` local usan
+`mercampus_dev` (proyecto `Mercampus-dev`), con un usuario que no abre
+producción. **No bajes la guardia:** lo que un preview manda por
+`src/services/api.js` sigue yendo a la API de producción (T-112), la credencial
+de producción todavía puede escribir cualquier base (T-63b), y Clerk e ImageKit
+siguen siendo uno solo para todos los entornos (T-64, T-118). `npm run seed`
+sigue exigiendo `--yes` fuera de localhost — no le quites esa guarda.
+`npm run backup:db` ahora respalda **dev**; para producción:
+`node --env-file=.env --env-file=.env.prod-db --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs`.
+Antes de tocar ImageKit, `npm run backup:images` (T-121).
 
 **Ojo con Clerk (T-12h):** hay más de una instancia. Las claves del `.env` y las
 del entorno Production de Vercel son de una de **desarrollo** (11 cuentas); la

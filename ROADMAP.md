@@ -35,10 +35,10 @@ data or real access, and the human has asked for them to wait:
   reads or writes `publicMetadata`, `User.role`, or the seller approval path.
   T-104, T-105 and T-106 are done; what is left of that chain either guards
   the only approval surface (T-114) or touches real user documents (T-107).
-- **Environment separation: T-63**, and T-64/T-12h's Clerk instance work. One
-  Mongo cluster and one Clerk instance serve Production, Preview and
-  Development today. Until that is split, a careless write lands on real
-  users.
+- **Environment separation: T-63b** (rotating production's DB credential),
+  and T-64/T-12h's Clerk instance work. T-63 split Mongo on 2026-09-14, but
+  one Clerk instance still serves every environment, and a preview still
+  writes production data through `src/services/api.js` until T-112.
 - **T-95** (audit `/admin/*`) - it needs minting a privileged Clerk account
   per run, which is both of the above at once.
 - **T-82** (deleting a product's images) - irreversible deletes against an
@@ -4043,7 +4043,75 @@ public listing reflects it. The bound matters: an override with no expiry
 becomes a seller permanently marked available who is not.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-63 · Separate the environments (database and Clerk)
+### [x] T-63 · Separate the environments (database and Clerk)
+**Done 2026-09-14 (the Mongo half), with the human in the session.**
+Re-measured first, then split:
+
+| | Production | Preview + Development (and the local `.env`) |
+|---|---|---|
+| Atlas project | `Mercampus-db` (org "Mercampus") | `Mercampus-dev` (same org, created for this) |
+| Cluster | `cluster0.fibip` - M0, AWS us-east-1 | `cluster0.xuedyfi` - M0, AWS us-east-1 |
+| Database | `mercampus_products` | `mercampus_dev` |
+| DB user | one user with `readWriteAnyDatabase` | `mercampus-dev-app`, `readWrite@mercampus_dev` only |
+| Vercel `MONGO_URI` | row `nJ7Ex9q9…`, Production only | new row `SR5yNOPk…`, Preview + Development |
+| Clerk | `sacred-shrew-44`, development instance | the same instance |
+
+- **Vercel:** the single `MONGO_URI` row (all three environments, 655 days
+  old) had its targets narrowed to Production **without touching its
+  value**, and a second row was added for Preview + Development. Production
+  did not need a redeploy.
+- **Verified:** a production backup was taken first; the dev user connects,
+  writes, and is denied on any other database; `mercampus_dev` was seeded (3
+  users, 2 sellers, 6 products, 6 schedules); production's counts were the
+  same afterwards (84 users, 55 sellers, 114 products, 143 schedules) and
+  `/antojos` answered 200.
+- **Why a second project and not a second database:** Atlas allows one free
+  M0 per *project*, not per account, and a project has its own DB users and
+  IP list, so a dev credential cannot open production. A `mercampus_dev`
+  database inside the production cluster would share its connection and
+  throughput limits, and the existing user can write to every database there.
+- **Clerk, re-measured:** the Production keys changed on 2026-09-05 but still
+  belong to the same development instance as Preview (`ins_2mH0…`,
+  publishable host `sacred-shrew-44`), so the drift the note further down
+  worried about did not change instance. Loose end: Production's
+  `CLERK_SECRET_KEY` is stored as Sensitive and cannot be read back, so it is
+  confirmed only indirectly - T-104's admin check needs it and works.
+- **The webhook, corrected:** the sketch below says a real account signing in
+  against the dev database gets its `User` from the webhook "unprompted". It
+  does not: `WEBHOOK_SECRET` exists only in Production, and Clerk sends each
+  event to one endpoint. With no `User`, `src/utils/lib/auth.ts` treats the
+  session as nobody. `npm run seed:team -- --email <email> [--apply]` creates
+  those documents from Clerk, only for the accounts named - the development
+  instance also holds real students' accounts.
+- **`npm run seed` now loads `.env`**, like `backup:db`. Before, it failed with
+  "falta MONGO_URI" unless the variable was exported by hand.
+
+**Outside the repo - already done, listed for whoever promotes:** the Atlas
+project, cluster, IP rule (`0.0.0.0/0`, which Vercel needs) and DB user; the
+two Vercel `MONGO_URI` rows; the human's local `.env` points at
+`mercampus_dev`, with production's URI kept in the ignored `.env.prod-db`.
+Nothing further is needed for this PR to work.
+
+**What changes for anyone working here:**
+- `npm run backup:db` now backs up **dev**. For production:
+  `node --env-file=.env --env-file=.env.prod-db --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs`
+  (with repeated `--env-file`, the last file wins).
+- Preview deployments built **before** 2026-09-14 15:55 UTC still carry
+  production's URI: Vercel fixes variables at build time. Only new
+  deployments use dev.
+
+**Not closed by this - read before assuming a preview is safe:**
+- **T-112.** Whatever a preview routes through `src/services/api.js` /
+  `apiToken.js` (editing a product or a seller, schedules) is still answered
+  by production's API, and so written to the production database.
+- **T-63b.** Production's credential is still the one `readWriteAnyDatabase`
+  user that every environment and every local `.env` held until today.
+- **A preview writing to dev has not been observed yet.** The first
+  deployment built after the change is that check.
+
+**The entry as it stood before 2026-09-14** (kept for its history; the
+webhook bullet in the sketch is wrong, see above):
+
 > **The biggest structural risk in the project right now.** An agent can't
 > do this: these are infrastructure decisions and they cost money.
 
@@ -4129,6 +4197,28 @@ it - one instance, same keys, everywhere), worked through with the human
   the new cluster too - workable, but carrying the exact gap forward
   instead of closing it first.
 **Model:** `opusplan` · **Nightly:** no (infrastructure and cost)
+
+### [ ] T-63b · Rotate production's database credential
+**Why:** found doing T-63 on 2026-09-14. Production's cluster has exactly one
+DB user, with `readWriteAnyDatabase`, and until that day it sat in all three
+Vercel environments and in every local `.env`. T-63 moved Preview,
+Development and the local `.env` to their own cluster, but the old credential
+still works from wherever a copy lives - an old `.env`, a pulled env file, a
+preview built before the change. The split is only as real as that
+credential is retired.
+**Done when:** production connects with a new user limited to
+`readWrite@mercampus_products`; Vercel's Production `MONGO_URI` (row
+`nJ7Ex9q9…`) holds it; production was redeployed and a page that reads Mongo
+answers 200 with data; only then is the old user deleted. The human's
+`.env.prod-db` is updated to the new URI.
+**Careful:** the order is the task - create, switch, redeploy, verify, *then*
+delete. Deleting first takes production down. Previews built before T-63
+still hold the old credential and stop reaching any database once it is
+deleted - expected, and harmless.
+**Why it matters more than it looks:** both Atlas projects allow `0.0.0.0/0`
+(Vercel on M0 has no static egress IPs), so the password is the only barrier.
+**Outside the repo:** entirely - Atlas and Vercel. No code changes.
+**Model:** `opus` · **Nightly:** no (production credentials, needs the human)
 
 ### [x] T-12h · Instance guard in the backfill
 > **Fixes a mistake of mine that would have damaged real data.** In T-12f
