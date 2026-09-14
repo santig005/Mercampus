@@ -4,9 +4,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // Next injects every NEXT_PUBLIC_* variable into the client bundle at the
-// point where it is used. Today only route handlers import imagekit.js and
-// cloudinary.js, so their keys never leave the server - but one 'use client'
-// component importing them would publish those keys with no warning.
+// point where it is used. Today only server code imports imagekit.js, so its
+// keys never leave the server - but one 'use client' component importing it
+// would publish those keys with no warning. (cloudinary.js was checked here
+// too until T-116 deleted it along with its only importer, a route with no
+// caller.)
 // This test keeps the naming from lending itself to that again.
 
 const walk = dir =>
@@ -37,7 +39,7 @@ describe('variables expuestas al cliente', () => {
   it('los SDK de imagenes no leen variables NEXT_PUBLIC_', () => {
     // Busca el uso, no la cadena: estos archivos mencionan el prefijo en sus
     // comments to explain why they do NOT carry it.
-    for (const file of ['src/utils/imagekit.js', 'src/utils/cloudinary.js']) {
+    for (const file of ['src/utils/imagekit.js']) {
       expect(readFileSync(file, 'utf8')).not.toMatch(/process\.\s*env\.\s*NEXT_PUBLIC_/);
     }
   });
