@@ -89,7 +89,10 @@ function ProductModal({ product, theKey }) {
                       <h2 className='text-lg font-semibold break-words dark:text-base-content'>
                         {name}
                       </h2>
-                      <AvailabilityBadge availability={availability} />
+                      <AvailabilityBadge
+                        availability={availability}
+                        status={product.availabilityStatus}
+                      />
                     </div>
                     <p className='text-[14px] text-secondary px-6 text-balance whitespace-pre-wrap'>
                       {parseIfJSON(description)}

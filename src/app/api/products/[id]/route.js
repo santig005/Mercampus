@@ -4,6 +4,7 @@ import { AppError } from '@/utils/lib/errors';
 import { productIdSchema, updateProductSchema } from '@/lib/validators/product';
 import { errorResponse, invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
+import { productAvailability } from '@/lib/store-availability';
 import { verifyOwnershipAndGetSellerId } from '@/utils/lib/auth';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 import { Product } from '@/utils/models/productSchema';
@@ -58,15 +59,22 @@ export async function GET(req, { params }) {
       return notFound();
     }
 
-    const schedules = withDayNames(
+    const schedules =
       (await getSchedulesBySeller([product.sellerId._id])).get(
         product.sellerId._id.toString()
-      ) ?? []
-    );
+      ) ?? [];
 
     // .lean() already returns plain objects: .toObject() (what this called
     // before) is unnecessary and would throw on them.
-    return NextResponse.json({ ...product, schedules }, { status: 200 });
+    return NextResponse.json(
+      {
+        ...product,
+        schedules: withDayNames(schedules),
+        // T-122: same definition as the listing, from the numeric days.
+        availabilityStatus: productAvailability(product.availability, schedules),
+      },
+      { status: 200 }
+    );
   } catch (error) {
     // errorResponse never returns a 500's message to the client, which is the
     // other half of F29: the body used to carry the driver's text verbatim.
