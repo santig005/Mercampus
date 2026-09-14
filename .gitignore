@@ -55,3 +55,7 @@ next-env.d.ts
 
 # playwright: signed-in session state (T-84)
 /tests/e2e/.auth
+
+# experimento: visualizador local del grafo de dependencias del ROADMAP
+# (no es parte del producto; si resulta útil se promueve al repo aparte)
+/roadmap-map

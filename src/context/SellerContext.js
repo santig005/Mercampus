@@ -16,6 +16,26 @@ export const SellerProvider = ({ children, initialUser, initialSeller }) => {
   const [seller, setSeller] = useState(initialSeller);
   const [dbUser, setDbUser] = useState(initialUser);
 
+  // T-125: follow the server when the session changes. Clerk calls
+  // router.refresh() after signing in or out, so the root layout re-renders
+  // with the new user/seller - but useState only reads its argument on mount,
+  // and a root layout is not remounted by a client-side navigation. Without
+  // this, signing in through the form kept `dbUser === false`: the sidebar
+  // offered "Quiero ser vendedor" and every seller screen bounced to the login.
+  //
+  // Adjusted during render, not in a useEffect: child effects run before the
+  // parent's, so useCheckSeller would still see the stale `dbUser` and redirect
+  // before an effect here could correct it. Compared by value because every
+  // server render hands over new objects; optimistic updates made with
+  // setSeller/setDbUser survive until the server's data actually changes.
+  const serverKey = JSON.stringify([initialUser, initialSeller]);
+  const [syncedKey, setSyncedKey] = useState(serverKey);
+  if (serverKey !== syncedKey) {
+    setSyncedKey(serverKey);
+    setSeller(initialSeller);
+    setDbUser(initialUser);
+  }
+
   return (
     <SellerContext.Provider
       value={{ seller, setSeller, loading: false, dbUser, setDbUser }}

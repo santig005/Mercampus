@@ -11,7 +11,6 @@ import Loading from '@/components/general/Loading';
 import { updateSeller } from '@/services/sellerService';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
-import { useAuth } from '@clerk/nextjs';
 
 export default function EditProductsPage() {
   const [products, setProducts] = useState([]);
@@ -25,9 +24,6 @@ export default function EditProductsPage() {
     'sellerApproved',
     '/antojos/sellers/approving'
   );
-  const { getToken } = useAuth();
-
-
   // Once the seller context is done loading, check if we have a valid seller
   useEffect(() => {
     if (!sellerLoading) {
@@ -56,12 +52,11 @@ export default function EditProductsPage() {
             : product
         )
       );
-      const token = await getToken({ skipCache: true});
-      logger.debug("etngo token");
-      logger.debug(token);
+      // T-112b: no getToken() (or logging it) before the write - updateProduct
+      // is a relative browser fetch carrying Clerk's session cookie.
       const updatedProduct = await updateProduct(id, {
         availability: !currentAvailability
-      },token);
+      });
       //if the request is not successful, correct the availability
       if (!updatedProduct) {
         setProducts(prevProducts =>
@@ -80,10 +75,9 @@ export default function EditProductsPage() {
     try {
       setSellerAvailability(!sellerAvailability);
       setSeller({ ...seller, availability: !sellerAvailability });
-      const token = await getToken({skipCache: true});
       const updatedSeller = await updateSeller(seller._id, {
         availability: !sellerAvailability
-      },token);
+      });
       //if the request is not successful, correct the availability
       if (!updatedSeller) {
         setSellerAvailability(!sellerAvailability);

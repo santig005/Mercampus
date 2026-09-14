@@ -1,14 +1,8 @@
-// src/services/schedules.js
-import { fetchAPI } from './api';
+// src/services/scheduleService.js
+import { fetchFromApi } from './browserApi';
 
+// T-112: a relative browser fetch - see browserApi.js. createSchedule() was
+// deleted in T-112b: no reference anywhere.
 export const getSchedules = async (sellerId) => {
-  return await fetchAPI(`/schedules/${sellerId}`);
+  return await fetchFromApi(`/schedules/${sellerId}`);
 };
-
-export const createSchedule = async (scheduleData) => {
-  return await fetchAPI('/schedules', {
-    method: 'POST',
-    body: JSON.stringify(scheduleData),
-  });
-};
-

@@ -35,10 +35,12 @@ data or real access, and the human has asked for them to wait:
   reads or writes `publicMetadata`, `User.role`, or the seller approval path.
   T-104, T-105 and T-106 are done; what is left of that chain either guards
   the only approval surface (T-114) or touches real user documents (T-107).
-- **Environment separation: T-63**, and T-64/T-12h's Clerk instance work. One
-  Mongo cluster and one Clerk instance serve Production, Preview and
-  Development today. Until that is split, a careless write lands on real
-  users.
+- **Environment separation: T-64/T-12h's Clerk instance work.** T-63 split
+  Mongo and T-63b rotated production's credential on 2026-09-14, but one
+  Clerk instance still serves every environment, and a preview still writes
+  production data through `src/services/api.js` until T-112. Never roll
+  production back in Vercel to a deployment from before that day: it has no
+  working database credential.
 - **T-95** (audit `/admin/*`) - it needs minting a privileged Clerk account
   per run, which is both of the above at once.
 - **T-82** (deleting a product's images) - irreversible deletes against an
@@ -635,6 +637,13 @@ after every `setActive()` (`__unstable__onAfterSetActive`), which is
 exactly what already made the `auth()` → `userId` prop into `SideBar` (in
 `antojos/layout.jsx`/`marketplace/layout.jsx`) safe. Same guarantee here,
 not a new assumption.
+**Correction (T-125, 2026-09-14): the check above was wrong for
+`SellerProvider`.** The refresh does re-render the layout with fresh props,
+but the provider stored them with `useState(initialUser)`, which reads its
+argument only on mount - so signing in or out without a full page load left
+the context describing the previous visitor. `SideBar`'s `userId` is safe
+because it uses the prop directly; state is not. The human hit it on a
+preview; see T-125.
 **Deleted as a consequence, not a target:** `src/services/server/userService.js`
 (`getUserWithSellerByEmail` plus an already-unexported, already-dead
 `populateSellerIdInUsers`) and `src/services/userService.js` (the client
@@ -3041,7 +3050,15 @@ removes the `NEXT_PUBLIC_URL + '/api'` antipattern from the one path it
 touched.
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-111 · `src/services/api.js` and `apiToken.js`, audited
+### [x] T-111 · `src/services/api.js` and `apiToken.js`, audited
+**Closed by T-112b on 2026-09-14:** both files were deleted. Items 1-3 are
+moot, and 4 - the Server Action surface of `fetchAPI(endpoint, options)` - no
+longer exists. The Bearer's job, carrying identity, moved to Clerk's session
+cookie on a same-origin browser fetch, the shape T-105b had already proved.
+Nothing shaped like `x-internal-fetch` was introduced. **The warnings below
+still hold for anyone tempted to bring back a server-side fetch to this app's
+own API.**
+
 **Why:** the human asked, while reviewing T-105b, whether `apiToken.js` was an
 abandoned experiment - it was written long before this backlog, to carry
 identity to the API with a Bearer token, and they no longer remembered
@@ -3509,7 +3526,114 @@ before trying - verified with a real large file, not a mocked request body.
 **Model:** `sonnet` for (a), `opus` for (b) · **Nightly:** no (verifying it
 needs a browser and a real file)
 
-### [ ] T-112 · A preview deployment calls production's API
+### [x] T-125 · Signing in without a reload leaves the seller context stale
+**Why:** reported by the human on 2026-09-14 on the `agent/develop` preview,
+and it is in production too (the code is on `main` since T-12d). They signed
+in through the form, the sidebar still offered "Quiero ser vendedor", and
+`/antojos/sellers/register` bounced to `/auth/login`. A full reload (F5) fixed
+it - the human confirmed.
+**Measured before touching anything:**
+- **Clerk had an active session.**
+- **The middleware let `/antojos/sellers/register` through with 200**, and
+  350 ms later the browser requested `/auth/login`: a client-side redirect,
+  not an auth rejection.
+- **Their `User` existed in `mercampus_dev` with the right `clerkId`,** and
+  the preview read that database (its sitemap had 9 URLs, the dev seed's).
+
+**The Vercel CLI repeats every log row ~20 times; deduplicate by `id` before
+reading a sequence.**
+**Cause:** `SellerProvider` stored the server-resolved context with
+`useState(initialUser)`, and `useState` reads its argument only on mount.
+- **The refresh happens, but it is not enough.** Clerk calls
+  `router.refresh()` after `setActive()`, so the root layout re-renders with
+  the new user and seller.
+- **The root layout is never remounted by a client-side navigation**, so the
+  new props were ignored.
+- **`useCheckSeller` then saw `dbUser === false`** and pushed to the login.
+- **Signing out had the mirror problem:** the context kept the seller until a
+  reload.
+
+T-12d's "checked it wouldn't go stale" held for `SideBar`'s `userId` prop,
+not for state (corrected in that entry).
+**Why no spec caught it:** `auth.setup.js` signs in and then `page.goto()`s, a
+full load.
+**Proven first:** `tests/e2e/session-context.spec.js` (public project) loads
+`/antojos` signed out, then signs in inside the page with `clerk.signIn`
+(`Clerk.setActive`, no reload, same as the form). "Gestionar" needs both
+`userId` (a fresh server prop) and `seller.approved` (the context), so it
+shows only when the context followed the session.
+- **Sign-in test:** expects "Editar mis productos" to appear and the seller
+  screen to open.
+- **Sign-out test:** starts from a full load while signed in, calls
+  `clerk.signOut`, and expects "Quiero ser vendedor" back.
+
+**Both failed on the unfixed code.**
+**Fix:** `SellerProvider` compares the server's data by value
+(`JSON.stringify([initialUser, initialSeller])`) and, when it changes, resets
+`seller`/`dbUser` **during render**.
+- **Not in a `useEffect`:** child effects run before the parent's, so
+  `useCheckSeller` would redirect on the stale value first.
+- **Optimistic updates survive:** those made with `setSeller`/`setDbUser`
+  last until the server's data actually changes.
+
+**Verified:** both new tests pass, as does every signed-in spec (20/20 with
+the setup, including T-112b's writes); `npm run verify` green.
+**Outside the repo:** nothing.
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-126 · A failed image upload logs no reason
+**Why:** found alongside T-125 on 2026-09-14. The human's logo upload on the
+`agent/develop` preview (`POST /api/images`, 18:40 UTC) answered **500**, and
+the only log line was `{ status: 500, message: 'Error interno del servidor' }`.
+`errorResponse` copies `error.message` only when the thrown value is an
+`Error`; the `imagekit` SDK rejects a failed upload with a **plain object**
+(`{ message, help }`), so the real reason is dropped before it reaches the
+log.
+**What was ruled out, read-only:**
+- Nothing reached ImageKit: no file created after 17:30 UTC.
+- The three `IMAGEKIT_*` variables are single rows covering Production,
+  Preview and Development, so the preview has production's keys. An upload in
+  production worked at 15:06 UTC that day.
+- A missing key throws a real `Error` naming the variable.
+- A missing session would be 401, a non-image `sharp` 400, a body over 4.5 MB
+  413.
+
+The cause is still unknown: most likely the file itself (name or format) or an
+ImageKit-side rejection.
+**Done when:** a thrown non-`Error` with a `message` gets that message logged
+server-side (the client still gets the generic 500 - the policy of not leaking
+a 500's detail stays), covered by a unit test with a plain-object rejection;
+and a retry of the failing upload on a preview shows the actual reason.
+**Careful:** log the error object's `message`/`help`, never the request or
+the SDK instance - it holds the private key.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-112 · A preview deployment calls production's API
+**Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
+chosen over pointing previews at themselves, and done in two PRs. **This
+entry is the reads; T-112b is the writes.** Why A and not the self-pointing
+URL, measured before choosing:
+- `api.js` and `apiToken.js` are `'use server'`. Every call, even one made
+  from a client component, is a Server Action whose `fetch` leaves the
+  function over HTTP. So pointing it at the preview's own URL keeps that hop.
+- **Vercel Authentication covers every preview** (project setting
+  `ssoProtection: prod_deployment_urls_and_all_previews`; an unauthenticated
+  request to a preview answers 302 to Vercel's login). A server-side fetch
+  carries no Vercel session, so it would need the automation bypass secret
+  (`VERCEL_AUTOMATION_BYPASS_SECRET`, which Vercel does inject; one secret is
+  configured) in an `x-vercel-protection-bypass` header - attached to a public
+  Server Action whose path argument the caller controls.
+- A relative fetch from the browser needs none of that: the browser already
+  passed Vercel's check and carries Clerk's cookie. T-105b's `approveSeller`
+  already worked this way.
+
+**Done (reads):** `src/services/browserApi.js` (`fetchFromApi`) fetches
+`/api/...` relatively, with `fetchAPI`'s contract (JSON or text on 2xx, an
+Error with status and body otherwise). `getProducts`, `getSellerProducts`,
+`getSellers` and `getSchedules` use it. All five call sites run inside
+`useEffect`; none of the four GET handlers reads the session, so the Clerk
+cookie now arriving changes nothing they return.
+
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
 half that was *correct* and was reverted along with the auth bypass that
 wasn't. `src/services/api.js` and `apiToken.js` build their base URL as
@@ -3564,8 +3688,84 @@ be read together.
 with a trailing slash, so every one of these builds a double slash
 (`http://localhost:3000//api/...`). Harmless today, but it means nothing
 normalises that value.
+**Found alongside, not changed (rule 9):** four service functions have no
+reference anywhere in `src/` - `createProduct`, `createSchedule`,
+`getSellerById` and `getSellerByEmail` - and still go through `fetchAPI`.
+Candidates for deletion once T-112b retires that helper; checked with a
+reference search, not removed here.
 **Model:** `opusplan` - it is an infrastructure question before it is a code
 one · **Nightly:** no (needs the dashboard)
+
+### [x] T-112b · The writes still call production's API from a preview
+**Done 2026-09-14.** The human chose to land it before promoting #329, so the
+promotion carries the fix.
+**A real bug surfaced first, and it was in production, not only in previews:**
+`EditProductForm` called `updateProduct(id, product)` and `deleteProduct(id)`
+without the Bearer token `apiToken.js` needs, so **saving or deleting from the
+full product form answered 401** everywhere. The list page's availability
+switch and the seller forms did pass a token and worked. No spec saved
+anything, which is how it went unnoticed.
+**Proven before fixing:** `tests/e2e/signed-in/writes.spec.js` creates a
+disposable marketplace product through the API with the session, then:
+- saves the full product form;
+- flips that product's availability switch;
+- saves the seller profile;
+- deletes the product.
+
+Every write is checked by reloading. Against the unfixed code:
+
+| Step | Result |
+|---|---|
+| Create | ✓ |
+| Save | **✗ - the server logged `HTTP 401: {"error":"No autenticado."}`** |
+| Switch | ✓ |
+| Profile | ✓ |
+| Delete | **✗ - 401** |
+
+A first run also failed the switch; that was the test reloading before the
+write went out, fixed with a wait on the write, and re-run green on the unfixed
+code before anything was changed.
+**Fix:**
+- `updateProduct`, `deleteProduct` and `updateSeller` go through
+  `fetchFromApi` (relative URL, Clerk's session cookie, `jsonBody()` for the
+  payload). The token parameter is gone, as is every `getToken()` before a
+  write - including a `logger.debug(token)` on the product list page.
+- Deleted `api.js` and `apiToken.js`, and with them `createProduct`,
+  `createSchedule`, `getSellerById` and `getSellerByEmail` (no reference,
+  re-checked).
+- Also deleted `extractAuthHeader` in `api/sellers/[id]/route.js`: never
+  called, and it logged the request's `Authorization` header.
+**Verified after the fix:**
+- The same spec: 5/5 green.
+- `tests/unit/browser-api.test.js`: 10 tests. The writes' cases assert the
+  relative URL, the method, the JSON body and that no `Authorization` header
+  is sent.
+- `tests/unit/env-publico.test.js` now expects `NEXT_PUBLIC_URL` gone from
+  `src/`.
+- A reference search: nothing left imports the deleted helpers.
+- `npm run verify`: green.
+**Left for later, noted:** `NEXT_PUBLIC_URL` is read by nothing in `src/`
+now. `scripts/e2e.mjs` and `scripts/lighthouse.mjs` still set it, and it is
+still a Vercel variable. It can be dropped from both once nobody sets it.
+**Outside the repo:** nothing.
+
+**Why:** the second half of T-112. `updateProduct`, `deleteProduct` and
+`updateSeller` still go through `apiToken.js`, a `'use server'` helper that
+fetches `NEXT_PUBLIC_URL + '/api'` - production's origin in every Vercel
+environment. Since T-63 a preview reads its own database, but **editing or
+deleting a product, or editing a seller, from a preview still writes to the
+production database**.
+**Done when:** those three go through a relative browser fetch like T-112's
+reads and T-105b's `approveSeller`, authenticated by Clerk's cookie instead of
+a Bearer token; nothing imports `api.js` or `apiToken.js` any more and both
+are deleted, together with the four unreferenced service functions T-112
+lists; the signed-in e2e specs for product edit and seller edit stay green.
+**Careful:** read T-111 first. `apiToken.js` is what carries identity in these
+mutations today; the PUT/DELETE handlers must accept the cookie session (they
+use `auth()`, which reads either) - verify that against the handlers, don't
+assume it. And check what the callers pass as `token` so nothing is left
+fetching one for no reason.
+**Model:** `opus` (authorization on mutations) · **Nightly:** no
 
 ### [x] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
 **Why:** decided with the human alongside T-104. There is a stronger argument
@@ -4043,7 +4243,77 @@ public listing reflects it. The bound matters: an override with no expiry
 becomes a seller permanently marked available who is not.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-63 · Separate the environments (database and Clerk)
+### [x] T-63 · Separate the environments (database and Clerk)
+**Done 2026-09-14 (the Mongo half), with the human in the session.**
+Re-measured first, then split:
+
+| | Production | Preview + Development (and the local `.env`) |
+|---|---|---|
+| Atlas project | `Mercampus-db` (org "Mercampus") | `Mercampus-dev` (same org, created for this) |
+| Cluster | `cluster0.fibip` - M0, AWS us-east-1 | `cluster0.xuedyfi` - M0, AWS us-east-1 |
+| Database | `mercampus_products` | `mercampus_dev` |
+| DB user | one user with `readWriteAnyDatabase` | `mercampus-dev-app`, `readWrite@mercampus_dev` only |
+| Vercel `MONGO_URI` | row `nJ7Ex9q9…`, Production only | new row `SR5yNOPk…`, Preview + Development |
+| Clerk | `sacred-shrew-44`, development instance | the same instance |
+
+- **Vercel:** the single `MONGO_URI` row (all three environments, 655 days
+  old) had its targets narrowed to Production **without touching its
+  value**, and a second row was added for Preview + Development. Production
+  did not need a redeploy.
+- **Verified:** a production backup was taken first; the dev user connects,
+  writes, and is denied on any other database; `mercampus_dev` was seeded (3
+  users, 2 sellers, 6 products, 6 schedules); production's counts were the
+  same afterwards (84 users, 55 sellers, 114 products, 143 schedules) and
+  `/antojos` answered 200.
+- **Why a second project and not a second database:** Atlas allows one free
+  M0 per *project*, not per account, and a project has its own DB users and
+  IP list, so a dev credential cannot open production. A `mercampus_dev`
+  database inside the production cluster would share its connection and
+  throughput limits, and the existing user can write to every database there.
+- **Clerk, re-measured:** the Production keys changed on 2026-09-05 but still
+  belong to the same development instance as Preview (`ins_2mH0…`,
+  publishable host `sacred-shrew-44`), so the drift the note further down
+  worried about did not change instance. Loose end: Production's
+  `CLERK_SECRET_KEY` is stored as Sensitive and cannot be read back, so it is
+  confirmed only indirectly - T-104's admin check needs it and works.
+- **The webhook, corrected:** the sketch below says a real account signing in
+  against the dev database gets its `User` from the webhook "unprompted". It
+  does not: `WEBHOOK_SECRET` exists only in Production, and Clerk sends each
+  event to one endpoint. With no `User`, `src/utils/lib/auth.ts` treats the
+  session as nobody. `npm run seed:team -- --email <email> [--apply]` creates
+  those documents from Clerk, only for the accounts named - the development
+  instance also holds real students' accounts.
+- **`npm run seed` now loads `.env`**, like `backup:db`. Before, it failed with
+  "falta MONGO_URI" unless the variable was exported by hand.
+
+**Outside the repo - already done, listed for whoever promotes:** the Atlas
+project, cluster, IP rule (`0.0.0.0/0`, which Vercel needs) and DB user; the
+two Vercel `MONGO_URI` rows; the human's local `.env` points at
+`mercampus_dev`, with production's URI kept in the ignored `.env.prod-db`.
+Nothing further is needed for this PR to work.
+
+**What changes for anyone working here:**
+- `npm run backup:db` now backs up **dev**. For production:
+  `node --env-file=.env --env-file=.env.prod-db --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs`
+  (with repeated `--env-file`, the last file wins).
+- Preview deployments built **before** 2026-09-14 15:55 UTC still carry
+  production's URI: Vercel fixes variables at build time. Only new
+  deployments use dev.
+
+**Not closed by this - read before assuming a preview is safe:**
+- **T-112.** Whatever a preview routes through `src/services/api.js` /
+  `apiToken.js` (editing a product or a seller, schedules) is still answered
+  by production's API, and so written to the production database.
+- ~~T-63b~~ - done the same day: production has its own
+  `readWrite@mercampus_products` user and the old one is deleted.
+- **Observed afterwards:** the first preview built after the change
+  (`agent/t-63`, 16:12 UTC) served a sitemap of 9 URLs carrying the dev seed's
+  ids and none of production's - it reads `mercampus_dev`. That is a read; a
+  preview *write* through `api.js` still goes to production until T-112.
+
+**The entry as it stood before 2026-09-14** (kept for its history; the
+webhook bullet in the sketch is wrong, see above):
+
 > **The biggest structural risk in the project right now.** An agent can't
 > do this: these are infrastructure decisions and they cost money.
 
@@ -4129,6 +4399,57 @@ it - one instance, same keys, everywhere), worked through with the human
   the new cluster too - workable, but carrying the exact gap forward
   instead of closing it first.
 **Model:** `opusplan` · **Nightly:** no (infrastructure and cost)
+
+### [x] T-63b · Rotate production's database credential
+**Done 2026-09-14, the human authorizing each step.** In this order:
+1. Production backup (`backups/2026-09-14T16-28-59-300Z`).
+2. Created `mercampus-prod-app` with `readWrite@mercampus_products` only.
+   Checked before using it: it reads production (84 users, 55 sellers, 114
+   products, 143 schedules), is denied on the `dev` database, and
+   `listDatabases` shows it only `mercampus_products`.
+3. Vercel's Production `MONGO_URI` (row `nJ7Ex9q9…`, still Production only)
+   set to the new URI, 16:35 UTC.
+4. Redeployed production from `dpl_7Ensy…` (commit `cb835a5`, no code
+   change): new deployment `dpl_DfLRT1pw…`, aliased to `mercampus.vercel.app`.
+5. Verified on it: `/antojos`, `/antojos/sellers/list`, `/marketplace` and
+   `/sitemap.xml` answered 200, the sitemap listed 135 URLs (dev's lists 9),
+   and its logs had no errors, 5xx or Mongo/auth messages.
+6. Deleted the old `readWriteAnyDatabase` user. Atlas now rejects the old
+   URI; the four pages and the logs were checked again; the human's
+   `.env.prod-db` was rewritten with the new URI (connects, 84 users).
+
+**Checked alongside:** no GitHub repo secret or workflow references a Mongo
+URI (CI uses `mongodb-memory-server`). Environment-level secrets (Preview,
+Production, copilot) could not be listed from the session, but no workflow
+reads `MONGO_URI`, so nothing there could consume one.
+**Consequence, expected:** every deployment built before this - older
+production deployments and previews from before T-63 - can no longer reach a
+database. **An instant rollback in Vercel to one of them comes up without
+Mongo; redeploy instead.**
+**Outside the repo (all done):** the Atlas user created and the old one
+deleted; Vercel's Production `MONGO_URI` value; production redeployed;
+`.env.prod-db`.
+
+**Why:** found doing T-63 on 2026-09-14. Production's cluster has exactly one
+DB user, with `readWriteAnyDatabase`, and until that day it sat in all three
+Vercel environments and in every local `.env`. T-63 moved Preview,
+Development and the local `.env` to their own cluster, but the old credential
+still works from wherever a copy lives - an old `.env`, a pulled env file, a
+preview built before the change. The split is only as real as that
+credential is retired.
+**Done when:** production connects with a new user limited to
+`readWrite@mercampus_products`; Vercel's Production `MONGO_URI` (row
+`nJ7Ex9q9…`) holds it; production was redeployed and a page that reads Mongo
+answers 200 with data; only then is the old user deleted. The human's
+`.env.prod-db` is updated to the new URI.
+**Careful:** the order is the task - create, switch, redeploy, verify, *then*
+delete. Deleting first takes production down. Previews built before T-63
+still hold the old credential and stop reaching any database once it is
+deleted - expected, and harmless.
+**Why it matters more than it looks:** both Atlas projects allow `0.0.0.0/0`
+(Vercel on M0 has no static egress IPs), so the password is the only barrier.
+**Outside the repo:** entirely - Atlas and Vercel. No code changes.
+**Model:** `opus` · **Nightly:** no (production credentials, needs the human)
 
 ### [x] T-12h · Instance guard in the backfill
 > **Fixes a mistake of mine that would have damaged real data.** In T-12f
