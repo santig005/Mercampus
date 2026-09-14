@@ -51,22 +51,27 @@ export default function ImageGrid({
     const imageUrl = images[index];
     logger.debug('imageUrl', imageUrl);
     try {
-      // 1) Resolve the fileId from the URL
-      const responseFileId = await fetch(
-        `/api/fileId?url=${encodeURIComponent(imageUrl)}`
-      );
-      if (!responseFileId.ok) throw new Error('Error al obtener el fileId');
-      const { fileId } = await responseFileId.json();
-      logger.debug('fileId', fileId);
-      // 2) Ask to delete the image by that fileId
+      // T-116: one call with the URL; the server resolves the file itself.
       const responseDelete = await fetch('/api/images', {
         method: 'DELETE',
-        body: JSON.stringify({ fileId }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: imageUrl }),
       });
 
-      if (!responseDelete.ok) throw new Error('Error al eliminar la imagen');
+      // 403 (not yours alone to delete, e.g. the shared default logo) and 404
+      // (no such file) leave the file untouched, but the image still leaves
+      // this form: with maxImages={1} a seller holding the default logo could
+      // otherwise never replace it. 401 and 5xx mean nothing happened, so the
+      // image stays and they can retry.
+      if (
+        !responseDelete.ok &&
+        responseDelete.status !== 403 &&
+        responseDelete.status !== 404
+      ) {
+        throw new Error(`Error al eliminar la imagen (${responseDelete.status})`);
+      }
 
-      // 3) Update state, dropping the image from the array
+      // Update state, dropping the image from the array
       const updatedImages = images.filter((_, i) => i !== index);
       setImages(updatedImages);
       onUpdateImages(updatedImages);
