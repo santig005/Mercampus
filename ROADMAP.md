@@ -3043,7 +3043,15 @@ removes the `NEXT_PUBLIC_URL + '/api'` antipattern from the one path it
 touched.
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-111 · `src/services/api.js` and `apiToken.js`, audited
+### [x] T-111 · `src/services/api.js` and `apiToken.js`, audited
+**Closed by T-112b on 2026-09-14:** both files were deleted. Items 1-3 are
+moot, and 4 - the Server Action surface of `fetchAPI(endpoint, options)` - no
+longer exists. The Bearer's job, carrying identity, moved to Clerk's session
+cookie on a same-origin browser fetch, the shape T-105b had already proved.
+Nothing shaped like `x-internal-fetch` was introduced. **The warnings below
+still hold for anyone tempted to bring back a server-side fetch to this app's
+own API.**
+
 **Why:** the human asked, while reviewing T-105b, whether `apiToken.js` was an
 abandoned experiment - it was written long before this backlog, to carry
 identity to the API with a Bearer token, and they no longer remembered
@@ -3599,7 +3607,59 @@ reference search, not removed here.
 **Model:** `opusplan` - it is an infrastructure question before it is a code
 one · **Nightly:** no (needs the dashboard)
 
-### [ ] T-112b · The writes still call production's API from a preview
+### [x] T-112b · The writes still call production's API from a preview
+**Done 2026-09-14.** The human chose to land it before promoting #329, so the
+promotion carries the fix.
+**A real bug surfaced first, and it was in production, not only in previews:**
+`EditProductForm` called `updateProduct(id, product)` and `deleteProduct(id)`
+without the Bearer token `apiToken.js` needs, so **saving or deleting from the
+full product form answered 401** everywhere. The list page's availability
+switch and the seller forms did pass a token and worked. No spec saved
+anything, which is how it went unnoticed.
+**Proven before fixing:** `tests/e2e/signed-in/writes.spec.js` creates a
+disposable marketplace product through the API with the session, then:
+- saves the full product form;
+- flips that product's availability switch;
+- saves the seller profile;
+- deletes the product.
+
+Every write is checked by reloading. Against the unfixed code:
+
+| Step | Result |
+|---|---|
+| Create | ✓ |
+| Save | **✗ - the server logged `HTTP 401: {"error":"No autenticado."}`** |
+| Switch | ✓ |
+| Profile | ✓ |
+| Delete | **✗ - 401** |
+
+A first run also failed the switch; that was the test reloading before the
+write went out, fixed with a wait on the write, and re-run green on the unfixed
+code before anything was changed.
+**Fix:**
+- `updateProduct`, `deleteProduct` and `updateSeller` go through
+  `fetchFromApi` (relative URL, Clerk's session cookie, `jsonBody()` for the
+  payload). The token parameter is gone, as is every `getToken()` before a
+  write - including a `logger.debug(token)` on the product list page.
+- Deleted `api.js` and `apiToken.js`, and with them `createProduct`,
+  `createSchedule`, `getSellerById` and `getSellerByEmail` (no reference,
+  re-checked).
+- Also deleted `extractAuthHeader` in `api/sellers/[id]/route.js`: never
+  called, and it logged the request's `Authorization` header.
+**Verified after the fix:**
+- The same spec: 5/5 green.
+- `tests/unit/browser-api.test.js`: 10 tests. The writes' cases assert the
+  relative URL, the method, the JSON body and that no `Authorization` header
+  is sent.
+- `tests/unit/env-publico.test.js` now expects `NEXT_PUBLIC_URL` gone from
+  `src/`.
+- A reference search: nothing left imports the deleted helpers.
+- `npm run verify`: green.
+**Left for later, noted:** `NEXT_PUBLIC_URL` is read by nothing in `src/`
+now. `scripts/e2e.mjs` and `scripts/lighthouse.mjs` still set it, and it is
+still a Vercel variable. It can be dropped from both once nobody sets it.
+**Outside the repo:** nothing.
+
 **Why:** the second half of T-112. `updateProduct`, `deleteProduct` and
 `updateSeller` still go through `apiToken.js`, a `'use server'` helper that
 fetches `NEXT_PUBLIC_URL + '/api'` - production's origin in every Vercel

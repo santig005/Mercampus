@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchFromApi } from '@/services/browserApi';
-import { getProducts, getSellerProducts } from '@/services/productService';
+import {
+  deleteProduct,
+  getProducts,
+  getSellerProducts,
+  updateProduct,
+} from '@/services/productService';
 import { getSchedules } from '@/services/scheduleService';
-import { getSellers } from '@/services/sellerService';
+import { getSellers, updateSeller } from '@/services/sellerService';
 
 // T-112: the reads must reach whichever deployment served the page. The
 // variable they used to depend on is set to production's origin here, the way
@@ -50,6 +55,32 @@ describe('reads use a relative /api URL', () => {
   it('getSchedules', async () => {
     await getSchedules('seller123');
     expect(requestedUrl()).toBe('/api/schedules/seller123');
+  });
+});
+
+describe('writes use a relative /api URL and no token (T-112b)', () => {
+  const requestInit = () => fetchMock.mock.calls[0][1];
+
+  it('updateProduct sends a JSON PUT with no Authorization header', async () => {
+    await updateProduct('p1', { description: 'nueva' });
+    expect(requestedUrl()).toBe('/api/products/p1');
+    expect(requestInit().method).toBe('PUT');
+    expect(JSON.parse(requestInit().body)).toEqual({ description: 'nueva' });
+    expect(requestInit().headers).toEqual({ 'Content-Type': 'application/json' });
+  });
+
+  it('deleteProduct sends a DELETE', async () => {
+    await deleteProduct('p1');
+    expect(requestedUrl()).toBe('/api/products/p1');
+    expect(requestInit()).toEqual({ method: 'DELETE' });
+  });
+
+  it('updateSeller sends a JSON PUT with no Authorization header', async () => {
+    await updateSeller('s1', { paused: true });
+    expect(requestedUrl()).toBe('/api/sellers/s1');
+    expect(requestInit().method).toBe('PUT');
+    expect(JSON.parse(requestInit().body)).toEqual({ paused: true });
+    expect(requestInit().headers).toEqual({ 'Content-Type': 'application/json' });
   });
 });
 

@@ -123,7 +123,10 @@ otras). Es un índice: la entrada de cada tarea sigue siendo el contrato.
   efectos o handlers de eventos. Si un componente solo muestra datos, es server.
 - **Nada de fetch a la propia API desde el servidor.** Un Server Component
   consulta Mongo directo mediante `src/server/`; las mutaciones usan Server
-  Actions. `NEXT_PUBLIC_URL + '/api'` es un antipatrón aquí y se está eliminando.
+  Actions. `NEXT_PUBLIC_URL + '/api'` es un antipatrón aquí; desde T-112b no queda
+  ninguno (`services/api.js` y `apiToken.js` se borraron). Un componente de
+  cliente llama a la API con URL relativa y la cookie de Clerk
+  (`src/services/browserApi.js`), nunca con un token pasado a mano.
 - **Validación en el borde.** Todo body y todo query param pasa por un schema de
   Zod antes de tocar Mongoose. Nunca `new Model(body)` con datos crudos.
 - **Autorización explícita.** Toda ruta o acción que muta datos verifica
