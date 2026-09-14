@@ -1392,7 +1392,7 @@ there); the assertion is still first-poll-only. A wait on a real condition,
 such as "no `cursor=` request until the scroll", would pin it.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-36 · A real README
+### [x] T-36 · A real README
 **Why:** it's still `create-next-app`'s, with a stray `## Yes`.
 **Done when:** what the project is, screenshots, stack, environment
 variables, how to run it, how to run tests, and a section on the agentic
