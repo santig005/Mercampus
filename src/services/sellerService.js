@@ -1,10 +1,9 @@
-import { logger } from '@/lib/logger';
-import { fetchAPI } from './api';
-import { fetchAPIToken } from './apiToken';
-import { fetchFromApi } from './browserApi';
+import { fetchFromApi, jsonBody } from './browserApi';
 
-// T-112: a relative browser fetch, not the `'use server'` fetchAPI - see
-// browserApi.js.
+// T-112 / T-112b: relative browser fetches with Clerk's session cookie - see
+// browserApi.js. getSellerById() and getSellerByEmail() were deleted in T-112b:
+// no reference anywhere.
+
 export const getSellers = async (university, section = '') => {
   const queryParams = new URLSearchParams();
 
@@ -14,23 +13,12 @@ export const getSellers = async (university, section = '') => {
   return await fetchFromApi(`/sellers?${queryParams.toString()}`);
 };
 
-export const getSellerById = async id => {
-  return await fetchAPI(`/sellers/${id}`);
-};
-
-export const getSellerByEmail = async email => {
-  try {
-    const result= await fetchAPI(`/sellers/${email}`);
-    return result?.seller ? result : {seller: null};
-  } catch (error) {
-    logger.error('Error fetching seller by email:', error);
-  }
-};
-
-export const updateSeller = async (id, data,token) => {
-  return await fetchAPIToken(`/sellers/${id}`,token, {
+// T-112b: no token parameter any more; the session cookie identifies the
+// caller, and PUT /api/sellers/:id checks ownership against it.
+export const updateSeller = async (id, data) => {
+  return await fetchFromApi(`/sellers/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(data),
+    ...jsonBody(data),
   });
 };
 
@@ -39,22 +27,16 @@ export const updateSeller = async (id, data,token) => {
 // stripped there by design (T-13). This one is admin-only, gated by the
 // middleware's /api/(.*)/admin(.*) matcher and again inside the handler.
 //
-// T-105b: a plain relative fetch from the browser, NOT fetchAPIToken. That
-// helper is `'use server'`, so it turns the call into a Server Action that
-// fetches `NEXT_PUBLIC_URL + '/api'` from the server with a Bearer token and
-// no cookies. Two problems with that here, and only here:
-//  - This is the first call through that helper to a path the middleware
-//    gates as an admin route, so the request has to survive Clerk's admin
-//    check on a server-to-server hop - a seam nothing in this repo exercises,
-//    and one the integration tests cannot cover because they call the handler
-//    directly with the middleware mocked out.
-//  - It is the `NEXT_PUBLIC_URL + '/api'` antipattern CLAUDE.md says is being
-//    removed.
-// The sibling GET on `/api/sellers/admin` has always been a relative browser
-// fetch carrying Clerk's cookie, and it works. This now matches it.
+// T-105b: the first write to become a plain relative fetch from the browser,
+// instead of the `'use server'` fetchAPIToken - which fetched
+// `NEXT_PUBLIC_URL + '/api'` from the server with a Bearer token and no
+// cookies, a server-to-server hop through Clerk's admin check that nothing in
+// this repo exercised. T-112b moved every other call to the same shape and
+// deleted that helper.
 //
 // It throws on a non-2xx so callers doing an optimistic update roll back in
-// their `catch`, same contract fetchAPIToken had.
+// their `catch`. It keeps its own fetch rather than fetchFromApi for the error
+// message it builds from the body.
 export const approveSeller = async (id, approved) => {
   const response = await fetch(`/api/sellers/admin/${id}`, {
     method: 'PATCH',
@@ -71,4 +53,3 @@ export const approveSeller = async (id, approved) => {
 
   return response.json();
 };
-
