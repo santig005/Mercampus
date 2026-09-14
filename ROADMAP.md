@@ -103,9 +103,10 @@ already warns about, and getting it wrong wastes a PR:
 - **T-60** · Observability - needs a Sentry account and a DSN.
 - **T-112** · a preview calling production's API - the first step is reading
   the Vercel dashboard, which an agent cannot do.
-- **The dashboard half of T-11b and T-14** - six renamed env vars in Vercel,
-  and `CRON_SECRET` in both Vercel and GitHub. Broke production on
-  2026-09-13; the names are in those entries.
+- **The dashboard half of T-11b** - six image env vars to rename in Vercel,
+  one of them spelled differently there than locally (see the table in
+  T-11b), then a redeploy. Image uploads are broken in production until then.
+  `CRON_SECRET` (T-14) is done and verified.
 - **T-62b** · closing inactive PRs - a community policy call.
 - **T-80 batch e** - `scripts/`, where the dangerous warnings live; PR #273 is
   already open awaiting review.
@@ -375,19 +376,37 @@ days on `agent/develop` and went live with the 136-commit promotion on
 mercampus.vercel.app answered **500** (`getCloudinary()` configured with
 three `undefined`s) - and the one approved seller that day could not add a
 first product, so could not become visible. The route's generic "Error al
-subir la imagen" hid the cause; see T-113. The renames Vercel needs, names
-only (values unchanged, nothing to rotate - this entry already proved no
-key reached the bundle):
-| Old name (still in Vercel and the human's `.env`) | Name the code reads |
-|---|---|
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | `CLOUDINARY_CLOUD_NAME` |
-| `NEXT_PUBLIC_CLOUDINARY_API_KEY` | `CLOUDINARY_API_KEY` |
-| `NEXT_PUBLIC_CLOUDINARY_API_SECRET` | `CLOUDINARY_API_SECRET` |
-| `NEXT_PUBLIC_IMAGEKIT_KEY` | `IMAGEKIT_PUBLIC_KEY` |
-| `PRIVATE_KEY_IMAGEKIT` | `IMAGEKIT_PRIVATE_KEY` |
-| `NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT` | `IMAGEKIT_URL_ENDPOINT` |
-The ImageKit two do not just lose a prefix, they change shape - an easy
-pair to rename wrong.
+subir la imagen" hid the cause; see T-113. The renames needed, names only
+(values unchanged, nothing to rotate - this entry already proved no key
+reached the bundle).
+**The first version of this table was built from the human's `.env` alone,
+and Vercel turned out to name one of them differently.** Re-read straight
+from Vercel with `vercel env ls` on 2026-09-13 (names and environments only,
+never values), so the Vercel column is measured, not inferred:
+| In Vercel (all three environments) | In the human's local `.env` | Name the code reads |
+|---|---|---|
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | same | `CLOUDINARY_CLOUD_NAME` |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY` | same | `CLOUDINARY_API_KEY` |
+| `NEXT_PUBLIC_CLOUDINARY_API_SECRET` | same | `CLOUDINARY_API_SECRET` |
+| `NEXT_PUBLIC_IMAGEKIT_KEY` | same | `IMAGEKIT_PUBLIC_KEY` |
+| **`NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT`** | `PRIVATE_KEY_IMAGEKIT` | `IMAGEKIT_PRIVATE_KEY` |
+| `NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT` | same | `IMAGEKIT_URL_ENDPOINT` |
+- **The ImageKit pair changes shape, not just prefix**, and the private key
+  had a *third* spelling in Vercel. Look it up by the Vercel column, not by
+  the local one - searching Vercel for `PRIVATE_KEY_IMAGEKIT` finds nothing.
+- **A private key named `NEXT_PUBLIC_*` is a trap, not a leak - yet.** Next.js
+  inlines a `NEXT_PUBLIC_` value into the browser bundle only where source
+  code names it, and nothing in this repo has ever named
+  `NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT`, which agrees with this entry's bundle
+  audit. But one `process.env.NEXT_PUBLIC_PRIVATE_KEY_IMAGEKIT` in a client
+  component would have shipped it on the next deploy. Renaming it closes that.
+- **All six are type `Config` in Vercel.** When recreating them under the new
+  names, mark `CLOUDINARY_API_SECRET` and `IMAGEKIT_PRIVATE_KEY` as
+  *Sensitive* - the other four are identifiers, not secrets.
+- **State on 2026-09-13, after the production redeploy for `CRON_SECRET`:**
+  still under the old names in Vercel, so uploads are still broken in
+  production. Renames only take effect on a new deployment - rename, then
+  redeploy once.
 **Model:** `sonnet` · **Nightly:** no
 
 ### [x] T-12b · Link Clerk to Mongo by `clerkId`
@@ -898,6 +917,18 @@ production. **What it needs is two values that must match:** `CRON_SECRET`
 in Vercel's Production environment *and* a GitHub repo secret of the same
 name. Until both exist it fails ~144 times a day, and GitHub emails the
 repo owner about scheduled-workflow failures.
+**Resolved the same day, and verified end to end.** A fresh 64-hex value was
+generated locally with no trailing newline - a single stray byte of
+difference between the two stores keeps the Bearer from matching - and set,
+by CLI with the human's explicit authorisation, as the GitHub repo secret
+and as a *Sensitive* Production variable in Vercel. It was passed on stdin
+(never `--value`, which puts it on a command line), never printed, and the
+local file was deleted. The agent's own production redeploy was refused by
+the permission classifier, so the human redeployed from the dashboard
+(`mercampus-ggh3jj6ol`, 20:16 Bogotá). A manual `workflow_dispatch` run at
+01:21 UTC answered **success**. The scheduled run at 01:15 UTC still failed,
+and that is expected: it hit the previous deployment, and Vercel only applies
+an environment change to deployments created after it.
 **Worth knowing before wiring it up:** the first successful run will
 recompute `availability` for every seller from their `Schedule`, in
 production, for the first time ever. Stored values that disagree with a
