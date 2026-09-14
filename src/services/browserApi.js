@@ -20,6 +20,14 @@
 //
 // Same contract `fetchAPI` had, so callers did not change: JSON (or text) on
 // 2xx, and an Error carrying the status and body otherwise.
+//
+// T-119: the comment above already promised "an Error carrying the status
+// and body", but the thrown Error only had them baked into `.message` as
+// text - a caller that wanted the API's per-field `fields` (see
+// invalidPayload in api-response.ts) had to regex it back out. `.status` and
+// `.body` are now real properties, so EditProductForm can read
+// `error.body?.fields` directly. `.message` keeps its old text so existing
+// callers that only log it see no change.
 export async function fetchFromApi(path, options = {}) {
   const response = await fetch(`/api${path}`, options);
 
@@ -29,7 +37,10 @@ export async function fetchFromApi(path, options = {}) {
     : await response.text();
 
   if (!response.ok) {
-    throw new Error(`Error HTTP ${response.status}: ${JSON.stringify(body)}`);
+    const error = new Error(`Error HTTP ${response.status}: ${JSON.stringify(body)}`);
+    error.status = response.status;
+    error.body = body;
+    throw error;
   }
 
   return body;

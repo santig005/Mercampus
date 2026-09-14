@@ -31,6 +31,12 @@ export default function EditProductForm({ product: initialProduct }) {
   const id = initialProduct._id;
   const [product, setProduct] = useState(initialProduct);
   const [error, setError] = useState(null);
+  // T-119: fetchFromApi (browserApi.js) now attaches the failed response's
+  // body to the thrown Error, so the per-field `fields` the API already
+  // returns (see invalidPayload in src/lib/api-response.ts) can be shown
+  // here instead of only the generic message below - the same bug T-115
+  // found on the add-product page.
+  const [fieldErrors, setFieldErrors] = useState([]);
   const [categories, setCategories] = useState([]);
   const router = useRouter();
   const { seller } = useSeller();
@@ -63,6 +69,7 @@ export default function EditProductForm({ product: initialProduct }) {
       router.push('/antojos/sellers/products/edit');
     } catch (error) {
       setError('Error al actualizar el producto.');
+      setFieldErrors(Array.isArray(error?.body?.fields) ? error.body.fields : []);
       logger.error(error);
     }
   };
@@ -83,6 +90,10 @@ export default function EditProductForm({ product: initialProduct }) {
       router.push('/antojos/sellers/products/edit');
     } catch (error) {
       setError('Error al eliminar el producto.');
+      // Deleting has no body to validate, so no `fields` to show - but clear
+      // any left over from a failed edit, or they would be shown next to an
+      // unrelated delete error.
+      setFieldErrors([]);
       logger.error(error);
     }
   };
@@ -110,8 +121,20 @@ export default function EditProductForm({ product: initialProduct }) {
               about, taking the seller's unsaved edits with it. It reports
               next to the form now, and the form stays on screen. */}
           {error && (
-            <div role='alert' className='alert alert-error mb-4'>
+            <div
+              role='alert'
+              className='alert alert-error mb-4 flex-col items-start'
+            >
               <span>{error}</span>
+              {fieldErrors.length > 0 && (
+                <ul className='list-disc list-inside text-sm'>
+                  {fieldErrors.map(({ field, message }) => (
+                    <li key={field}>
+                      <span className='font-semibold'>{field}:</span> {message}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           <form onSubmit={handleSubmit}>
