@@ -46,10 +46,11 @@ describe('variables expuestas al cliente', () => {
 
   it('las que quedan son legitimamente publicas', () => {
     // If a new one shows up, deciding whether it belongs in the bundle is a
+    // T-112b removed NEXT_PUBLIC_URL from this list: its only readers were
+    // services/api.js and apiToken.js, deleted along with the self-fetch.
     expect([...publicEnvVars].sort()).toEqual([
       'NEXT_PUBLIC_GA_ID',
       'NEXT_PUBLIC_GTM_ID',
-      'NEXT_PUBLIC_URL',
     ]);
   });
 });

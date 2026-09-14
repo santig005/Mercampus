@@ -14,15 +14,21 @@ calidad del código sobre nuevas funciones.
 **Corrección importante (T-12f): aquí decía "no hay usuarios en producción" y es
 falso.** Medido contra la base real: **54 vendedores, 79 documentos de usuario y
 11 cuentas de Clerk**, y los nombres coinciden con los que sirve
-mercampus.vercel.app. Además, **el `.env` local apunta a esa misma base de
-producción**, no a un cluster de desarrollo: `npm run seed` la borraría entera
-(por eso exige `--yes` fuera de localhost — no le quites esa guarda).
+mercampus.vercel.app.
 
-**Y no hay separación de entornos (T-12g):** Production, Preview y Development
-comparten **la misma base de Mongo** y **la misma instancia de Clerk**. Los
-deployments de preview escriben en producción. Antes de tocar datos, haz
-`npm run backup:db` (vuelca a `backups/`, que está ignorado), y antes de
-tocar ImageKit, `npm run backup:images` (T-121). Ver T-63.
+**Mongo separado desde el 2026-09-14 (T-63):** Production usa `mercampus_products`
+(proyecto de Atlas `Mercampus-db`); Preview, Development y el `.env` local usan
+`mercampus_dev` (proyecto `Mercampus-dev`), con un usuario que no abre
+producción. **No bajes la guardia:** lo que un preview manda por
+`src/services/api.js` sigue yendo a la API de producción (T-112), y Clerk e
+ImageKit siguen siendo uno solo para todos los entornos (T-64, T-118). La
+credencial de producción se rotó (T-63b): un deployment de Vercel anterior al
+2026-09-14 ya no llega a Mongo, así que **no hagas rollback a uno de esos,
+redespliega**. `npm run seed`
+sigue exigiendo `--yes` fuera de localhost — no le quites esa guarda.
+`npm run backup:db` ahora respalda **dev**; para producción:
+`node --env-file=.env --env-file=.env.prod-db --import ./scripts/register-alias.mjs ./scripts/backup-db.mjs`.
+Antes de tocar ImageKit, `npm run backup:images` (T-121).
 
 **Ojo con Clerk (T-12h):** hay más de una instancia. Las claves del `.env` y las
 del entorno Production de Vercel son de una de **desarrollo** (11 cuentas); la
@@ -117,7 +123,10 @@ otras). Es un índice: la entrada de cada tarea sigue siendo el contrato.
   efectos o handlers de eventos. Si un componente solo muestra datos, es server.
 - **Nada de fetch a la propia API desde el servidor.** Un Server Component
   consulta Mongo directo mediante `src/server/`; las mutaciones usan Server
-  Actions. `NEXT_PUBLIC_URL + '/api'` es un antipatrón aquí y se está eliminando.
+  Actions. `NEXT_PUBLIC_URL + '/api'` es un antipatrón aquí; desde T-112b no queda
+  ninguno (`services/api.js` y `apiToken.js` se borraron). Un componente de
+  cliente llama a la API con URL relativa y la cookie de Clerk
+  (`src/services/browserApi.js`), nunca con un token pasado a mano.
 - **Validación en el borde.** Todo body y todo query param pasa por un schema de
   Zod antes de tocar Mongoose. Nunca `new Model(body)` con datos crudos.
 - **Autorización explícita.** Toda ruta o acción que muta datos verifica

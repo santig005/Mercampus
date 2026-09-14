@@ -1,5 +1,7 @@
-import { fetchAPI } from './api';
-import { fetchAPIToken } from './apiToken';
+import { fetchFromApi, jsonBody } from './browserApi';
+
+// T-112 / T-112b: every call goes to the app's own API from the browser, with a
+// relative URL and Clerk's session cookie - see browserApi.js.
 
 // T-23: limit/cursor replace offset - a numeric offset can't be kept stable
 // once the listing paginates in Mongo with a cursor (see GET /api/products).
@@ -28,17 +30,17 @@ export const getProducts = async ({
   if (limit) queryParams.append('limit', limit);
   if (cursor) queryParams.append('cursor', cursor);
 
-  return await fetchAPI(`/products?${queryParams.toString()}`);
+  return await fetchFromApi(`/products?${queryParams.toString()}`);
 };
 
 export const getSellerProducts = async (sellerId, section = '') => {
   const queryParams = new URLSearchParams();
   if (section) queryParams.append('section', section);
-  
+
   const queryString = queryParams.toString();
   const url = `/products/seller/${sellerId}${queryString ? `?${queryString}` : ''}`;
-  
-  return await fetchAPI(url);
+
+  return await fetchFromApi(url);
 };
 
 // T-97: getProductById() lived here and was the edit screen's only caller.
@@ -48,23 +50,21 @@ export const getSellerProducts = async (sellerId, section = '') => {
 // the antipattern CLAUDE.md says is being removed. The public product detail
 // does not use it either: ProductPage calls /api/products/[id] with fetch
 // directly.
+//
+// T-112b: createProduct() went the same way - no reference anywhere; the add
+// screen posts on its own.
 
-export const createProduct = async productData => {
-  return await fetchAPI('/products', {
-    method: 'POST',
-    body: JSON.stringify(productData),
-  });
-};
-
-export const updateProduct = async (id, productData,token) => {
-  return await fetchAPIToken(`/products/${id}`, token,{
+// T-112b: no token parameter any more. EditProductForm never passed one, so
+// with the old Bearer helper saving and deleting from the full form answered
+// 401; the list page's availability switch did pass one and worked. The session
+// cookie now covers every caller alike.
+export const updateProduct = async (id, productData) => {
+  return await fetchFromApi(`/products/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(productData),
+    ...jsonBody(productData),
   });
 };
 
-export const deleteProduct = async (id ,token)=> {
-  return await fetchAPIToken(`/products/${id}`, token,{
-    method: 'DELETE',
-  });
+export const deleteProduct = async id => {
+  return await fetchFromApi(`/products/${id}`, { method: 'DELETE' });
 };

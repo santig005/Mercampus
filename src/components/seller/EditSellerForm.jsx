@@ -11,7 +11,6 @@ import ImageGrid from '@/components/general/ImageGrid';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 import UniGraphicSelector from '@/components/university/UniGraphicSelector';
-import { useAuth } from '@clerk/nextjs';
 import ProfileChecklist from '@/components/seller/ProfileChecklist';
  
 // T-72: moved out of app/antojos/sellers/profile/edit/page.jsx, which is now a
@@ -36,8 +35,6 @@ export default function EditSellerForm({ checklist }) {
     'sellerApproved',
     '/antojos/sellers/approving'
   );
-  const { getToken } = useAuth();
-
   useEffect(() => {
     if (!sellerLoading) {
       if (dataSeller) {
@@ -48,11 +45,12 @@ export default function EditSellerForm({ checklist }) {
     }
   }, [dataSeller, sellerLoading]);
 
+  // T-112b: no getToken() before each write any more - updateSeller is a
+  // relative browser fetch and Clerk's session cookie identifies the caller.
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      const token = await getToken({ skipCache: true});
-      await updateSeller(seller._id, seller,token);
+      await updateSeller(seller._id, seller);
       setDataSeller(seller);
       router.push('/');
     } catch (error) {
@@ -66,12 +64,11 @@ export default function EditSellerForm({ checklist }) {
 
   const handleSellerAvailability = async () => {
     try {
-      const token = await getToken({ skipCache: true });
       setSellerAvailability(!sellerAvailability);
       setDataSeller({ ...seller, availability: !sellerAvailability });
       const updatedSeller = await updateSeller(seller._id, {
         availability: !sellerAvailability,
-      },token);
+      });
       //if the request is not successful, correct the availability
       if (!updatedSeller) {
         setDataSeller({ ...seller, availability: !sellerAvailability });
@@ -82,7 +79,7 @@ export default function EditSellerForm({ checklist }) {
     }
   };
   // Optimistic like the availability toggle above, but it rolls back on the
-  // catch: fetchAPIToken throws on a non-2xx instead of returning a falsy
+  // catch: updateSeller throws on a non-2xx instead of returning a falsy
   // value, so checking the return (as handleSellerAvailability does) never
   // catches a failed write. Keeps `seller` in sync too, or the next full-form
   // submit would send back the pre-toggle value.
@@ -96,8 +93,7 @@ export default function EditSellerForm({ checklist }) {
 
     applyPaused(next);
     try {
-      const token = await getToken({ skipCache: true });
-      await updateSeller(seller._id, { paused: next }, token);
+      await updateSeller(seller._id, { paused: next });
     } catch (error) {
       applyPaused(!next);
       logger.error('Error updating seller pause mode:', error);

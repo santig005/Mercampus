@@ -13,28 +13,9 @@ import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
 import { logger } from '@/lib/logger';
 
+// T-112b: extractAuthHeader() used to sit here - never called, and it logged
+// the request's Authorization header (a Bearer token) at debug level. Deleted.
 
-
-function extractAuthHeader(req) {
-  let auth = req.headers.get("authorization");
-  logger.debug("authHeader dentro");
-  logger.debug(auth);
-  if (!auth) {
-    const sc = req.headers.get("x-vercel-sc-headers");
-    logger.debug("scHeader dentro");
-    logger.debug(sc);
-    if (sc) {
-      try {
-        logger.debug("scHeader dentro try");
-        const obj = JSON.parse(sc);
-        logger.debug("scHeader dentro try parseado");
-        logger.debug(obj);
-        auth = obj.Authorization || obj.authorization;
-      } catch {}
-    }
-  }
-  return auth;
-}
 export async function GET(req, { params }) {
     try {
         await connectDB();
