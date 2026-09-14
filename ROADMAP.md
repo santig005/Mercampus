@@ -3265,6 +3265,13 @@ about deleting a product leaving its images behind.
   Cleaner, but it changes `ImageGrid`'s contract and every form that uses it.
 **Not done here on purpose:** the two known orphans were left in place; they
 are the human's test images and cost nothing until a cleanup exists.
+**Sized on 2026-09-13 by T-121's first backup:** of 365 files in the
+account, **174 are referenced by no product and no seller** - 103 in
+`products`, 65 in `sellerlogos`, plus the legacy folders `seller-logos` (2)
+and `tutorimages` (4). Not all are necessarily orphans of this bug (the
+legacy folders predate the current forms), but that is the ceiling, and the
+backup's `manifest.json` lists every one with its `fileId`. A cleanup should
+start from that manifest and keep the backup it came from.
 **Model:** `opus` for the script (it deletes production files), `sonnet`
 for upload-on-save · **Nightly:** no
 
@@ -3347,6 +3354,32 @@ and migration, then routes, then each form).
 **Depends on:** T-116 (done). Coordinate with T-82 and T-117, which both
 delete by these references.
 **Model:** `opus` (migration against production data) · **Nightly:** no
+
+### [x] T-121 · A backup of the ImageKit account, like the database one
+**Why:** asked for by the human on 2026-09-13, before the first controlled
+write against the production ImageKit account (T-116's tag check). The
+database has had `npm run backup:db` since T-12f; the media library had
+nothing, and it holds every product photo and seller logo on the site.
+**Done:** `scripts/backup-images.mjs`, run as `npm run backup:images`.
+Read-only against ImageKit and Mongo. It writes `backups/imagekit-<date>/`
+(ignored by git, like the database backups) with:
+- `files/<filePath>` - the original bytes, mirroring the account's folders;
+- `manifest.json` and `manifest.csv` - per file: `fileId`, `filePath`, URL,
+  size, mime, dimensions, dates, tags, `sha256`, local path, and which
+  products and sellers reference it;
+- `_meta.json` - totals, unreferenced count, failures.
+**The trap it avoids, measured:** ImageKit converts formats on delivery. A
+586,433-byte PNG downloaded from its plain URL came back as a 57,094-byte
+WebP. Every download asks for `?tr=orig-true`, and each file's byte count is
+checked against the size the API reports; a mismatch is recorded as a
+failure, never written as if it were the original.
+**First run, 2026-09-13:** 365 of 365 files, 0 failures, 46.9 MB. 191 are
+referenced from Mongo; **174 are referenced by nothing** - see T-117.
+**Worth knowing:** the script reads only the post-T-11b variable names
+(`IMAGEKIT_PUBLIC_KEY`, `IMAGEKIT_PRIVATE_KEY`, `IMAGEKIT_URL_ENDPOINT`) and
+says which are missing. A local `.env` still on the old names has to be
+renamed first; the first run bridged them without committing anything.
+**Model:** `sonnet` · **Nightly:** no (it reads production media)
 
 ### [ ] T-112 · A preview deployment calls production's API
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
