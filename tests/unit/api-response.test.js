@@ -57,3 +57,43 @@ describe('errorResponse · log level based on status', () => {
     expect(body.error).toBe('Error interno del servidor');
   });
 });
+
+// T-126. The imagekit SDK rejects a failed upload with a plain object
+// (`{ message, help }`), not an `Error`, so the real reason used to be
+// dropped before it reached the log - only the generic 500 message showed
+// up server-side too.
+describe('errorResponse · a plain-object rejection still logs its reason', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('logs the message and help of a non-Error rejection', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+    const response = errorResponse(
+      {
+        message: 'Invalid file uploaded',
+        help: 'Ensure the file is a valid image.',
+      },
+      '[test]'
+    );
+
+    expect(response.status).toBe(500);
+    expect(error).toHaveBeenCalledTimes(1);
+    const [, context] = error.mock.calls[0];
+    expect(context.detailMessage).toBe('Invalid file uploaded');
+    expect(context.help).toBe('Ensure the file is a valid image.');
+  });
+
+  it('still never leaks the plain-object detail to the client', async () => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+    const response = errorResponse(
+      { message: 'Invalid file uploaded', help: 'Ensure the file is a valid image.' },
+      '[test]'
+    );
+
+    const body = await response.json();
+    expect(body.error).toBe('Error interno del servidor');
+  });
+});
