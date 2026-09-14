@@ -3245,6 +3245,38 @@ for "deleting one product's `arepa.jpg` does not touch another's".
 **Model:** `opus` - authorisation plus a destructive external call ·
 **Nightly:** no
 
+### [x] T-116b · Deleting a photo right after picking it answered 404
+**Why:** found on 2026-09-13 while checking T-116 against the real ImageKit
+API before promoting it. ImageKit's search index lags an upload: a file
+uploaded to a throwaway folder returned **0** results from `listFiles` one
+second later and **1** after about seven, while `getFileDetails` by id found
+it at once (two controlled uploads, both deleted, account back to 365 files,
+taken after T-121's full backup). T-116's `findImageFile` resolves by search,
+so a seller who picked a photo and removed it within those seconds got a
+404; the form - as T-116 decided - dropped it from the list without deleting
+it, and the file stayed in ImageKit as an orphan (T-117). It fails closed,
+so it was never a security issue, and T-116 was promoted without waiting.
+**Done:** `ImageGrid` remembers the `fileId` each upload in the session
+returned (keyed by URL, in a ref - the parent form still receives plain
+URLs) and sends it with the URL on delete. `findImageFile(url, fileId)` tries
+`getFileDetails` first and accepts the result **only if that file sits at
+exactly the path the URL points to**; an unknown id or an id for a different
+file falls through to the path search. So the id is a hint that skips the
+index, never a way to aim a delete at another file, and the permission rule
+is untouched.
+**Verified:** `npm run verify` green. Five integration tests with the index
+lag simulated in the ImageKit mock: the uploader deletes at once with the
+`fileId`; without it the answer is still 404 and nothing is deleted; a
+`fileId` belonging to another file is ignored; someone else's URL with its
+real `fileId` is still 403; an unknown `fileId` falls back to the path. The
+first of those was run against T-116's code before the change and failed.
+**Not verified in a browser:** `ImageGrid`'s change is not visual, and the
+agent's session has no seller login. **Outside the repo:** nothing; it
+reaches production with the next promotion.
+**Related:** T-120 (storing `fileId` + `filePath` in Mongo) would give every
+image an id, not only the ones uploaded in the current session.
+**Model:** `opus` · **Nightly:** no
+
 ### [ ] T-117 · A failed or abandoned product form leaves its images in ImageKit
 **Why:** reported by the human on 2026-09-13 and measured the same day. The
 image uploads the moment it is picked (`ImageGrid.jsx` -> `POST /api/images`),
