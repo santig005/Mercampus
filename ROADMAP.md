@@ -3122,6 +3122,47 @@ which is exactly why they were missing from the example.
 That is the human's, and listing it is what T-11b and T-14 now do.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-115 · Creating a product answered 400 for every price typed in the form
+**Why:** reported live on 2026-09-13, right after image uploads were fixed:
+the upload worked, then "Subir producto" answered `400 Datos inválidos`. The
+cause had been waiting ten days. `/antojos/product/add` takes the price in a
+`type='text'` input and sends the string it holds; T-13 (`1b2d030`,
+2026-09-03, in `main` since 2026-09-05) validated it as `z.number().int()`,
+and Zod never coerces. **Every product created from the UI since then was
+refused.** Nobody noticed because nobody had tried: the most recent product
+in the database was created on 2025-09-30. The edit form
+(`EditProductForm.jsx`) had the same bug on any change that included price.
+**The trap in the obvious fix:** `Number("5.000")` is `5`, and so is
+`z.coerce.number()`. In Colombia the dot is the thousands separator, so a
+seller typing five thousand the usual way would have had it stored as five
+pesos, with a 200 and no error anywhere.
+**Measured first (rule 8, read-only):** 112 products, prices from 1.212 to
+1.100.000, all whole numbers, none under 100. There are no cents to preserve,
+and "5.000" can only mean five thousand.
+**Done:** `src/lib/price.ts` exports `toPesos()`, which accepts a number,
+plain digits, or digits grouped in threes by one kind of separator (dots or
+commas), with optional `$`, `COP` and spaces - and returns NaN for anything
+it would have to guess at: "5,5", "5.50", "1.000,50". The product schema
+pipes the price through it into the same `int().nonnegative()` as before, so
+creation and edit are fixed in one place, and an ambiguous price fails with a
+message naming the field instead of being stored wrong. Same shape as the
+seller phone normalisation already in `src/lib/phone.ts`.
+**Verified:** `npm run verify` green. `tests/unit/price.test.js` covers
+`toPesos` and the schema with the exact payload the add form sends, plus a
+guard that "5.000" is never read as five; `tests/integration/validacion.test.js`
+gains a `PUT` with `"9.000"` that reads the stored document and finds 9000.
+The schema-level and integration tests were run against the old schema first
+and failed, then passed with the change - so they test the bug, not just the
+fix. The existing `price: 'gratis'` test still answers 400 naming `price`.
+**Nothing outside the repo.** It reaches production with the next promotion.
+**Also noticed (rule 9), left for their own PRs:** the add page shows only
+the generic `message` and drops the `fields` the API already returns, which
+is why this surfaced as "Datos inválidos" rather than "precio"; its price
+input has `value` commented out, so it is uncontrolled; and the image upload
+happens before the product is saved, so this very failure left two orphan
+files in ImageKit (see the image-routes entries).
+**Model:** `opus` · **Nightly:** no
+
 ### [ ] T-112 · A preview deployment calls production's API
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
 half that was *correct* and was reverted along with the auth bypass that
