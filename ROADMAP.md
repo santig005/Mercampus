@@ -35,10 +35,12 @@ data or real access, and the human has asked for them to wait:
   reads or writes `publicMetadata`, `User.role`, or the seller approval path.
   T-104, T-105 and T-106 are done; what is left of that chain either guards
   the only approval surface (T-114) or touches real user documents (T-107).
-- **Environment separation: T-63b** (rotating production's DB credential),
-  and T-64/T-12h's Clerk instance work. T-63 split Mongo on 2026-09-14, but
-  one Clerk instance still serves every environment, and a preview still
-  writes production data through `src/services/api.js` until T-112.
+- **Environment separation: T-64/T-12h's Clerk instance work.** T-63 split
+  Mongo and T-63b rotated production's credential on 2026-09-14, but one
+  Clerk instance still serves every environment, and a preview still writes
+  production data through `src/services/api.js` until T-112. Never roll
+  production back in Vercel to a deployment from before that day: it has no
+  working database credential.
 - **T-95** (audit `/admin/*`) - it needs minting a privileged Clerk account
   per run, which is both of the above at once.
 - **T-82** (deleting a product's images) - irreversible deletes against an
@@ -4104,10 +4106,12 @@ Nothing further is needed for this PR to work.
 - **T-112.** Whatever a preview routes through `src/services/api.js` /
   `apiToken.js` (editing a product or a seller, schedules) is still answered
   by production's API, and so written to the production database.
-- **T-63b.** Production's credential is still the one `readWriteAnyDatabase`
-  user that every environment and every local `.env` held until today.
-- **A preview writing to dev has not been observed yet.** The first
-  deployment built after the change is that check.
+- ~~T-63b~~ - done the same day: production has its own
+  `readWrite@mercampus_products` user and the old one is deleted.
+- **Observed afterwards:** the first preview built after the change
+  (`agent/t-63`, 16:12 UTC) served a sitemap of 9 URLs carrying the dev seed's
+  ids and none of production's - it reads `mercampus_dev`. That is a read; a
+  preview *write* through `api.js` still goes to production until T-112.
 
 **The entry as it stood before 2026-09-14** (kept for its history; the
 webhook bullet in the sketch is wrong, see above):
@@ -4198,7 +4202,36 @@ it - one instance, same keys, everywhere), worked through with the human
   instead of closing it first.
 **Model:** `opusplan` · **Nightly:** no (infrastructure and cost)
 
-### [ ] T-63b · Rotate production's database credential
+### [x] T-63b · Rotate production's database credential
+**Done 2026-09-14, the human authorizing each step.** In this order:
+1. Production backup (`backups/2026-09-14T16-28-59-300Z`).
+2. Created `mercampus-prod-app` with `readWrite@mercampus_products` only.
+   Checked before using it: it reads production (84 users, 55 sellers, 114
+   products, 143 schedules), is denied on the `dev` database, and
+   `listDatabases` shows it only `mercampus_products`.
+3. Vercel's Production `MONGO_URI` (row `nJ7Ex9q9…`, still Production only)
+   set to the new URI, 16:35 UTC.
+4. Redeployed production from `dpl_7Ensy…` (commit `cb835a5`, no code
+   change): new deployment `dpl_DfLRT1pw…`, aliased to `mercampus.vercel.app`.
+5. Verified on it: `/antojos`, `/antojos/sellers/list`, `/marketplace` and
+   `/sitemap.xml` answered 200, the sitemap listed 135 URLs (dev's lists 9),
+   and its logs had no errors, 5xx or Mongo/auth messages.
+6. Deleted the old `readWriteAnyDatabase` user. Atlas now rejects the old
+   URI; the four pages and the logs were checked again; the human's
+   `.env.prod-db` was rewritten with the new URI (connects, 84 users).
+
+**Checked alongside:** no GitHub repo secret or workflow references a Mongo
+URI (CI uses `mongodb-memory-server`). Environment-level secrets (Preview,
+Production, copilot) could not be listed from the session, but no workflow
+reads `MONGO_URI`, so nothing there could consume one.
+**Consequence, expected:** every deployment built before this - older
+production deployments and previews from before T-63 - can no longer reach a
+database. **An instant rollback in Vercel to one of them comes up without
+Mongo; redeploy instead.**
+**Outside the repo (all done):** the Atlas user created and the old one
+deleted; Vercel's Production `MONGO_URI` value; production redeployed;
+`.env.prod-db`.
+
 **Why:** found doing T-63 on 2026-09-14. Production's cluster has exactly one
 DB user, with `readWriteAnyDatabase`, and until that day it sat in all three
 Vercel environments and in every local `.env`. T-63 moved Preview,
