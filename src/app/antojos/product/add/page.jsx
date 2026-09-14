@@ -32,8 +32,16 @@ const AddProduct = () => {
   const [categories, setCategories] = useState([]); // State for storing categories
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
-  const [price, setPrice] = useState('');
-  const [displayPrice, setDisplayPrice] = useState('');
+  // T-119: the API's 400s carry a `fields` array naming exactly what was
+  // wrong (see invalidPayload in src/lib/api-response.ts) - this page used to
+  // read only `.message` and show the generic "Datos inválidos", which is
+  // why a price-format bug looked like an opaque error for ten days (T-115).
+  const [fieldErrors, setFieldErrors] = useState([]);
+
+  const closeErrorModal = () => {
+    setErrorCode('');
+    setFieldErrors([]);
+  };
 
   const categoryOptions = categories.map(category => ({
     value: category,
@@ -95,6 +103,7 @@ const AddProduct = () => {
         const errorData = await response.json();
         logger.error('Error:', errorData.message);
         setErrorCode(errorData.message);
+        setFieldErrors(Array.isArray(errorData.fields) ? errorData.fields : []);
       }
     } catch (error) {
       logger.error('Network Error:', error);
@@ -125,15 +134,21 @@ const AddProduct = () => {
                   ¡Atención!
                   <form method='dialog'>
                     {/* if there is a button in form, it will close the modal */}
-                    <button
-                      className='font-normal'
-                      onClick={() => setErrorCode('')}
-                    >
+                    <button className='font-normal' onClick={closeErrorModal}>
                       <IoClose className='text-red-400 text-2xl' />
                     </button>
                   </form>
                 </h3>
                 <p className='py-2'>{errorCode}</p>
+                {fieldErrors.length > 0 && (
+                  <ul className='list-disc list-inside text-sm -mt-1 pb-1'>
+                    {fieldErrors.map(({ field, message }) => (
+                      <li key={field}>
+                        <span className='font-semibold'>{field}:</span> {message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
@@ -213,7 +228,7 @@ const AddProduct = () => {
                   type='text'
                   name='price'
                   placeholder='Precio del producto'
-                  // value={formData.price}
+                  value={formData.price}
                   onChange={handleChange}
                   required
                 />

@@ -73,7 +73,6 @@ One per PR, per rule 2. Ordered by how little can go wrong.
 | **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
 | **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
 | **T-111** (items 1-3 only) · Tidy `src/services/api.js` | Deleting a commented-out draft that the function below it supersedes, and a `credentials` option that is inert server-side. The audit is already written in the entry, so the reference search is done. | `npm run verify`, `deadcode` green. Item 4 is **not** in this bucket. |
-| **T-119** · Show which field failed on the add-product page | A UI message change with no data or auth involved. | A real screenshot of the error state (rule 3). |
 | **T-113** · Fail loudly on missing env, and a `.env.example` drift test | All in-repo: a config check that turns a generic 500 into a message naming the variable, and a unit test comparing source against `.env.example`. No setting outside the repo is touched. | `npm run verify`; the new tests fail with the variables unset. |
 
 ### Fine for an agent, but read the caveat in the entry first
@@ -3433,16 +3432,53 @@ Admin act on the media library with the signed-in account, delete included)
 **Model:** `opusplan` · **Nightly:** no (needs T-63 and an ImageKit
 dashboard key)
 
-### [ ] T-119 · The add-product page hides which field failed
+### [x] T-119 · The add-product page hides which field failed
 **Why:** found while diagnosing T-115. The API already answers a 400 with
 `fields` naming what was wrong; `/antojos/product/add` reads only
 `message` and shows "Datos inválidos". That is why a price-format bug
 looked like "something is invalid" for ten days instead of "precio". Its
 price input also has `value` commented out, so the field is uncontrolled.
-**Done when:** the page shows the per-field messages from `fields`, and the
-price input is controlled. Check `EditProductForm.jsx` for the same.
-**Careful:** this is a UI change, so rule 3 means a real screenshot of the
-error state, not a test that greps for a class name.
+**Done (2026-09-14):**
+- `/antojos/product/add`: restored `value={formData.price}` on the price
+  `<input>` (it was commented out), and removed the two `price`/
+  `displayPrice` states that were left dangling around that gap - declared,
+  never read, never set. The error dialog now renders the API's `fields`
+  array under the existing generic message, one line per field.
+- `EditProductForm.jsx`'s price input was already controlled - no bug there
+  - but its error banner had the same generic-only problem. It shows
+  `fields` too now.
+- To get `fields` there, `fetchFromApi` (`src/services/browserApi.js`) had to
+  change: it threw an `Error` whose `.message` baked in the failed
+  response's status and body as a JSON string - its own comment already
+  claimed "an Error carrying the status and body", which wasn't literally
+  true. `.status` and `.body` are real properties on the thrown Error now,
+  so `EditProductForm` reads `error.body?.fields` directly. `.message`'s
+  text is unchanged, so `sellerService.js`/`scheduleService.js`, the other
+  two callers, see no difference - both only ever read `.message`.
+- `.eslintrc.json` gained `"root": true`. Without it, ESLint's config
+  resolution walked up past this worktree into the parent checkout's own
+  `.eslintrc.json` and refused to run at all ("Plugin ... was conflicted") -
+  `npm run verify` could not run *at all*, for any task, in this harness's
+  nested-worktree layout (`.claude/worktrees/<id>` inside the repo it
+  worktrees). Not specific to this task, but required to satisfy rule 3.
+**Verified:** `npm run verify` green - lint, `deadcode`, `tsc --noEmit`, 443
+unit/integration tests (`vitest`), `next build`.
+**Not captured this round: real screenshots of the error state.** This
+worktree has no `.env` and no Clerk credentials at all, not even the
+publishable key (public by design). Per `scripts/e2e.mjs`'s own comment,
+Clerk's middleware answers 400 on *every* route without a real publishable
+key, so nothing in the app renders in this session regardless of sign-in -
+and `/antojos/product/add` needs a signed-in seller session besides. Tried
+and ruled out: pulling the Development environment's keys with `vercel env
+pull` - `vercel link` in this session, given only a team scope to pick from,
+created and GitHub-connected a **new, unintended Vercel project**
+(`mercampus-team/agent-abc53b5ffcded3fe6`) instead of linking the existing
+one. It was left in place (the sandbox refuses project deletion as an
+irreversible action) - **a human needs to delete it from the Vercel
+dashboard**, and check it triggered no unwanted deploy. Left for whoever
+promotes this to `develop`: capture the error dialog (add) and error banner
+(edit) in both themes with real Clerk credentials, following the recipe in
+`docs/audits/t-122/` and `docs/audits/t-123/`.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-120 · Store an image's `fileId` and `filePath`, not just its URL
