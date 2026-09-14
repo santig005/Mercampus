@@ -10,7 +10,8 @@ import { productCardClassName } from '@/lib/card-variant';
 // already provides that look (the product editing row, for instance).
 // The className logic lives in src/lib/card-variant.js: see there for why.
 export default function ProductCard({ product, isClicked, variant = 'standalone' }) {
-  const { name, availability, category, price, images, owner } = product;
+  const { name, availability, availabilityStatus, category, price, images, owner } =
+    product;
 
   const renderCategories = () => {
     try {
@@ -41,7 +42,7 @@ export default function ProductCard({ product, isClicked, variant = 'standalone'
         <div className='flex items-center gap-2'>
           <p className='my-card-subtitle'>{owner}</p>
         </div>
-        <AvailabilityBadge availability={availability}></AvailabilityBadge>
+        <AvailabilityBadge availability={availability} status={availabilityStatus} />
       </div>
     </div>
   );

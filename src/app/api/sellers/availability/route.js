@@ -3,11 +3,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-
-// Colombia has no daylight saving, so a fixed offset is enough. Without
-// this, "now" would come out in the runtime's timezone (UTC on Vercel),
-// which doesn't match the local time the seller entered in their schedule.
-const BOGOTA_OFFSET_HOURS = 5;
+import { bogotaClock, isOpenAt } from '@/lib/store-availability';
 
 // T-14: this used to be protected by IP (allowedIPs.js, deleted in T-34).
 // Vercel Cron doesn't send Clerk cookies, so the guard is a shared secret in
@@ -34,18 +30,13 @@ export async function GET(req) {
       );
     }
 
-    const bogota = new Date(Date.now() - BOGOTA_OFFSET_HOURS * 60 * 60 * 1000);
-    const currentDay = bogota.getUTCDay() === 0 ? 7 : bogota.getUTCDay(); // Convert Sunday (0) to 7
-    const currentTime = bogota.toISOString().slice(11, 16); // HH:MM
+    // T-122: the same definition of "open" the product badges use.
+    const clock = bogotaClock(new Date());
 
     for (const seller of sellers) {
-      const schedules = await Schedule.find({ sellerId: seller._id });
+      const schedules = await Schedule.find({ sellerId: seller._id }).lean();
 
-      const isAvailable = schedules.some(schedule => (
-        schedule.day === currentDay &&
-        schedule.startTime <= currentTime &&
-        schedule.endTime >= currentTime
-      ));
+      const isAvailable = isOpenAt(schedules, clock);
 
       await Seller.findByIdAndUpdate(seller._id, { availability: isAvailable });
     }
