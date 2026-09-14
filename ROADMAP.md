@@ -637,6 +637,13 @@ after every `setActive()` (`__unstable__onAfterSetActive`), which is
 exactly what already made the `auth()` → `userId` prop into `SideBar` (in
 `antojos/layout.jsx`/`marketplace/layout.jsx`) safe. Same guarantee here,
 not a new assumption.
+**Correction (T-125, 2026-09-14): the check above was wrong for
+`SellerProvider`.** The refresh does re-render the layout with fresh props,
+but the provider stored them with `useState(initialUser)`, which reads its
+argument only on mount - so signing in or out without a full page load left
+the context describing the previous visitor. `SideBar`'s `userId` is safe
+because it uses the prop directly; state is not. The human hit it on a
+preview; see T-125.
 **Deleted as a consequence, not a target:** `src/services/server/userService.js`
 (`getUserWithSellerByEmail` plus an already-unexported, already-dead
 `populateSellerIdInUsers`) and `src/services/userService.js` (the client
@@ -3518,6 +3525,88 @@ can exceed it. **Not measured** whether a seller has hit it yet.
 before trying - verified with a real large file, not a mocked request body.
 **Model:** `sonnet` for (a), `opus` for (b) · **Nightly:** no (verifying it
 needs a browser and a real file)
+
+### [x] T-125 · Signing in without a reload leaves the seller context stale
+**Why:** reported by the human on 2026-09-14 on the `agent/develop` preview,
+and it is in production too (the code is on `main` since T-12d). They signed
+in through the form, the sidebar still offered "Quiero ser vendedor", and
+`/antojos/sellers/register` bounced to `/auth/login`. A full reload (F5) fixed
+it - the human confirmed.
+**Measured before touching anything:**
+- **Clerk had an active session.**
+- **The middleware let `/antojos/sellers/register` through with 200**, and
+  350 ms later the browser requested `/auth/login`: a client-side redirect,
+  not an auth rejection.
+- **Their `User` existed in `mercampus_dev` with the right `clerkId`,** and
+  the preview read that database (its sitemap had 9 URLs, the dev seed's).
+
+**The Vercel CLI repeats every log row ~20 times; deduplicate by `id` before
+reading a sequence.**
+**Cause:** `SellerProvider` stored the server-resolved context with
+`useState(initialUser)`, and `useState` reads its argument only on mount.
+- **The refresh happens, but it is not enough.** Clerk calls
+  `router.refresh()` after `setActive()`, so the root layout re-renders with
+  the new user and seller.
+- **The root layout is never remounted by a client-side navigation**, so the
+  new props were ignored.
+- **`useCheckSeller` then saw `dbUser === false`** and pushed to the login.
+- **Signing out had the mirror problem:** the context kept the seller until a
+  reload.
+
+T-12d's "checked it wouldn't go stale" held for `SideBar`'s `userId` prop,
+not for state (corrected in that entry).
+**Why no spec caught it:** `auth.setup.js` signs in and then `page.goto()`s, a
+full load.
+**Proven first:** `tests/e2e/session-context.spec.js` (public project) loads
+`/antojos` signed out, then signs in inside the page with `clerk.signIn`
+(`Clerk.setActive`, no reload, same as the form). "Gestionar" needs both
+`userId` (a fresh server prop) and `seller.approved` (the context), so it
+shows only when the context followed the session.
+- **Sign-in test:** expects "Editar mis productos" to appear and the seller
+  screen to open.
+- **Sign-out test:** starts from a full load while signed in, calls
+  `clerk.signOut`, and expects "Quiero ser vendedor" back.
+
+**Both failed on the unfixed code.**
+**Fix:** `SellerProvider` compares the server's data by value
+(`JSON.stringify([initialUser, initialSeller])`) and, when it changes, resets
+`seller`/`dbUser` **during render**.
+- **Not in a `useEffect`:** child effects run before the parent's, so
+  `useCheckSeller` would redirect on the stale value first.
+- **Optimistic updates survive:** those made with `setSeller`/`setDbUser`
+  last until the server's data actually changes.
+
+**Verified:** both new tests pass, as does every signed-in spec (20/20 with
+the setup, including T-112b's writes); `npm run verify` green.
+**Outside the repo:** nothing.
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-126 · A failed image upload logs no reason
+**Why:** found alongside T-125 on 2026-09-14. The human's logo upload on the
+`agent/develop` preview (`POST /api/images`, 18:40 UTC) answered **500**, and
+the only log line was `{ status: 500, message: 'Error interno del servidor' }`.
+`errorResponse` copies `error.message` only when the thrown value is an
+`Error`; the `imagekit` SDK rejects a failed upload with a **plain object**
+(`{ message, help }`), so the real reason is dropped before it reaches the
+log.
+**What was ruled out, read-only:**
+- Nothing reached ImageKit: no file created after 17:30 UTC.
+- The three `IMAGEKIT_*` variables are single rows covering Production,
+  Preview and Development, so the preview has production's keys. An upload in
+  production worked at 15:06 UTC that day.
+- A missing key throws a real `Error` naming the variable.
+- A missing session would be 401, a non-image `sharp` 400, a body over 4.5 MB
+  413.
+
+The cause is still unknown: most likely the file itself (name or format) or an
+ImageKit-side rejection.
+**Done when:** a thrown non-`Error` with a `message` gets that message logged
+server-side (the client still gets the generic 500 - the policy of not leaking
+a 500's detail stays), covered by a unit test with a plain-object rejection;
+and a retry of the failing upload on a preview shows the actual reason.
+**Careful:** log the error object's `message`/`help`, never the request or
+the SDK instance - it holds the private key.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
