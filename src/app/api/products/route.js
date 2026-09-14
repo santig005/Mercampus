@@ -7,6 +7,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { daysES } from '@/utils/resources/days';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
 import {
+  AVAILABILITY_PHASES,
   createProductSchema,
   encodeProductCursor,
   productQuerySchema,
@@ -15,6 +16,7 @@ import { SORT_CONFIGS } from '@/lib/sorting/product-sort';
 import { invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
 import { productAvailability } from '@/lib/store-availability';
+import { getAvailableSellerIds } from '@/server/products/availableSellers';
 import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // Not used by name, but the import registers the model with Mongoose and the
 // GET's populate({ model: 'Seller' }) needs it registered. Delete it and the
@@ -32,8 +34,17 @@ export async function GET(req) {
   if (!parsedQuery.success) {
     return invalidPayload(parsedQuery.error);
   }
-  const { product, category, sellerId, university, section, sort, limit, cursor } =
-    parsedQuery.data;
+  const {
+    product,
+    category,
+    sellerId,
+    university,
+    section,
+    sort,
+    availability,
+    limit,
+    cursor,
+  } = parsedQuery.data;
   const sortConfig = SORT_CONFIGS[sort];
 
   // This used to be a populate({match: {approved, university}}) that pulled
@@ -88,46 +99,108 @@ export async function GET(req) {
     filter.section = section;
   }
 
-  // T-70: each sort brings its own Mongo order and its own
-  // "next page" filter (see SORT_CONFIGS) - a per-request random order, as
-  // this had before, can't be paginated with a stable cursor (page 2 could
-  // repeat or skip products from page 1).
-  if (cursor) {
-    Object.assign(filter, sortConfig.buildCursorFilter(cursor));
+  // T-123: one clock for the whole request, so the filter, the order and every
+  // badge on the page (getPopulatedProducts) agree on what "now" is.
+  const now = new Date();
+
+  // Only looked up when something uses it: 'newest' and the price sorts with
+  // both options selected ignore availability entirely.
+  const availableSellerIds =
+    availability === 'all' && sort !== 'default'
+      ? null
+      : await getAvailableSellerIds(eligibleSellerIds, now);
+
+  // "Available" is the T-122 badge's rule: the product switched on AND its
+  // seller open now or without a schedule. `availability: true`, not
+  // `$ne: false`: the badge reads a missing field as switched off, so the
+  // filter has to as well.
+  const phaseFilter = phase =>
+    phase === 'available'
+      ? { availability: true, sellerId: { $in: availableSellerIds } }
+      : {
+          $or: [
+            { availability: { $ne: true } },
+            { sellerId: { $nin: availableSellerIds } },
+          ],
+        };
+
+  // $and rather than merging into `filter`: the phase and the cursor bring
+  // their own `sellerId` and `$or`, and a merge would overwrite the listing's.
+  // One extra item is requested to know whether there is a next page without a
+  // second countDocuments query.
+  const findPage = (conditions, pageLimit) =>
+    Product.find({ $and: [filter, ...conditions.filter(Boolean)] })
+      .sort(sortConfig.mongoSort)
+      .limit(pageLimit + 1)
+      .populate({ path: 'sellerId', model: 'Seller' })
+      .lean();
+
+  const page = [];
+  let last = null; // the page's last product, and the block it came from
+  let hasMore = false;
+
+  if (sort === 'default') {
+    // T-123: "available first" spans two collections, so it is not a sort key.
+    // The listing is walked as two blocks, each newest first, and a page that
+    // runs out of the first block is topped up from the second. With one
+    // option selected there is only that block.
+    const phases = availability === 'all' ? AVAILABILITY_PHASES : [availability];
+    const start = cursor ? phases.indexOf(cursor.phase) : 0;
+
+    for (let i = start; i < phases.length && !hasMore; i++) {
+      const phase = phases[i];
+      const remaining = limit - page.length;
+      const after =
+        cursor && cursor.phase === phase ? sortConfig.buildCursorFilter(cursor) : null;
+
+      const found = await findPage([phaseFilter(phase), after], remaining);
+      hasMore = found.length > remaining;
+
+      const taken = found.slice(0, remaining);
+      page.push(...taken);
+      if (taken.length > 0) {
+        last = { product: taken[taken.length - 1], phase };
+      }
+    }
+  } else {
+    // T-70: each sort brings its own Mongo order and its own "next page"
+    // filter (see SORT_CONFIGS) - a per-request random order, as this had
+    // before, can't be paginated with a stable cursor.
+    const found = await findPage(
+      [
+        availability === 'all' ? null : phaseFilter(availability),
+        cursor ? sortConfig.buildCursorFilter(cursor) : null,
+      ],
+      limit
+    );
+    hasMore = found.length > limit;
+    page.push(...found.slice(0, limit));
+    if (page.length > 0) {
+      last = { product: page[page.length - 1], phase: 'available' };
+    }
   }
 
-  // One extra item is requested to know whether there is a next page without
-  // a second countDocuments query.
-  const products = await Product.find(filter)
-    .sort(sortConfig.mongoSort)
-    .limit(limit + 1)
-    .populate({ path: 'sellerId', model: 'Seller' })
-    .lean();
+  const populated = await getPopulatedProducts(page, now);
 
-  const hasMore = products.length > limit;
-  const page = hasMore ? products.slice(0, limit) : products;
-
-  const populated = await getPopulatedProducts(page);
-
-  const last = page[page.length - 1];
   const nextCursor =
     hasMore && last
-      ? encodeProductCursor(sortConfig.encodeCursorPayload(last))
+      ? encodeProductCursor(
+          sortConfig.encodeCursorPayload(last.product, {
+            filter: availability,
+            phase: last.phase,
+          })
+        )
       : null;
 
   return NextResponse.json({ products: populated, nextCursor }, { status: 200 });
 }
 
-const getPopulatedProducts = async approvedProducts => {
+const getPopulatedProducts = async (approvedProducts, now) => {
   // A single query for every seller in the listing, instead of one per
   // product.
   const schedulesBySeller = await getSchedulesBySeller(
     approvedProducts.map(product => product.sellerId._id)
   );
-
-  // One clock for the whole page, so two products of the same seller can't
-  // straddle a minute boundary and disagree.
-  const now = new Date();
 
   // .lean() already returns plain objects, not Mongoose documents: calling
   // .toObject() here is unnecessary (and wrong).
@@ -137,6 +210,7 @@ const getPopulatedProducts = async approvedProducts => {
       ...product,
       schedules: withDayNames(schedules),
       // T-122: computed from the numeric days, before withDayNames swaps them.
+      // T-123: with the request's own clock, so the badge matches the block.
       availabilityStatus: productAvailability(product.availability, schedules, now),
     };
   });

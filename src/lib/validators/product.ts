@@ -97,13 +97,25 @@ export const updateProductSchema = z
 
 // --- Sorting ------------------------------------------------------------------
 //
-// 'default' is the listing's historical order (availability desc, createdAt
-// desc, _id as the tie-breaker) - T-23 made it deterministic, replacing the
-// random shuffle that was there before. T-70 adds 'newest' and both price
-// directions on top of the same cursor-pagination machinery, without touching
-// the default.
+// 'default' is the listing's historical order, available first and newest
+// first - T-23 made it deterministic, replacing the random shuffle that was
+// there before. T-70 adds 'newest' and both price directions on top of the
+// same cursor-pagination machinery, without touching the default.
 export const SORT_OPTIONS = ['default', 'newest', 'price_asc', 'price_desc'] as const;
 export type ProductSort = (typeof SORT_OPTIONS)[number];
+
+// --- Availability filter (T-123) ----------------------------------------------
+//
+// The buyer's two options, "Disponibles ahora" and "No disponibles", either or
+// both selected. 'all' is both, and the default: at night almost no store is
+// open, so defaulting to 'available' would show an empty site. "Available" is
+// the T-122 badge's rule - see src/server/products/availableSellers.ts.
+export const AVAILABILITY_FILTERS = ['all', 'available', 'unavailable'] as const;
+export type AvailabilityFilter = (typeof AVAILABILITY_FILTERS)[number];
+
+// The two blocks the 'default' order walks, in order.
+export const AVAILABILITY_PHASES = ['available', 'unavailable'] as const;
+export type AvailabilityPhase = (typeof AVAILABILITY_PHASES)[number];
 
 // --- Cursor pagination --------------------------------------------------------
 //
@@ -112,27 +124,38 @@ export type ProductSort = (typeof SORT_OPTIONS)[number];
 // generated for 'price_asc' cannot be reused by mistake with 'newest' (the
 // shape does not match and decodeProductCursor rejects it). Encoded as
 // base64url so it travels in the URL without needing escapes.
+//
+// T-123: every cursor also carries the availability filter it was made under,
+// rejected on a mismatch like the sort, and the 'default' one carries which
+// block (`phase`) its product came from. It used to carry the product's own
+// `availability` boolean instead: a cursor minted before T-123 no longer
+// parses, and "load more" on a page loaded before the deploy answers 400 once.
+const cursorFields = {
+  filter: z.enum(AVAILABILITY_FILTERS),
+  id: z.string().regex(objectIdRegex),
+};
+
 const cursorPayloadSchema = z.discriminatedUnion('sort', [
   z.object({
     sort: z.literal('default'),
-    availability: z.boolean(),
+    phase: z.enum(AVAILABILITY_PHASES),
     createdAt: z.string().datetime(),
-    id: z.string().regex(objectIdRegex),
+    ...cursorFields,
   }),
   z.object({
     sort: z.literal('newest'),
     createdAt: z.string().datetime(),
-    id: z.string().regex(objectIdRegex),
+    ...cursorFields,
   }),
   z.object({
     sort: z.literal('price_asc'),
     price: z.number(),
-    id: z.string().regex(objectIdRegex),
+    ...cursorFields,
   }),
   z.object({
     sort: z.literal('price_desc'),
     price: z.number(),
-    id: z.string().regex(objectIdRegex),
+    ...cursorFields,
   }),
 ]);
 
@@ -176,19 +199,44 @@ export const productQuerySchema = z
       ])
       .default(''),
     sort: z.enum(SORT_OPTIONS).default('default'),
+    availability: z.enum(AVAILABILITY_FILTERS).default('all'),
     limit: z.coerce.number().int().min(1).max(50).default(12),
     cursor: z.string().default('').transform(decodeProductCursor),
   })
   // A cursor encodes its own sort (see above). If it does not match the
   // request's `sort`, "load more" would mix two different orders halfway down
   // the listing - easier to reject it here than to let it produce repeated or
-  // skipped results in the client.
+  // skipped results in the client. The same goes for the availability filter.
   .superRefine((data, ctx) => {
-    if (data.cursor && data.cursor.sort !== data.sort) {
+    if (!data.cursor) return;
+
+    if (data.cursor.sort !== data.sort) {
       ctx.addIssue({
         code: 'custom',
         path: ['cursor'],
         message: 'el cursor no coincide con el sort pedido',
+      });
+    }
+
+    if (data.cursor.filter !== data.availability) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['cursor'],
+        message: 'el cursor no coincide con el filtro de disponibilidad pedido',
+      });
+    }
+
+    // With one option selected there is only that block, so a cursor pointing
+    // at the other one was not made by this listing.
+    if (
+      data.cursor.sort === 'default' &&
+      data.availability !== 'all' &&
+      data.cursor.phase !== data.availability
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['cursor'],
+        message: 'el cursor no coincide con el filtro de disponibilidad pedido',
       });
     }
   });
