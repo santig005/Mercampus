@@ -103,6 +103,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                         {/* <span className='text-4xl mx-2'>•</span> */}
                         <AvailabilityBadge
                           availability={product.availability}
+                          status={product.availabilityStatus}
                         />
                       </div>
                       <p className='text-[14px] text-secondary px-6 text-balance whitespace-pre-wrap'>
