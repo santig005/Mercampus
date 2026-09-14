@@ -3121,7 +3121,7 @@ token is the half that works. And do not reintroduce anything shaped like
 `x-internal-fetch`: it has been tried, on a branch, and it is an auth bypass.
 **Model:** `opus` for 4, `sonnet` for 1-3 · **Nightly:** yes for 1-3
 
-### [ ] T-113 · Environment drift: fail loudly, and catch renames before they ship
+### [x] T-113 · Environment drift: fail loudly, and catch renames before they ship
 **Why:** on 2026-09-13 the first promotion in eight days broke two things in
 production at once, and **neither was a code bug** - both were a change
 that needed a value set outside the repo, recorded somewhere no promoter
@@ -3157,6 +3157,57 @@ which is exactly why they were missing from the example.
    trustworthy as *the* list to compare a dashboard against.
 **Not in scope:** anything that reads or writes Vercel or GitHub settings.
 That is the human's, and listing it is what T-11b and T-14 now do.
+**`getCloudinary()` no longer exists.** T-116 deleted `src/utils/cloudinary.js`
+along with its only importer (a route with no caller) - confirmed by grepping
+all of `src/` for `getCloudinary` and finding nothing outside this ROADMAP.
+Only `getImageKit()` (`src/utils/imagekit.js`) got the check.
+**Done:** `getImageKit()` checks its three variables and throws a new
+`ConfigError` (`src/utils/lib/errors.ts`) naming every one that's missing.
+`errorResponse` (`src/lib/api-response.ts`), the single choke point both
+`POST` and `DELETE /api/images` already funnel every error through, logs it
+at `error` (unchanged) and now answers `ConfigError` with a message that says
+"configuración" and that retrying won't help, instead of the generic
+"Error interno del servidor" - the specific variable name stays in the log,
+never in the response. `tests/unit/imagekit.test.js` is new: each of the
+three vars missing alone, and all three missing together, name themselves in
+the thrown message. `tests/unit/api-response.test.js` gained a `ConfigError`
+case covering both the log and the response body.
+`tests/unit/env-publico.test.js` gained the drift test: every `process.env.X`
+read under `src/` must be in `.env.example` (two runtime-only exceptions,
+`NODE_ENV`/`VITEST`, which a human never sets there), and every
+`.env.example` entry must be read in `src/`, read directly by a library
+(the two Clerk URLs, plus - newly confirmed by grep - `CLERK_SECRET_KEY` and
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`), or a named, evidenced orphan. Verified
+the negative case by hand: deleting `CRON_SECRET` from `.env.example` and
+rerunning the suite failed that exact test; restored before committing.
+**Orphans found while building the drift test (not deleted, rule 5):**
+`CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` are
+new orphans - T-116 deleted the only code that read them, and `.env.example`'s
+own comment ("T-35 decide con cual quedarse") shows that decision never
+happened. `NEXT_PUBLIC_URL` was already known-orphaned (T-112b); confirmed its
+only remaining readers are `scripts/e2e.mjs` and `scripts/lighthouse.mjs`,
+outside `src/`. `.env.example` now says so next to each. `LOG_LEVEL`
+(`src/lib/logger.ts`) was read in `src/` but undocumented; added as an
+optional entry.
+**Verified:** `npm run test` (451/451), `npm run typecheck` and `npm run build`
+all green. `npm run lint` (and the lint step inside `npm run build`) fails in
+this session's sandbox with `Plugin "@next/next" was conflicted between
+".eslintrc.json ..." and "..\..\..\.eslintrc.json ..."` - reproduced
+identically on the unmodified base commit, so it's the worktree sitting
+inside the main checkout (which has its own `.eslintrc.json` and
+`node_modules` three directories up), not this change. Ran raw `eslint
+--no-eslintrc -c .eslintrc.json` (bypasses the ancestor-directory config
+search `next lint` doesn't let you skip) over `src` and `tests`: 0 errors, 6
+pre-existing warnings, none in a file this PR touches.
+**Also noticed (rule 9), not fixed here:** `src/components/general/ImageGrid.jsx`
+ignores the upload response body and always shows a static "Hubo un problema
+al subir la imagen. Inténtalo de nuevo." alert, so a seller hitting the new
+`ConfigError` message still only sees "try again" client-side. Fixing that
+needs its own PR (and, per CLAUDE.md, a real render/screenshot if the UI copy
+changes) - the "Done when" for this task was the route's response, not this
+component.
+**Nothing outside the repo.** This is entirely in-repo: no Vercel, GitHub, or
+`.env` change required.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-115 · Creating a product answered 400 for every price typed in the form
