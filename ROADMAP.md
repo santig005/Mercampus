@@ -3511,7 +3511,32 @@ before trying - verified with a real large file, not a mocked request body.
 **Model:** `sonnet` for (a), `opus` for (b) · **Nightly:** no (verifying it
 needs a browser and a real file)
 
-### [ ] T-112 · A preview deployment calls production's API
+### [x] T-112 · A preview deployment calls production's API
+**Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
+chosen over pointing previews at themselves, and done in two PRs. **This
+entry is the reads; T-112b is the writes.** Why A and not the self-pointing
+URL, measured before choosing:
+- `api.js` and `apiToken.js` are `'use server'`. Every call, even one made
+  from a client component, is a Server Action whose `fetch` leaves the
+  function over HTTP. So pointing it at the preview's own URL keeps that hop.
+- **Vercel Authentication covers every preview** (project setting
+  `ssoProtection: prod_deployment_urls_and_all_previews`; an unauthenticated
+  request to a preview answers 302 to Vercel's login). A server-side fetch
+  carries no Vercel session, so it would need the automation bypass secret
+  (`VERCEL_AUTOMATION_BYPASS_SECRET`, which Vercel does inject; one secret is
+  configured) in an `x-vercel-protection-bypass` header - attached to a public
+  Server Action whose path argument the caller controls.
+- A relative fetch from the browser needs none of that: the browser already
+  passed Vercel's check and carries Clerk's cookie. T-105b's `approveSeller`
+  already worked this way.
+
+**Done (reads):** `src/services/browserApi.js` (`fetchFromApi`) fetches
+`/api/...` relatively, with `fetchAPI`'s contract (JSON or text on 2xx, an
+Error with status and body otherwise). `getProducts`, `getSellerProducts`,
+`getSellers` and `getSchedules` use it. All five call sites run inside
+`useEffect`; none of the four GET handlers reads the session, so the Clerk
+cookie now arriving changes nothing they return.
+
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
 half that was *correct* and was reverted along with the auth bypass that
 wasn't. `src/services/api.js` and `apiToken.js` build their base URL as
@@ -3566,8 +3591,32 @@ be read together.
 with a trailing slash, so every one of these builds a double slash
 (`http://localhost:3000//api/...`). Harmless today, but it means nothing
 normalises that value.
+**Found alongside, not changed (rule 9):** four service functions have no
+reference anywhere in `src/` - `createProduct`, `createSchedule`,
+`getSellerById` and `getSellerByEmail` - and still go through `fetchAPI`.
+Candidates for deletion once T-112b retires that helper; checked with a
+reference search, not removed here.
 **Model:** `opusplan` - it is an infrastructure question before it is a code
 one · **Nightly:** no (needs the dashboard)
+
+### [ ] T-112b · The writes still call production's API from a preview
+**Why:** the second half of T-112. `updateProduct`, `deleteProduct` and
+`updateSeller` still go through `apiToken.js`, a `'use server'` helper that
+fetches `NEXT_PUBLIC_URL + '/api'` - production's origin in every Vercel
+environment. Since T-63 a preview reads its own database, but **editing or
+deleting a product, or editing a seller, from a preview still writes to the
+production database**.
+**Done when:** those three go through a relative browser fetch like T-112's
+reads and T-105b's `approveSeller`, authenticated by Clerk's cookie instead of
+a Bearer token; nothing imports `api.js` or `apiToken.js` any more and both
+are deleted, together with the four unreferenced service functions T-112
+lists; the signed-in e2e specs for product edit and seller edit stay green.
+**Careful:** read T-111 first. `apiToken.js` is what carries identity in these
+mutations today; the PUT/DELETE handlers must accept the cookie session (they
+use `auth()`, which reads either) - verify that against the handlers, don't
+assume it. And check what the callers pass as `token` so nothing is left
+fetching one for no reason.
+**Model:** `opus` (authorization on mutations) · **Nightly:** no
 
 ### [x] T-106 · Collapse SellerGrid's approval UI into /admin/sellers
 **Why:** decided with the human alongside T-104. There is a stronger argument

@@ -1,5 +1,9 @@
 import { fetchAPI } from './api';
 import { fetchAPIToken } from './apiToken';
+import { fetchFromApi } from './browserApi';
+
+// T-112: the reads go through the browser (fetchFromApi); the writes still use
+// the `'use server'` helpers until T-112b.
 
 // T-23: limit/cursor replace offset - a numeric offset can't be kept stable
 // once the listing paginates in Mongo with a cursor (see GET /api/products).
@@ -28,17 +32,17 @@ export const getProducts = async ({
   if (limit) queryParams.append('limit', limit);
   if (cursor) queryParams.append('cursor', cursor);
 
-  return await fetchAPI(`/products?${queryParams.toString()}`);
+  return await fetchFromApi(`/products?${queryParams.toString()}`);
 };
 
 export const getSellerProducts = async (sellerId, section = '') => {
   const queryParams = new URLSearchParams();
   if (section) queryParams.append('section', section);
-  
+
   const queryString = queryParams.toString();
   const url = `/products/seller/${sellerId}${queryString ? `?${queryString}` : ''}`;
-  
-  return await fetchAPI(url);
+
+  return await fetchFromApi(url);
 };
 
 // T-97: getProductById() lived here and was the edit screen's only caller.
