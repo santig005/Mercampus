@@ -54,6 +54,20 @@ describe('validacion en el borde', () => {
     expect(body.fields.map(f => f.field)).toContain('price');
   });
 
+  // The add and edit forms send the price as the string their text input
+  // holds, in the Colombian format. Until this change "9.000" answered 400 -
+  // and a naive Number() would have stored it as 9, which is why the check
+  // reads the stored document rather than trusting the status.
+  it('accepts a price the way the forms send it, "9.000", and stores 9000', async () => {
+    const response = await productRoute.PUT(put({ price: '9.000' }), {
+      params: { id: ids.approvedProduct },
+    });
+
+    expect(response.status).toBe(200);
+    const product = await Product.findById(ids.approvedProduct).lean();
+    expect(product.price).toBe(9000);
+  });
+
   it('400 si la categoria no pertenece a la seccion, en vez de 500 al guardar', async () => {
     const response = await productRoute.PUT(
       put({ section: 'antojos', category: ['Tecnología'] }),
