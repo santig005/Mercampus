@@ -3754,6 +3754,33 @@ and a retry of the failing upload on a preview shows the actual reason.
 the SDK instance - it holds the private key.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [ ] T-127 · The add-product error dialog is unreadable in dark mode
+**Why:** found on 2026-09-14 while capturing the real screenshots T-119's
+rule 3 required - the PR that shipped T-119 could not take them (no `.env`
+in its worktree, same Clerk blocker as T-100), so nobody had actually looked
+at this dialog rendered in dark mode before. `docs/audits/t-119/` has the
+screenshot and the computed styles.
+**The bug, measured (`docs/audits/t-119/error-state__dark.png`):** the
+errors `<dialog>` on `/antojos/product/add` (`src/app/antojos/product/add/page.jsx`)
+has `.modal-box` hardcoded to `bg-[#fde6e6]` - a light pink meant for the
+light theme, with no theme variant. Its heading and list text carry no
+explicit color, so they fall back to the ambient text color; in the `dark`
+theme that resolves to `base-content` (`#EDE6DE`, set in
+`tailwind.config.js` for text on the dark theme's near-black surfaces), not
+anything chosen for a light pink box. Computed in the browser:
+`.modal-box` background `rgb(253, 230, 230)`, heading/list color
+`oklch(0.928 0.013 71.3)` - both very light, so the error text a seller
+most needs to read is nearly invisible in dark mode. Same shape as the
+`bg-primary` caution in `CLAUDE.md`: a color that was only ever checked in
+one theme.
+**Scope:** `EditProductForm.jsx`'s error banner may share the same pattern -
+check it too before fixing.
+**Done when:** the dialog's background and text read correctly in both
+themes (a themed daisyUI token like `alert`/`alert-error`, or an explicit
+dark-mode text color, rather than a hardcoded hex), verified with a real
+screenshot in both themes (rule 3), not a class-name test.
+**Model:** `sonnet` · **Nightly:** yes
+
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
 chosen over pointing previews at themselves, and done in two PRs. **This
