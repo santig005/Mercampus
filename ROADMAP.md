@@ -3727,7 +3727,7 @@ the setup, including T-112b's writes); `npm run verify` green.
 **Outside the repo:** nothing.
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-126 · A failed image upload logs no reason
+### [x] T-126 · A failed image upload logs no reason
 **Why:** found alongside T-125 on 2026-09-14. The human's logo upload on the
 `agent/develop` preview (`POST /api/images`, 18:40 UTC) answered **500**, and
 the only log line was `{ status: 500, message: 'Error interno del servidor' }`.
@@ -3752,6 +3752,22 @@ a 500's detail stays), covered by a unit test with a plain-object rejection;
 and a retry of the failing upload on a preview shows the actual reason.
 **Careful:** log the error object's `message`/`help`, never the request or
 the SDK instance - it holds the private key.
+**Done:** `errorResponse` (`src/lib/api-response.ts`) now pulls `message`
+(and `help`, when present) from any thrown non-`Error` with a string
+`message`, logs it under `detailMessage`/`help` alongside the existing
+`status`/`message` fields, and still never puts it in the client response.
+Covered by `tests/unit/api-response.test.js`, proven meaningful by failing
+against the pre-fix code (`git stash push -- src`) and passing after
+(`git stash pop`). Callers of `errorResponse` that benefit: both
+`/api/images` verbs (the one that prompted this), `/api/sellers/admin/:id`
+PATCH, `/api/schedules` POST, and `/api/products/:id` GET/PUT/DELETE — any
+of them can be handed a non-`Error` rejection by a dependency the same way
+imagekit does.
+**Still pending (human, needs a live preview):** retrying the failing
+upload was explicitly out of reach from here (no preview access) - the
+actual root cause behind the 2026-09-14 500 is still unknown. Once the fix
+above ships, reproduce it on a preview and read the new `detailMessage`/
+`help` fields in the log.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-112 · A preview deployment calls production's API
