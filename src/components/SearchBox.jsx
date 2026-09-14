@@ -38,6 +38,10 @@ export default function SearchBox({ section = 'antojos' }) {
   const [search, setSearch] = useState(() => searchParams.get('product') ?? '');
   const category = searchParams.get('category') || '';
   const sellerId = searchParams.get('sellerId') || '';
+  // T-123: ProductGrid's availability filter lives in the URL too, and the
+  // effect below rebuilds the whole query string - without this, typing a
+  // search would silently switch the filter back to "both".
+  const availability = searchParams.get('availability') || '';
 
   const debouncedSearchValue = useDebounce(search, 500);
 
@@ -68,8 +72,12 @@ export default function SearchBox({ section = 'antojos' }) {
       params.set('sellerId', sellerId);
     }
 
+    if (availability) {
+      params.set('availability', availability);
+    }
+
     router.push(`?${params.toString()}`);
-  }, [debouncedSearchValue, category, sellerId, router]);
+  }, [debouncedSearchValue, category, sellerId, availability, router]);
 
   return (
     <label className='input input-bordered flex items-center gap-2'>

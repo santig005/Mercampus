@@ -14,6 +14,7 @@ export const getProducts = async ({
   university,
   section = 'antojos',
   sort,
+  availability,
   limit,
   cursor,
 } = {}) => {
@@ -27,6 +28,10 @@ export const getProducts = async ({
   // 'default' is the backend's own fallback - leaving it out keeps the URL
   // clean when nobody picked an explicit order.
   if (sort && sort !== 'default') queryParams.append('sort', sort);
+  // T-123: same idea - 'all' (both options) is the backend's default.
+  if (availability && availability !== 'all') {
+    queryParams.append('availability', availability);
+  }
   if (limit) queryParams.append('limit', limit);
   if (cursor) queryParams.append('cursor', cursor);
 

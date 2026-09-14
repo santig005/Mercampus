@@ -110,9 +110,6 @@ already warns about, and getting it wrong wastes a PR:
 
 - **T-35** · choosing the image provider (T-109 carves out the safe half).
 - **T-60** · Observability - needs a Sentry account and a DSN.
-- **T-123** (the availability filter) - T-122 is done and fixed the
-  definition of "available" in `src/lib/store-availability.ts`; the filter
-  needs a denormalised field and a migration, read its entry.
 - **T-112** · a preview calling production's API - **confirmed** 2026-09-14;
   choosing between removing the self-fetch and pointing previews at
   themselves is the human's call.
@@ -1388,6 +1385,12 @@ test exists because the header printed on top of the section text; a version
 that no longer checks the background is worse than a flaky one.
 **Worth knowing:** `--grep` narrows `npm run test:e2e` to one spec, which is
 what makes "run it ten times" cheap enough to actually prove the fix.
+**Found 2026-09-14 (T-123): `scroll-infinito.spec.js` was hiding a real bug.**
+Its "page 2 is not there yet" check is `toHaveCount(0)`, which passes on its
+first poll, so a second page that auto-loads ~300 ms later went unseen on
+`agent/develop` (1 of 3 runs, measured). The bug is fixed in T-123 (see
+there); the assertion is still first-poll-only. A wait on a real condition,
+such as "no `cursor=` request until the scroll", would pin it.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-36 · A real README
@@ -3482,7 +3485,8 @@ change). A switched-off product says "No disponible" whatever the schedule.
   filter must use the same rule.
 - `GET /api/products` and `GET /api/products/[id]` add `availabilityStatus`,
   computed from the schedules at read time, not from `Seller.availability`
-  (up to ten minutes stale, and it cannot say when the store opens).
+  (only as fresh as the last cron run, every 10-20 minutes, and it cannot say
+  when the store opens).
 - Card, modal and product page pass it to `AvailabilityBadge`; the seller
   screens still pass the boolean and keep two states.
 - Tests: `tests/unit/store-availability.test.js`,
@@ -3490,7 +3494,7 @@ change). A switched-off product says "No disponible" whatever the schedule.
   before the change). Screenshots: `docs/audits/t-122/`.
 - **Outside the repo:** nothing. No document changes shape; no migration.
 
-### [ ] T-123 · Filter the listing by availability
+### [x] T-123 · Filter the listing by availability
 **Why:** the human's idea, 2026-09-14: a buyer should find out that a
 product *exists* even when it is not available right now - that was the
 point of the "No disponible" badge in the first place.
@@ -3520,6 +3524,44 @@ that predate a field.
 integration tests including "load more" across a filtered listing, and the UI
 control with real screenshots.
 **Model:** `opusplan` · **Nightly:** no
+**Done 2026-09-14, with the human in the session.** Three decisions changed
+the plan above:
+- **No denormalised field, no migration.** "Available" is computed per request
+  instead: `getAvailableSellerIds()` (`src/server/products/availableSellers.ts`)
+  runs two `Schedule.distinct` queries, open now and has a schedule, and the
+  listing filters `Product` by that. It is always as fresh as the badge, and
+  no document changes shape, so rule 8's migration does not apply. The other
+  reason: `Seller.availability` is only refreshed by the GitHub Actions cron,
+  every 10-20 minutes as measured today. (`vercel.json`'s own cron is daily, a
+  fallback.)
+- **"Consultar horario" counts as "Disponibles ahora"** (the human's call).
+  "Available" = product switched on AND seller open or without a valid
+  schedule, the T-122 badge's rule exactly.
+- **"Recomendado" orders by real availability**, not the product switch. That
+  is not a sort key, so the default order walks two blocks (available, then
+  the rest, each newest first), and the cursor records the block (`phase`) and
+  the filter it was made under. A cursor minted before this change no longer
+  parses, so "load more" on a page loaded before the deploy answers 400 once.
+- URL param `availability=available|unavailable`, absent = both. `SearchBox`
+  now keeps it when it rebuilds the query string.
+- Tests: `tests/integration/availability-filter.test.js` (9 of 9 failed before
+  the change), `tests/e2e/availability-filter.spec.js`. Screenshots:
+  `docs/audits/t-123/`.
+- **A pre-existing infinite-scroll bug, fixed here because this change made
+  it constant.** `scroll-infinito.spec.js` failed 3 of 4 runs with this
+  change and passed 4 of 4 without it. An instrumented run showed why:
+  `useAutoAnimate` animates the list container's own `height` (auto-animate
+  0.8.2 `remain()` on the mutation target), so for ~250 ms after a page lands
+  the container is spinner-height and the sentinel after it is on screen.
+  Inserted at y=1760, reported intersecting at y=368, page 2 requested with
+  no scroll. **On `agent/develop` it already did this in 1 of 3 runs:**
+  production makes an unrequested page-2 call on some visits. `ProductGrid`
+  now waits for the list's animations to finish and re-observes before
+  loading more.
+- **Left for later:** the index `{section, availability, createdAt}` that T-23
+  added for the old default order has no query that needs it now. Not dropped
+  here: an index change goes in its own PR.
+- **Outside the repo:** nothing.
 
 ### [ ] T-124 · Photos over 4.5 MB fail before reaching our code
 **Why:** raised on 2026-09-13 while discussing who should upload images.
