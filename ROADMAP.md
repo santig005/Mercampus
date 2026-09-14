@@ -110,9 +110,9 @@ already warns about, and getting it wrong wastes a PR:
 
 - **T-35** · choosing the image provider (T-109 carves out the safe half).
 - **T-60** · Observability - needs a Sentry account and a DSN.
-- **T-122** · product availability states - the label wording and what "no
-  schedule" means are product decisions. **T-123** (the availability filter)
-  follows it.
+- **T-123** (the availability filter) - T-122 is done and fixed the
+  definition of "available" in `src/lib/store-availability.ts`; the filter
+  needs a denormalised field and a migration, read its entry.
 - **T-112** · a preview calling production's API - **confirmed** 2026-09-14;
   choosing between removing the self-fetch and pointing previews at
   themselves is the human's call.
@@ -3437,7 +3437,7 @@ says which are missing. A local `.env` still on the old names has to be
 renamed first; the first run bridged them without committing anything.
 **Model:** `sonnet` · **Nightly:** no (it reads production media)
 
-### [ ] T-122 · "Disponible" on a product card ignores whether the store is open
+### [x] T-122 · "Disponible" on a product card ignores whether the store is open
 **Why:** found on 2026-09-14 while explaining why a newly approved seller
 looked closed. There are **two availabilities**, and buyers see the wrong one:
 | Field | What it is | Written by | Shown to buyers? |
@@ -3472,6 +3472,23 @@ three states; tested with fixtures for each; real screenshots in both themes
 (rule 3).
 **Model:** `opusplan` · **Nightly:** no (the label wording and the
 no-schedule decision are the human's)
+**Done 2026-09-14.** The human decided: the wording above
+("Cerrado ahora · abre mar 6:38"), and a **fourth, neutral label for a seller
+with no schedule, "Consultar horario"** (text provisional, the human's to
+change). A switched-off product says "No disponible" whatever the schedule.
+- `src/lib/store-availability.ts` is now the one definition of "open":
+  `isOpenAt()` (the T-14 cron uses it too), `nextOpening()` and
+  `productAvailability()`. **T-83's override goes in `isOpenAt()`**; T-123's
+  filter must use the same rule.
+- `GET /api/products` and `GET /api/products/[id]` add `availabilityStatus`,
+  computed from the schedules at read time, not from `Seller.availability`
+  (up to ten minutes stale, and it cannot say when the store opens).
+- Card, modal and product page pass it to `AvailabilityBadge`; the seller
+  screens still pass the boolean and keep two states.
+- Tests: `tests/unit/store-availability.test.js`,
+  `tests/integration/product-availability-status.test.js` (4 of 4 failed
+  before the change). Screenshots: `docs/audits/t-122/`.
+- **Outside the repo:** nothing. No document changes shape; no migration.
 
 ### [ ] T-123 · Filter the listing by availability
 **Why:** the human's idea, 2026-09-14: a buyer should find out that a

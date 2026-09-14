@@ -14,6 +14,7 @@ import {
 import { SORT_CONFIGS } from '@/lib/sorting/product-sort';
 import { invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
+import { productAvailability } from '@/lib/store-availability';
 import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // Not used by name, but the import registers the model with Mongoose and the
 // GET's populate({ model: 'Seller' }) needs it registered. Delete it and the
@@ -124,14 +125,21 @@ const getPopulatedProducts = async approvedProducts => {
     approvedProducts.map(product => product.sellerId._id)
   );
 
+  // One clock for the whole page, so two products of the same seller can't
+  // straddle a minute boundary and disagree.
+  const now = new Date();
+
   // .lean() already returns plain objects, not Mongoose documents: calling
   // .toObject() here is unnecessary (and wrong).
-  return approvedProducts.map(product => ({
-    ...product,
-    schedules: withDayNames(
-      schedulesBySeller.get(product.sellerId._id.toString()) ?? []
-    ),
-  }));
+  return approvedProducts.map(product => {
+    const schedules = schedulesBySeller.get(product.sellerId._id.toString()) ?? [];
+    return {
+      ...product,
+      schedules: withDayNames(schedules),
+      // T-122: computed from the numeric days, before withDayNames swaps them.
+      availabilityStatus: productAvailability(product.availability, schedules, now),
+    };
+  });
 };
 
 export async function POST(req) {
