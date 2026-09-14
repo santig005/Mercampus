@@ -45,8 +45,8 @@ data or real access, and the human has asked for them to wait:
   external service.
 - **T-91** (`notFound()` soft-404s) - the fix runs through the root layout and
   `SellerContext`; read T-12d first, and do it with the human.
-- **T-116** (unauthenticated image routes) and **T-117** (orphan images) -
-  authorisation and deletes against production media.
+- **T-117** (orphan images) - deletes against production media. T-116 is
+  done, so its lookup (`findImageFile`) is there to build on.
 - **T-118** (ImageKit per environment) - waits on T-63 and a dashboard key.
 
 Everything below still assumes **rule 1**: branch from `agent/develop`, PR
@@ -3173,7 +3173,7 @@ happens before the product is saved, so this very failure left two orphan
 files in ImageKit (see the image-routes entries).
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-116 · The image routes answer anyone: upload, look up and delete
+### [x] T-116 · The image routes answer anyone: upload, look up and delete
 **Why:** found on 2026-09-13 while fixing image uploads in production, read
 from the code and **not** exercised against production. None of the three
 image routes checks identity, and the middleware does not cover them:
@@ -3201,6 +3201,47 @@ belong to a product or seller the caller owns (or the caller is an admin via
 the reference search is above and should be repeated in the PR); errors go
 through `errorResponse()`. Integration tests for 401/403 on each verb, and
 for "deleting one product's `arepa.jpg` does not touch another's".
+**Done (2026-09-13), design agreed with the human before coding:**
+- `POST /api/images` needs a session (any session - see below) and takes
+  `folder` only as a choice from `products | sellerlogos`;
+  `imageFolder()` in `src/server/images/imageFiles.ts` is the single place a
+  folder is built, where T-118's prefix goes. Uploads are tagged
+  `uploader:<clerkId>`.
+- `DELETE /api/images` takes `{ url }`, not `{ fileId }`, and resolves the
+  file server-side in one function, `findImageFile()`: URL -> exact path
+  under `IMAGEKIT_URL_ENDPOINT`, only inside the two folders, `listFiles`
+  narrowed by `path` + `name`, then every candidate compared against the
+  exact `filePath` in code. `GET /api/fileId` is deleted; `ImageGrid` was its
+  only caller.
+- Allowed when **(a)** the file's uploader tag is the caller's, **(b)** the
+  URL is referenced by the caller's seller (a product image or the logo) and
+  by no other seller, or **(c)** `isClerkAdmin()`. Both sides are normalised
+  to origin + path first (`src/lib/image-url.ts`): 12 of the 205 stored URLs
+  carry `?updatedAt=`, and the default logo is used by 12 sellers once the
+  query is dropped - 6 by exact text. The default logo is refused outright
+  under (b). "No other seller" exists because a product accepts any URL:
+  pasting someone's photo into your product must not make it yours.
+- `ImageGrid` makes one call with the URL and drops the image from the form
+  on 403 and 404 without the file being touched (so a seller holding the
+  shared default logo can replace it); on 401 and 5xx it alerts and keeps the
+  image so the user can retry. No visual change.
+- Deleted, reference search repeated on 2026-09-13 (`git grep` over `src`,
+  `tests`, `scripts`, `.github`): `api/uploadimageProduct/route.js` and
+  `utils/cloudinary.js` were only referenced by each other, `api/fileId` only
+  by `ImageGrid`. `cloudinary.js` had to go with the route: knip's `files`
+  rule is an error. The `cloudinary` package stays for T-35.
+**Noted, not fixed (rule 9):**
+- Any session can upload, a buyer without a seller included. A `sellerId`
+  can't be required: `/antojos/sellers/register` uploads the logo before the
+  seller exists.
+- On the *edit* forms `ImageGrid` deletes the file the moment it is removed,
+  before saving; cancelling leaves the product pointing at a deleted image.
+  The mirror image of T-117.
+- `src/services/uploadImages.js` is imported by `/antojos/product/add` and
+  called nowhere.
+- Resolving by URL is a stopgap; storing `fileId` + `filePath` is T-120.
+- The ownership check is an unindexed regex over `products.images` and
+  `sellers.logo`: fine at ~110 products, worth revisiting with T-120.
 **Model:** `opus` - authorisation plus a destructive external call ·
 **Nightly:** no
 
@@ -3224,6 +3265,13 @@ about deleting a product leaving its images behind.
   Cleaner, but it changes `ImageGrid`'s contract and every form that uses it.
 **Not done here on purpose:** the two known orphans were left in place; they
 are the human's test images and cost nothing until a cleanup exists.
+**Sized on 2026-09-13 by T-121's first backup:** of 365 files in the
+account, **174 are referenced by no product and no seller** - 103 in
+`products`, 65 in `sellerlogos`, plus the legacy folders `seller-logos` (2)
+and `tutorimages` (4). Not all are necessarily orphans of this bug (the
+legacy folders predate the current forms), but that is the ceiling, and the
+backup's `manifest.json` lists every one with its `fileId`. A cleanup should
+start from that manifest and keep the backup it came from.
 **Model:** `opus` for the script (it deletes production files), `sonnet`
 for upload-on-save · **Nightly:** no
 
@@ -3248,6 +3296,18 @@ legacy product images on Cloudinary. The seed already uses fake URLs
   folder, so the folders separate by convention and the key is what actually
   protects production. That also neutralises the name-lookup hazard in
   T-116 for non-prod.
+- **That restricted key must not be able to modify tags either.** Since
+  T-116, the `uploader:<clerkId>` tag is one of the three ways to be allowed
+  to delete a file; a key that can rewrite tags can grant that. Likewise the
+  DAM MCP server, if connected, gets view-only.
+- **The uploader tag depends on the Clerk instance** (T-12h, T-64): a
+  `clerkId` only exists inside one instance. If uploads start coming from a
+  different instance, old tags stop matching and deleting falls back to
+  ownership or admin - nothing opens, but a user may lose rule (a) for their
+  unsaved uploads.
+- **The folder prefix goes in `imageFolder()`** (`src/server/images/
+  imageFiles.ts`); `findImageFile()` derives the deletable folders from it,
+  so the two stay in step.
 - **A second ImageKit account** would isolate harder, at the cost of another
   dashboard, quota and key set. Not needed at this scale; the upgrade path
   if it ever is.
@@ -3274,6 +3334,52 @@ price input is controlled. Check `EditProductForm.jsx` for the same.
 **Careful:** this is a UI change, so rule 3 means a real screenshot of the
 error state, not a test that greps for a class name.
 **Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-120 · Store an image's `fileId` and `filePath`, not just its URL
+**Why:** filed by the human on 2026-09-13 while agreeing T-116's design.
+Mongo keeps `products.images` and `sellers.logo` as URL strings, so every
+delete has to turn a URL back into a file: derive the path, search ImageKit,
+compare. T-116 made that exact, but it is still a search per delete, an
+unindexed regex to find who references the URL, and a normalisation step
+because the same file is stored with and without `?updatedAt=`.
+`POST /api/images` already answers with `fileId`; `ImageGrid` throws it away.
+**Done when:** images are stored as `{ url, fileId, filePath }` (or an
+equivalent the human agrees), the forms keep what the upload returns, the
+delete resolves by `fileId` and checks ownership by `filePath` equality, and
+a migration in `scripts/` - dry run by default, rule 8 - backfills the 205
+existing URLs by exact path, reporting the ones it cannot resolve instead of
+guessing.
+**Size:** about 16 files plus the backfill - split before starting (schema
+and migration, then routes, then each form).
+**Depends on:** T-116 (done). Coordinate with T-82 and T-117, which both
+delete by these references.
+**Model:** `opus` (migration against production data) · **Nightly:** no
+
+### [x] T-121 · A backup of the ImageKit account, like the database one
+**Why:** asked for by the human on 2026-09-13, before the first controlled
+write against the production ImageKit account (T-116's tag check). The
+database has had `npm run backup:db` since T-12f; the media library had
+nothing, and it holds every product photo and seller logo on the site.
+**Done:** `scripts/backup-images.mjs`, run as `npm run backup:images`.
+Read-only against ImageKit and Mongo. It writes `backups/imagekit-<date>/`
+(ignored by git, like the database backups) with:
+- `files/<filePath>` - the original bytes, mirroring the account's folders;
+- `manifest.json` and `manifest.csv` - per file: `fileId`, `filePath`, URL,
+  size, mime, dimensions, dates, tags, `sha256`, local path, and which
+  products and sellers reference it;
+- `_meta.json` - totals, unreferenced count, failures.
+**The trap it avoids, measured:** ImageKit converts formats on delivery. A
+586,433-byte PNG downloaded from its plain URL came back as a 57,094-byte
+WebP. Every download asks for `?tr=orig-true`, and each file's byte count is
+checked against the size the API reports; a mismatch is recorded as a
+failure, never written as if it were the original.
+**First run, 2026-09-13:** 365 of 365 files, 0 failures, 46.9 MB. 191 are
+referenced from Mongo; **174 are referenced by nothing** - see T-117.
+**Worth knowing:** the script reads only the post-T-11b variable names
+(`IMAGEKIT_PUBLIC_KEY`, `IMAGEKIT_PRIVATE_KEY`, `IMAGEKIT_URL_ENDPOINT`) and
+says which are missing. A local `.env` still on the old names has to be
+renamed first; the first run bridged them without committing anything.
+**Model:** `sonnet` · **Nightly:** no (it reads production media)
 
 ### [ ] T-112 · A preview deployment calls production's API
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
