@@ -45,6 +45,9 @@ data or real access, and the human has asked for them to wait:
   external service.
 - **T-91** (`notFound()` soft-404s) - the fix runs through the root layout and
   `SellerContext`; read T-12d first, and do it with the human.
+- **T-116** (unauthenticated image routes) and **T-117** (orphan images) -
+  authorisation and deletes against production media.
+- **T-118** (ImageKit per environment) - waits on T-63 and a dashboard key.
 
 Everything below still assumes **rule 1**: branch from `agent/develop`, PR
 into `agent/develop`, never push to `main` or `develop`.
@@ -68,6 +71,7 @@ One per PR, per rule 2. Ordered by how little can go wrong.
 | **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
 | **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
 | **T-111** (items 1-3 only) · Tidy `src/services/api.js` | Deleting a commented-out draft that the function below it supersedes, and a `credentials` option that is inert server-side. The audit is already written in the entry, so the reference search is done. | `npm run verify`, `deadcode` green. Item 4 is **not** in this bucket. |
+| **T-119** · Show which field failed on the add-product page | A UI message change with no data or auth involved. | A real screenshot of the error state (rule 3). |
 | **T-113** · Fail loudly on missing env, and a `.env.example` drift test | All in-repo: a config check that turns a generic 500 into a message naming the variable, and a unit test comparing source against `.env.example`. No setting outside the repo is touched. | `npm run verify`; the new tests fail with the variables unset. |
 
 ### Fine for an agent, but read the caveat in the entry first
@@ -1308,6 +1312,12 @@ and dependency; `package.json` with no unused dependencies.
 **The dead pre-Clerk dependencies were split out as T-109**, because that
 half needs no decision from anybody. What is left here is the provider
 choice.
+**The data has mostly made it (measured 2026-09-13, read-only):** 150 product
+images and 53 seller logos are on ImageKit, against 2 legacy product images
+on Cloudinary, and every form uploads through `ImageGrid` -> `/api/images`,
+which is ImageKit. The Cloudinary route has no caller in the repo; see
+T-116. Keeping ImageKit is the path of least migration; the 2 Cloudinary
+URLs still render without any Cloudinary key, since they are public.
 **Model:** `sonnet` · **Nightly:** no (choosing the provider is yours)
 
 ### [ ] T-109 · Drop the pre-Clerk dead dependencies
@@ -3162,6 +3172,108 @@ input has `value` commented out, so it is uncontrolled; and the image upload
 happens before the product is saved, so this very failure left two orphan
 files in ImageKit (see the image-routes entries).
 **Model:** `opus` · **Nightly:** no
+
+### [ ] T-116 · The image routes answer anyone: upload, look up and delete
+**Why:** found on 2026-09-13 while fixing image uploads in production, read
+from the code and **not** exercised against production. None of the three
+image routes checks identity, and the middleware does not cover them:
+- `DELETE /api/images` takes `{ fileId }` and calls ImageKit's `deleteFile`.
+- `GET /api/fileId?url=...` turns any image URL into its `fileId`, by listing
+  files whose *name* matches the URL's last segment.
+- Together: anyone who can see a product photo on the site can delete it
+  from ImageKit. `POST /api/images` also accepts any `folder` the caller
+  names, so the media library is writable by anybody, anywhere.
+- `src/app/api/uploadimageProduct/route.js` (Cloudinary) has the same shape
+  and **no caller anywhere in the repo** - dead, but still a live endpoint.
+- Every 500 returns `error.message` to the client, which `api-response.ts`'s
+  `errorResponse()` exists to prevent.
+**This predates the promotion** - the routes worked with the old env var
+names until T-11b's rename broke them, and renaming them back in Vercel
+(done 2026-09-13) restored the exposure exactly as it was.
+**The name lookup is its own bug:** `listFiles({ name })` searches the whole
+account and returns the first match, so two files called `arepa.jpg` in
+different folders means deleting a product image can remove the wrong one.
+**Done when:** `POST` requires a Clerk session and picks the folder
+server-side instead of trusting the client; `DELETE` requires the image to
+belong to a product or seller the caller owns (or the caller is an admin via
+`isClerkAdmin()`), and resolves the file by the exact stored URL or a stored
+`fileId` rather than by name; the dead Cloudinary route is deleted (rule 5:
+the reference search is above and should be repeated in the PR); errors go
+through `errorResponse()`. Integration tests for 401/403 on each verb, and
+for "deleting one product's `arepa.jpg` does not touch another's".
+**Model:** `opus` - authorisation plus a destructive external call ·
+**Nightly:** no
+
+### [ ] T-117 · A failed or abandoned product form leaves its images in ImageKit
+**Why:** reported by the human on 2026-09-13 and measured the same day. The
+image uploads the moment it is picked (`ImageGrid.jsx` -> `POST /api/images`),
+long before the product is saved. The "Subir producto" that answered 400
+(T-115) left **two files** in ImageKit's `products` folder, created 01:58 and
+01:59 UTC, that no product references - checked by listing the most recent
+files with the SDK and searching Mongo for each name, read-only. Closing
+the tab mid-form does the same. It is the mirror image of T-82, which is
+about deleting a product leaving its images behind.
+**Done when:** one of these is chosen and built -
+- **a cleanup script** in `scripts/`, dry run by default, that lists ImageKit
+  files older than a grace period (a day) and deletes the ones no product or
+  seller references. Covers every past orphan too. Destructive against
+  production media, so it needs the T-116 lookup fix first - matching by
+  name is exactly how it would delete the wrong file;
+- or **upload on save**: keep the picked file in the browser and upload it in
+  the same submit as the product, so nothing is stored for a form that fails.
+  Cleaner, but it changes `ImageGrid`'s contract and every form that uses it.
+**Not done here on purpose:** the two known orphans were left in place; they
+are the human's test images and cost nothing until a cleanup exists.
+**Model:** `opus` for the script (it deletes production files), `sonnet`
+for upload-on-save · **Nightly:** no
+
+### [ ] T-118 · ImageKit per environment: folders plus a restricted key
+**Why:** agreed with the human on 2026-09-13. Products and sellers will not
+live in both environments - after T-63, production keeps the real ones and
+the shared non-prod cluster gets seeded data - so images should follow the
+data: real images only in production, non-prod uploads disposable.
+**Measured first:** the real media is in ImageKit, not Cloudinary - 150
+product images under `products` and 53 logos under `sellerlogos`, against 2
+legacy product images on Cloudinary. The seed already uses fake URLs
+(`ik.imagekit.io/seed/...`) that point at no real account.
+**The plan:**
+- **Production is not touched.** `products` and `sellerlogos` stay at the
+  root; moving them would break the 203 URLs already stored in Mongo.
+- **Preview and Development upload under `dev/products` and
+  `dev/sellerlogos`**, from a server-side variable (empty in production,
+  `dev` elsewhere) applied by the route - never a folder the client names.
+- **A restricted ImageKit key outside production**, allowed to upload and
+  read but not delete. ImageKit supports restricted keys that limit which
+  APIs a key may call; no evidence was found that they can be scoped to a
+  folder, so the folders separate by convention and the key is what actually
+  protects production. That also neutralises the name-lookup hazard in
+  T-116 for non-prod.
+- **A second ImageKit account** would isolate harder, at the cost of another
+  dashboard, quota and key set. Not needed at this scale; the upgrade path
+  if it ever is.
+- Cleaning up non-prod becomes deleting the `dev/` folder.
+**Depends on:** T-63 - while Preview still writes to the production
+database, a preview upload would land in `dev/` but be referenced by real
+data. T-116 should land first regardless.
+**Tooling, looked at:** ImageKit's official CLI (`imagekit-cli`) only
+migrates from Cloudinary. The Node SDK, already a dependency, is what works
+from scripts. Its hosted MCP servers exist (DevTools needs no login; DAM and
+Admin act on the media library with the signed-in account, delete included)
+- if connected, grant view-only.
+**Model:** `opusplan` · **Nightly:** no (needs T-63 and an ImageKit
+dashboard key)
+
+### [ ] T-119 · The add-product page hides which field failed
+**Why:** found while diagnosing T-115. The API already answers a 400 with
+`fields` naming what was wrong; `/antojos/product/add` reads only
+`message` and shows "Datos inválidos". That is why a price-format bug
+looked like "something is invalid" for ten days instead of "precio". Its
+price input also has `value` commented out, so the field is uncontrolled.
+**Done when:** the page shows the per-field messages from `fields`, and the
+price input is controlled. Check `EditProductForm.jsx` for the same.
+**Careful:** this is a UI change, so rule 3 means a real screenshot of the
+error state, not a test that greps for a class name.
+**Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-112 · A preview deployment calls production's API
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
