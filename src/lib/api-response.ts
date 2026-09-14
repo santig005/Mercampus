@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { ZodError } from 'zod';
 
 import { logger } from '@/lib/logger';
+import { ConfigError } from '@/utils/lib/errors';
 
 /** 400 with the per-field detail. */
 export const invalidPayload = (error: ZodError) =>
@@ -47,6 +48,19 @@ export function errorResponse(
   // actually unexpected.
   const log = status >= 500 ? logger.error : logger.warn;
   log(context, { status, message });
+
+  // T-113: a missing env var isn't a transient failure like a DB timeout -
+  // retrying does nothing until a human sets it in Vercel. The generic 500
+  // branch below reads as "try again" to the caller; this one says so.
+  if (error instanceof ConfigError) {
+    return NextResponse.json(
+      {
+        [bodyKey]:
+          'Error de configuración del servidor. Reintentar no lo va a arreglar; ya quedó registrado para el equipo.',
+      },
+      { status }
+    );
+  }
 
   return NextResponse.json(
     { [bodyKey]: status >= 500 ? 'Error interno del servidor' : message },
