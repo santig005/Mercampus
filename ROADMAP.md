@@ -3797,6 +3797,25 @@ dark-mode text color, rather than a hardcoded hex), verified with a real
 screenshot in both themes (rule 3), not a class-name test.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [ ] T-128 · Backlog idea: semantic color on the availability filter buttons
+**Why:** raised by the human on 2026-09-14, looking at T-123's filter. Not
+scoped, not assigned - a note for whenever someone designs it, not a task an
+agent should pick up as-is.
+**Current state:** `ProductGrid.jsx`'s two filter buttons ("Disponibles
+ahora" / "No disponibles", `AVAILABILITY_OPTIONS`) both use the same
+`category-active` class when selected - the brand tint, no distinction
+between the two beyond which one is lit up.
+**The idea:** a green/red-ish tint per option (available vs. unavailable)
+so the state reads at a glance, without fighting the brand palette
+(`primary` `#FF7622`/`#FF8A3D`, the warm-charcoal `dark` theme) the way a
+literal traffic-light green/red would. Needs an actual color decision from
+the human before anyone touches it - same as "Consultar horario" in T-122/
+T-123 - and both themes have to be checked, not just light (see T-127 for
+what happens when only one theme gets checked).
+**Not done when:** an agent picks colors on its own judgement and ships
+them. This entry exists so the idea is not lost, not so it gets guessed at.
+**Model:** TBD (needs the human's color choice first) · **Nightly:** no
+
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
 chosen over pointing previews at themselves, and done in two PRs. **This
