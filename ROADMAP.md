@@ -89,6 +89,9 @@ already warns about, and getting it wrong wastes a PR:
   with `clerkMiddleware`. That is the part that can break auth on routes with
   nothing to do with i18n. If a zone needs the matcher rethought, stop and
   ask.
+- **T-124** · Photos over 4.5 MB. Option (a), shrinking in the browser, is
+  agent-sized; verifying it needs a real large file in a browser, and option
+  (b) must not be taken without checking what the upload signature binds.
 - **T-44** · Seller panel. Unblocked (T-40 is done), but it is new UI, and
   CLAUDE.md rule 3 means a real screenshot, not a test that greps for a class
   name. If you cannot render it in your session, say so in the PR instead of
@@ -105,6 +108,9 @@ already warns about, and getting it wrong wastes a PR:
 
 - **T-35** · choosing the image provider (T-109 carves out the safe half).
 - **T-60** · Observability - needs a Sentry account and a DSN.
+- **T-122** · product availability states - the label wording and what "no
+  schedule" means are product decisions. **T-123** (the availability filter)
+  follows it.
 - **T-112** · a preview calling production's API - the first step is reading
   the Vercel dashboard, which an agent cannot do.
 - **The dashboard half of T-11b** - six image env vars to rename in Vercel,
@@ -3412,6 +3418,95 @@ referenced from Mongo; **174 are referenced by nothing** - see T-117.
 says which are missing. A local `.env` still on the old names has to be
 renamed first; the first run bridged them without committing anything.
 **Model:** `sonnet` · **Nightly:** no (it reads production media)
+
+### [ ] T-122 · "Disponible" on a product card ignores whether the store is open
+**Why:** found on 2026-09-14 while explaining why a newly approved seller
+looked closed. There are **two availabilities**, and buyers see the wrong one:
+| Field | What it is | Written by | Shown to buyers? |
+|---|---|---|---|
+| `Product.availability` | a manual per-product toggle in "Editar producto" | the seller | **yes** - the card badge and the listing's default sort read it |
+| `Seller.availability` | "is the store open now", from its `Schedule` | the T-14 cron, every ~10 min | **no** - no card reads it |
+The cron only started working in production on 2026-09-13 (T-14), so the
+data to fix this has existed for a day.
+**Measured read-only, 2026-09-14 04:39 UTC (Sunday 23:39 in Bogotá):** 36
+visible sellers (approved, not paused), **0 open**, **9 with no schedule at
+all**. Of their 95 products, **75 show "Disponible" while their store is
+closed**; the other 20 show "No disponible" because the seller switched them
+off by hand.
+**Direction agreed with the human:** three states instead of two, because
+they mean different things to a buyer -
+- **Disponible** - the product is on and the store is open;
+- **Cerrado ahora** - the store is outside its schedule, ideally with when it
+  opens next ("abre el martes 6:38"), read from `Schedule`;
+- **No disponible** - the seller switched this product off.
+The exact wording is the human's call.
+**Careful:**
+- **The 9 sellers with no schedule** would read "Cerrado" forever. Either nudge
+  them first (T-72's profile checklist is the natural place) or treat "no
+  schedule" as unknown rather than closed - decide before shipping.
+- **T-83** (opening outside the schedule for a bounded window) must count as
+  open under whatever definition this lands.
+- The card only receives the product today; the listing has to carry the
+  seller's availability to it (the API already looks up eligible sellers for
+  `publicSellerFilter()`).
+**Done when:** the card, the product modal and the product page show the
+three states; tested with fixtures for each; real screenshots in both themes
+(rule 3).
+**Model:** `opusplan` · **Nightly:** no (the label wording and the
+no-schedule decision are the human's)
+
+### [ ] T-123 · Filter the listing by availability
+**Why:** the human's idea, 2026-09-14: a buyer should find out that a
+product *exists* even when it is not available right now - that was the
+point of the "No disponible" badge in the first place.
+**Direction agreed:** options "Disponibles ahora" and "No disponibles" next to
+the existing sort control (`ProductGrid.jsx`, T-70), either or both selected,
+**both selected by default** - everything shown, available first, exactly
+as today.
+**The default is not a detail, measured:** at 23:39 on a Sunday 0 of 36
+stores were open. A default of "available only" would show buyers an empty
+site every night.
+**Constraints:**
+- **The filter goes in the Mongo query, never in the browser**: the listing is
+  cursor-paginated (T-23), and filtering a page client-side breaks "load more".
+  The cursor has to encode the filter, or be rejected on a mismatch the way it
+  already is for `sort`.
+- **It lives in the URL**, like search (T-92), so a filtered view can be shared.
+- It uses the same definition of "available" as T-122.
+**The hard part:** effective availability is the product toggle AND the store
+being open (and T-83's override), which spans two collections. Filtering and
+sorting by it under cursor pagination very likely needs a denormalised field
+on `Product`, kept in sync by the cron and by both toggles. That changes the
+shape of existing documents, so rule 8 applies in full: measure, migrate from
+`scripts/` with a dry run, and mind the `$ne: true` trap T-71 hit on documents
+that predate a field.
+**Depends on:** T-122.
+**Done when:** a validated query parameter in `productQuerySchema`,
+integration tests including "load more" across a filtered listing, and the UI
+control with real screenshots.
+**Model:** `opusplan` · **Nightly:** no
+
+### [ ] T-124 · Photos over 4.5 MB fail before reaching our code
+**Why:** raised on 2026-09-13 while discussing who should upload images.
+Vercel Functions reject any request body over **4.5 MB** with `413
+FUNCTION_PAYLOAD_TOO_LARGE`, and the limit cannot be configured.
+`POST /api/images` receives the file through a function; `ImageGrid` only
+sets `accept='image/*'` - no size check, no compression - and the `sharp`
+resize runs *after* the body has arrived. A photo straight off a modern phone
+can exceed it. **Not measured** whether a seller has hit it yet.
+**Options:**
+- **(a) Shrink in the browser before uploading.** Keeps T-116's model intact:
+  the upload still goes through our route, so the session check and the
+  `uploader:` tag still apply. The recommended first step.
+- **(b) Signed direct upload to ImageKit.** ImageKit supports it (the backend
+  issues `token`, `expire`, `signature`), and the bytes never touch Vercel.
+  But the server-side resize is lost, and **it must be verified that the
+  signature binds the folder and the tags** - if a client can change them,
+  T-116's uploader rule stops meaning anything.
+**Done when:** a photo over 4.5 MB uploads from the form, or the form says so
+before trying - verified with a real large file, not a mocked request body.
+**Model:** `sonnet` for (a), `opus` for (b) · **Nightly:** no (verifying it
+needs a browser and a real file)
 
 ### [ ] T-112 · A preview deployment calls production's API
 **Why:** the other half of the 2025-03-28 attempt described in T-111 - the
