@@ -111,8 +111,9 @@ already warns about, and getting it wrong wastes a PR:
 - **T-122** · product availability states - the label wording and what "no
   schedule" means are product decisions. **T-123** (the availability filter)
   follows it.
-- **T-112** · a preview calling production's API - the first step is reading
-  the Vercel dashboard, which an agent cannot do.
+- **T-112** · a preview calling production's API - **confirmed** 2026-09-14;
+  choosing between removing the self-fetch and pointing previews at
+  themselves is the human's call.
 - **The dashboard half of T-11b** - six image env vars to rename in Vercel,
   one of them spelled differently there than locally (see the table in
   T-11b), then a redeploy. Image uploads are broken in production until then.
@@ -3522,10 +3523,32 @@ add an endpoint on a branch, open that branch's preview, and anything routed
 through these services fails - because the request is answered by production,
 where the endpoint does not exist yet. Silent, and it makes a preview useless
 for exactly the changes worth previewing.
-**Not confirmed, and here is the honest gap:** whether `NEXT_PUBLIC_URL` is
-environment-scoped in Vercel cannot be read from this repo. **First step is
-one look at the Vercel dashboard**: if Preview has its own value, this is
-already fine and the task closes with a note; if not, it is real.
+**Confirmed on 2026-09-14, read from Vercel with the CLI.** `NEXT_PUBLIC_URL`
+is **one row covering Production, Preview and Development**, and its value is
+`https://mercampus.vercel.app` in all three (read per environment with
+`vercel env pull`, keeping only this variable - it is public by definition,
+Next inlines it into the browser bundle - and deleting the pulled files at
+once). So:
+- **Every preview deployment** renders its own branch's UI, but everything
+  routed through `src/services/api.js` and `apiToken.js` - listings,
+  schedules, editing a product or a seller - is answered by **production's**
+  API. An endpoint added or changed on a branch is not exercised by that
+  branch's preview.
+- **Vercel's Development environment** points at production too. The human's
+  local `.env` says `localhost`, so it does not bite today, but anyone running
+  `vercel env pull` gets the production URL.
+- **CI is not affected**: `scripts/e2e.mjs` and `scripts/lighthouse.mjs` set
+  `NEXT_PUBLIC_URL` to `localhost` themselves.
+**Fix options, for the human to pick:**
+- **Remove the self-fetch** (the real direction - T-30/31/32): read through
+  `src/server/` and mutate through Server Actions, or call the API with a
+  relative URL from the browser as T-105b did. Then there is no base URL to
+  get wrong.
+- **Point previews at themselves** in the meantime, with the deployment's own
+  URL (`VERCEL_URL` / `VERCEL_BRANCH_URL`, which Vercel sets per deployment)
+  instead of a fixed variable. **Verify before relying on it:** if Vercel's
+  deployment protection is on for previews, a server-to-self fetch can be
+  answered by Vercel's login wall rather than by the app.
 **Careful - the fix is not the 2025 one.** That version bypassed Clerk with a
 header because a server-side fetch has no cookies (see T-111). Whatever
 lands here has to keep the Bearer that `apiToken.js` introduced, or drop the
