@@ -7,11 +7,13 @@
 //
 // This is the single definition of "open". The T-14 cron (api/sellers/
 // availability) uses isOpenAt() to write `Seller.availability`, and the product
-// routes use productAvailability() to label each product. T-123's filter has to
-// use it too, or the filter and the badge will disagree.
+// routes use productAvailability() to label each product. T-123's filter is the
+// same rule as a Mongo query, in src/server/products/availableSellers.ts: change
+// one and the other has to follow, or the filter and the badge disagree.
 //
 // Computed from the schedules at read time rather than read from
-// `Seller.availability`: that field lags the cron by up to ten minutes, and
+// `Seller.availability`: that field is only as fresh as the last cron run (a
+// GitHub Actions schedule, every 10-20 minutes as measured on 2026-09-14), and
 // "abre mar 6:38" needs the schedules anyway.
 //
 // T-83 (opening outside the schedule for a bounded window) does not exist yet.
