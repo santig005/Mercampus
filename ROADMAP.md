@@ -1366,7 +1366,7 @@ All four removed with `npm uninstall`; `npm run verify` green (lint, deadcode,
 typecheck, test, build). See PR for the full reference-search evidence.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-110 · Stabilise the flaky e2e specs
+### [x] T-110 · Stabilise the flaky e2e specs
 **Why:** the suite has now cried wolf three times on record, which is how a
 real regression gets waved through. T-80 logged two seller specs (`el perfil
 del vendedor carga su negocio`, `el listado de vendedores muestra las
