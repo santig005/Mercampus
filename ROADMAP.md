@@ -1332,7 +1332,7 @@ T-116. Keeping ImageKit is the path of least migration; the 2 Cloudinary
 URLs still render without any Cloudinary key, since they are public.
 **Model:** `sonnet` · **Nightly:** no (choosing the provider is yours)
 
-### [ ] T-109 · Drop the pre-Clerk dead dependencies
+### [x] T-109 · Drop the pre-Clerk dead dependencies
 **Why:** carved out of T-35 on 2026-09-10 so an agent can take it alone.
 T-35 bundles two things: *which image provider to keep*, which is the
 human's call, and *deleting the leftovers from before Clerk*, which is
@@ -1358,6 +1358,12 @@ named `NEXT_PUBLIC_IMAGEKIT_KEY` that **no workflow references** (the
 workflows use only `CLERK_SECRET_KEY`, `CRON_SECRET` and the automatic
 `GITHUB_TOKEN`) - almost certainly the placeholder CI carried before T-11b.
 Deleting it is a settings change, so it is listed here, not done.
+**Done (2026-09-14):** `next-auth`, `bcryptjs`, `jsonwebtoken` and `cookies`
+had zero references in `src/`, `scripts/` or `tests/` (only `package.json`,
+`package-lock.json` and this file mentioned them by name) and `npm ls` showed
+each as a bare top-level dependency with no other package depending on it.
+All four removed with `npm uninstall`; `npm run verify` green (lint, deadcode,
+typecheck, test, build). See PR for the full reference-search evidence.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-110 · Stabilise the flaky e2e specs
