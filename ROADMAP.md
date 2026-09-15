@@ -4139,7 +4139,7 @@ existing tests already inject `obtenerMetadataDeClerk`, so this is testable
 without touching Clerk - the seam is there.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-85 · Spanish left in test descriptions
+### [x] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
 reads a failure rather than code comments. The human overruled that on
