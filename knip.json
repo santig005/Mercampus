@@ -3,7 +3,8 @@
   "entry": [
     "src/app/**/{page,layout,route,not-found,error,loading}.{js,jsx,ts,tsx}",
     "scripts/*.mjs",
-    "tests/**/*.test.js"
+    "tests/**/*.test.js",
+    "tests/e2e/image-compression/playwright.config.js"
   ],
   "project": ["src/**/*.{js,jsx,ts,tsx}", "scripts/**/*.mjs", "tests/**/*.js"],
   "rules": {

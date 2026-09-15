@@ -1,3 +1,4 @@
+import { compressImageForUpload } from '@/lib/compressImageForUpload';
 import { logger } from '@/lib/logger';
 import React, { useRef, useState } from 'react';
 
@@ -23,10 +24,34 @@ export default function ImageGrid({
     }
     const file = event.target.files[0];
     if (!file) return;
+    // Reset so picking the same file again (e.g. after it was rejected below)
+    // still fires onChange.
+    event.target.value = '';
 
     setLoading(true);
+
+    // T-124a: Vercel rejects any request body over 4.5 MB before our route
+    // handler runs, and a modern phone photo can easily be bigger than that.
+    // Shrink it here so the upload still has a shot; a file that already
+    // fits comes back untouched.
+    let uploadFile;
+    try {
+      uploadFile = await compressImageForUpload(file);
+    } catch (error) {
+      logger.error('Error compressing image before upload:', error);
+      uploadFile = null;
+    }
+
+    if (!uploadFile) {
+      setLoading(false);
+      alert(
+        'Esta imagen es muy pesada y no se pudo reducir lo suficiente para subirla. Prueba con otra foto o recórtala antes de subirla.'
+      );
+      return;
+    }
+
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', uploadFile);
     formData.append('folder', nameFolder);
 
     try {
