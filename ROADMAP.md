@@ -3972,6 +3972,52 @@ literal traffic light): available `#1F6B3A` on `#DCEEDF` (light) /
 - **Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** no
 
+### [ ] T-130 · Backlog idea: broken product images show raw alt text, no fallback
+**Why:** raised by the human on 2026-09-15, looking at a screenshot of the
+`agent/develop` preview's `/antojos` listing - several cards showed
+"Imagen de Jugo de mango" etc. as visible text instead of a photo. Not
+scoped, not assigned - a note for whenever someone designs it.
+**Current state:** `ProductCard.jsx` renders
+`<img src={images[0]} alt={'Imagen de ' + name} />` with no `onError`
+handler and no default image - same bare pattern repeats in
+`ProductCardFavorite.jsx`, `ProductModal.jsx` and `ProductPage.jsx`. The
+Zod validator (`src/lib/validators/product.ts`) requires at least one URL
+shape, but a string that passes `.url()` is not a guarantee it still
+resolves. The screenshot's specific case: `scripts/seed.mjs`'s products
+carry placeholder URLs like `https://ik.imagekit.io/seed/arepa.jpg` that
+were never uploaded to ImageKit and never will resolve, so any preview or
+`e2e` run seeded from that script shows this. The same gap would also show
+in production for a real product whose ImageKit asset got deleted or
+expired.
+**The idea, two parts, not mutually exclusive:**
+1. Give `scripts/seed.mjs` placeholder images that actually resolve, so a
+   preview looks representative instead of broken.
+2. A default fallback image in the product card/page components when the
+   real URL fails to load - the same idea `DEFAULT_SELLER_LOGO`
+   (`sellerSchema2.ts`) already applies to sellers with no logo.
+**Not done when:** an agent picks the seed placeholders or the default
+image on its own judgement and ships them - same caution as T-128: this
+needs a decision, not a guess.
+**Model:** TBD (needs the human's call on the placeholder/default image
+first) · **Nightly:** no
+
+### [ ] T-131 · Backlog idea: the sort control looks like a bare browser dropdown
+**Why:** raised by the human on 2026-09-15, same screenshot as T-130. Not
+scoped, not assigned - a note for whenever someone designs it.
+**Current state:** `ProductGrid.jsx`'s sort control is a plain
+`<select className='select select-bordered select-sm'>` (`SORT_OPTIONS`,
+T-70) - daisyUI's default select chrome, unstyled beyond that, sitting
+next to the pill-shaped, brand-colored category and availability buttons
+the same page already uses (including T-128's tinted pair, right above
+it).
+**The idea:** restyle it to match the rest of the page's controls, or
+replace it with a custom dropdown, so it doesn't read as an afterthought.
+Needs a look from the human first - same caution as T-128's color choice:
+don't guess at what "matching" means visually.
+**Not done when:** an agent redesigns it on its own judgement and ships
+it.
+**Model:** TBD (needs the human's visual call first) · **Nightly:** no
+
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
 chosen over pointing previews at themselves, and done in two PRs. **This
