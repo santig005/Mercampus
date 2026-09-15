@@ -1,5 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
+import { headers } from 'next/headers';
 
+import { logger } from '@/lib/logger';
 import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
 import { isClerkAdmin } from '@/utils/lib/isClerkAdmin';
@@ -57,6 +59,52 @@ export async function getAuthenticatedUser() {
 type SellerContextValue = false | 'None' | Record<string, unknown>;
 
 /**
+ * Next signals control flow by throwing, and those exceptions must reach Next
+ * untouched. They all carry a `digest` string: `DYNAMIC_SERVER_USAGE` (what
+ * `headers()` - and therefore `auth()` - throws during prerendering, to tell
+ * Next the route is dynamic), `NEXT_REDIRECT`, `NEXT_NOT_FOUND`,
+ * `BAILOUT_TO_CLIENT_SIDE_RENDERING`.
+ *
+ * Swallowing the dynamic one would be worse than the bug T-77 is about: the
+ * root layout would prerender cleanly, the pages that depend on it would turn
+ * static, and every visitor would be served a cached layout that says "signed
+ * out" - permanently, not for one render.
+ */
+function isNextControlFlowError(error: unknown): boolean {
+  return typeof (error as { digest?: unknown } | null | undefined)?.digest === 'string';
+}
+
+/**
+ * Best-effort address for the T-77 log line.
+ *
+ * Next 14 hands a Server Component no pathname, and the middleware that would
+ * normally set a header for it is exactly what is missing when this fires. So
+ * this reads the headers that carry it when they exist: `next-url` on a
+ * client-side (RSC) navigation, `x-matched-path` on Vercel, `x-invoke-path` /
+ * `x-pathname` if anything upstream sets them, and `referer` as a last
+ * resort. Nothing else is read: the request also carries Clerk's session
+ * cookie, which must never reach a log.
+ */
+const PATH_HEADERS = ['next-url', 'x-matched-path', 'x-invoke-path', 'x-pathname', 'referer'];
+
+function requestAddressForLog(): { path: string; pathSource: string } {
+  try {
+    const requestHeaders = headers();
+
+    for (const name of PATH_HEADERS) {
+      const value = requestHeaders.get(name);
+      if (value) return { path: value, pathSource: name };
+    }
+
+    return { path: 'unknown', pathSource: 'none' };
+  } catch {
+    // headers() needs a request context of its own. If that is gone too there
+    // is nothing to report, and reporting must not become a second error.
+    return { path: 'unknown', pathSource: 'headers-unavailable' };
+  }
+}
+
+/**
  * The current session's user and seller, ready to hand to a Client Component
  * (`SellerContext`). Unlike `getAuthenticatedUser()`, this never throws: no
  * session is a valid result (an anonymous visitor), not an error, because
@@ -75,7 +123,32 @@ export async function getSellerContextData(): Promise<{
   user: SellerContextValue;
   seller: SellerContextValue;
 }> {
-  const { userId } = await auth();
+  let userId: string | null = null;
+
+  try {
+    ({ userId } = await auth());
+  } catch (error) {
+    if (isNextControlFlowError(error)) throw error;
+
+    // T-77: some requests reach this layout without Clerk having decorated
+    // them, and `auth()` throws "Clerk: auth() was called but Clerk can't
+    // detect usage of clerkMiddleware()". It happens 36 times per CI
+    // `lighthouse` run - 6 on each of its 6 budgeted URLs - and the error
+    // itself names no URL, which is what has kept the cause hidden. Why it
+    // happens is still open (see the ROADMAP entry); what this does is stop
+    // it from taking the root layout down, by degrading to the same "no
+    // session" result an anonymous visitor already gets, and leave an
+    // address behind so the next occurrence can be placed.
+    logger.warn('getSellerContextData: auth() threw, rendering as signed out', {
+      ...requestAddressForLog(),
+      // First line only: Clerk's message is a six-line troubleshooting note
+      // and the first line is what identifies it.
+      error: (error instanceof Error ? error.message : String(error)).split('\n')[0],
+    });
+
+    return { user: false, seller: false };
+  }
+
   if (!userId) {
     return { user: false, seller: false };
   }
