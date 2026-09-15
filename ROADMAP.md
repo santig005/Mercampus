@@ -66,14 +66,15 @@ the number is taken, bump it before the merge, not after.
 
 One per PR, per rule 2. Ordered by how little can go wrong.
 
+**Refreshed 2026-09-15** - T-36, T-109, T-110 and T-113 shipped (see their
+entries); T-111's items 1-3 stopped applying when T-112b deleted
+`src/services/api.js`/`apiToken.js` outright, so that row is gone rather than
+marked done. T-85 stays, batch 2 only.
+
 | Task | Why it is safe | How you know it worked |
 |---|---|---|
-| **T-85** · Spanish left in test descriptions | Renames `describe`/`it` strings only. No source, no behaviour. The entry names the trap: renaming a test is safe, changing a string a test *asserts on* is not. | `npm run verify`. The same tests pass, with English names. |
-| **T-36** · A real README | Touches no source at all. The human explicitly delegated it to an agent and said it gets rewritten by hand if it does not land, so a mediocre attempt costs nothing. | It builds, and it answers: what this is, stack, env vars, how to run it and the tests, the agentic pipeline. |
-| **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
-| **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
-| **T-111** (items 1-3 only) · Tidy `src/services/api.js` | Deleting a commented-out draft that the function below it supersedes, and a `credentials` option that is inert server-side. The audit is already written in the entry, so the reference search is done. | `npm run verify`, `deadcode` green. Item 4 is **not** in this bucket. |
-| **T-113** · Fail loudly on missing env, and a `.env.example` drift test | All in-repo: a config check that turns a generic 500 into a message naming the variable, and a unit test comparing source against `.env.example`. No setting outside the repo is touched. | `npm run verify`; the new tests fail with the variables unset. |
+| **T-85** (batch 2 only, 20 files listed in the entry) · Spanish left in test descriptions | Renames `describe`/`it` strings only. No source, no behaviour. The entry names the trap: renaming a test is safe, changing a string a test *asserts on* is not. | `npm run verify`. The same tests pass, with English names. |
+| **T-127** · The add-product error dialog is unreadable in dark mode | One `<dialog>`, a color problem the screenshots already pinned down (`docs/audits/t-119/`). No data, no auth, no other screen touched. | A real screenshot in both themes (rule 3), text legible in each. |
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -1315,7 +1316,7 @@ to **T-30**, once the data layer absorbs the services. They stay as
 visible warnings in the log until then.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-35 · A single image provider
+### [x] T-35 · A single image provider
 **Why:** Cloudinary and ImageKit are both installed, each with its own
 route. `next-auth`, `bcryptjs`, `jsonwebtoken`, and `cookies` are also
 leftovers from before Clerk.
@@ -1330,6 +1331,14 @@ on Cloudinary, and every form uploads through `ImageGrid` -> `/api/images`,
 which is ImageKit. The Cloudinary route has no caller in the repo; see
 T-116. Keeping ImageKit is the path of least migration; the 2 Cloudinary
 URLs still render without any Cloudinary key, since they are public.
+**Decided by the human (2026-09-15): ImageKit.** Cloudinary was already dead
+code by the time the decision landed - T-116 had deleted its only route and
+importer, and T-109/T-113 had already found zero references left under
+`src/`. Done in the same PR: `cloudinary` and `next-cloudinary` removed from
+`package.json` (`npm uninstall`, lockfile updated), the `CLOUDINARY_*`
+section dropped from `.env.example`, and the matching `KNOWN_ORPHANS`
+entries removed from `tests/unit/env-publico.test.js` now that there is
+nothing left to be orphaned.
 **Model:** `sonnet` · **Nightly:** no (choosing the provider is yours)
 
 ### [x] T-109 · Drop the pre-Clerk dead dependencies
@@ -1743,11 +1752,54 @@ saving**, no autosave. Manual fallback if the API fails.
 **Model:** `opus` · **Nightly:** no
 
 ### [ ] T-52 · Listing moderation
+**Why:** raised again by the human on 2026-09-15, specifically as
+AI-based explicit-content detection - both the product photo and the
+text fields (name, description) - so a listing can't publish something a
+human never looked at.
 **Done when:** automatic review of photo and text on publish, with a
-human-review queue for uncertain cases instead of automatic blocking.
+human-review queue for uncertain cases instead of automatic blocking - not
+a hard block, since a false positive would refuse a legitimate seller with
+no recourse.
+**Open design questions for whoever picks this up (interactive session,
+not a nightly task):** which provider/model does the classification (an
+LLM vision call vs. a dedicated moderation API - cost and latency differ a
+lot at upload time); where the queue lives (an admin screen, extending the
+existing seller-approval surface, or its own); what "uncertain" means
+numerically for each classifier; and whether this blocks publish
+synchronously or runs after, with the listing live in the meantime.
 **Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-53 · Evals for the AI features
+### [ ] T-129 · Mercarti, a support chatbot (the squirrel mascot)
+**Why:** raised by the human on 2026-09-15. Not scoped, not urgent - a
+backlog idea for later, and also a portfolio piece (an agentic feature
+looks good on the showcase T-36 already writes for). Named after the
+site's existing squirrel mascot, Mercarti.
+**The idea, roughly staged (each stage is its own decision, not a plan to
+execute as written):**
+1. **A widget on the site** a visitor can open to ask questions about
+   registration, how the site works, and its conventions - and that can
+   hand back a real link to the relevant page/resource rather than just
+   describing it in prose.
+2. **Read-only tools first:** look up a product's or a seller's approval
+   status, schedule, or availability, and answer from that instead of
+   guessing. Lower risk than the next stage - it can only leak what a
+   signed-in user could already see through the UI, so it needs the same
+   authorization boundary CLAUDE.md's convention already requires
+   ("Autorización explícita") before it can answer with anyone's data
+   rather than public listing info.
+3. **Agentic/write tools, later and separately:** editing a product's own
+   name, price, etc. on the seller's behalf. This is a materially
+   different risk level than (1)/(2) - it mutates real data through
+   natural language - and shouldn't be scoped until (1)/(2) exist and the
+   authorization model for a write made *by an assistant, on a user's
+   behalf* has been thought through on its own, not inherited by default
+   from the read-only stage.
+**Open questions for whoever designs this:** which model/provider, cost
+per conversation at any real traffic, where conversation history lives (a
+new collection, likely), how it's told apart from a real human in the
+UI, and how (2)/(3)'s tool calls get audited - "the assistant did it" is
+not an acceptable line in a log next to a real data mutation.
+**Model:** `opusplan` · **Nightly:** no
 **Why:** without evals, "I improved the prompt" is just an opinion. This
 is what separates a demo from a system.
 **Done when:** a case set with expected output for T-50 and T-51, a

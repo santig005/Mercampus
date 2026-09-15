@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
 // keys never leave the server - but one 'use client' component importing it
 // would publish those keys with no warning. (cloudinary.js was checked here
 // too until T-116 deleted it along with its only importer, a route with no
-// caller.)
+// caller; T-35 later removed the Cloudinary dependency and its .env.example
+// entries entirely, once ImageKit was confirmed as the sole provider.)
 // This test keeps the naming from lending itself to that again.
 
 const walk = dir =>
@@ -105,13 +106,6 @@ describe('.env.example matches what the code actually reads', () => {
     // scripts/e2e.mjs and scripts/lighthouse.mjs still set it for their own
     // builds, outside src/.
     'NEXT_PUBLIC_URL',
-    // T-116 deleted src/utils/cloudinary.js and its only importer (a route
-    // with no caller). .env.example still says "T-35 decide con cual
-    // quedarse" - that decision never happened, so these three stay
-    // documented pending it instead of being deleted here.
-    'CLOUDINARY_CLOUD_NAME',
-    'CLOUDINARY_API_KEY',
-    'CLOUDINARY_API_SECRET',
   ]);
 
   it('every env var read under src/ is documented in .env.example', () => {
