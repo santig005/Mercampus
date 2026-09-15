@@ -10,15 +10,15 @@ describe('titleMetadata (T-76)', () => {
   // The bug this replaced: `template: 'Mercampus'` with no %s. Next.js renders
   // a template without a placeholder literally, so every page that set a plain
   // `title` came out as just 'Mercampus'.
-  it('el template interpola el titulo de la pagina', () => {
+  it('the template interpolates the page title', () => {
     expect(titleMetadata.template).toContain('%s');
   });
 
-  it('el template conserva el nombre del sitio como sufijo', () => {
+  it('the template keeps the site name as a suffix', () => {
     expect(titleMetadata.template).toBe('%s · Mercampus');
   });
 
-  it('una pagina sin titulo propio cae al nombre del sitio', () => {
+  it('a page with no title of its own falls back to the site name', () => {
     expect(titleMetadata.default).toBe('Mercampus');
   });
 });
@@ -33,30 +33,30 @@ describe('buildProductMetadata', () => {
 
   // T-76: this used to be a title.absolute with the suffix written by hand, to
   // step around the root layout's broken template. Now the template adds it.
-  it('deja el nombre del producto solo, para que el template le ponga el sufijo', () => {
+  it('leaves the product name alone, so the template adds the suffix', () => {
     const metadata = buildProductMetadata(product);
     expect(metadata.title).toBe('Arepa de queso');
   });
 
-  it('openGraph y twitter si llevan el titulo completo: el template no les aplica', () => {
+  it('openGraph and twitter do carry the full title: the template does not apply to them', () => {
     const metadata = buildProductMetadata(product);
     expect(metadata.openGraph.title).toBe('Arepa de queso · Mercampus');
     expect(metadata.twitter.title).toBe('Arepa de queso · Mercampus');
   });
 
-  it('usa la descripcion del producto tal cual, en description/openGraph/twitter', () => {
+  it("uses the product's description as-is, in description/openGraph/twitter", () => {
     const metadata = buildProductMetadata(product);
     expect(metadata.description).toBe(product.description);
     expect(metadata.openGraph.description).toBe(product.description);
     expect(metadata.twitter.description).toBe(product.description);
   });
 
-  it('cae al precio formateado cuando no hay descripcion', () => {
+  it('falls back to the formatted price when there is no description', () => {
     const metadata = buildProductMetadata({ ...product, description: undefined });
     expect(metadata.description).toContain('6.000');
   });
 
-  it('desenvuelve una descripcion guardada como string JSON', () => {
+  it('unwraps a description stored as a JSON string', () => {
     const metadata = buildProductMetadata({
       ...product,
       description: JSON.stringify('Descripción real'),
@@ -64,7 +64,7 @@ describe('buildProductMetadata', () => {
     expect(metadata.description).toBe('Descripción real');
   });
 
-  it('una descripcion que parsea a un objeto (no texto) se usa tal cual, no como objeto', () => {
+  it('a description that parses to an object (not text) is used as-is, not as an object', () => {
     const metadata = buildProductMetadata({
       ...product,
       description: JSON.stringify({ blocks: [] }),
@@ -72,13 +72,13 @@ describe('buildProductMetadata', () => {
     expect(typeof metadata.description).toBe('string');
   });
 
-  it('pone la imagen del producto en openGraph y twitter', () => {
+  it("puts the product's image in openGraph and twitter", () => {
     const metadata = buildProductMetadata(product);
     expect(metadata.openGraph.images).toEqual([{ url: product.image }]);
     expect(metadata.twitter.images).toEqual([{ url: product.image }]);
   });
 
-  it('sin imagen, images queda undefined en vez de un array con url vacia', () => {
+  it('with no image, images stays undefined instead of an array with an empty url', () => {
     const metadata = buildProductMetadata({ ...product, image: undefined });
     expect(metadata.openGraph.images).toBeUndefined();
     expect(metadata.twitter.images).toBeUndefined();
@@ -93,28 +93,28 @@ describe('buildSellerMetadata', () => {
     logo: 'https://ik.imagekit.io/seed/logo.png',
   };
 
-  it('deja el nombre del negocio solo, para que el template le ponga el sufijo', () => {
+  it('leaves the business name alone, so the template adds the suffix', () => {
     const metadata = buildSellerMetadata(seller);
     expect(metadata.title).toBe('Arepas El Parche');
   });
 
-  it('openGraph y twitter si llevan el titulo completo', () => {
+  it('openGraph and twitter do carry the full title', () => {
     const metadata = buildSellerMetadata(seller);
     expect(metadata.openGraph.title).toBe('Arepas El Parche · Mercampus');
     expect(metadata.twitter.title).toBe('Arepas El Parche · Mercampus');
   });
 
-  it('prefiere la descripcion sobre el slogan cuando ambas existen', () => {
+  it('prefers the description over the slogan when both exist', () => {
     const metadata = buildSellerMetadata(seller);
     expect(metadata.description).toBe(seller.description);
   });
 
-  it('cae al slogan cuando no hay descripcion', () => {
+  it('falls back to the slogan when there is no description', () => {
     const metadata = buildSellerMetadata({ ...seller, description: undefined });
     expect(metadata.description).toBe(seller.slogan);
   });
 
-  it('cae a un texto generico cuando no hay descripcion ni slogan', () => {
+  it('falls back to generic text when there is neither description nor slogan', () => {
     const metadata = buildSellerMetadata({
       ...seller,
       description: undefined,
@@ -123,7 +123,7 @@ describe('buildSellerMetadata', () => {
     expect(metadata.description).toContain('Mercampus');
   });
 
-  it('pone el logo del vendedor en openGraph y twitter', () => {
+  it("puts the seller's logo in openGraph and twitter", () => {
     const metadata = buildSellerMetadata(seller);
     expect(metadata.openGraph.images).toEqual([{ url: seller.logo }]);
     expect(metadata.twitter.images).toEqual([{ url: seller.logo }]);

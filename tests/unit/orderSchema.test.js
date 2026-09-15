@@ -18,28 +18,28 @@ const buildOrder = overrides =>
     ...overrides,
   });
 
-describe('orderSchema · campos requeridos', () => {
-  it('acepta un pedido con los campos minimos', () => {
+describe('orderSchema · required fields', () => {
+  it('accepts an order with the minimum fields', () => {
     const doc = buildOrder();
     expect(doc.validateSync()).toBeUndefined();
   });
 
-  it('rechaza un pedido sin buyerId', () => {
+  it('rejects an order with no buyerId', () => {
     const doc = buildOrder({ buyerId: undefined });
     expect(doc.validateSync()?.errors?.buyerId).toBeDefined();
   });
 
-  it('rechaza un pedido sin sellerId', () => {
+  it('rejects an order with no sellerId', () => {
     const doc = buildOrder({ sellerId: undefined });
     expect(doc.validateSync()?.errors?.sellerId).toBeDefined();
   });
 
-  it('rechaza un pedido sin lineItems', () => {
+  it('rejects an order with no lineItems', () => {
     const doc = buildOrder({ lineItems: [] });
     expect(doc.validateSync()?.errors?.lineItems).toBeDefined();
   });
 
-  it('rechaza una linea con cantidad menor a 1', () => {
+  it('rejects a line with quantity less than 1', () => {
     const doc = buildOrder({
       lineItems: [
         {
@@ -53,14 +53,14 @@ describe('orderSchema · campos requeridos', () => {
     expect(doc.validateSync()?.errors?.['lineItems.0.quantity']).toBeDefined();
   });
 
-  it('rechaza un status fuera del enum', () => {
+  it('rejects a status outside the enum', () => {
     const doc = buildOrder({ status: 'enviado' });
     expect(doc.validateSync()?.errors?.status).toBeDefined();
   });
 });
 
-describe('orderSchema · valores por defecto', () => {
-  it('arranca en "pending" con una primera entrada de historial', () => {
+describe('orderSchema · default values', () => {
+  it('starts at "pending" with a first history entry', () => {
     const doc = buildOrder();
     expect(doc.status).toBe('pending');
     expect(doc.history).toHaveLength(1);

@@ -14,7 +14,7 @@ const urlsOf = async () => {
   return buildSitemap(data).map(entry => entry.url);
 };
 
-describe('T-74 · sitemap contra la base', () => {
+describe('T-74 · sitemap against the database', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     ({ getPublicSitemapData } = await import(
@@ -33,20 +33,20 @@ describe('T-74 · sitemap contra la base', () => {
     ({ ids } = await seedDatabase());
   });
 
-  it('incluye al vendedor aprobado y a sus productos', async () => {
+  it('includes the approved seller and its products', async () => {
     const urls = await urlsOf();
 
     expect(urls.some(url => url.endsWith(`/antojos/sellers/${ids.approvedSeller}`))).toBe(true);
     expect(urls.some(url => url.endsWith(`/antojos/${ids.approvedProduct}`))).toBe(true);
   });
 
-  it('no incluye al vendedor sin aprobar', async () => {
+  it('does not include the unapproved seller', async () => {
     const urls = await urlsOf();
 
     expect(urls.some(url => url.includes(ids.pendingSeller))).toBe(false);
   });
 
-  it('tampoco los productos del vendedor sin aprobar', async () => {
+  it('nor the unapproved seller\'s products either', async () => {
     const pendingProducts = await Product.find({ sellerId: ids.pendingSeller })
       .select('_id')
       .lean();
@@ -60,7 +60,7 @@ describe('T-74 · sitemap contra la base', () => {
 
   // T-71: pausing hides the store from the public listing, so the sitemap
   // can't keep sending crawlers to it.
-  it('un vendedor en pausa desaparece, junto con sus productos', async () => {
+  it('a paused seller disappears, along with its products', async () => {
     expect((await urlsOf()).some(url => url.includes(ids.approvedSeller))).toBe(true);
 
     await Seller.findByIdAndUpdate(ids.approvedSeller, { paused: true });
@@ -72,7 +72,7 @@ describe('T-74 · sitemap contra la base', () => {
 
   // Sellers predating T-71 have no `paused` field; if the filter used
   // `paused: false` they would all vanish from the sitemap.
-  it('un vendedor viejo, sin el campo paused, sigue anunciandose', async () => {
+  it('an old seller, with no paused field, still gets listed', async () => {
     await Seller.collection.updateOne(
       { businessName: 'Arepas El Parche' },
       { $unset: { paused: '' } }
@@ -81,7 +81,7 @@ describe('T-74 · sitemap contra la base', () => {
     expect((await urlsOf()).some(url => url.includes(ids.approvedSeller))).toBe(true);
   });
 
-  it('un producto de marketplace se anuncia bajo /marketplace', async () => {
+  it('a marketplace product is listed under /marketplace', async () => {
     const product = await Product.findOne({
       sellerId: ids.approvedSeller,
       section: 'marketplace',

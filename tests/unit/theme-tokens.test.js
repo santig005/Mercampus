@@ -83,26 +83,26 @@ const isAllowed = hit =>
     entry => entry.file === hit.file && entry.classes.includes(hit.className)
   );
 
-describe('T-75 · tokens de tema en toda la app', () => {
-  it('no queda ninguna clase sin migrar fuera de las excepciones documentadas', () => {
+describe('T-75 · theme tokens across the app', () => {
+  it('no unmigrated class remains outside the documented exceptions', () => {
     const unexpected = scan().filter(hit => !isAllowed(hit));
 
     // The message lists file and class: if this fails it says exactly what to
     // migrate, not just that something broke.
     expect(
       unexpected.map(hit => `${hit.file}: ${hit.className}`),
-      'clases sin migrar (ver la regla de T-75 en ROADMAP.md)'
+      'unmigrated classes (see the T-75 rule in ROADMAP.md)'
     ).toEqual([]);
   });
 
-  it('cada excepcion sigue existiendo: si se migro, sobra en la lista', () => {
+  it('each exception still exists: if it was migrated, it is stale in the list', () => {
     const hits = scan();
 
     for (const entry of ALLOWED) {
       for (const className of entry.classes) {
         expect(
           hits.some(hit => hit.file === entry.file && hit.className === className),
-          `${entry.file} ya no usa ${className}: borra esa excepcion de ALLOWED`
+          `${entry.file} no longer uses ${className}: remove that exception from ALLOWED`
         ).toBe(true);
       }
     }

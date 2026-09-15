@@ -28,8 +28,8 @@ const publicEnvVars = new Set(
   )
 );
 
-describe('variables expuestas al cliente', () => {
-  it('ninguna NEXT_PUBLIC_ se llama SECRET ni PRIVATE', () => {
+describe('variables exposed to the client', () => {
+  it('no NEXT_PUBLIC_ is named SECRET or PRIVATE', () => {
     const sospechosas = [...publicEnvVars].filter(name =>
       /SECRET|PRIVATE/.test(name)
     );
@@ -37,7 +37,7 @@ describe('variables expuestas al cliente', () => {
     expect(sospechosas).toEqual([]);
   });
 
-  it('los SDK de imagenes no leen variables NEXT_PUBLIC_', () => {
+  it('image SDKs do not read NEXT_PUBLIC_ variables', () => {
     // Busca el uso, no la cadena: estos archivos mencionan el prefijo en sus
     // comments to explain why they do NOT carry it.
     for (const file of ['src/utils/imagekit.js']) {
@@ -45,7 +45,7 @@ describe('variables expuestas al cliente', () => {
     }
   });
 
-  it('las que quedan son legitimamente publicas', () => {
+  it('the ones that remain are legitimately public', () => {
     // If a new one shows up, deciding whether it belongs in the bundle is a
     // T-112b removed NEXT_PUBLIC_URL from this list: its only readers were
     // services/api.js and apiToken.js, deleted along with the self-fetch.

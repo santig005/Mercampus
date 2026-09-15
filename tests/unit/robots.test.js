@@ -17,16 +17,16 @@ const publicPaths = buildSitemap({
 }).map(entry => entry.url.replace(SITE_URL, ''));
 
 describe('robots.txt (T-78)', () => {
-  it('apunta al sitemap: sin esta linea, T-74 no lo encuentra nadie', () => {
+  it('points at the sitemap: without this line, nobody finds T-74', () => {
     expect(robots().sitemap).toBe(`${SITE_URL}/sitemap.xml`);
   });
 
-  it('permite el resto del sitio', () => {
+  it('allows the rest of the site', () => {
     expect(rule.allow).toBe('/');
     expect(rule.userAgent).toBe('*');
   });
 
-  it('bloquea la API, el admin, el login y las pantallas del vendedor', () => {
+  it("blocks the API, the admin, the login and the seller's screens", () => {
     for (const path of ['/api/', '/admin', '/auth/', '/antojos/product/add']) {
       expect(rule.disallow).toContain(path);
     }
@@ -35,7 +35,7 @@ describe('robots.txt (T-78)', () => {
   // The trap: `/antojos/sellers/` as a single prefix would have deindexed
   // every public seller profile and the directory - exactly what the sitemap
   // acaba de empezar a anunciar.
-  it('ninguna regla tapa una URL que el sitemap anuncia', () => {
+  it('no rule blocks a URL the sitemap advertises', () => {
     const tapadas = publicPaths.filter(path =>
       PRIVATE_PATHS.some(prefix => path.startsWith(prefix))
     );
@@ -43,7 +43,7 @@ describe('robots.txt (T-78)', () => {
     expect(tapadas).toEqual([]);
   });
 
-  it('en particular, el perfil publico y el directorio de vendedores siguen permitidos', () => {
+  it('in particular, the public profile and the seller directory stay allowed', () => {
     for (const path of ['/antojos/sellers/list', '/antojos/sellers/6a9f0000000000000000aaaa']) {
       expect(PRIVATE_PATHS.some(prefix => path.startsWith(prefix))).toBe(false);
     }

@@ -26,7 +26,7 @@ let Product;
 let Seller;
 let ids;
 
-describe('validacion en el borde', () => {
+describe('validation at the edge', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     productRoute = await import('@/app/api/products/[id]/route.js');
@@ -44,7 +44,7 @@ describe('validacion en el borde', () => {
     session.userId = OWNER;
   });
 
-  it('400 con el detalle del campo cuando el tipo no cuadra', async () => {
+  it('400 with the field detail when the type does not match', async () => {
     const response = await productRoute.PUT(put({ price: 'gratis' }), {
       params: { id: ids.approvedProduct },
     });
@@ -68,7 +68,7 @@ describe('validacion en el borde', () => {
     expect(product.price).toBe(9000);
   });
 
-  it('400 si la categoria no pertenece a la seccion, en vez de 500 al guardar', async () => {
+  it('400 if the category does not belong to the section, instead of a 500 on save', async () => {
     const response = await productRoute.PUT(
       put({ section: 'antojos', category: ['Tecnología'] }),
       { params: { id: ids.approvedProduct } }
@@ -80,7 +80,7 @@ describe('validacion en el borde', () => {
     expect(body.fields[0].message).toContain('Tecnología');
   });
 
-  it('400 si el nombre viene vacio', async () => {
+  it('400 if the name comes empty', async () => {
     const response = await productRoute.PUT(put({ name: '   ' }), {
       params: { id: ids.approvedProduct },
     });
@@ -88,7 +88,7 @@ describe('validacion en el borde', () => {
     expect(response.status).toBe(400);
   });
 
-  it('no deja que el cliente reasigne el producto a otro vendedor', async () => {
+  it('does not let the client reassign the product to another seller', async () => {
     const antes = await Product.findById(ids.approvedProduct);
 
     const response = await productRoute.PUT(
@@ -103,7 +103,7 @@ describe('validacion en el borde', () => {
     expect(despues.sellerId.toString()).toBe(antes.sellerId.toString());
   });
 
-  it('no deja que un vendedor se autoapruebe por el body', async () => {
+  it('does not let a seller self-approve through the body', async () => {
     await Seller.findByIdAndUpdate(ids.approvedSeller, { approved: false });
 
     const response = await sellerRoute.PUT(
@@ -117,7 +117,7 @@ describe('validacion en el borde', () => {
     expect(seller.approved).toBe(false);
   });
 
-  it('400 si el telefono no es numerico', async () => {
+  it('400 if the phone number is not numeric', async () => {
     const response = await sellerRoute.PUT(put({ phoneNumber: '300-123' }), {
       params: { id: ids.approvedSeller },
     });
@@ -127,7 +127,7 @@ describe('validacion en el borde', () => {
     expect(body.fields.map(f => f.field)).toContain('phoneNumber');
   });
 
-  it('acepta un cuerpo valido', async () => {
+  it('accepts a valid body', async () => {
     const response = await productRoute.PUT(
       put({ name: 'Arepa con todo', price: 9000 }),
       { params: { id: ids.approvedProduct } }
@@ -140,7 +140,7 @@ describe('validacion en el borde', () => {
   });
 
   describe('query params', () => {
-    it('400 si sellerId no es un ObjectId, en vez de un CastError 500', async () => {
+    it('400 if sellerId is not an ObjectId, instead of a 500 CastError', async () => {
       const productsRoute = await import('@/app/api/products/route.js');
 
       const response = await productsRoute.GET(
@@ -152,7 +152,7 @@ describe('validacion en el borde', () => {
       expect(body.fields.map(f => f.field)).toContain('sellerId');
     });
 
-    it('una consulta sin parametros sigue devolviendo el listado', async () => {
+    it('a query with no params still returns the listing', async () => {
       const productsRoute = await import('@/app/api/products/route.js');
 
       const response = await productsRoute.GET(

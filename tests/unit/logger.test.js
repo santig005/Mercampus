@@ -17,7 +17,7 @@ describe('logger', () => {
     delete process.env.LOG_LEVEL;
   });
 
-  it('no imprime nada en test', () => {
+  it('prints nothing in test', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -32,7 +32,7 @@ describe('logger', () => {
     expect(error).not.toHaveBeenCalled();
   });
 
-  it('respeta LOG_LEVEL cuando se pide explicitamente', () => {
+  it('respects LOG_LEVEL when explicitly requested', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     process.env.LOG_LEVEL = 'warn';
@@ -46,7 +46,7 @@ describe('logger', () => {
     expect(error).toHaveBeenCalledTimes(2);
   });
 
-  it('manda el contexto como objeto aparte, no interpolado', () => {
+  it('sends the context as a separate object, not interpolated', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     process.env.LOG_LEVEL = 'error';
 
@@ -59,8 +59,8 @@ describe('logger', () => {
   });
 });
 
-describe('sin console.* en src', () => {
-  it('ningun archivo de src usa console directamente', () => {
+describe('no console.* in src', () => {
+  it('no file in src uses console directly', () => {
     // Deliberately strict: it matches inside comments too, so a commented-out
     // se acumulen `// console.log(...)` de depuracion. El unico permitido es el
     // logger itself, which is the one that really calls console.
@@ -72,7 +72,7 @@ describe('sin console.* en src', () => {
     expect(conConsole).toEqual([]);
   });
 
-  it('scripts/ si puede usar console: son herramientas de linea de comandos', () => {
+  it('scripts/ may use console: they are command-line tools', () => {
     const conConsole = walk('scripts').filter(file =>
       /console\.(log|error)\s*\(/.test(readFileSync(file, 'utf8'))
     );
@@ -81,13 +81,13 @@ describe('sin console.* en src', () => {
   });
 });
 
-describe('normalizacion del contexto', () => {
+describe('context normalization', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.LOG_LEVEL;
   });
 
-  it('convierte un Error en mensaje y stack', () => {
+  it('converts an Error into message and stack', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     process.env.LOG_LEVEL = 'error';
 
@@ -98,7 +98,7 @@ describe('normalizacion del contexto', () => {
     expect(context.stack).toContain('Error: conexión rechazada');
   });
 
-  it('envuelve los valores que no son objeto', () => {
+  it('wraps values that are not an object', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     process.env.LOG_LEVEL = 'error';
 
@@ -109,7 +109,7 @@ describe('normalizacion del contexto', () => {
     expect(spy.mock.calls[0][1]).toEqual({ detail: 'abc123' });
   });
 
-  it('deja pasar los objetos tal cual', () => {
+  it('passes objects through as-is', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     process.env.LOG_LEVEL = 'error';
 

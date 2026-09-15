@@ -6,8 +6,8 @@ import {
   transitionOrder,
 } from '@/server/orders/stateMachine';
 
-describe('assertValidTransition · camino feliz', () => {
-  it('acepta la secuencia completa pending -> ... -> completed', () => {
+describe('assertValidTransition · happy path', () => {
+  it('accepts the full sequence pending -> ... -> completed', () => {
     const path = [
       'pending',
       'accepted',
@@ -21,29 +21,29 @@ describe('assertValidTransition · camino feliz', () => {
   });
 
   it.each(['pending', 'accepted', 'preparing'])(
-    'acepta cancelar desde "%s"',
+    'accepts cancelling from "%s"',
     status => {
       expect(() => assertValidTransition(status, 'cancelled')).not.toThrow();
     }
   );
 });
 
-describe('assertValidTransition · transiciones invalidas', () => {
-  it('rechaza saltarse pasos (pending -> delivering)', () => {
+describe('assertValidTransition · invalid transitions', () => {
+  it('rejects skipping steps (pending -> delivering)', () => {
     expect(() => assertValidTransition('pending', 'delivering')).toThrow(
       'No se puede pasar de "pending" a "delivering".'
     );
   });
 
-  it('rechaza retroceder (preparing -> accepted)', () => {
+  it('rejects going backwards (preparing -> accepted)', () => {
     expect(() => assertValidTransition('preparing', 'accepted')).toThrow();
   });
 
-  it('rechaza cancelar un pedido ya en reparto', () => {
+  it('rejects cancelling an order already out for delivery', () => {
     expect(() => assertValidTransition('delivering', 'cancelled')).toThrow();
   });
 
-  it('rechaza cualquier transicion desde un estado terminal', () => {
+  it('rejects any transition from a terminal state', () => {
     for (const terminal of ['completed', 'cancelled']) {
       for (const next of ORDER_STATUSES) {
         if (next === terminal) continue;
@@ -52,10 +52,10 @@ describe('assertValidTransition · transiciones invalidas', () => {
     }
   });
 
-  it('la transicion invalida se rechaza con un AppError 409', () => {
+  it('the invalid transition is rejected with an AppError 409', () => {
     try {
       assertValidTransition('pending', 'completed');
-      throw new Error('no debio llegar aqui');
+      throw new Error('should not have reached here');
     } catch (error) {
       expect(error.name).toBe('AppError');
       expect(error.status).toBe(409);
@@ -69,7 +69,7 @@ describe('transitionOrder', () => {
     history: [{ status: 'pending', at: new Date('2026-01-01') }],
   });
 
-  it('actualiza el estado y agrega una entrada al historial', () => {
+  it('updates the status and adds a history entry', () => {
     const order = buildOrder();
     transitionOrder(order, 'accepted');
 
@@ -78,7 +78,7 @@ describe('transitionOrder', () => {
     expect(order.history[1].status).toBe('accepted');
   });
 
-  it('no toca el pedido si la transicion es invalida', () => {
+  it('does not touch the order if the transition is invalid', () => {
     const order = buildOrder();
     expect(() => transitionOrder(order, 'delivering')).toThrow();
 
