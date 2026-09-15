@@ -1360,7 +1360,7 @@ workflows use only `CLERK_SECRET_KEY`, `CRON_SECRET` and the automatic
 Deleting it is a settings change, so it is listed here, not done.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-110 · Stabilise the flaky e2e specs
+### [x] T-110 · Stabilise the flaky e2e specs
 **Why:** the suite has now cried wolf three times on record, which is how a
 real regression gets waved through. T-80 logged two seller specs (`el perfil
 del vendedor carga su negocio`, `el listado de vendedores muestra las

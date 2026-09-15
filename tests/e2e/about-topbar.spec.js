@@ -58,7 +58,18 @@ test.describe('/about sticky topbar (T-87)', () => {
     await scrollToTop(page);
 
     await expect(topbar(page)).toHaveAttribute('data-scrolled', 'false');
-    expect(isTransparent(await backgroundOf(topbar(page)))).toBe(true);
+
+    // The header has `transition-colors duration-200`: `data-scrolled` flips
+    // the instant React re-renders, but the background is still animating
+    // from opaque to transparent for up to 200ms after that. A one-shot read
+    // here races the transition and was the real, previously undocumented
+    // cause of T-110's flake - going the other way (opaque check after
+    // scrolling down) never flaked because "not transparent" is already true
+    // the moment the transition *starts*, while "is transparent" is only true
+    // once it *finishes*. Poll until the transition actually lands.
+    await expect
+      .poll(async () => isTransparent(await backgroundOf(topbar(page))))
+      .toBe(true);
   });
 
   // F17 was exactly this page's hero looking fine in light and being unreadable

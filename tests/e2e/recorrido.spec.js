@@ -62,7 +62,19 @@ test.describe('recorrido publico', () => {
   });
 
   test('el perfil del vendedor carga su negocio', async ({ page }) => {
+    // T-110: SellerPage.jsx is a client component that fetches its own copy of
+    // the seller (its own `/api/sellers/:id` call, separate from the server
+    // read generateMetadata already did) in a useEffect after mount - nothing
+    // but a full-screen spinner renders until that resolves. The assertions
+    // below already retry via toBeVisible(), which covers this most of the
+    // time, but T-80 saw this spec fail once and pass 16/16 on an immediate
+    // re-run: a real, if rare, data-load race. Waiting on the response itself
+    // is the real condition, not an incidental proxy for it.
+    const sellerResponse = page.waitForResponse(
+      response => new URL(response.url()).pathname === `/api/sellers/${SELLER_ID}`
+    );
     await page.goto(`/antojos/sellers/${SELLER_ID}`);
+    await sellerResponse;
 
     await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
     // Its own products, not the other seller's.
@@ -83,7 +95,16 @@ test.describe('recorrido publico', () => {
   test('el listado de vendedores muestra las tarjetas de negocio', async ({ page }) => {
     // The only public screen that renders SellerCard (via SellerGrid). The
     // product detail and the seller profile do not use it.
+    //
+    // T-110: same data-load race as the seller profile test above - SellerGrid
+    // is a client component that fetches GET /api/sellers in a useEffect after
+    // mount, and renders an empty-state until that resolves. Wait on the
+    // response itself rather than only on toBeVisible()'s implicit retry.
+    const sellersResponse = page.waitForResponse(
+      response => new URL(response.url()).pathname === '/api/sellers'
+    );
     await page.goto('/antojos/sellers/list');
+    await sellersResponse;
 
     await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
     await expect(page.getByText('De la plancha a tu clase').first()).toBeVisible();
