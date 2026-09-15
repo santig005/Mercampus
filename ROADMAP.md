@@ -1780,13 +1780,36 @@ execute as written):**
    registration, how the site works, and its conventions - and that can
    hand back a real link to the relevant page/resource rather than just
    describing it in prose.
-2. **Read-only tools first:** look up a product's or a seller's approval
-   status, schedule, or availability, and answer from that instead of
-   guessing. Lower risk than the next stage - it can only leak what a
-   signed-in user could already see through the UI, so it needs the same
-   authorization boundary CLAUDE.md's convention already requires
-   ("Autorización explícita") before it can answer with anyone's data
-   rather than public listing info.
+2. **Read-only tools first - but two different risk levels, not one:**
+   - **Catalog/recommendation** ("algo frutal bajo $6000 que esté hoy"): a
+     natural-language front end to the same public listing `/antojos`
+     already shows anyone, logged in or not - no ownership check applies,
+     because none of the data is private. Best built as tool-calling on
+     top of **T-50** (semantic search) rather than a separate
+     implementation: the model extracts structured arguments (the semantic
+     text, a price bound, a day/time bound) and the tool executes them,
+     it never reasons over raw catalog text itself. Day/time reuses
+     `isOpenAt`/`src/lib/store-availability.ts` as-is (it already takes an
+     arbitrary `{day, time}`, not just "now"); a *range* query ("after 10,
+     before 3pm") needs one small overlap predicate added to that same
+     file, not a formula invented per query. University defaults from the
+     existing `UniversityContext` (`selectedUniversity` in
+     `localStorage` - client state, not server session, so the client has
+     to pass it explicitly), overridden only when the text names another
+     one. **Depends on T-50** existing - without it, this either doesn't
+     scale or duplicates it.
+   - **Mine/my-seller's data** (a product's or seller's approval status,
+     schedule, availability): this is the one that can leak what a
+     signed-in user could not already see through the UI, so it needs the
+     authorization boundary CLAUDE.md's convention already requires
+     ("Autorización explícita") - scoped to the caller's own seller/
+     product, never anyone else's.
+
+   Either way: for a claim read out of a seller's free-text description
+   that reads as health/dietary/allergy ("sin azúcar", "apto para X"),
+   quote what the seller wrote rather than assert it as verified - nobody
+   has checked it. Doesn't apply to taste/price/schedule, where a wrong
+   guess costs a follow-up question, not a false safety claim.
 3. **Agentic/write tools, later and separately:** editing a product's own
    name, price, etc. on the seller's behalf. This is a materially
    different risk level than (1)/(2) - it mutates real data through
