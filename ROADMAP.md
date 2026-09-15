@@ -3757,7 +3757,21 @@ the plan above:
   here: an index change goes in its own PR.
 - **Outside the repo:** nothing.
 
-### [ ] T-124 · Photos over 4.5 MB fail before reaching our code
+### [~] T-124 · Photos over 4.5 MB fail before reaching our code
+> **Option (a) is done and verified; option (b) is untouched.**
+> `src/lib/compressImageForUpload.js` shrinks an oversized file with the
+> Canvas API (resize, then re-encode as JPEG, stepping quality down and then
+> dimensions until it fits) and `ImageGrid.jsx` calls it before building the
+> upload's `FormData`, so `POST /api/images` still sees the same session and
+> `uploader:` tag as before (T-116's model intact). Verified against a real
+> generated file in a real headless Chromium via
+> `npm run test:e2e:image-compression` (`tests/e2e/image-compression/`, its
+> own standalone Playwright config since the main one needs a full `next
+> build` behind a real Clerk key) - **not** the actual add/edit-product form
+> end to end, which needs a signed-in session this worktree's missing `.env`
+> can't provide. Option (b) (signed direct upload to ImageKit) was not
+> attempted; it still needs the signature-binding check the entry below
+> describes before anyone starts it.
 **Why:** raised on 2026-09-13 while discussing who should upload images.
 Vercel Functions reject any request body over **4.5 MB** with `413
 FUNCTION_PAYLOAD_TOO_LARGE`, and the limit cannot be configured.
@@ -3768,12 +3782,12 @@ can exceed it. **Not measured** whether a seller has hit it yet.
 **Options:**
 - **(a) Shrink in the browser before uploading.** Keeps T-116's model intact:
   the upload still goes through our route, so the session check and the
-  `uploader:` tag still apply. The recommended first step.
+  `uploader:` tag still apply. The recommended first step. **Done.**
 - **(b) Signed direct upload to ImageKit.** ImageKit supports it (the backend
   issues `token`, `expire`, `signature`), and the bytes never touch Vercel.
   But the server-side resize is lost, and **it must be verified that the
   signature binds the folder and the tags** - if a client can change them,
-  T-116's uploader rule stops meaning anything.
+  T-116's uploader rule stops meaning anything. **Not started.**
 **Done when:** a photo over 4.5 MB uploads from the form, or the form says so
 before trying - verified with a real large file, not a mocked request body.
 **Model:** `sonnet` for (a), `opus` for (b) · **Nightly:** no (verifying it

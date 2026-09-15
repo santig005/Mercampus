@@ -15,6 +15,7 @@
     "test": "vitest run",
     "verify": "node scripts/verify.mjs",
     "test:e2e": "node --import ./scripts/register-alias.mjs ./scripts/e2e.mjs",
+    "test:e2e:image-compression": "playwright test --config=tests/e2e/image-compression/playwright.config.js",
     "budget:lighthouse": "node --import ./scripts/register-alias.mjs ./scripts/lighthouse.mjs",
     "budget:lighthouse:dark": "node --import ./scripts/register-alias.mjs ./scripts/lighthouse-dark.mjs",
     "seed": "node --env-file=.env --import ./scripts/register-alias.mjs ./scripts/seed.mjs",
