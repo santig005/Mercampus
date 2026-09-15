@@ -124,10 +124,23 @@ const AddProduct = () => {
           id='errors'
           className={`modal ${errorCode ? 'modal-open' : ''}`}
         >
-          <div className='modal-box bg-[#fde6e6] p-3'>
-            <div className='flex justify-start items-center gap-3 w-full'>
+          <div className='modal-box p-3'>
+            {/* T-127: this used to be `bg-[#fde6e6]`, a light pink with no
+                dark-theme variant - heading/list text had no explicit color
+                so it fell back to base-content, nearly invisible on that
+                pink in the dark theme (see docs/audits/t-119/
+                error-state__dark.png and t-127 in ROADMAP.md). `alert
+                alert-error` is the same themed daisyUI token
+                EditProductForm.jsx already uses for its error banner - its
+                background and text both come from the current theme's
+                error/error-content CSS vars, so they track light/dark
+                instead of being hardcoded for one of them. */}
+            <div
+              role='alert'
+              className='alert alert-error flex justify-start items-start gap-3 w-full'
+            >
               <div className=''>
-                <FcHighPriority className='text-red-400 text-4xl' />
+                <FcHighPriority className='text-4xl' />
               </div>
               <div className='w-full'>
                 <h3 className='font-bold text-lg flex justify-between'>
@@ -135,7 +148,7 @@ const AddProduct = () => {
                   <form method='dialog'>
                     {/* if there is a button in form, it will close the modal */}
                     <button className='font-normal' onClick={closeErrorModal}>
-                      <IoClose className='text-red-400 text-2xl' />
+                      <IoClose className='text-2xl' />
                     </button>
                   </form>
                 </h3>

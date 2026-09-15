@@ -3835,7 +3835,7 @@ above ships, reproduce it on a preview and read the new `detailMessage`/
 `help` fields in the log.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-127 · The add-product error dialog is unreadable in dark mode
+### [x] T-127 · The add-product error dialog is unreadable in dark mode
 **Why:** found on 2026-09-14 while capturing the real screenshots T-119's
 rule 3 required - the PR that shipped T-119 could not take them (no `.env`
 in its worktree, same Clerk blocker as T-100), so nobody had actually looked
