@@ -9,8 +9,8 @@ import { expect, test } from '@playwright/test';
 // "scroll 1" (inserted first, the smallest id among the filler) is one of
 // the last to be seen - it should only appear after loading the second
 // page.
-test.describe('scroll infinito en el listado (T-23)', () => {
-  test('cargar mas al llegar al final trae la siguiente pagina', async ({ page }) => {
+test.describe('infinite scroll on the listing (T-23)', () => {
+  test('loading more at the end brings the next page', async ({ page }) => {
     // T-110: found while stabilising the suite - T-123's bug (page 2
     // auto-loading ~300ms after the first page rendered, with nobody
     // scrolling: ProductGrid.jsx's sentinel firing before auto-animate's

@@ -52,46 +52,46 @@ beforeEach(() => {
   clerkUser.publicMetadata = {};
 });
 
-describe('middleware · rutas de admin (T-12)', () => {
-  it('pagina /admin sin sesion manda a login', async () => {
+describe('middleware · admin routes (T-12)', () => {
+  it('/admin page with no session sends to login', async () => {
     const res = await middleware(new NextRequest('http://localhost/admin/sellers'));
     expect(res.status).toBe(307);
     expect(res.headers.get('location')).toBe('/auth/login');
   });
 
-  it('api /api/sellers/admin sin sesion responde 401, no redirige', async () => {
+  it('/api/sellers/admin api with no session responds 401, does not redirect', async () => {
     const res = await middleware(new NextRequest('http://localhost/api/sellers/admin'));
     expect(res.status).toBe(401);
   });
 
-  it('pagina /admin con sesion pero sin rol manda al home', async () => {
+  it('/admin page with a session but no role sends home', async () => {
     session.userId = 'user_buyer';
     const res = await middleware(new NextRequest('http://localhost/admin/sellers'));
     expect(res.status).toBe(307);
     expect(res.headers.get('location')).toBe('http://localhost/');
   });
 
-  it('api de admin con sesion pero sin rol responde 403', async () => {
+  it('admin api with a session but no role responds 403', async () => {
     session.userId = 'user_buyer';
     const res = await middleware(new NextRequest('http://localhost/api/sellers/admin'));
     expect(res.status).toBe(403);
   });
 
-  it('rol de admin en publicMetadata: pagina de admin pasa', async () => {
+  it('admin role in publicMetadata: admin page passes', async () => {
     session.userId = 'user_admin';
     clerkUser.publicMetadata = { role: 'admin' };
     const res = await middleware(new NextRequest('http://localhost/admin/sellers'));
     expect(res).toBeUndefined();
   });
 
-  it('rol de admin en publicMetadata: api de admin pasa', async () => {
+  it('admin role in publicMetadata: admin api passes', async () => {
     session.userId = 'user_admin';
     clerkUser.publicMetadata = { role: 'admin' };
     const res = await middleware(new NextRequest('http://localhost/api/sellers/admin'));
     expect(res).toBeUndefined();
   });
 
-  it('una ruta que no es de admin no se ve afectada, con o sin sesion', async () => {
+  it('a non-admin route is unaffected, with or without a session', async () => {
     expect(await middleware(new NextRequest('http://localhost/antojos'))).toBeUndefined();
 
     session.userId = 'user_buyer';

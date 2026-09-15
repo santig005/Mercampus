@@ -24,7 +24,7 @@ const indexKeys = async model =>
     Object.keys(index.key).join(',')
   );
 
-describe('indices', () => {
+describe('indexes', () => {
   beforeAll(async () => {
     await startTestDb();
     ({ ids } = await seedDatabase());
@@ -41,7 +41,7 @@ describe('indices', () => {
     await stopTestDb();
   });
 
-  it('declara los indices que pide el ROADMAP', async () => {
+  it('declares the indexes the ROADMAP asks for', async () => {
     expect(await indexKeys(Product)).toEqual(
       expect.arrayContaining(['sellerId', 'section'])
     );
@@ -54,19 +54,19 @@ describe('indices', () => {
     expect(await indexKeys(User)).toEqual(expect.arrayContaining(['email']));
   });
 
-  it('Product.sellerId se resuelve por indice, no por collection scan', async () => {
+  it('Product.sellerId is resolved by an index, not a collection scan', async () => {
     expect(await usesIndex(Product.find({ sellerId: ids.approvedSeller }))).toBe(
       true
     );
   });
 
-  it('Schedule.sellerId se resuelve por indice', async () => {
+  it('Schedule.sellerId is resolved by an index', async () => {
     expect(
       await usesIndex(Schedule.find({ sellerId: ids.approvedSeller }))
     ).toBe(true);
   });
 
-  it('Seller.userId y Seller.university se resuelven por indice', async () => {
+  it('Seller.userId and Seller.university are resolved by an index', async () => {
     const seller = await Seller.findById(ids.approvedSeller);
 
     expect(await usesIndex(Seller.find({ userId: seller.userId }))).toBe(true);
@@ -75,13 +75,13 @@ describe('indices', () => {
     ).toBe(true);
   });
 
-  it('User.email se resuelve por indice', async () => {
+  it('User.email is resolved by an index', async () => {
     expect(
       await usesIndex(User.find({ email: 'carlos.mesa@example.test' }))
     ).toBe(true);
   });
 
-  it('una consulta sin indice sigue siendo collection scan', async () => {
+  it('a query with no index is still a collection scan', async () => {
     // Control: si esto diera true, el test de arriba no probaria nada.
     expect(await usesIndex(Product.find({ description: /arepa/i }))).toBe(false);
   });

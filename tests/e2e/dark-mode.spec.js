@@ -8,8 +8,8 @@ const openSidebar = async page => {
 
 const themeToggle = page => page.getByLabel('Alternar modo oscuro');
 
-test.describe('modo oscuro (T-73)', () => {
-  test('el switcher cambia data-theme y lo guarda en localStorage', async ({ page }) => {
+test.describe('dark mode (T-73)', () => {
+  test('the switcher changes data-theme and saves it to localStorage', async ({ page }) => {
     await page.goto('/antojos');
 
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'dark');
@@ -26,7 +26,7 @@ test.describe('modo oscuro (T-73)', () => {
     await page.screenshot({ path: 'test-results/08-modo-oscuro.png', fullPage: true });
   });
 
-  test('el tema persiste entre recargas sin parpadeo (script anti-FOUC)', async ({ page }) => {
+  test('the theme persists across reloads without a flash (anti-FOUC script)', async ({ page }) => {
     await page.goto('/antojos');
     await openSidebar(page);
     await themeToggle(page).click();
@@ -49,7 +49,7 @@ test.describe('modo oscuro (T-73)', () => {
       .toBe('dark');
   });
 
-  test('un segundo click vuelve a modo claro', async ({ page }) => {
+  test('a second click goes back to light mode', async ({ page }) => {
     await page.goto('/antojos');
     await openSidebar(page);
     await themeToggle(page).click();

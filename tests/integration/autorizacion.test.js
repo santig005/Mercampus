@@ -75,7 +75,7 @@ let Schedule;
 let User;
 let ids;
 
-describe('autorizacion en mutaciones', () => {
+describe('authorization on mutations', () => {
   beforeAll(async () => {
     // connectDB reads MONGO_URI when imported, so it has to be set before
     // loading the handlers, and with the same string startTestDb used.
@@ -101,7 +101,7 @@ describe('autorizacion en mutaciones', () => {
   });
 
   describe('PUT /api/products/[id]', () => {
-    it('401 sin sesion, y no toca el producto', async () => {
+    it('401 without a session, and the product is untouched', async () => {
       const response = await productRoute.PUT(jsonRequest({ name: 'Hackeado' }), {
         params: { id: ids.approvedProduct },
       });
@@ -111,7 +111,7 @@ describe('autorizacion en mutaciones', () => {
       expect(product.name).toBe('Arepa de queso');
     });
 
-    it('403 con la sesion de otro vendedor, y no toca el producto', async () => {
+    it("403 with another seller's session, and the product is untouched", async () => {
       signInAs(OTHER_SELLER);
 
       const response = await productRoute.PUT(jsonRequest({ name: 'Hackeado' }), {
@@ -123,7 +123,7 @@ describe('autorizacion en mutaciones', () => {
       expect(product.name).toBe('Arepa de queso');
     });
 
-    it('403 con un comprador sin perfil de vendedor', async () => {
+    it('403 for a buyer with no seller profile', async () => {
       signInAs(BUYER);
 
       const response = await productRoute.PUT(jsonRequest({ name: 'Hackeado' }), {
@@ -133,7 +133,7 @@ describe('autorizacion en mutaciones', () => {
       expect(response.status).toBe(403);
     });
 
-    it('200 con el dueño, y el cambio se aplica', async () => {
+    it('200 with the owner, and the change applies', async () => {
       signInAs(OWNER);
 
       const response = await productRoute.PUT(
@@ -148,7 +148,7 @@ describe('autorizacion en mutaciones', () => {
   });
 
   describe('DELETE /api/products/[id]', () => {
-    it('401 sin sesion, y el producto sigue existiendo', async () => {
+    it('401 without a session, and the product still exists', async () => {
       const response = await productRoute.DELETE(new Request('http://localhost/api'), {
         params: { id: ids.approvedProduct },
       });
@@ -157,7 +157,7 @@ describe('autorizacion en mutaciones', () => {
       expect(await Product.findById(ids.approvedProduct)).not.toBeNull();
     });
 
-    it('403 con la sesion de otro vendedor, y el producto sigue existiendo', async () => {
+    it("403 with another seller's session, and the product still exists", async () => {
       signInAs(OTHER_SELLER);
 
       const response = await productRoute.DELETE(new Request('http://localhost/api'), {
@@ -168,7 +168,7 @@ describe('autorizacion en mutaciones', () => {
       expect(await Product.findById(ids.approvedProduct)).not.toBeNull();
     });
 
-    it('200 con el dueño, y el producto desaparece', async () => {
+    it('200 with the owner, and the product disappears', async () => {
       signInAs(OWNER);
 
       const response = await productRoute.DELETE(new Request('http://localhost/api'), {
@@ -181,7 +181,7 @@ describe('autorizacion en mutaciones', () => {
   });
 
   describe('PUT /api/sellers/[id]', () => {
-    it('401 sin sesion, y no toca el vendedor', async () => {
+    it('401 without a session, and the seller is untouched', async () => {
       const response = await sellerRoute.PUT(
         jsonRequest({ businessName: 'Robado' }),
         { params: { id: ids.approvedSeller } }
@@ -192,7 +192,7 @@ describe('autorizacion en mutaciones', () => {
       expect(seller.businessName).toBe('Arepas El Parche');
     });
 
-    it('403 con la sesion de otro vendedor, y no toca el vendedor', async () => {
+    it("403 with another seller's session, and the seller is untouched", async () => {
       signInAs(OTHER_SELLER);
 
       const response = await sellerRoute.PUT(
@@ -205,7 +205,7 @@ describe('autorizacion en mutaciones', () => {
       expect(seller.businessName).toBe('Arepas El Parche');
     });
 
-    it('200 con el dueño, y el cambio se aplica', async () => {
+    it('200 with the owner, and the change applies', async () => {
       signInAs(OWNER);
 
       const response = await sellerRoute.PUT(
@@ -218,7 +218,7 @@ describe('autorizacion en mutaciones', () => {
       expect(seller.slogan).toBe('Recién hechas');
     });
 
-    it('403 al editar por email ajeno', async () => {
+    it("403 editing by someone else's email", async () => {
       signInAs(OTHER_SELLER);
 
       const response = await sellerRoute.PUT(
@@ -229,7 +229,7 @@ describe('autorizacion en mutaciones', () => {
       expect(response.status).toBe(403);
     });
 
-    it('200 al editarse a sí mismo por email', async () => {
+    it('200 editing yourself by email', async () => {
       signInAs(OWNER);
 
       const response = await sellerRoute.PUT(
@@ -298,7 +298,7 @@ describe('autorizacion en mutaciones', () => {
       category: ['Panadería'],
     };
 
-    it('401 sin sesion, y no crea el producto', async () => {
+    it('401 without a session, and it does not create the product', async () => {
       const antes = await Product.countDocuments();
 
       const response = await productsRoute.POST(postRequest(productoValido));
@@ -307,7 +307,7 @@ describe('autorizacion en mutaciones', () => {
       expect(await Product.countDocuments()).toBe(antes);
     });
 
-    it('403 con un comprador sin perfil de vendedor', async () => {
+    it('403 for a buyer with no seller profile', async () => {
       signInAs(BUYER);
       const antes = await Product.countDocuments();
 
@@ -317,7 +317,7 @@ describe('autorizacion en mutaciones', () => {
       expect(await Product.countDocuments()).toBe(antes);
     });
 
-    it('201 con un vendedor, y el producto queda a su nombre', async () => {
+    it('201 with a seller, and the product is created under their name', async () => {
       signInAs(OWNER);
 
       const response = await productsRoute.POST(postRequest(productoValido));
@@ -343,7 +343,7 @@ describe('autorizacion en mutaciones', () => {
 
     const vaciado = sellerId => postRequest({ sellerId, schedules: [] });
 
-    it('401 sin sesion, y el horario sigue intacto', async () => {
+    it('401 without a session, and the schedule stays intact', async () => {
       const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
 
       expect(response.status).toBe(401);
@@ -352,7 +352,7 @@ describe('autorizacion en mutaciones', () => {
       ).toBe(HORARIO_SEMBRADO);
     });
 
-    it('403 con la sesion de otro vendedor, y el horario sigue intacto', async () => {
+    it("403 with another seller's session, and the schedule stays intact", async () => {
       signInAs(OTHER_SELLER);
 
       const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
@@ -363,7 +363,7 @@ describe('autorizacion en mutaciones', () => {
       ).toBe(HORARIO_SEMBRADO);
     });
 
-    it('403 con un comprador sin perfil de vendedor', async () => {
+    it('403 for a buyer with no seller profile', async () => {
       signInAs(BUYER);
 
       const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
@@ -374,7 +374,7 @@ describe('autorizacion en mutaciones', () => {
       ).toBe(HORARIO_SEMBRADO);
     });
 
-    it('no deja vaciar el horario de un vendedor ajeno', async () => {
+    it("does not let you empty another seller's schedule", async () => {
       signInAs(OTHER_SELLER);
 
       const response = await schedulesRoute.POST(vaciado(ids.approvedSeller));
@@ -385,7 +385,7 @@ describe('autorizacion en mutaciones', () => {
       ).toBe(HORARIO_SEMBRADO);
     });
 
-    it('200 con el dueño, y el horario se reemplaza', async () => {
+    it('200 with the owner, and the schedule is replaced', async () => {
       signInAs(OWNER);
 
       const response = await schedulesRoute.POST(reemplazo(ids.approvedSeller));
@@ -397,7 +397,7 @@ describe('autorizacion en mutaciones', () => {
       expect(schedules[0].startTime).toBe('09:00');
     });
 
-    it('el dueño no toca el horario del otro vendedor', async () => {
+    it("the owner does not touch the other seller's schedule", async () => {
       signInAs(OWNER);
 
       await schedulesRoute.POST(reemplazo(ids.approvedSeller));

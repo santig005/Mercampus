@@ -9,7 +9,7 @@ const session = vi.hoisted(() => ({ userId: null }));
 
 // T-104: clerkClient is stubbed because verifySellerId now asks Clerk for
 // admin-ness whenever the session is not the seller's owner - which is
-// exactly the path 'un vendedor no puede pausar la tienda de otro' takes.
+// exactly the path "a seller cannot pause another seller's store" takes.
 // No publicMetadata here: none of these sessions is an admin.
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
@@ -48,7 +48,7 @@ const putSeller = (id, body) =>
 
 const businessNames = ({ sellers }) => sellers.map(seller => seller.businessName);
 
-describe('T-71 · modo pausa del vendedor', () => {
+describe('T-71 · seller pause mode', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     productsRoute = await import('@/app/api/products/route.js');
@@ -66,13 +66,13 @@ describe('T-71 · modo pausa del vendedor', () => {
     session.userId = null;
   });
 
-  it('un vendedor nuevo nace despausado', async () => {
+  it('a new seller is born unpaused', async () => {
     const seller = await Seller.findById(ids.approvedSeller).lean();
 
     expect(seller.paused).toBe(false);
   });
 
-  it('pausar esconde al vendedor del listado publico', async () => {
+  it('pausing hides the seller from the public listing', async () => {
     expect(businessNames(await getSellers())).toContain('Arepas El Parche');
 
     await Seller.findByIdAndUpdate(ids.approvedSeller, { paused: true });
@@ -94,13 +94,13 @@ describe('T-71 · modo pausa del vendedor', () => {
   // visitor so that one privileged page could filter it back in client-side.
   // The assertion is inverted rather than deleted, so the file still records
   // that this behaviour existed and why it stopped.
-  it('un vendedor sin aprobar NO se devuelve en el listado publico', async () => {
+  it('an unapproved seller is NOT returned in the public listing', async () => {
     expect(businessNames(await getSellers())).not.toContain('Postres Laura');
   });
 
   // The other half of the same change: the pending seller did not vanish, they
   // moved. T-106 is only defensible if the admin surface still sees them.
-  it('el vendedor sin aprobar sigue estando para el admin, en /api/sellers/admin', async () => {
+  it('the unapproved seller is still there for the admin, at /api/sellers/admin', async () => {
     const adminRoute = await import('@/app/api/sellers/admin/route.js');
     const { sellers } = await (await adminRoute.GET()).json();
 
@@ -113,7 +113,7 @@ describe('T-71 · modo pausa del vendedor', () => {
   // nobody. This locks that in for the case the measurement cannot cover - a
   // document written before the field existed. `approved` has a schema
   // default, so this has to unset it underneath Mongoose.
-  it('un vendedor sin el campo approved queda fuera, no dentro', async () => {
+  it('a seller with no approved field is left out, not in', async () => {
     await Seller.collection.updateOne(
       { businessName: 'Arepas El Parche' },
       { $unset: { approved: '' } }
@@ -128,7 +128,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(businessNames(await getSellers())).not.toContain('Arepas El Parche');
   });
 
-  it('pausar esconde tambien sus productos del listado', async () => {
+  it('pausing also hides its products from the listing', async () => {
     const antes = await getProducts('section=antojos');
     expect(antes.products.length).toBeGreaterThan(0);
 
@@ -138,7 +138,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(despues.products).toHaveLength(0);
   });
 
-  it('pedir explicitamente los productos de un vendedor en pausa devuelve vacio', async () => {
+  it('explicitly requesting products from a paused seller returns empty', async () => {
     await Seller.findByIdAndUpdate(ids.approvedSeller, { paused: true });
 
     const body = await getProducts(`section=antojos&sellerId=${ids.approvedSeller}`);
@@ -147,7 +147,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(body.nextCursor).toBeNull();
   });
 
-  it('despausar lo devuelve al listado con su catalogo intacto', async () => {
+  it('unpausing returns it to the listing with its catalog intact', async () => {
     await Seller.findByIdAndUpdate(ids.approvedSeller, { paused: true });
     await Seller.findByIdAndUpdate(ids.approvedSeller, { paused: false });
 
@@ -155,7 +155,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect((await getProducts('section=antojos')).products.length).toBeGreaterThan(0);
   });
 
-  it('pausar no toca la aprobacion', async () => {
+  it('pausing does not touch approval', async () => {
     signInAs(OWNER);
     const response = await putSeller(ids.approvedSeller, { paused: true });
 
@@ -165,7 +165,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(seller.approved).toBe(true); // still approved, just hidden
   });
 
-  it('un vendedor no puede pausar la tienda de otro', async () => {
+  it("a seller cannot pause another seller's store", async () => {
     signInAs(OTHER_SELLER);
     const response = await putSeller(ids.approvedSeller, { paused: true });
 
@@ -174,7 +174,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect(seller.paused).toBe(false);
   });
 
-  it('sin sesion no se puede pausar', async () => {
+  it('without a session you cannot pause', async () => {
     const response = await putSeller(ids.approvedSeller, { paused: true });
 
     expect(response.status).toBe(401);
@@ -184,7 +184,7 @@ describe('T-71 · modo pausa del vendedor', () => {
   // already in the database carry a `paused` field (54 of them, measured
   // read-only against the real one), and `paused: false` doesn't match a
   // missing field. A listing filtered that way would have returned nobody.
-  it('un vendedor viejo, sin el campo paused, sigue apareciendo', async () => {
+  it('an old seller, with no paused field, still appears', async () => {
     await Seller.collection.updateOne(
       { _id: (await Seller.findById(ids.approvedSeller))._id },
       { $unset: { paused: '' } }
@@ -196,7 +196,7 @@ describe('T-71 · modo pausa del vendedor', () => {
     expect((await getProducts('section=antojos')).products.length).toBeGreaterThan(0);
   });
 
-  it('paused y availability son campos distintos: pausar no cambia la disponibilidad', async () => {
+  it('paused and availability are different fields: pausing does not change availability', async () => {
     signInAs(OWNER);
     await putSeller(ids.approvedSeller, { paused: true });
 

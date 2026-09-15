@@ -10,7 +10,7 @@ const get = query =>
 
 const namesFrom = async response => (await response.json()).products.map(p => p.name);
 
-describe('GET /api/products · búsqueda (T-24)', () => {
+describe('GET /api/products · search (T-24)', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     productsRoute = await import('@/app/api/products/route.js');
@@ -24,29 +24,29 @@ describe('GET /api/products · búsqueda (T-24)', () => {
     await seedDatabase();
   });
 
-  it('un termino sin tilde encuentra el producto sembrado con eñe', async () => {
+  it('a term without an accent finds the seeded product with an ñ', async () => {
     // From the seed: "Buñuelo".
     const nombres = await namesFrom(await get('section=antojos&product=bunuelo'));
     expect(nombres).toContain('Buñuelo');
   });
 
-  it('sigue funcionando como busqueda en vivo: un prefijo corto encuentra el producto', async () => {
+  it('still works as a live search: a short prefix finds the product', async () => {
     const nombres = await namesFrom(await get('section=antojos&product=are'));
     expect(nombres).toContain('Arepa de queso');
   });
 
-  it('un termino que no aparece en ningun nombre no trae nada', async () => {
+  it('a term that appears in no name brings back nothing', async () => {
     const nombres = await namesFrom(await get('section=antojos&product=pizza'));
     expect(nombres).toEqual([]);
   });
 
-  it('la busqueda respeta el filtro de vendedor aprobado', async () => {
+  it('the search respects the approved-seller filter', async () => {
     // "Brownie de chocolate" belongs to the seller awaiting approval.
     const nombres = await namesFrom(await get('section=antojos&product=brownie'));
     expect(nombres).toEqual([]);
   });
 
-  it('un termino con caracteres especiales de regex no revienta la consulta', async () => {
+  it('a term with regex special characters does not break the query', async () => {
     const response = await get('section=antojos&product=' + encodeURIComponent('a(b'));
     expect(response.status).toBe(200);
   });

@@ -41,14 +41,14 @@ describe('getSellerContextData', () => {
     signOut();
   });
 
-  it('sin sesion: user y seller en false', async () => {
+  it('with no session: user and seller are false', async () => {
     expect(await getSellerContextData()).toEqual({
       user: false,
       seller: false,
     });
   });
 
-  it('sesion de Clerk sin User en Mongo: user y seller en false', async () => {
+  it('a Clerk session with no User in Mongo: user and seller are false', async () => {
     // Lost webhook (T-12b): there is a clerkId in the session but no User
     // carries it. It must be treated like "no session", not throw.
     signInAs('user_sin_webhook');
@@ -58,7 +58,7 @@ describe('getSellerContextData', () => {
     });
   });
 
-  it('usuario sin perfil de vendedor: seller es "None"', async () => {
+  it('a user with no seller profile: seller is "None"', async () => {
     signInAs(BUYER_CLERK_ID);
     const { user, seller } = await getSellerContextData();
 
@@ -67,7 +67,7 @@ describe('getSellerContextData', () => {
     expect(user.sellerId).toBeUndefined();
   });
 
-  it('usuario con vendedor: seller trae el documento poblado', async () => {
+  it('a user with a seller: seller brings the populated document', async () => {
     signInAs(OWNER_CLERK_ID);
     const { user, seller } = await getSellerContextData();
 
@@ -75,7 +75,7 @@ describe('getSellerContextData', () => {
     expect(user.sellerId).toBeUndefined();
   });
 
-  it('el resultado es JSON plano, no documentos de Mongoose', async () => {
+  it('the result is plain JSON, not Mongoose documents', async () => {
     signInAs(OWNER_CLERK_ID);
     const { user, seller } = await getSellerContextData();
 

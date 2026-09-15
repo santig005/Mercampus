@@ -19,19 +19,19 @@ describe('scripts/seed', () => {
     await stopTestDb();
   });
 
-  it('crea 3 usuarios, 2 vendedores, 6 productos y horarios', async () => {
+  it('creates 3 users, 2 sellers, 6 products and schedules', async () => {
     expect(await User.countDocuments()).toBe(3);
     expect(await Seller.countDocuments()).toBe(2);
     expect(await Product.countDocuments()).toBe(6);
     expect(await Schedule.countDocuments()).toBeGreaterThan(0);
   });
 
-  it('deja un vendedor aprobado y uno pendiente', async () => {
+  it('leaves one seller approved and one pending', async () => {
     expect(await Seller.countDocuments({ approved: true })).toBe(1);
     expect(await Seller.countDocuments({ approved: false })).toBe(1);
   });
 
-  it('enlaza cada vendedor con su usuario en los dos sentidos', async () => {
+  it('links each seller with its user in both directions', async () => {
     const sellers = await Seller.find();
 
     for (const seller of sellers) {
@@ -42,7 +42,7 @@ describe('scripts/seed', () => {
     }
   });
 
-  it('apunta los productos a un Seller, no a un User', async () => {
+  it('points products at a Seller, not a User', async () => {
     // The schema declares `ref: 'User'` but the actual value is a Seller: the
     // routes populate with an explicit `model: 'Seller'`. If somebody "fixes"
     // the ref without migrating the data, this test catches it.
@@ -53,7 +53,7 @@ describe('scripts/seed', () => {
     }
   });
 
-  it('siembra productos de las dos secciones, con categorías válidas', async () => {
+  it('seeds products in both sections, with valid categories', async () => {
     expect(await Product.countDocuments({ section: 'antojos' })).toBeGreaterThan(0);
     expect(await Product.countDocuments({ section: 'marketplace' })).toBeGreaterThan(0);
 
@@ -63,7 +63,7 @@ describe('scripts/seed', () => {
     }
   });
 
-  it('da horarios a los dos vendedores, con día entre 1 y 7', async () => {
+  it('gives both sellers schedules, with a day between 1 and 7', async () => {
     for (const seller of await Seller.find()) {
       expect(await Schedule.countDocuments({ sellerId: seller._id })).toBeGreaterThan(0);
     }
@@ -74,7 +74,7 @@ describe('scripts/seed', () => {
     }
   });
 
-  it('es idempotente: correrlo dos veces no duplica', async () => {
+  it('is idempotent: running it twice does not duplicate', async () => {
     await seedDatabase();
 
     expect(await User.countDocuments()).toBe(3);
@@ -82,7 +82,7 @@ describe('scripts/seed', () => {
     expect(await Product.countDocuments()).toBe(6);
   });
 
-  it('deja la conexión viva para el resto de la suite', () => {
+  it('leaves the connection alive for the rest of the suite', () => {
     expect(mongoose.connection.readyState).toBe(1);
   });
 });

@@ -4154,6 +4154,49 @@ task is for.
 needs): that one is test infrastructure, this one is language. They do
 touch: any `describe`/`it` T-84 adds should be written in English from the
 start rather than translated later.
+**Re-measured 2026-09-14, batch 1:** a keyword grep for Spanish inside
+`describe`/`it`/`test(...)` strings (accented characters plus a list of
+common Spanish function words) found **38 files**. That heuristic still
+missed three with unaccented, keyword-free Spanish
+(`tests/integration/register-cerrado.test.js`,
+`tests/integration/seller-approval.test.js`,
+`tests/integration/user-with-seller-cerrado.test.js` — each just one short
+phrase like `'ya no existe'` or a `describe` title), caught only by reading
+every file the grep didn't flag. **41 files total.** Whoever does batch 2
+should not trust a keyword grep alone either — eyeball the files the grep
+clears too, at least for `describe`/`it` lines.
+**Batch 1 — done, this PR (21 files):** `tests/e2e/dark-mode.spec.js`,
+`tests/e2e/i18n.spec.js`, `tests/e2e/recorrido.spec.js`,
+`tests/e2e/scroll-infinito.spec.js`,
+`tests/integration/autorizacion.test.js`,
+`tests/integration/availability-cron.test.js`,
+`tests/integration/backfill-clerk-id.test.js`,
+`tests/integration/busqueda-productos.test.js`,
+`tests/integration/horarios-n-mas-1.test.js`,
+`tests/integration/indices.test.js`,
+`tests/integration/middleware-admin.test.js`,
+`tests/integration/migracion-section.test.js`,
+`tests/integration/og-metadata.test.js`,
+`tests/integration/paginacion-productos.test.js`,
+`tests/integration/reclaim-account.test.js`,
+`tests/integration/register-cerrado.test.js`, `tests/integration/seed.test.js`,
+`tests/integration/seller-approval.test.js` (only its `describe` title —
+the rest of the file was already English),
+`tests/integration/seller-pause.test.js`,
+`tests/integration/sellerContextData.test.js`,
+`tests/integration/set-admin-metadata.test.js`.
+**Batch 2 — still pending (20 files):** `tests/integration/sitemap.test.js`,
+`tests/integration/user-with-seller-cerrado.test.js`,
+`tests/integration/validacion-sellers-schedules-pqrs.test.js`,
+`tests/integration/validacion.test.js`,
+`tests/integration/webhook-clerk.test.js`, `tests/unit/adminAccess.test.js`,
+`tests/unit/card-variants.test.js`, `tests/unit/env-publico.test.js`,
+`tests/unit/logger.test.js`, `tests/unit/metadata.test.js`,
+`tests/unit/orderSchema.test.js`, `tests/unit/orderStateMachine.test.js`,
+`tests/unit/phone.test.js`, `tests/unit/productSchema.test.js`,
+`tests/unit/profile-completeness.test.js`, `tests/unit/robots.test.js`,
+`tests/unit/search.test.js`, `tests/unit/sitemap.test.js`,
+`tests/unit/theme-tokens.test.js`, `tests/unit/utilFn.test.js`.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-86 · A visible keyboard focus ring (F5)
