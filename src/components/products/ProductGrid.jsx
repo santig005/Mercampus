@@ -25,9 +25,20 @@ const SORT_OPTIONS = [
 // T-123: either or both. Both selected is the default and is written as no
 // `availability` param at all, so every link shared before this task still
 // means "everything".
+// T-128: `activeClass` gives each option its own selected-state color
+// (soft brand-toned green/red, see public/css/main.css) instead of both
+// sharing `category-active`'s single brand-orange tint.
 const AVAILABILITY_OPTIONS = [
-  { value: 'available', label: 'Disponibles ahora' },
-  { value: 'unavailable', label: 'No disponibles' },
+  {
+    value: 'available',
+    label: 'Disponibles ahora',
+    activeClass: 'availability-active-available',
+  },
+  {
+    value: 'unavailable',
+    label: 'No disponibles',
+    activeClass: 'availability-active-unavailable',
+  },
 ];
 
 // Whether the sentinel is on screen once the list has stopped animating.
@@ -244,7 +255,7 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
                     type='button'
                     aria-pressed={selected}
                     className={`btn btn-sm rounded-full ${
-                      selected ? 'category-active' : 'bg-base-100 text-base-content'
+                      selected ? option.activeClass : 'bg-base-100 text-base-content'
                     }`}
                     onClick={() => toggleAvailability(option.value)}
                   >
