@@ -2144,6 +2144,48 @@ number.
 **Careful, same as T-91:** that wrap is inside the root layout. Making it
 degrade gracefully is safe; restructuring what the root layout awaits is
 T-12d/T-91 territory and is not this task.
+**The defensive half is done (PR #TBD, 2026-09-15). The entry stays open
+because the cause is not found.** `getSellerContextData()` now catches the
+throw, returns the `{ user: false, seller: false }` it already returned for
+an anonymous visitor, and logs the pathname with `logger.warn`. What that
+buys: the root layout no longer renders through an error, and the next
+occurrence carries an address. What it does not buy: any answer to *why*
+`auth()` runs without Clerk's context.
+**Baseline, re-measured before the change:** run 34924504970, `lighthouse`
+job 104239568323, on `agent/develop`. **36 errors, and the distribution is
+flat: exactly 6 on each of the 6 budgeted URLs** — `/antojos`,
+`/antojos/<id>`, `/antojos/sellers/<id>`, `/antojos/sellers/list`,
+`/marketplace`, `/about`. Within each page the 6 arrive as 3 pairs, each
+pair ~2ms apart and the pairs ~20ms apart, all within one page load. That
+`/about` scores the same 6 as everything else is another nail in the
+intl-middleware theory, and the flat 6-per-URL says whatever it is happens
+a fixed number of times per render, not once per route.
+**Do not let the wrap swallow Next's control flow.** Next signals "this
+route is dynamic" by throwing `DynamicServerError` out of `headers()`, which
+is what Clerk's `auth()` calls underneath. Catching that one would let the
+root layout prerender and bake a signed-out session into every static page —
+permanently, not for one render, and far worse than the bug being defended
+against. The wrap rethrows anything carrying a `digest` string
+(`DYNAMIC_SERVER_USAGE`, `NEXT_REDIRECT`, `NEXT_NOT_FOUND`,
+`BAILOUT_TO_CLIENT_SIDE_RENDERING`); the build's route table staying all `ƒ`
+is the check that it worked.
+**The pathname is best-effort, and that is a real limitation.** Next 14 hands
+a Server Component no pathname, and the middleware that would normally set a
+header for it is exactly what is missing when this fires. The wrap reads an
+allowlist — `next-url` (client-side navigations), `x-matched-path` (Vercel),
+`x-invoke-path`, `x-pathname`, `referer` — and logs `pathSource: 'none'`
+when none of them is present, rather than inventing one. Nothing else is
+read off the request: it also carries Clerk's session cookie. On a cold
+document request in the `lighthouse` job none of those headers exist, so
+expect `path: 'unknown'` there; it is on Vercel and on soft navigations that
+this earns its keep.
+**Noticed while in there, not fixed (rule 9, rule 2).** Three other call
+sites `await auth()` with no try/catch and would throw the same way:
+`src/app/antojos/layout.jsx:8` and `src/app/marketplace/layout.jsx:8` (both
+only to pass `userId` to `SideBar`), and `src/server/sellers/
+getProfileChecklist.ts:15`. They are *not* the source of the 36 — `/about`
+renders none of them and still logs 6 — but whoever finds the cause should
+fix them in the same pass rather than one at a time.
 **Model:** `opus` — subtle, and it runs through the root layout · **Nightly:**
 no
 
