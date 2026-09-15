@@ -58,18 +58,18 @@ afterAll(async () => {
   await stopTestDb();
 });
 
-describe('POST /api/sellers · validación y registro', () => {
+describe('POST /api/sellers · validation and registration', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
     session.userId = null;
   });
 
-  it('401 sin sesión', async () => {
+  it('401 with no session', async () => {
     const response = await sellersRoute.POST(post({ businessName: 'Nuevo negocio' }));
     expect(response.status).toBe(401);
   });
 
-  it('404 si la sesión no tiene un User asociado', async () => {
+  it('404 if the session has no associated User', async () => {
     session.userId = 'user_que_no_existe_en_mongo';
 
     const response = await sellersRoute.POST(post({ businessName: 'Nuevo negocio' }));
@@ -77,7 +77,7 @@ describe('POST /api/sellers · validación y registro', () => {
     expect(response.status).toBe(404);
   });
 
-  it('400 si falta el nombre del negocio', async () => {
+  it('400 if the business name is missing', async () => {
     session.userId = BUYER;
 
     const response = await sellersRoute.POST(post({ phoneNumber: 3000000000 }));
@@ -87,7 +87,7 @@ describe('POST /api/sellers · validación y registro', () => {
     expect(body.fields.map(f => f.field)).toContain('businessName');
   });
 
-  it('400 si el teléfono está incompleto', async () => {
+  it('400 if the phone number is incomplete', async () => {
     session.userId = BUYER;
 
     const response = await sellersRoute.POST(
@@ -97,7 +97,7 @@ describe('POST /api/sellers · validación y registro', () => {
     expect(response.status).toBe(400);
   });
 
-  it('no deja que el cliente se autoapruebe al crearse', async () => {
+  it('does not let the client self-approve on creation', async () => {
     session.userId = BUYER;
 
     const response = await sellersRoute.POST(
@@ -113,7 +113,7 @@ describe('POST /api/sellers · validación y registro', () => {
     expect((await Seller.findById(seller._id)).approved).toBe(false);
   });
 
-  it('201 con un payload válido: crea el Seller y actualiza el User', async () => {
+  it('201 with a valid payload: creates the Seller and updates the User', async () => {
     session.userId = BUYER;
 
     const response = await sellersRoute.POST(
@@ -141,13 +141,13 @@ describe('POST /api/sellers · validación y registro', () => {
 // `z.number()`, so seller sign-up answered 400 every time. These cases use
 // the payload the real pages build, not one hand-written with a number:
 // that is why T-13b's tests did not catch the bug.
-describe('teléfono del vendedor · el payload real del formulario', () => {
+describe("seller's phone number · the real payload the form sends", () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
     session.userId = null;
   });
 
-  it('201 con el string de digitos que manda el alta de vendedor', async () => {
+  it('201 with the digit string the seller sign-up form sends', async () => {
     session.userId = BUYER;
 
     const response = await sellersRoute.POST(
@@ -162,7 +162,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
     expect(typeof created.phoneNumber).toBe('number');
   });
 
-  it('descarta el indicativo de pais al crear', async () => {
+  it('drops the country code on creation', async () => {
     session.userId = BUYER;
 
     const response = await sellersRoute.POST(
@@ -174,7 +174,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
     expect((await Seller.findById(seller._id)).phoneNumber).toBe(3001234567);
   });
 
-  it('200 con el telefono ya formateado que manda la edicion de perfil', async () => {
+  it('200 with the already-formatted phone number the profile edit sends', async () => {
     session.userId = OWNER;
 
     const response = await sellerByIdRoute.PUT(
@@ -188,7 +188,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
     expect(typeof seller.phoneNumber).toBe('number');
   });
 
-  it('400 si el telefono no llega a 10 digitos, y no crea nada', async () => {
+  it('400 if the phone number is under 10 digits, and creates nothing', async () => {
     session.userId = BUYER;
     const antes = await Seller.countDocuments();
 
@@ -202,7 +202,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
     expect(await Seller.countDocuments()).toBe(antes);
   });
 
-  it('400 si el telefono empieza por cero', async () => {
+  it('400 if the phone number starts with zero', async () => {
     // Se guarda como Number: '0300123456' se convertiria en 300123456 y
     // would lose a digit without anyone noticing.
     session.userId = BUYER;
@@ -215,7 +215,7 @@ describe('teléfono del vendedor · el payload real del formulario', () => {
   });
 });
 
-describe('POST /api/schedules · reemplazo de horario', () => {
+describe('POST /api/schedules · schedule replacement', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
     // Since T-10b the route demands a session and ownership. These cases are
@@ -224,7 +224,7 @@ describe('POST /api/schedules · reemplazo de horario', () => {
     session.userId = OWNER;
   });
 
-  it('400 si sellerId no es un ObjectId', async () => {
+  it('400 if sellerId is not an ObjectId', async () => {
     const response = await schedulesRoute.POST(
       post({ sellerId: 'no-es-un-id', schedules: [] })
     );
@@ -232,7 +232,7 @@ describe('POST /api/schedules · reemplazo de horario', () => {
     expect(response.status).toBe(400);
   });
 
-  it('400 si el día no es uno de los nombres válidos, en vez de guardar day: 0', async () => {
+  it('400 if the day is not one of the valid names, instead of storing day: 0', async () => {
     const response = await schedulesRoute.POST(
       post({
         sellerId: ids.approvedSeller,
@@ -245,7 +245,7 @@ describe('POST /api/schedules · reemplazo de horario', () => {
     expect(body.fields.map(f => f.field)).toContain('schedules.0.day');
   });
 
-  it('400 si la hora no tiene formato HH:MM', async () => {
+  it('400 if the time is not in HH:MM format', async () => {
     const response = await schedulesRoute.POST(
       post({
         sellerId: ids.approvedSeller,
@@ -256,7 +256,7 @@ describe('POST /api/schedules · reemplazo de horario', () => {
     expect(response.status).toBe(400);
   });
 
-  it('200 con un payload válido: reemplaza el horario completo', async () => {
+  it('200 with a valid payload: replaces the whole schedule', async () => {
     const antes = await Schedule.countDocuments({ sellerId: ids.approvedSeller });
     expect(antes).toBeGreaterThan(0); // the seed already planted schedules
 
@@ -273,7 +273,7 @@ describe('POST /api/schedules · reemplazo de horario', () => {
     expect(schedules[0].day).toBe(2); // Martes = indice 2 en daysES
   });
 
-  it('un array vacío borra el horario del vendedor', async () => {
+  it("an empty array clears the seller's schedule", async () => {
     const response = await schedulesRoute.POST(
       post({ sellerId: ids.approvedSeller, schedules: [] })
     );
@@ -283,19 +283,19 @@ describe('POST /api/schedules · reemplazo de horario', () => {
   });
 });
 
-describe('POST /api/pqrs · validación', () => {
+describe('POST /api/pqrs · validation', () => {
   beforeEach(async () => {
     await Pqrs.deleteMany({});
   });
 
-  it('400 si falta la descripción', async () => {
+  it('400 if the description is missing', async () => {
     const response = await pqrsRoute.POST(post({ type: 'Queja', email: '' }));
 
     expect(response.status).toBe(400);
     expect(await Pqrs.countDocuments()).toBe(0);
   });
 
-  it('400 si el tipo no es uno de los válidos', async () => {
+  it('400 if the type is not one of the valid ones', async () => {
     const response = await pqrsRoute.POST(
       post({ type: 'Denuncia', description: 'algo', email: '' })
     );
@@ -303,7 +303,7 @@ describe('POST /api/pqrs · validación', () => {
     expect(response.status).toBe(400);
   });
 
-  it('400 si el email no está vacío pero tampoco es válido', async () => {
+  it('400 if the email is not empty but is not valid either', async () => {
     const response = await pqrsRoute.POST(
       post({ type: 'Queja', description: 'algo', email: 'no-es-un-email' })
     );
@@ -311,7 +311,7 @@ describe('POST /api/pqrs · validación', () => {
     expect(response.status).toBe(400);
   });
 
-  it('201 y status HTTP real (no solo en el cuerpo) con un envío anónimo válido', async () => {
+  it('201 and a real HTTP status (not just in the body) with a valid anonymous submission', async () => {
     const response = await pqrsRoute.POST(
       post({ type: 'Sugerencia', description: 'Pongan más opciones veganas', email: '' })
     );

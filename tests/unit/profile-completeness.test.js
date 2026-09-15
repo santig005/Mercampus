@@ -15,22 +15,22 @@ describe('hasCustomLogo (T-72)', () => {
   // logo, so asking `if (seller.logo)` is always true. Measured against the
   // real database: 6 of the 7 approved sellers without a logo of their own
   // carry exactly this placeholder.
-  it('el logo por defecto no cuenta como logo propio', () => {
+  it('the default logo does not count as a custom logo', () => {
     expect(hasCustomLogo(DEFAULT_SELLER_LOGO)).toBe(false);
   });
 
-  it('un logo subido por el vendedor si cuenta', () => {
+  it('a logo uploaded by the seller does count', () => {
     expect(hasCustomLogo('https://ik.imagekit.io/seed/mi-logo.png')).toBe(true);
   });
 
-  it('sin logo tampoco cuenta', () => {
+  it('no logo does not count either', () => {
     expect(hasCustomLogo(undefined)).toBe(false);
     expect(hasCustomLogo('')).toBe(false);
   });
 });
 
 describe('buildProfileChecklist (T-72)', () => {
-  it('un perfil completo marca los 4 items y 100%', () => {
+  it('a complete profile marks all 4 items and 100%', () => {
     const checklist = buildProfileChecklist(complete);
 
     expect(checklist.completed).toBe(4);
@@ -39,7 +39,7 @@ describe('buildProfileChecklist (T-72)', () => {
     expect(checklist.items.every(item => item.done)).toBe(true);
   });
 
-  it('un perfil recien creado no marca nada', () => {
+  it('a freshly created profile marks nothing', () => {
     const checklist = buildProfileChecklist({
       logo: DEFAULT_SELLER_LOGO,
       description: undefined,
@@ -51,14 +51,14 @@ describe('buildProfileChecklist (T-72)', () => {
     expect(checklist.percent).toBe(0);
   });
 
-  it('una descripcion en blanco no cuenta como escrita', () => {
+  it('a blank description does not count as written', () => {
     const checklist = buildProfileChecklist({ ...complete, description: '   ' });
 
     expect(checklist.items.find(item => item.id === 'description').done).toBe(false);
     expect(checklist.completed).toBe(3);
   });
 
-  it('un solo horario o un solo producto ya alcanzan', () => {
+  it('a single schedule or a single product is already enough', () => {
     const checklist = buildProfileChecklist({
       ...complete,
       scheduleCount: 1,
@@ -68,13 +68,13 @@ describe('buildProfileChecklist (T-72)', () => {
     expect(checklist.completed).toBe(4);
   });
 
-  it('el porcentaje sale redondeado, no con decimales', () => {
+  it('the percentage comes out rounded, not with decimals', () => {
     const checklist = buildProfileChecklist({ ...complete, productCount: 0 });
 
     expect(checklist.percent).toBe(75);
   });
 
-  it('los items que llevan a otra pantalla traen su enlace', () => {
+  it('items that lead to another screen carry their link', () => {
     const { items } = buildProfileChecklist(complete);
     const byId = Object.fromEntries(items.map(item => [item.id, item]));
 
