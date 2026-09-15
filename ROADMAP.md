@@ -3862,24 +3862,36 @@ dark-mode text color, rather than a hardcoded hex), verified with a real
 screenshot in both themes (rule 3), not a class-name test.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-128 · Backlog idea: semantic color on the availability filter buttons
-**Why:** raised by the human on 2026-09-14, looking at T-123's filter. Not
-scoped, not assigned - a note for whenever someone designs it, not a task an
-agent should pick up as-is.
-**Current state:** `ProductGrid.jsx`'s two filter buttons ("Disponibles
-ahora" / "No disponibles", `AVAILABILITY_OPTIONS`) both use the same
+### [x] T-128 · Backlog idea: semantic color on the availability filter buttons
+**Why:** raised by the human on 2026-09-14, looking at T-123's filter.
+**Current state (before):** `ProductGrid.jsx`'s two filter buttons ("Disponibles
+ahora" / "No disponibles", `AVAILABILITY_OPTIONS`) both used the same
 `category-active` class when selected - the brand tint, no distinction
-between the two beyond which one is lit up.
+between the two beyond which one was lit up.
 **The idea:** a green/red-ish tint per option (available vs. unavailable)
 so the state reads at a glance, without fighting the brand palette
 (`primary` `#FF7622`/`#FF8A3D`, the warm-charcoal `dark` theme) the way a
-literal traffic-light green/red would. Needs an actual color decision from
-the human before anyone touches it - same as "Consultar horario" in T-122/
-T-123 - and both themes have to be checked, not just light (see T-127 for
+literal traffic-light green/red would. Needed an actual color decision from
+the human before anyone touched it - same as "Consultar horario" in T-122/
+T-123 - and both themes had to be checked, not just light (see T-127 for
 what happens when only one theme gets checked).
-**Not done when:** an agent picks colors on its own judgement and ships
-them. This entry exists so the idea is not lost, not so it gets guessed at.
-**Model:** TBD (needs the human's color choice first) · **Nightly:** no
+**Done 2026-09-14.** The human decided the palette (soft, brand-toned, not a
+literal traffic light): available `#1F6B3A` on `#DCEEDF` (light) /
+`#8FD8A6` on `#23372A` (dark); unavailable `#9A3B2A` on `#F7DFDB` (light) /
+`#E8A28F` on `#3A2620` (dark). Shipped as-is, no adjustment needed.
+- `public/css/main.css`: `.availability-active-available` /
+  `.availability-active-unavailable`, each with its own `dark:` pair (no
+  daisyUI token exists for this).
+- `ProductGrid.jsx`: each `AVAILABILITY_OPTIONS` entry carries its own
+  `activeClass`, applied instead of the shared `category-active`.
+- Verified two ways, not just the class string: `getComputedStyle` read back
+  from the live buttons matched the intended hex exactly in both themes, and
+  real Playwright screenshots for both selected states in both themes -
+  `docs/audits/t-128/`. Contrast checked: 5.4:1/7.6:1 (available,
+  light/dark), 5.5:1/6.8:1 (unavailable, light/dark), all past the 4.5:1 AA
+  floor.
+- **Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** no
 
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was

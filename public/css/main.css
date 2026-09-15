@@ -115,6 +115,27 @@ img {
   @apply text-primary bg-primary/15 border-primary;
 }
 
+/* T-128: the availability filter's two options both used `.category-active`
+   above when selected - the same brand-orange tint for both, no visual
+   difference beyond which one was lit up. The human's call (2026-09-14): a
+   soft, brand-toned green/red per option, not a literal traffic light and
+   not fighting `primary` (#FF7622 light / #FF8A3D dark) or the warm-charcoal
+   `dark` theme. These are new hardcoded hex pairs (no daisyUI token for
+   "soft available green" exists), each with its own `dark:` value rather
+   than one pair reused across themes - see the `bg-primary` note above and
+   T-127/docs/audits/t-119 for what happens when a hardcoded color is only
+   checked in one theme. Contrast verified in both themes, see
+   docs/audits/t-128/README.md: text-on-tint is 5.4:1/7.6:1 (available,
+   light/dark) and 5.5:1/6.8:1 (unavailable, light/dark) - all well past the
+   4.5:1 AA floor for this button's small text. */
+.availability-active-available {
+  @apply text-[#1F6B3A] bg-[#DCEEDF] border-[#1F6B3A] dark:text-[#8FD8A6] dark:bg-[#23372A] dark:border-[#8FD8A6];
+}
+
+.availability-active-unavailable {
+  @apply text-[#9A3B2A] bg-[#F7DFDB] border-[#9A3B2A] dark:text-[#E8A28F] dark:bg-[#3A2620] dark:border-[#E8A28F];
+}
+
 .modal-width {
   @apply container mx-auto w-full max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl;
 }
