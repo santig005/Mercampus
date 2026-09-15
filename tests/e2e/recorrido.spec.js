@@ -9,8 +9,8 @@ const shot = (page, name) =>
 const PRODUCT_ID = process.env.E2E_PRODUCT_ID;
 const SELLER_ID = process.env.E2E_SELLER_ID;
 
-test.describe('recorrido publico', () => {
-  test('home redirige al listado de antojos', async ({ page }) => {
+test.describe('public walkthrough', () => {
+  test('home redirects to the antojos listing', async ({ page }) => {
     await page.goto('/');
 
     await expect(page).toHaveURL(/\/antojos$/);
@@ -19,7 +19,7 @@ test.describe('recorrido publico', () => {
     await shot(page, '01-home');
   });
 
-  test('el listado muestra solo los productos publicables', async ({ page }) => {
+  test('the listing shows only publishable products', async ({ page }) => {
     await page.goto('/antojos');
 
     // If the grid fails, the app paints an error in its place and these names
@@ -41,7 +41,7 @@ test.describe('recorrido publico', () => {
     await shot(page, '02-listado-antojos');
   });
 
-  test('el detalle de producto carga el producto sembrado', async ({ page }) => {
+  test('the product detail page loads the seeded product', async ({ page }) => {
     await page.goto(`/antojos/${PRODUCT_ID}`);
 
     await expect(page.getByText('Arepa de queso').first()).toBeVisible();
@@ -61,7 +61,7 @@ test.describe('recorrido publico', () => {
     await shot(page, '03-detalle-producto');
   });
 
-  test('el perfil del vendedor carga su negocio', async ({ page }) => {
+  test("the seller's profile loads their business", async ({ page }) => {
     // T-110: SellerPage.jsx is a client component that fetches its own copy of
     // the seller (its own `/api/sellers/:id` call, separate from the server
     // read generateMetadata already did) in a useEffect after mount - nothing
@@ -92,7 +92,7 @@ test.describe('recorrido publico', () => {
     await shot(page, '04-perfil-vendedor');
   });
 
-  test('el listado de vendedores muestra las tarjetas de negocio', async ({ page }) => {
+  test('the seller listing shows the business cards', async ({ page }) => {
     // The only public screen that renders SellerCard (via SellerGrid). The
     // product detail and the seller profile do not use it.
     //

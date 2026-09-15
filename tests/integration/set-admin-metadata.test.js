@@ -37,7 +37,7 @@ const obtenerAdminsDeMongo = () =>
   User.find({ role: 'admin' }).select('email clerkId').lean();
 
 describe('syncAdminMetadata', () => {
-  it('no escribe nada sin --apply', async () => {
+  it('writes nothing without --apply', async () => {
     await crearUsuario('admin@example.test', { role: 'admin', clerkId: 'user_admin' });
     const clerk = clerkDeMentira();
 
@@ -52,7 +52,7 @@ describe('syncAdminMetadata', () => {
     expect(clerk.leer('user_admin')).toBeUndefined();
   });
 
-  it('con --apply pone role: admin en publicMetadata', async () => {
+  it('with --apply sets role: admin in publicMetadata', async () => {
     await crearUsuario('admin@example.test', { role: 'admin', clerkId: 'user_admin' });
     const clerk = clerkDeMentira();
 
@@ -61,7 +61,7 @@ describe('syncAdminMetadata', () => {
     expect(clerk.leer('user_admin')).toEqual({ role: 'admin' });
   });
 
-  it('conserva otras claves que ya hubiera en publicMetadata', async () => {
+  it('preserves other keys already in publicMetadata', async () => {
     await crearUsuario('admin@example.test', { role: 'admin', clerkId: 'user_admin' });
     const clerk = clerkDeMentira({ user_admin: { theme: 'dark' } });
 
@@ -70,7 +70,7 @@ describe('syncAdminMetadata', () => {
     expect(clerk.leer('user_admin')).toEqual({ theme: 'dark', role: 'admin' });
   });
 
-  it('es idempotente: no toca nada si ya tiene el rol', async () => {
+  it('is idempotent: touches nothing if it already has the role', async () => {
     await crearUsuario('admin@example.test', { role: 'admin', clerkId: 'user_admin' });
     const clerk = clerkDeMentira({ user_admin: { role: 'admin' } });
 
@@ -80,7 +80,7 @@ describe('syncAdminMetadata', () => {
     expect(informe.resumen).toEqual({ 'ya-tiene-rol': 1 });
   });
 
-  it('un admin de Mongo sin clerkId no cuenta como pendiente', async () => {
+  it('a Mongo admin with no clerkId does not count as pending', async () => {
     // They can't sign in (T-12c), so there is nobody to write publicMetadata
     // to: that is migrate:clerk-id's job, not this script's.
     await crearUsuario('admin-sin-enlazar@example.test', { role: 'admin' });
@@ -92,7 +92,7 @@ describe('syncAdminMetadata', () => {
     expect(informe.resumen).toEqual({ 'sin-clerk-id': 1 });
   });
 
-  it('no toca a los usuarios que no son admin', async () => {
+  it('does not touch users who are not admin', async () => {
     await crearUsuario('buyer@example.test', { role: 'buyer', clerkId: 'user_buyer' });
     const clerk = clerkDeMentira();
 

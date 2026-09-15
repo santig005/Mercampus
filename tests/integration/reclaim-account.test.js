@@ -25,8 +25,8 @@ beforeEach(async () => {
   await User.deleteMany({});
 });
 
-describe('reclamo de cuenta', () => {
-  it('caso feliz: reclama el User viejo y borra el stub del webhook, con --apply', async () => {
+describe('account reclaim', () => {
+  it('happy path: reclaims the old User and deletes the webhook stub, with --apply', async () => {
     const sellerId = new mongoose.Types.ObjectId();
     const viejo = await User.create({
       name: 'Ana',
@@ -61,7 +61,7 @@ describe('reclamo de cuenta', () => {
     expect(await User.findById(stub._id)).toBeNull();
   });
 
-  it('sin --apply no escribe nada', async () => {
+  it('without --apply writes nothing', async () => {
     await User.create({
       name: 'Ana',
       email: 'ana@example.test',
@@ -80,7 +80,7 @@ describe('reclamo de cuenta', () => {
     expect(sigue.clerkId).toBe('user_prod_ana');
   });
 
-  it('sin coincidencia: no hay User viejo con ese email, no toca nada', async () => {
+  it('no match: there is no old User with that email, touches nothing', async () => {
     const resultado = await reclaimAccount({
       email: 'nadie@example.test',
       newClerkId: 'user_dev_nadie',
@@ -91,7 +91,7 @@ describe('reclamo de cuenta', () => {
     expect(await User.countDocuments({})).toBe(0);
   });
 
-  it('ya reclamado: el único User con ese email ya tiene el clerkId nuevo', async () => {
+  it('already claimed: the only User with that email already has the new clerkId', async () => {
     await User.create({ name: 'Ana', email: 'ana@example.test', clerkId: 'user_dev_ana' });
 
     const resultado = await reclaimAccount({
@@ -103,7 +103,7 @@ describe('reclamo de cuenta', () => {
     expect(resultado).toEqual({ estado: YA_RECLAMADO, email: 'ana@example.test' });
   });
 
-  it('conflicto: el clerkId nuevo ya pertenece a otro documento con otro email', async () => {
+  it('conflict: the new clerkId already belongs to another document with a different email', async () => {
     await User.create({ name: 'Ana', email: 'ana@example.test', clerkId: 'user_prod_ana' });
     await User.create({ name: 'Carlos', email: 'carlos@example.test', clerkId: 'user_dev_carlos' });
 
@@ -123,7 +123,7 @@ describe('reclamo de cuenta', () => {
     );
   });
 
-  it('el email se compara sin distinguir mayúsculas', async () => {
+  it('the email is compared case-insensitively', async () => {
     const viejo = await User.create({
       name: 'Ana',
       email: 'Ana@Example.test',

@@ -6,8 +6,8 @@ import { expect, test } from '@playwright/test';
 const shot = (page, name) =>
   page.screenshot({ path: `test-results/${name}.png`, fullPage: true });
 
-test.describe('i18n en /about', () => {
-  test('espanol (default, sin prefijo)', async ({ page }) => {
+test.describe('i18n on /about', () => {
+  test('Spanish (default, no prefix)', async ({ page }) => {
     await page.goto('/about');
 
     await expect(page).toHaveURL(/\/about$/);
@@ -18,7 +18,7 @@ test.describe('i18n en /about', () => {
     await shot(page, '06-about-es');
   });
 
-  test('ingles via /en/about', async ({ page }) => {
+  test('English via /en/about', async ({ page }) => {
     await page.goto('/en/about');
 
     await expect(page).toHaveURL(/\/en\/about$/);
@@ -29,7 +29,7 @@ test.describe('i18n en /about', () => {
     await shot(page, '07-about-en');
   });
 
-  test('el switcher de idioma navega entre /about y /en/about', async ({ page }) => {
+  test('the language switcher navigates between /about and /en/about', async ({ page }) => {
     await page.goto('/about');
 
     await page.getByRole('link', { name: 'English' }).click();
@@ -41,7 +41,7 @@ test.describe('i18n en /about', () => {
     await expect(page.getByText('Conecta, compra y vende dentro de tu universidad')).toBeVisible();
   });
 
-  test('las rutas no migradas siguen en espanol sin prefijo de locale', async ({ page }) => {
+  test('routes not yet migrated stay in Spanish with no locale prefix', async ({ page }) => {
     await page.goto('/antojos');
 
     await expect(page).toHaveURL(/\/antojos$/);

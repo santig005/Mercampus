@@ -52,7 +52,7 @@ const patchApproval = (id, body) =>
 
 const approvedOf = async id => (await Seller.findById(id).lean()).approved;
 
-describe('T-105 · aprobacion de vendedores', () => {
+describe('T-105 · seller approval', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     approvalRoute = await import('@/app/api/sellers/admin/[id]/route.js');

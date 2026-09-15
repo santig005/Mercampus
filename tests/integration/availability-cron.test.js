@@ -37,7 +37,7 @@ describe('GET /api/sellers/availability', () => {
     vi.restoreAllMocks();
   });
 
-  it('sin Authorization responde 401 y no toca ningun Seller', async () => {
+  it('without Authorization responds 401 and touches no Seller', async () => {
     const spy = vi.spyOn(Seller, 'findByIdAndUpdate');
 
     const response = await availabilityRoute.GET(request());
@@ -46,7 +46,7 @@ describe('GET /api/sellers/availability', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('con el secreto equivocado responde 401 y no toca ningun Seller', async () => {
+  it('with the wrong secret responds 401 and touches no Seller', async () => {
     const spy = vi.spyOn(Seller, 'findByIdAndUpdate');
 
     const response = await availabilityRoute.GET(request('Bearer secreto-invalido'));
@@ -55,7 +55,7 @@ describe('GET /api/sellers/availability', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('sin CRON_SECRET configurado responde 401 aunque manden algo', async () => {
+  it('without CRON_SECRET configured responds 401 even if something is sent', async () => {
     const original = process.env.CRON_SECRET;
     delete process.env.CRON_SECRET;
 
@@ -65,7 +65,7 @@ describe('GET /api/sellers/availability', () => {
     process.env.CRON_SECRET = original;
   });
 
-  it('marca disponible al vendedor sembrado dentro de su horario (lunes 10am Bogota)', async () => {
+  it('marks the seeded seller available within its schedule (Monday 10am Bogota)', async () => {
     // Forced to false first: if the test passed without the route doing
     // anything, it wouldn't prove what it claims to (the schema default is
     // es true).
@@ -81,7 +81,7 @@ describe('GET /api/sellers/availability', () => {
     expect(seller.availability).toBe(true);
   });
 
-  it('marca no disponible al vendedor sembrado fuera de su horario (lunes 8pm Bogota)', async () => {
+  it('marks the seeded seller unavailable outside its schedule (Monday 8pm Bogota)', async () => {
     vi.useFakeTimers();
     // 2024-01-02T01:00 UTC es 2024-01-01 20:00 en Bogota: sigue siendo lunes
     // in local time even though the UTC day already rolled over - confirming

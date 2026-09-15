@@ -10,7 +10,7 @@ import { Seller } from '@/utils/models/sellerSchema2';
 let productsRoute;
 let sellersRoute;
 
-describe('horarios sin N+1', () => {
+describe('schedules without N+1', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     productsRoute = await import('@/app/api/products/route.js');
@@ -29,7 +29,7 @@ describe('horarios sin N+1', () => {
     vi.restoreAllMocks();
   });
 
-  it('el listado de productos consulta horarios una sola vez', async () => {
+  it('the product listing queries schedules only once', async () => {
     // Approve the second seller so the listing carries products from two
     // different sellers: that way the test catches both a query per product
     // and a query per seller.
@@ -53,7 +53,7 @@ describe('horarios sin N+1', () => {
     expect(products[0].schedules[0].day).toBe('Lunes');
   });
 
-  it('el listado de vendedores consulta horarios una sola vez', async () => {
+  it('the seller listing queries schedules only once', async () => {
     // T-106: the seed has one approved seller and one pending, and this
     // endpoint now filters on `approved` in the Mongo query, so without this
     // the listing would carry a single seller and the assertion below - which
@@ -78,7 +78,7 @@ describe('horarios sin N+1', () => {
     ]);
   });
 
-  it('un vendedor sin horarios devuelve una lista vacia, no falla', async () => {
+  it('a seller with no schedules returns an empty list, not a failure', async () => {
     const seller = await Seller.create({
       businessName: 'Sin horario',
       phoneNumber: 3000000000,
