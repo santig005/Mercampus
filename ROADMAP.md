@@ -4308,7 +4308,7 @@ lives in Clerk now, so a stray document no longer grants or denies it).
 Seller-ness is still not immune, which is why this is still worth doing.
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-108 · `set-admin-metadata`'s dry run can't tell "wrong instance" from "missing role"
+### [x] T-108 · `set-admin-metadata`'s dry run can't tell "wrong instance" from "missing role"
 **Why:** found while running it for T-104. `obtenerMetadataDeClerk` returns
 `{}` when the user lookup fails (`if (!ok) return {}`), so a `clerkId` that
 **404s** - because it belongs to a different Clerk instance - is reported as
@@ -4326,6 +4326,24 @@ while this is per id, and a database can hold ids from both.
 the role, and `--check` is not failed by ids from another instance. The
 existing tests already inject `obtenerMetadataDeClerk`, so this is testable
 without touching Clerk - the seam is there.
+**Done 2026-09-16.** `obtenerMetadataDeClerk`'s contract changed: it now
+returns `null` on a failed lookup instead of `{}`, so `syncAdminMetadata` can
+tell "does not exist here" apart from "exists, no role yet". A `null` result
+gets its own state, `otra-instancia`, pushed before the `role === 'admin'`
+check and *before* the `--apply` write, so it is excluded from `pendientes`
+(and therefore from `--check`) and is never written to. The CLI's real
+`obtenerMetadataDeClerk` was updated to return `null` on `!ok`, and a summary
+line was added so a dry run surfaces the count instead of it only showing up
+in the raw per-account list. Covered by three new tests in
+`tests/integration/set-admin-metadata.test.js` using the existing
+`obtenerMetadataDeClerk` injection seam (no real Clerk call): a lone 404'd id
+reports `otra-instancia` with `pendientes: 0`; `--apply` against it writes
+nothing; and a mix of all three states (has role / missing role / other
+instance) classifies each independently.
+**Verified:** `npm run verify` (lint + typecheck + test + build) - see PR.
+No real Clerk API calls were made; all Clerk responses are faked through the
+existing `clerkDeMentira` test double.
+**Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-85 · Spanish left in test descriptions
