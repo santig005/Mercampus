@@ -3,7 +3,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { Seller } from '@/utils/models/sellerSchema2';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { bogotaClock, isOpenAt } from '@/lib/store-availability';
+import { bogotaClock, isOpenAt, isOverrideActive } from '@/lib/store-availability';
 
 // T-14: this used to be protected by IP (allowedIPs.js, deleted in T-34).
 // Vercel Cron doesn't send Clerk cookies, so the guard is a shared secret in
@@ -31,12 +31,20 @@ export async function GET(req) {
     }
 
     // T-122: the same definition of "open" the product badges use.
-    const clock = bogotaClock(new Date());
+    const now = new Date();
+    const clock = bogotaClock(now);
 
     for (const seller of sellers) {
       const schedules = await Schedule.find({ sellerId: seller._id }).lean();
 
-      const isAvailable = isOpenAt(schedules, clock);
+      // T-83: `seller` comes from `Seller.find()` without `.lean()`, so
+      // Mongoose applies the schema default (`null`) for every seller that
+      // predates this field - reading it directly is safe, no `$ne`-style
+      // filter needed. This composes the override into the recomputed value
+      // instead of the cron skipping affected sellers outright, so the write
+      // below never has to know an override exists.
+      const overrideActive = isOverrideActive(seller.availabilityOverrideUntil, now);
+      const isAvailable = isOpenAt(schedules, clock, overrideActive);
 
       await Seller.findByIdAndUpdate(seller._id, { availability: isAvailable });
     }

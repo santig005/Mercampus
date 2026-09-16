@@ -12,7 +12,15 @@ import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 import UniGraphicSelector from '@/components/university/UniGraphicSelector';
 import ProfileChecklist from '@/components/seller/ProfileChecklist';
- 
+import { MAX_AVAILABILITY_OVERRIDE_HOURS } from '@/lib/validators/seller';
+
+// T-83: preset durations for "open right now" - short enough that a seller
+// who forgets to cancel it isn't stuck marked open for long, and all within
+// the API's own cap so a button here can never be rejected by the schema.
+const OVERRIDE_PRESET_HOURS = [1, 2, 4].filter(
+  hours => hours <= MAX_AVAILABILITY_OVERRIDE_HOURS
+);
+
 // T-72: moved out of app/antojos/sellers/profile/edit/page.jsx, which is now a
 // Server Component that resolves the checklist and renders this. The form
 // itself stays a Client Component - it is all state, effects and handlers.
@@ -22,6 +30,10 @@ export default function EditSellerForm({ checklist }) {
   // getSellerContextData reads them with .lean(), which skips Mongoose's
   // schema defaults - so this reads `undefined` for them, not `false`.
   const [sellerPaused, setSellerPaused] = useState(false);
+  // T-83. Same `.lean()` caveat as `paused`: a seller who never used this
+  // reads `undefined`, treated the same as `null` (no override) everywhere
+  // below.
+  const [overrideUntil, setOverrideUntil] = useState(null);
   const [seller, setSeller] = useState(null);
 
   const [error, setError] = useState(null);
@@ -41,6 +53,7 @@ export default function EditSellerForm({ checklist }) {
         setSeller(dataSeller);
         setSellerAvailability(dataSeller.availability);
         setSellerPaused(Boolean(dataSeller.paused));
+        setOverrideUntil(dataSeller.availabilityOverrideUntil ?? null);
       }
     }
   }, [dataSeller, sellerLoading]);
@@ -99,6 +112,43 @@ export default function EditSellerForm({ checklist }) {
       logger.error('Error updating seller pause mode:', error);
     }
   };
+
+  // T-83. Same optimistic-with-rollback shape as handleSellerPaused: a plain
+  // toggle can't represent "how long", so this sends a computed timestamp
+  // instead. `null` cancels the window early, e.g. once the seller is
+  // actually done for the day.
+  const applyOverride = until => {
+    setOverrideUntil(until);
+    setSeller(current => ({ ...current, availabilityOverrideUntil: until }));
+    setDataSeller({ ...seller, availabilityOverrideUntil: until });
+  };
+
+  const handleSetOverride = async hours => {
+    const previous = overrideUntil;
+    const until = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+
+    applyOverride(until);
+    try {
+      await updateSeller(seller._id, { availabilityOverrideUntil: until });
+    } catch (error) {
+      applyOverride(previous);
+      logger.error('Error setting extraordinary availability:', error);
+    }
+  };
+
+  const handleClearOverride = async () => {
+    const previous = overrideUntil;
+
+    applyOverride(null);
+    try {
+      await updateSeller(seller._id, { availabilityOverrideUntil: null });
+    } catch (error) {
+      applyOverride(previous);
+      logger.error('Error clearing extraordinary availability:', error);
+    }
+  };
+
+  const overrideActive = Boolean(overrideUntil) && new Date(overrideUntil) > new Date();
 
   if (!checkedSeller || !seller) return <Loading />;
   if (error) return <p>{error}</p>;
@@ -160,6 +210,52 @@ export default function EditSellerForm({ checklist }) {
                   isOn={!sellerPaused}
                   onToggle={() => handleSellerPaused()}
                 />
+              </div>
+
+              {/* T-83. Separate row from "Mi disponibilidad" above: that one
+                  reflects today's Schedule and the T-14 cron overwrites it
+                  every run, so it can't hold a bounded exception. This opens
+                  the store despite the schedule saying closed, for one of a
+                  few preset windows - never with no expiry. */}
+              <div className='flex flex-col gap-2 p-2 bg-base-100 rounded shadow-md'>
+                <div>
+                  <h3>Apertura extraordinaria</h3>
+                  <p className='text-xs text-gray-500 dark:text-base-content/70'>
+                    Si abres fuera de tu horario habitual, actívala para que tu
+                    tienda se muestre abierta por un tiempo limitado.
+                  </p>
+                </div>
+                {overrideActive ? (
+                  <div className='flex justify-between items-center gap-4'>
+                    <p className='text-sm font-semibold text-[#03CF30]'>
+                      Abierta hasta las{' '}
+                      {new Date(overrideUntil).toLocaleTimeString('es-CO', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                    <button
+                      type='button'
+                      className='btn btn-sm'
+                      onClick={handleClearOverride}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <div className='flex gap-2'>
+                    {OVERRIDE_PRESET_HOURS.map(hours => (
+                      <button
+                        key={hours}
+                        type='button'
+                        className='btn btn-sm'
+                        onClick={() => handleSetOverride(hours)}
+                      >
+                        Abrir {hours}h
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <InputFields

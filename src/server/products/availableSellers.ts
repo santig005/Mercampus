@@ -2,6 +2,7 @@ import type { Types } from 'mongoose';
 
 import { bogotaClock } from '@/lib/store-availability';
 import { Schedule } from '@/utils/models/scheduleSchema';
+import { Seller } from '@/utils/models/sellerSchema2';
 
 /**
  * T-123: of these sellers, the ones whose switched-on products count as
@@ -18,6 +19,13 @@ import { Schedule } from '@/utils/models/scheduleSchema';
  *
  * Computed per request rather than read from `Seller.availability`, which is
  * only as fresh as the last cron run.
+ *
+ * T-83: a seller with an active `availabilityOverrideUntil` counts as open
+ * here too - the ROADMAP note next to T-123 is explicit that the override
+ * "must count as open under whatever definition this lands". `$gt: now`
+ * already excludes a seller without the field (a nonexistent field never
+ * satisfies `$gt`), so this needs no `$ne`-style rewrite for the 54 sellers
+ * that predate it - unlike an equality filter, which is the trap T-71 hit.
  */
 export async function getAvailableSellerIds(
   sellerIds: Types.ObjectId[],
@@ -29,7 +37,7 @@ export async function getAvailableSellerIds(
 
   const { day, time } = bogotaClock(now);
 
-  const [withSchedule, openNow] = await Promise.all([
+  const [withSchedule, openNow, overridden] = await Promise.all([
     Schedule.distinct('sellerId', {
       sellerId: { $in: sellerIds },
       day: { $gte: 1, $lte: 7 },
@@ -40,13 +48,18 @@ export async function getAvailableSellerIds(
       startTime: { $lte: time },
       endTime: { $gte: time },
     }),
+    Seller.find({
+      _id: { $in: sellerIds },
+      availabilityOverrideUntil: { $gt: now },
+    }).distinct('_id'),
   ]);
 
   const scheduled = new Set(withSchedule.map(String));
   const open = new Set(openNow.map(String));
+  const overriddenOpen = new Set(overridden.map(String));
 
   return sellerIds.filter(id => {
     const key = id.toString();
-    return open.has(key) || !scheduled.has(key);
+    return open.has(key) || overriddenOpen.has(key) || !scheduled.has(key);
   });
 }
