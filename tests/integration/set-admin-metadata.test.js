@@ -5,11 +5,20 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 let User;
 
-/** A fake Clerk: publicMetadata by clerkId, mutable like the real one. */
-const clerkDeMentira = (inicial = {}) => {
+/**
+ * A fake Clerk: publicMetadata by clerkId, mutable like the real one.
+ *
+ * `desconocidos` marks ids that 404 against this fake instance (T-108) - the
+ * same shape a clerkId from another Clerk instance produces against the real
+ * one - so it returns `null` instead of `{}` for them, same as the real
+ * `obtenerMetadataDeClerk` does on a failed lookup.
+ */
+const clerkDeMentira = (inicial = {}, { desconocidos = [] } = {}) => {
   const metadata = new Map(Object.entries(inicial));
+  const desconocidosSet = new Set(desconocidos);
   return {
-    obtenerMetadataDeClerk: async clerkId => metadata.get(clerkId) ?? {},
+    obtenerMetadataDeClerk: async clerkId =>
+      desconocidosSet.has(clerkId) ? null : metadata.get(clerkId) ?? {},
     actualizarMetadataDeClerk: async (clerkId, nueva) => {
       metadata.set(clerkId, nueva);
     },
@@ -100,5 +109,72 @@ describe('syncAdminMetadata', () => {
 
     expect(informe.admins).toBe(0);
     expect(clerk.leer('user_buyer')).toBeUndefined();
+  });
+
+  // T-108: a clerkId that 404s belongs to another Clerk instance (T-12h), not
+  // to an account that is merely missing the role. It must not be reported
+  // as `actualizado`, must not count toward `pendientes`, and --apply must
+  // not write to it.
+  it('a clerkId that 404s is reported as otra-instancia, not actualizado', async () => {
+    await crearUsuario('otra-instancia@example.test', {
+      role: 'admin',
+      clerkId: 'user_otra_instancia',
+    });
+    const clerk = clerkDeMentira({}, { desconocidos: ['user_otra_instancia'] });
+
+    const informe = await syncAdminMetadata({
+      obtenerAdminsDeMongo,
+      ...clerk,
+      apply: false,
+    });
+
+    expect(informe.pendientes).toBe(0);
+    expect(informe.resumen).toEqual({ 'otra-instancia': 1 });
+  });
+
+  it('--apply does not write metadata for a clerkId from another instance', async () => {
+    await crearUsuario('otra-instancia@example.test', {
+      role: 'admin',
+      clerkId: 'user_otra_instancia',
+    });
+    const clerk = clerkDeMentira({}, { desconocidos: ['user_otra_instancia'] });
+
+    const informe = await syncAdminMetadata({
+      obtenerAdminsDeMongo,
+      ...clerk,
+      apply: true,
+    });
+
+    expect(informe.resumen).toEqual({ 'otra-instancia': 1 });
+    expect(clerk.leer('user_otra_instancia')).toBeUndefined();
+  });
+
+  it('classifies the three clerkId states independently: has role, missing role, other instance', async () => {
+    await crearUsuario('has-role@example.test', { role: 'admin', clerkId: 'user_has_role' });
+    await crearUsuario('missing-role@example.test', {
+      role: 'admin',
+      clerkId: 'user_missing_role',
+    });
+    await crearUsuario('otra-instancia@example.test', {
+      role: 'admin',
+      clerkId: 'user_otra_instancia',
+    });
+    const clerk = clerkDeMentira(
+      { user_has_role: { role: 'admin' } },
+      { desconocidos: ['user_otra_instancia'] }
+    );
+
+    const informe = await syncAdminMetadata({
+      obtenerAdminsDeMongo,
+      ...clerk,
+      apply: false,
+    });
+
+    expect(informe.pendientes).toBe(1);
+    expect(informe.resumen).toEqual({
+      'ya-tiene-rol': 1,
+      actualizado: 1,
+      'otra-instancia': 1,
+    });
   });
 });

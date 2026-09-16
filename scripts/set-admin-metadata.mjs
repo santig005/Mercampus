@@ -28,11 +28,18 @@ import { User } from '@/utils/models/userSchema';
 export const YA_TIENE_ROL = 'ya-tiene-rol';
 export const ACTUALIZADO = 'actualizado';
 export const SIN_CLERK_ID = 'sin-clerk-id';
+// T-108: a clerkId that 404s against the Clerk instance we are talking to.
+// Most likely explanation is T-12h - the id belongs to a *different*
+// instance - not a genuinely missing role, so it must not count toward
+// `pendientes` nor be touched by --apply.
+export const OTRA_INSTANCIA = 'otra-instancia';
 
 /**
  * @param {object} deps
  * @param {() => Promise<Array<{email: string, clerkId?: string}>>} deps.obtenerAdminsDeMongo
- * @param {(clerkId: string) => Promise<Record<string, unknown>>} deps.obtenerMetadataDeClerk
+ * @param {(clerkId: string) => Promise<Record<string, unknown> | null>} deps.obtenerMetadataDeClerk
+ *   Returns `null` when the lookup 404s (the id does not exist in this Clerk
+ *   instance), and the `publicMetadata` object (possibly `{}`) when it does.
  * @param {(clerkId: string, metadata: Record<string, unknown>) => Promise<void>} deps.actualizarMetadataDeClerk
  * @param {boolean} [deps.apply]
  */
@@ -55,6 +62,21 @@ export async function syncAdminMetadata({
     }
 
     const metadataActual = await obtenerMetadataDeClerk(admin.clerkId);
+
+    // T-108: a 404 is not "no role yet" - it means this id does not exist in
+    // the Clerk instance we are talking to, almost always because it belongs
+    // to another instance (T-12h). Writing to it with --apply would create
+    // metadata no real session will ever see, so it gets its own state and
+    // is excluded from `pendientes` below instead of falling into ACTUALIZADO.
+    if (metadataActual === null) {
+      resultados.push({
+        email: admin.email,
+        clerkId: admin.clerkId,
+        estado: OTRA_INSTANCIA,
+      });
+      continue;
+    }
+
     if (metadataActual?.role === 'admin') {
       resultados.push({
         email: admin.email,
@@ -82,10 +104,12 @@ export async function syncAdminMetadata({
   return {
     admins: admins.length,
     resultados,
-    // The only thing blocking promotion: Mongo admins with a clerkId whose
-    // publicMetadata does not say 'admin' yet. After a successful --apply this
-    // has to be zero (no-clerk-id does not count: not this script's job, see
-    // script, ver el comentario de arriba).
+    // The only thing blocking promotion: Mongo admins with a clerkId that
+    // genuinely exists in this Clerk instance and whose publicMetadata does
+    // not say 'admin' yet. After a successful --apply this has to be zero
+    // (no-clerk-id does not count: not this script's job, see the comment
+    // above; otra-instancia does not count either: --apply must not write to
+    // it, see T-108).
     pendientes: resultados.filter(r => r.estado === ACTUALIZADO).length,
     resumen: resultados.reduce((acc, r) => {
       acc[r.estado] = (acc[r.estado] ?? 0) + 1;
@@ -130,7 +154,9 @@ async function main() {
 
   const obtenerMetadataDeClerk = async clerkId => {
     const { ok, datos } = await apiClerk(`/users/${clerkId}`);
-    if (!ok) return {};
+    // T-108: null means "this id does not exist here", distinct from "exists
+    // but publicMetadata is empty". syncAdminMetadata tells them apart.
+    if (!ok) return null;
     return datos.public_metadata ?? {};
   };
 
@@ -180,6 +206,15 @@ async function main() {
       console.log(`  ${r.estado.padEnd(16)} ${r.email}`);
     }
     console.log('\nResumen:', JSON.stringify(informe.resumen));
+
+    const otraInstancia = informe.resumen[OTRA_INSTANCIA] ?? 0;
+    if (otraInstancia > 0) {
+      console.log(
+        `\n⚠  ${otraInstancia} admin(s) con clerkId que esta instancia de Clerk` +
+          ' no reconoce (404): probablemente de otra instancia (T-12h).' +
+          ' No cuentan como pendientes ni afectan --check; --apply no les escribe.'
+      );
+    }
 
     if (check) {
       if (instanciaMal) {
