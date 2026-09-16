@@ -1494,9 +1494,42 @@ permissions requested at the right moment, not on load.
 **Depends on:** T-40
 **Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-44 · Seller panel
+### [~] T-44 · Seller panel
 **Done when:** sales per day, top-ordered products, peak hours,
 cancellation rate. Reads from `Order`, writes nothing new.
+**Done:** `/antojos/sellers/panel`, a Server Component that reads `Order`
+directly (`src/server/orders/getSellerPanelStats.ts`, no fetch to our own
+API). The aggregation itself is pure and unit tested apart from Mongo, same
+split T-72 used for the profile checklist: `src/lib/seller-panel-stats.ts`
+computes the last 14 days of sales bucketed by the day an order actually
+*completed* (from `history`, in Bogotá time - reuses `BOGOTA_OFFSET_HOURS`,
+now exported from `src/lib/store-availability.ts`), the top 5 products by
+quantity among completed orders, the top 5 peak hours across every order
+regardless of status (demand, not just fulfilled demand), and an all-time
+cancellation rate. Linked from the sidebar's "Gestionar" section as "Panel de
+ventas". No schema change, no new API route, no new dependency: bars are
+plain server-rendered `<div>`s against `bg-primary-orange`/`bg-base-200`
+(same tokens `ProfileChecklist` already proved safe in both themes), not a
+chart library.
+**Not verified per rule 3:** this worktree has no `.env` (only
+`.env.example` - no Clerk keys, no `MONGO_URI`), so there is no way in this
+session to run `npm run dev` and sign in as an approved seller to actually
+look at the rendered page. `npm run verify` passes (lint, typecheck, the
+full test suite including a new integration test that seeds an approved and
+a pending seller and asserts the access-control statuses, and the
+production build, which lists the route as 0 B client JS), but nobody has
+looked at the rendered bars. Stays `[~]` until a session with real
+credentials takes the screenshot rule 3 asks for.
+**Worth knowing (rule 9, found while touching `EditSellerForm.jsx`'s
+neighbourhood):** that file has a commented-out back button
+(`{/* <Link href='/'>...<TbChevronLeft />...</Link> */}`) left over from
+T-72's extraction (`git log -L` traces it to that commit, already commented
+there) - `EditSellerForm.jsx` never imports `TbChevronLeft` at all, so
+un-commenting it as-is would throw. Every other screen with this same back
+button (`ProductPage.jsx`, `SellerPage.jsx`, `Schedule.jsx`,
+`SignUpForm.jsx`, register pages) imports the icon and renders it live, so
+this one reads as dead, not a deliberate omission - not removed here to
+avoid scope creep on a task that isn't this one.
 **Depends on:** T-40
 **Model:** `sonnet` · **Nightly:** yes
 

@@ -24,6 +24,8 @@ import {
   BsBagCheckFill,
   BsBagPlus,
   BsBagPlusFill,
+  BsBarChart,
+  BsBarChartFill,
   BsBuildingFillGear,
   BsCalendarCheck,
   BsCalendarCheckFill,
@@ -133,6 +135,14 @@ const SideBar = ({ userId }) => {
                   Gestionar
                 </summary>
                 <ul className='flex flex-col gap-2'>
+                  <li>
+                    <SidebarBtn
+                      text='Panel de ventas'
+                      goto='/antojos/sellers/panel'
+                      iconActive={<BsBarChartFill className='size-5' />}
+                      iconInactive={<BsBarChart className='size-5' />}
+                    />
+                  </li>
                   <li>
                     <SidebarBtn
                       text='Agregar productos'
