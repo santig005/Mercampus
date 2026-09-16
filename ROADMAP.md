@@ -1494,7 +1494,7 @@ permissions requested at the right moment, not on load.
 **Depends on:** T-40
 **Model:** `opusplan` · **Nightly:** no
 
-### [~] T-44 · Seller panel
+### [x] T-44 · Seller panel
 **Done when:** sales per day, top-ordered products, peak hours,
 cancellation rate. Reads from `Order`, writes nothing new.
 **Done:** `/antojos/sellers/panel`, a Server Component that reads `Order`
@@ -1511,15 +1511,19 @@ ventas". No schema change, no new API route, no new dependency: bars are
 plain server-rendered `<div>`s against `bg-primary-orange`/`bg-base-200`
 (same tokens `ProfileChecklist` already proved safe in both themes), not a
 chart library.
-**Not verified per rule 3:** this worktree has no `.env` (only
-`.env.example` - no Clerk keys, no `MONGO_URI`), so there is no way in this
-session to run `npm run dev` and sign in as an approved seller to actually
-look at the rendered page. `npm run verify` passes (lint, typecheck, the
-full test suite including a new integration test that seeds an approved and
-a pending seller and asserts the access-control statuses, and the
-production build, which lists the route as 0 B client JS), but nobody has
-looked at the rendered bars. Stays `[~]` until a session with real
-credentials takes the screenshot rule 3 asks for.
+**Verified per rule 3 (2026-09-16):** the implementing agent's worktree had
+no `.env`, so it left this `[~]`. Closed out from a session with the real
+`.env`: `scripts/e2e.mjs`'s own recipe (in-memory Mongo + seed + a real
+throwaway Clerk account + build + Playwright) signed in as the seeded
+approved seller and hit `/antojos/sellers/panel` directly. The seed has no
+`Order` documents, so a handful of `completed`/`cancelled` orders were
+inserted by hand (script not committed - one-off, not a fixture anyone else
+needs) to see the bars with real data instead of the empty state.
+Screenshots in both themes: the `bg-primary-orange` bars render as
+brand-orange on `bg-base-200` in light mode and stay the same orange against
+the dark card background in dark mode, with legible text in both - none of
+the T-100 near-white regression. `npm run verify` already passed per the
+note above.
 **Worth knowing (rule 9, found while touching `EditSellerForm.jsx`'s
 neighbourhood):** that file has a commented-out back button
 (`{/* <Link href='/'>...<TbChevronLeft />...</Link> */}`) left over from
