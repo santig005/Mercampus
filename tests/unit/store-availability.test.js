@@ -4,6 +4,7 @@ import {
   availabilityLabel,
   bogotaClock,
   isOpenAt,
+  isOverrideActive,
   nextOpening,
   productAvailability,
 } from '@/lib/store-availability';
@@ -39,6 +40,44 @@ describe('isOpenAt (T-122)', () => {
 
   it('a day without a slot is closed', () => {
     expect(isOpenAt(weekday, { day: 2, time: '10:00' })).toBe(false);
+  });
+
+  it('T-83: an active override opens the store on a day with no slot at all', () => {
+    expect(isOpenAt(weekday, { day: 2, time: '10:00' }, true)).toBe(true);
+  });
+
+  it('T-83: overrideActive defaults to false, unchanged from before T-83', () => {
+    expect(isOpenAt(weekday, { day: 2, time: '10:00' })).toBe(false);
+  });
+});
+
+describe('isOverrideActive (T-83)', () => {
+  const now = MONDAY_10AM;
+
+  it('a future timestamp is active', () => {
+    expect(isOverrideActive(new Date(now.getTime() + 60_000), now)).toBe(true);
+  });
+
+  it('a past timestamp is not active - it already expired', () => {
+    expect(isOverrideActive(new Date(now.getTime() - 60_000), now)).toBe(false);
+  });
+
+  it('exactly now is not active - the window has to still be open', () => {
+    expect(isOverrideActive(now, now)).toBe(false);
+  });
+
+  it('null is not active - a seller who never used this', () => {
+    expect(isOverrideActive(null, now)).toBe(false);
+  });
+
+  it('undefined is not active - a document that predates the field', () => {
+    expect(isOverrideActive(undefined, now)).toBe(false);
+  });
+
+  it('accepts an ISO string, the shape a lean() read hands back', () => {
+    expect(isOverrideActive(new Date(now.getTime() + 60_000).toISOString(), now)).toBe(
+      true
+    );
   });
 });
 
@@ -118,6 +157,35 @@ describe('productAvailability (T-122)', () => {
 
   it('a product switched off stays off without a schedule too', () => {
     expect(productAvailability(false, [], MONDAY_10AM)).toEqual({ state: 'off' });
+  });
+
+  it('T-83: an active override makes an out-of-schedule product available', () => {
+    const overrideUntil = new Date(MONDAY_8PM.getTime() + 60 * 60 * 1000);
+    expect(productAvailability(true, weekday, MONDAY_8PM, overrideUntil)).toEqual({
+      state: 'available',
+    });
+  });
+
+  it('T-83: an expired override behaves exactly like no override at all', () => {
+    const overrideUntil = new Date(MONDAY_8PM.getTime() - 60 * 60 * 1000);
+    expect(productAvailability(true, weekday, MONDAY_8PM, overrideUntil)).toEqual({
+      state: 'closed',
+      nextOpening: { day: 3, startTime: '08:00' },
+    });
+  });
+
+  it('T-83: the product switch still wins over an active override', () => {
+    const overrideUntil = new Date(MONDAY_8PM.getTime() + 60 * 60 * 1000);
+    expect(productAvailability(false, weekday, MONDAY_8PM, overrideUntil)).toEqual({
+      state: 'off',
+    });
+  });
+
+  it('T-83: a missing overrideUntil (every seller before this field existed) behaves as before', () => {
+    expect(productAvailability(true, weekday, MONDAY_8PM)).toEqual({
+      state: 'closed',
+      nextOpening: { day: 3, startTime: '08:00' },
+    });
   });
 });
 

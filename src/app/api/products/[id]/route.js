@@ -71,7 +71,13 @@ export async function GET(req, { params }) {
         ...product,
         schedules: withDayNames(schedules),
         // T-122: same definition as the listing, from the numeric days.
-        availabilityStatus: productAvailability(product.availability, schedules),
+        // T-83: same override as the listing, read off the populated seller.
+        availabilityStatus: productAvailability(
+          product.availability,
+          schedules,
+          new Date(),
+          product.sellerId.availabilityOverrideUntil
+        ),
       },
       { status: 200 }
     );

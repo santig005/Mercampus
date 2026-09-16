@@ -16,8 +16,13 @@
 // GitHub Actions schedule, every 10-20 minutes as measured on 2026-09-14), and
 // "abre mar 6:38" needs the schedules anyway.
 //
-// T-83 (opening outside the schedule for a bounded window) does not exist yet.
-// When it lands, its override belongs in isOpenAt(), so both callers see it.
+// T-83: `Seller.availabilityOverrideUntil` (a nullable timestamp) opens the
+// store outside its schedule for a bounded window. Its override lives in
+// isOpenAt(), so both callers - the T-14 cron and productAvailability() -
+// see it the same way. isOpenAt() itself never touches the database or reads
+// `now`: callers resolve the timestamp into a plain boolean with
+// isOverrideActive() and pass that in, keeping isOpenAt() a pure function of
+// `clock` (Bogotá day + HH:MM) exactly as before.
 
 export type ScheduleSlot = {
   day: number; // 1 = Monday ... 7 = Sunday, as stored
@@ -60,13 +65,40 @@ const validSlots = (schedules: ScheduleSlot[]) =>
 
 // Both ends inclusive, exactly what the cron has always done. A slot that
 // crosses midnight (endTime < startTime) never matches, as before.
-export function isOpenAt(schedules: ScheduleSlot[], clock: BogotaClock): boolean {
-  return validSlots(schedules).some(
-    slot =>
-      slot.day === clock.day &&
-      slot.startTime <= clock.time &&
-      slot.endTime >= clock.time
+//
+// T-83: `overrideActive` short-circuits the schedule check entirely - a
+// seller with an active override is open no matter what Schedule says.
+// Defaults to `false` so every pre-T-83 caller (and every existing test)
+// keeps behaving exactly as before without passing a third argument.
+export function isOpenAt(
+  schedules: ScheduleSlot[],
+  clock: BogotaClock,
+  overrideActive = false
+): boolean {
+  return (
+    overrideActive ||
+    validSlots(schedules).some(
+      slot =>
+        slot.day === clock.day &&
+        slot.startTime <= clock.time &&
+        slot.endTime >= clock.time
+    )
   );
+}
+
+// T-83: turns `Seller.availabilityOverrideUntil` into the boolean isOpenAt()
+// wants. A missing/null value (every seller before this field existed, and
+// every seller who never used it) is "no override" - not an error - so this
+// is a plain falsy check, not a `$ne`-style Mongo filter: there is no query
+// here, just a value already read off a document.
+export function isOverrideActive(
+  overrideUntil: Date | string | null | undefined,
+  now: Date
+): boolean {
+  if (!overrideUntil) {
+    return false;
+  }
+  return new Date(overrideUntil).getTime() > now.getTime();
 }
 
 // The next slot that starts after `clock`, looking a full week ahead: the same
@@ -98,16 +130,17 @@ export function nextOpening(
 export function productAvailability(
   productOn: unknown,
   schedules: ScheduleSlot[],
-  now: Date = new Date()
+  now: Date = new Date(),
+  overrideUntil: Date | string | null | undefined = null
 ): AvailabilityStatus {
   // The seller's switch wins: a product they turned off is not coming back
-  // when the store opens.
+  // when the store opens, override or not.
   if (!productOn) {
     return { state: 'off' };
   }
 
   const clock = bogotaClock(now);
-  if (isOpenAt(schedules, clock)) {
+  if (isOpenAt(schedules, clock, isOverrideActive(overrideUntil, now))) {
     return { state: 'available' };
   }
 

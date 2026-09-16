@@ -211,7 +211,16 @@ const getPopulatedProducts = async (approvedProducts, now) => {
       schedules: withDayNames(schedules),
       // T-122: computed from the numeric days, before withDayNames swaps them.
       // T-123: with the request's own clock, so the badge matches the block.
-      availabilityStatus: productAvailability(product.availability, schedules, now),
+      // T-83: `product.sellerId` is the populated seller (no `.select()`
+      // restricting the query above), so a seller without this field simply
+      // hands back `undefined` here - treated as "no override", same as an
+      // old document would be.
+      availabilityStatus: productAvailability(
+        product.availability,
+        schedules,
+        now,
+        product.sellerId.availabilityOverrideUntil
+      ),
     };
   });
 };

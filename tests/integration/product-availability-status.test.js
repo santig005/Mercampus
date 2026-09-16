@@ -4,6 +4,7 @@ import { seedDatabase } from '../../scripts/seed.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
 import { Schedule } from '@/utils/models/scheduleSchema';
+import { Seller } from '@/utils/models/sellerSchema2';
 
 // T-122: both product routes carry `availabilityStatus`, so the card, the
 // modal (fed by the listing) and the product page (fed by the detail route)
@@ -84,6 +85,45 @@ describe('availabilityStatus on the product routes (T-122)', () => {
     at(MONDAY_8PM);
 
     expect((await listing())['Arepa de queso']).toEqual({ state: 'no-schedule' });
+  });
+
+  // T-83. Same out-of-schedule instant as the "outside the schedule" case
+  // above, but with an active override - both routes have to agree it counts
+  // as open, exactly as they agree it doesn't without one.
+  it('an active override makes the listing show available outside the schedule', async () => {
+    await Seller.findByIdAndUpdate(ids.approvedSeller, {
+      availabilityOverrideUntil: new Date(MONDAY_8PM.getTime() + 60 * 60 * 1000),
+    });
+    at(MONDAY_8PM);
+
+    const status = await listing();
+
+    expect(status['Arepa de queso']).toEqual({ state: 'available' });
+    // The switch still wins over an active override too.
+    expect(status['Jugo de mango']).toEqual({ state: 'off' });
+  });
+
+  it('an expired override leaves the listing closed, same as no override', async () => {
+    await Seller.findByIdAndUpdate(ids.approvedSeller, {
+      availabilityOverrideUntil: new Date(MONDAY_8PM.getTime() - 60 * 60 * 1000),
+    });
+    at(MONDAY_8PM);
+
+    expect((await listing())['Arepa de queso']).toEqual({
+      state: 'closed',
+      nextOpening: { day: 3, startTime: '08:00' },
+    });
+  });
+
+  it('the detail route also reflects an active override', async () => {
+    await Seller.findByIdAndUpdate(ids.approvedSeller, {
+      availabilityOverrideUntil: new Date(MONDAY_8PM.getTime() + 60 * 60 * 1000),
+    });
+    at(MONDAY_8PM);
+
+    const body = await detail(ids.approvedProduct);
+
+    expect(body.availabilityStatus).toEqual({ state: 'available' });
   });
 
   it('the detail route agrees with the listing', async () => {

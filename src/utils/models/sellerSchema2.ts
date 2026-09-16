@@ -48,6 +48,21 @@ const sellerSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    // T-83: the seller opening outside their usual Schedule, for a bounded
+    // window - the mirror image of `paused` above (that one hides an open
+    // store; this one shows a closed one as open). A single nullable
+    // timestamp rather than a boolean + expiry pair: there is no way to
+    // represent "override on, no expiry" - the exact bug the task called
+    // out - because the override IS the expiry. `isOpenAt()`
+    // (src/lib/store-availability.ts) composes it with the schedule so both
+    // the T-14 cron and the product routes see it the same way, and it
+    // self-expires by comparison against `now`, so nothing has to clear it
+    // when the window passes. Every existing document predates this field,
+    // exactly like `paused` did at T-71 - reads must not assume it exists.
+    availabilityOverrideUntil: {
+      type: Date,
+      default: null,
+    },
     phoneNumber: {
       type: Number,
       required: true,

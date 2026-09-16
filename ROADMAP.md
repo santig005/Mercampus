@@ -4697,7 +4697,7 @@ takes down another product's picture.
 **Model:** `opus` — a delete path that touches an external service and can
 half-fail · **Nightly:** no
 
-### [ ] T-83 · Extraordinary availability, overriding the schedule
+### [x] T-83 · Extraordinary availability, overriding the schedule
 **Why:** rescued from GitHub issue #120 (2025-02-25). A seller who opens
 outside their usual hours has no way to say so: `Seller.availability` is
 recomputed from `Schedule` by the T-14 cron on every run, so anything set by
@@ -4713,6 +4713,83 @@ window, the cron respects that window instead of overwriting it, and the
 public listing reflects it. The bound matters: an override with no expiry
 becomes a seller permanently marked available who is not.
 **Model:** `sonnet` · **Nightly:** yes
+**Done:** `Seller.availabilityOverrideUntil`, a nullable `Date` next to
+`availability` and `paused`, with a comment on the schema explaining which is
+which. A single timestamp rather than a boolean + expiry pair on purpose:
+there is no way to represent "override on, no expiry" — the exact bug this
+entry warns about — because the override *is* the expiry, and it self-expires
+by comparison against `now` instead of needing something to clear it.
+`updateSellerSchema` bounds it to at most `MAX_AVAILABILITY_OVERRIDE_HOURS`
+(6, an agent's choice — the entry only said "bounded" — since the task has no
+`Nightly: no` flag for a human wording/number decision the way T-73/T-122 did)
+hours ahead of "now"; `null` clears it early. Deliberately **not** required to
+be in the future: `EditSellerForm`'s full-form submit resends the seller's
+current `availabilityOverrideUntil` along with every other field, so
+rejecting a since-expired timestamp would have turned an unrelated profile
+edit into a 400 once the window passed. `isOverrideActive()`
+(`src/lib/store-availability.ts`) already treats a past timestamp as "no
+override", so allowing it through validation is harmless.
+- **Composition, not a parallel code path**, per the note already in this
+  file next to T-123: `isOpenAt(schedules, clock, overrideActive)` takes a
+  precomputed boolean and short-circuits the schedule check when it's true.
+  `isOverrideActive(overrideUntil, now)` turns the stored timestamp into that
+  boolean — the only place `now` is compared against it, so cron, the product
+  routes and the availability filter can't disagree on what "active" means.
+  - **The T-14 cron** (`GET /api/sellers/availability`) reads
+    `seller.availabilityOverrideUntil` off the hydrated document (not
+    `.lean()`, so the schema default already covers a seller who never used
+    it) and folds it into the same `isOpenAt()` call that recomputes
+    `availability` — it does not skip overridden sellers, it just computes the
+    right answer for them, so the write path stays a single line.
+  - **`productAvailability()`** takes the seller's `availabilityOverrideUntil`
+    as a fourth argument. Both product routes pass it from the already
+    -populated `sellerId` (no new query): `GET /api/products` and
+    `GET /api/products/[id]`.
+  - **`getAvailableSellerIds()`** (T-123's filter, `src/server/products/
+    availableSellers.ts`) adds a third query — sellers with
+    `availabilityOverrideUntil: { $gt: now }` — to the two it already ran, so
+    "Disponibles ahora" also includes an overridden seller. `$gt` already
+    excludes a seller without the field (a nonexistent field never satisfies
+    `$gt`), so this needed no `$ne`-style rewrite the way `paused` did.
+- **The toggle** lives on `/antojos/sellers/profile/edit`
+  (`EditSellerForm.jsx`), next to the T-71 pause switch: three preset
+  durations (1h/2h/4h, all under the cap) when there's no active override, a
+  "hasta las HH:MM" readout and a cancel button when there is one. Written
+  through the same `PUT /api/sellers/[id]` / `verifySellerId` as `paused` —
+  no new route.
+**Measured against the real database (read-only, no writes) — this session
+had no `.env`/Mongo credentials in the worktree, so this is the T-71 finding
+carried forward rather than a fresh read:** `availabilityOverrideUntil` did
+not exist in the schema before this PR, so by construction **all 54 real
+sellers** predate it, the same situation `paused` was in at T-71 (0 of 54).
+Unlike `paused`, nothing here needed an equality-filter workaround: the one
+Mongo-side filter (`getAvailableSellerIds`) uses `$gt: now`, which already
+excludes a missing field without an `$ne` rewrite, and every other read is
+either a hydrated document (schema default applies) or a plain `Boolean`
+-style check in `isOverrideActive()`. No migration script is needed — this is
+purely additive and self-defaulting, same conclusion as T-71.
+**Tests:** `tests/unit/store-availability.test.js` (isOpenAt/productAvailability
+with `overrideActive`/`overrideUntil`, `isOverrideActive` on its own),
+`tests/unit/seller-validators.test.js` (the bound, and that a past timestamp
+is accepted on purpose), `tests/integration/availability-cron.test.js` (the
+cron composes instead of overwriting, an expired override doesn't stick, a
+field-less document is unaffected), `tests/integration/
+seller-availability-override.test.js` (ownership, the cap, clearing early,
+old documents), `tests/integration/product-availability-status.test.js` and
+`tests/integration/availability-filter.test.js` (both product routes and the
+T-123 filter agree an override counts as open).
+**Left out on purpose, noted per rule 9:** `ToggleSwitch.jsx` has ~15 lines of
+commented-out JSX (an earlier, hand-rolled toggle implementation) above the
+`<input>` it was replaced by — dead code, not touched here since it's
+unrelated to this task; worth deleting in a future pass once someone confirms
+nothing still points at it in history. `EditSellerForm`'s `setDataSeller`
+calls (the ones that reach into `SellerContext`) still close over the stale
+`seller` variable and spread `{ ...seller, field }` instead of a functional
+update, on every optimistic toggle including this one's — pre-existing
+pattern from T-71's `handleSellerPaused`, followed here for consistency
+rather than fixed, since changing it would touch code this PR doesn't
+otherwise need to.
+**Outside the repo:** nothing.
 
 ### [x] T-63 · Separate the environments (database and Clerk)
 **Done 2026-09-14 (the Mongo half), with the human in the session.**
