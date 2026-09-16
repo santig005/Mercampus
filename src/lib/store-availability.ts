@@ -40,8 +40,10 @@ export type AvailabilityStatus =
 
 // Colombia has no daylight saving, so a fixed offset is enough. "Now" in the
 // runtime's timezone (UTC on Vercel) would not match the local time the seller
-// typed into their schedule.
-const BOGOTA_OFFSET_HOURS = 5;
+// typed into their schedule. Exported so other read-only aggregations that
+// need to bucket a UTC timestamp into Bogotá local time (T-44's seller panel)
+// reuse the same constant instead of re-typing the magic number.
+export const BOGOTA_OFFSET_HOURS = 5;
 
 export function bogotaClock(now: Date): BogotaClock {
   const bogota = new Date(now.getTime() - BOGOTA_OFFSET_HOURS * 60 * 60 * 1000);
