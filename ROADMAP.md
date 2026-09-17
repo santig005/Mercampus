@@ -4102,6 +4102,42 @@ don't guess at what "matching" means visually.
 it.
 **Model:** TBD (needs the human's visual call first) · **Nightly:** no
 
+### [ ] T-132 · Sharing a marketplace product hands out an `/antojos/` link
+**Why:** raised by the human on 2026-09-17 while testing T-81's listing
+zone. `ShareButton.jsx`'s `generateUrl()` hardcodes the section:
+```js
+return `${window.location.origin}/antojos/${data._id}?source=share`;
+```
+It never reads the product's own `section`, so every marketplace product
+gets shared as `/antojos/<id>`. Predates the i18n work entirely - this is
+not a locale bug.
+**What actually breaks, measured:** the link is not dead. Neither
+`src/app/antojos/[id]/page.jsx` nor `src/app/marketplace/[id]/page.jsx`
+filters by section; both just look the id up, so the product renders fine
+either way. The difference is the `section` prop: `marketplace/[id]` passes
+`section="marketplace"`, `antojos/[id]` passes nothing and
+`ProductPage` defaults it to `'antojos'` (line 18). That prop feeds exactly
+one thing - the back button's `router.push(\`/${section}\`)` on line 78. So
+whoever opens a shared marketplace link sees the right product and then gets
+sent to the wrong listing when they go back.
+**Done when:** the shared URL derives from the product's own `section`
+(`/${data.section}/${data._id}`), so a marketplace product shares as
+`/marketplace/<id>`, with a test covering both sections.
+**Leave the seller link alone:** `type === 'seller'` builds
+`/antojos/sellers/<id>`, which is correct - seller profiles live only
+there, in both sections. It looks like the same bug and is not one.
+**Not in scope, and do NOT guess at it:** whether a shared link should
+carry the sharer's locale (`/en/marketplace/<id>`). It cannot today - the
+product detail zone is not migrated yet, so `/en/antojos/<id>` would 404 -
+and when T-81 migrates that zone it becomes a **product** decision, not a
+technical one: this app sets `localeDetection: false` on purpose so that
+every visitor starts in Spanish and English is a deliberate opt-in (see
+T-46), which argues a link sent to *another person* should stay neutral.
+The opposite argument - one exchange student sharing with another - is just
+as reasonable. That call is the human's; whoever migrates the product
+detail zone should ask rather than pick.
+**Model:** `sonnet` - one-line fix plus a test · **Nightly:** yes
+
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
 chosen over pointing previews at themselves, and done in two PRs. **This
