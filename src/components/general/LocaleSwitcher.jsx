@@ -7,7 +7,12 @@ import { routing } from '@/i18n/routing';
 // translations stuck on the locale from the first page load. A full
 // navigation re-runs the root layout and picks up the new locale
 // everywhere (translations, <html lang>, Clerk localization).
-export default async function LocaleSwitcher() {
+//
+// `basePath` is the current page's route under a locale prefix (e.g.
+// 'about', 'antojos', 'marketplace') with no leading slash - it does not
+// preserve query params (sort/category/availability filters on the listing
+// pages), matching how the /about switcher already behaves.
+export default async function LocaleSwitcher({ basePath }) {
   const activeLocale = await getLocale();
   const t = await getTranslations('LocaleSwitcher');
 
@@ -16,7 +21,7 @@ export default async function LocaleSwitcher() {
       {routing.locales.map((locale) => (
         <a
           key={locale}
-          href={locale === routing.defaultLocale ? '/about' : `/${locale}/about`}
+          href={locale === routing.defaultLocale ? `/${basePath}` : `/${locale}/${basePath}`}
           className={
             locale === activeLocale
               ? 'font-semibold text-orange-600'

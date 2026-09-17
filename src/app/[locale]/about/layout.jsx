@@ -29,7 +29,7 @@ export default async function layout({ children, params }) {
             </Link>
 
             <div className="flex items-center gap-3 sm:gap-4">
-              <LocaleSwitcher />
+              <LocaleSwitcher basePath="about" />
 
               {/* Explore products button */}
               <Link
