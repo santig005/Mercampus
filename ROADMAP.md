@@ -2460,6 +2460,15 @@ switcher on these two pages yet: `LocaleSwitcher` only renders inside
 work from any zone is left for whichever zone does it first. Both
 languages are reachable directly by URL either way, which is what this
 task's "Done when" asks for.
+**Locale switcher follow-up (closed):** `LocaleSwitcher` now takes a
+`basePath` prop (`about` / `antojos` / `marketplace`) instead of a
+hardcoded `/about` href, and renders in `src/app/[locale]/antojos/layout.jsx`
+and `.../marketplace/layout.jsx` too - outside `<Layout>`, so it does not
+leak into the shared `Layout`/`Navbar` used by the still-unmigrated
+`src/app/antojos/layout.jsx` and `src/app/marketplace/layout.jsx`. It still
+does not preserve query params (sort/category/availability) across a
+switch, matching the About switcher's existing behavior on purpose.
+`tests/e2e/i18n.spec.js` walks the switcher on both listing pages.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 

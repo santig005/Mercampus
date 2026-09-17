@@ -91,12 +91,31 @@ test.describe('i18n on the listing zone (/antojos, /marketplace)', () => {
     await shot(page, '11-marketplace-en');
   });
 
-  // No LocaleSwitcher on these pages yet - it only renders inside
-  // AboutLayout, and its hrefs are hardcoded to /about (see
-  // src/components/general/LocaleSwitcher.jsx). Generalizing it to work from
-  // any zone is follow-up work, not this PR's - noted in the PR description.
-  // Both languages are still reachable directly by URL, which is what T-81's
-  // "Done when" asks this spec to walk.
+  // T-81 follow-up: LocaleSwitcher was generalized (basePath prop) and wired
+  // into both listing layouts, closing the gap noted in PR #361.
+  test('the language switcher navigates between /antojos and /en/antojos', async ({ page }) => {
+    await page.goto('/antojos');
+
+    await page.getByRole('link', { name: 'English' }).click();
+    await expect(page).toHaveURL(/\/en\/antojos$/);
+    await expect(page.getByRole('heading', { name: 'Soothe your cravings' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Español' }).click();
+    await expect(page).toHaveURL(/\/antojos$/);
+    await expect(page.getByRole('heading', { name: 'Calma tus antojos' })).toBeVisible();
+  });
+
+  test('the language switcher navigates between /marketplace and /en/marketplace', async ({ page }) => {
+    await page.goto('/marketplace');
+
+    await page.getByRole('link', { name: 'English' }).click();
+    await expect(page).toHaveURL(/\/en\/marketplace$/);
+    await expect(page.getByRole('heading', { name: 'Explore the marketplace' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Español' }).click();
+    await expect(page).toHaveURL(/\/marketplace$/);
+    await expect(page.getByRole('heading', { name: 'Explora el marketplace' })).toBeVisible();
+  });
 
   test('their sub-routes are not migrated yet and stay in Spanish with no locale prefix', async ({
     page,
