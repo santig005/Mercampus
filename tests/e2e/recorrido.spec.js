@@ -8,6 +8,8 @@ const shot = (page, name) =>
 // Seed ids. Only the approved seller and its products show up publicly.
 const PRODUCT_ID = process.env.E2E_PRODUCT_ID;
 const SELLER_ID = process.env.E2E_SELLER_ID;
+// T-132: 'Termo Mercampus', the seeded marketplace product.
+const MARKETPLACE_PRODUCT_ID = process.env.E2E_MARKETPLACE_PRODUCT_ID;
 
 test.describe('public walkthrough', () => {
   test('home redirects to the antojos listing', async ({ page }) => {
@@ -59,6 +61,41 @@ test.describe('public walkthrough', () => {
     await expect(page.locator('meta[property="og:image"]')).toHaveCount(1);
 
     await shot(page, '03-detalle-producto');
+  });
+
+  // T-132: ShareButton.jsx hardcoded /antojos for every product regardless of
+  // its own `section`. The link itself never 404'd (neither detail page
+  // filters by section), but ProductPage's back button reads its `section`
+  // prop from the route it was opened under, so a marketplace product shared
+  // this way sent the recipient back to the wrong listing. window.open is
+  // intercepted instead of reading the clipboard, to avoid granting
+  // clipboard permissions just for this assertion; the WhatsApp share text
+  // carries the same URL copyLink() would put on the clipboard.
+  test('sharing a marketplace product links to /marketplace, not /antojos', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      window.__shareOpens = [];
+      window.open = url => {
+        window.__shareOpens.push(url);
+        return null;
+      };
+    });
+
+    await page.goto(`/marketplace/${MARKETPLACE_PRODUCT_ID}`);
+    await expect(page.getByText('Termo Mercampus').first()).toBeVisible();
+
+    await page.getByRole('button', { name: /Recomendar a un amigo/ }).click();
+    await page
+      .getByRole('button', { name: /Compartir por WhatsApp/ })
+      .click();
+
+    const opened = await page.evaluate(() => window.__shareOpens);
+    expect(opened).toHaveLength(1);
+
+    const decoded = decodeURIComponent(opened[0]);
+    expect(decoded).toContain(`/marketplace/${MARKETPLACE_PRODUCT_ID}?source=share`);
+    expect(decoded).not.toContain(`/antojos/${MARKETPLACE_PRODUCT_ID}`);
   });
 
   test("the seller's profile loads their business", async ({ page }) => {

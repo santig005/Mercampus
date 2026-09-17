@@ -4165,7 +4165,7 @@ don't guess at what "matching" means visually.
 it.
 **Model:** TBD (needs the human's visual call first) · **Nightly:** no
 
-### [ ] T-132 · Sharing a marketplace product hands out an `/antojos/` link
+### [x] T-132 · Sharing a marketplace product hands out an `/antojos/` link
 **Why:** raised by the human on 2026-09-17 while testing T-81's listing
 zone. `ShareButton.jsx`'s `generateUrl()` hardcodes the section:
 ```js
@@ -4200,6 +4200,37 @@ The opposite argument - one exchange student sharing with another - is just
 as reasonable. That call is the human's; whoever migrates the product
 detail zone should ask rather than pick.
 **Model:** `sonnet` - one-line fix plus a test · **Nightly:** yes
+
+**Done:** `generateUrl()` moved into a pure `buildShareUrl()` in the new
+`src/lib/share-url.js` (no JSX, same pattern as `src/lib/card-variant.js`, for
+the same reason: it makes the logic importable from a Vitest test without
+tripping Vite's JSX transform), and `ShareButton.jsx` calls it with
+`data.section`. Verified both `data.section` is always populated at every
+`<ShareButton>` call site - `ProductPage.jsx` and `ProductModal.jsx` both pass
+a full lean Mongo document from `GET /api/products/:id` or `GET
+/api/products` respectively, neither route projects fields out, and the
+schema itself declares `section` `required: true` with `default: 'antojos'` -
+so the `|| 'antojos'` fallback in `buildShareUrl` is defensive, not something
+any real call site forces. `SellerPage.jsx`/`SellerModal.jsx`'s
+`type === 'seller'` call sites are untouched, as scoped. Covered by
+`tests/unit/share-url.test.js` (antojos, marketplace, missing-section
+fallback, seller, empty/unknown type) and a new e2e assertion in
+`tests/e2e/recorrido.spec.js` that opens the seeded marketplace product
+('Termo Mercampus', `E2E_MARKETPLACE_PRODUCT_ID` plumbed through
+`scripts/seed.mjs`/`scripts/e2e.mjs`) and checks the share link it generates
+carries `/marketplace`, not `/antojos`.
+**Rule 9, spotted in `ShareButton.jsx` while fixing this, not touched here:**
+several stretches of commented-out dead code - an old duplicate
+`productUrl`/`shareText` pair (now doubly stale, since the live version moved
+to `share-url.js`), a duplicated `<TbLink>` line inside the "Copiar enlace"
+button, and a commented-out "Cerrar" button. None are referenced anywhere;
+grepping the file's history isn't needed to tell they're inert JSX comments,
+not a flag or an experiment. Also: `TbShare2` is imported but never used in
+this file's JSX (pre-existing, not introduced by this task) - `knip`/eslint's
+`no-unused-vars` doesn't flag unused imports from a barrel-style icon
+package, which is presumably why it survived. Worth a small follow-up PR to
+delete the dead comments and the unused import; not done here to keep this
+PR to the one fix.
 
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
