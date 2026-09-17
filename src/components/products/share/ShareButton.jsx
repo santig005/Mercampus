@@ -2,6 +2,7 @@
 import { logger } from '@/lib/logger';
 import { buildShareUrl } from '@/lib/share-url';
 import { TbShare2, TbBrandWhatsapp, TbLink, TbLinkPlus } from 'react-icons/tb';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
@@ -11,16 +12,31 @@ export default function ShareButton({ data, type }) {
     duration: 150,
     easing: 'ease-in-out',
   });
+  const locale = useLocale();
+  const t = useTranslations('ShareButton');
 
   if (!data) return null;
 
-  const url = buildShareUrl({ origin: window.location.origin, type, data });
+  // T-81 (share link locale): a shared link carries the sharer's locale for
+  // a product (localizedHref only prefixes once the product detail zone is
+  // migrated, which it now is), but never for a seller - /antojos/sellers is
+  // not migrated, so a prefixed seller link would 404. See src/lib/share-url.js.
+  const url = buildShareUrl({
+    origin: window.location.origin,
+    type,
+    data,
+    locale,
+  });
 
   const getText = () => {
     if (type === 'product') {
-      return `¡Mira este producto en Mercampus! \n${data.name} de ${data?.sellerId?.businessName}\n${url}`;
+      return t('productMessage', {
+        name: data.name,
+        business: data?.sellerId?.businessName,
+        url,
+      });
     } else if (type === 'seller') {
-      return `¡Mira este vendedor en Mercampus! \n${data.businessName}\n${url}`;
+      return t('sellerMessage', { business: data.businessName, url });
     }
     return '';
   };
@@ -59,13 +75,13 @@ export default function ShareButton({ data, type }) {
 
       <dialog id={`my_modal_1_${type}`} className={`modal px-6 `}>
         <div className='modal-box px-6 rounded-lg modal-width'>
-          <h2 className='text-lg font-semibold mb-4'>Compartir producto</h2>
+          <h2 className='text-lg font-semibold mb-4'>{t('title')}</h2>
 
           <button
             className='btn btn-primary w-full mb-2'
             onClick={shareOnWhatsApp}
           >
-            <TbBrandWhatsapp className='icon' /> Compartir por WhatsApp
+            <TbBrandWhatsapp className='icon' /> {t('whatsapp')}
           </button>
 
           <button
@@ -78,11 +94,11 @@ export default function ShareButton({ data, type }) {
           >
             {copied ? (
               <>
-                <TbLinkPlus className='icon text-gray-200' /> Enlace copiado
+                <TbLinkPlus className='icon text-gray-200' /> {t('linkCopied')}
               </>
             ) : (
               <>
-                <TbLink className='icon' /> Copiar enlace
+                <TbLink className='icon' /> {t('copyLink')}
               </>
             )}
             {/* <TbLink className='icon' /> Copiar enlace */}
@@ -96,7 +112,7 @@ export default function ShareButton({ data, type }) {
           </button> */}
         </div>
         <form method='dialog' className='modal-backdrop'>
-          <button>close</button>
+          <button>{t('close')}</button>
         </form>
       </dialog>
     </>

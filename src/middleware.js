@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALIZED_ROUTES, routing } from './i18n/routing';
+import { LOCALIZED_ROUTES, buildDynamicPattern, routing } from './i18n/routing';
 import { decideAdminAccess } from './utils/lib/adminAccess';
 import { isClerkAdmin } from './utils/lib/isClerkAdmin';
 
@@ -40,16 +40,36 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/(.*)/admin(.*)']);
 // middleware actually treats as locale-aware. The exact-path-only rule
 // above still lives in that list's `matchSubpaths` flag per entry - it is
 // not flattened away.
+//
+// T-81 (product detail): a `dynamic` entry (/antojos/<id>,
+// /marketplace/<id>) contributes a RegExp per locale instead of a string -
+// createRouteMatcher accepts either (see node_modules/@clerk/nextjs's
+// routeMatcher.js: `pattern instanceof RegExp ? pattern : pathToRegexp(pattern)`).
+// buildDynamicPattern constrains the id segment to a Mongo ObjectId (24 hex
+// chars), which is what keeps this from also matching /antojos/game or
+// /antojos/pqrs - real, unmigrated single-segment sibling pages that would
+// otherwise get rewritten into a product lookup for id "game" and 404.
+// Verified live against both (see ROADMAP.md T-81).
 const nonDefaultLocales = routing.locales.filter(
   (locale) => locale !== routing.defaultLocale
 );
 
 const isIntlRoute = createRouteMatcher(
-  LOCALIZED_ROUTES.flatMap(({ path, matchSubpaths }) => {
-    const suffix = matchSubpaths ? '(.*)' : '';
+  LOCALIZED_ROUTES.flatMap((route) => {
+    if (route.kind === 'static') {
+      const suffix = route.matchSubpaths ? '(.*)' : '';
+      return [
+        `${route.path}${suffix}`,
+        ...nonDefaultLocales.map(
+          (locale) => `/${locale}${route.path}${suffix}`
+        ),
+      ];
+    }
     return [
-      `${path}${suffix}`,
-      ...nonDefaultLocales.map((locale) => `/${locale}${path}${suffix}`),
+      buildDynamicPattern(route.base),
+      ...nonDefaultLocales.map((locale) =>
+        buildDynamicPattern(route.base, `/${locale}`)
+      ),
     ];
   })
 );

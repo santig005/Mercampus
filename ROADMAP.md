@@ -2462,7 +2462,7 @@ same pattern applied to a different migration):
 | Zone | Routes | State |
 |---|---|---|
 | listing | `/antojos`, `/marketplace` (index pages only, not their sub-routes) | **done** |
-| product detail | `/antojos/[id]`, `/marketplace/[id]` | pending |
+| product detail | `/antojos/[id]`, `/marketplace/[id]` | **done** |
 | seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | pending |
 | auth | `/auth/login`, `/auth/register` | pending |
 | seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending |
@@ -2512,26 +2512,71 @@ so unmigrated destinations like `/antojos/sellers/list` stay bare and don't
 hardcoding a new pattern in the middleware. **Merged as PR #363** (opened on
 a branch for review first, at the human's request) - see it for the manual
 before/after verification in a real browser.
-**One call site that fix missed, found afterwards (rule 9, not fixed):**
-`src/components/products/ProductPage.jsx:78` does
+**One call site that fix missed, found afterwards (fixed in the product
+detail zone PR):** `src/components/products/ProductPage.jsx:78` did
 `router.push(\`/${section}\`)` - the same locale-dropping pattern, where
 `section` is `'antojos'` or `'marketplace'`, both exact members of
 `LOCALIZED_ROUTES`. The review grep that produced PR #363's call-site list
 searched for literal `'/antojos'`/`'/marketplace'` strings and a template
-literal with an interpolation does not match that shape. Whoever migrates
-the product detail zone should route it through `localizedHref` in the same
-pass, and should grep for interpolated pushes (`router.push(\``) rather than
-only quoted paths.
+literal with an interpolation does not match that shape - a reminder that
+grepping for interpolated pushes (`router.push(\``) matters as much as
+quoted paths. Now `router.push(localizedHref(\`/${section}\`, locale))`.
+**Product detail zone notes (this PR):** `/antojos/[id]` and
+`/marketplace/[id]` are the first *dynamic* routes in this migration - every
+zone before this one was a static path. A naive wildcard matcher
+(`/antojos/:id` or `/antojos(.*)`) would also match `/antojos/game` and
+`/antojos/pqrs`, two real, single-segment sibling pages that are not
+products; `isIntlRoute` swallowing them would rewrite them into a product
+lookup for id `"game"`/`"pqrs"` and 404 both. Chose **option (a)** from the
+task brief - constrain the id to a Mongo ObjectId shape (24 hex chars, what
+a Mongoose `_id` always is) - over **option (b)** (migrating `/antojos/game`
+and `/antojos/pqrs` in the same PR): (a) is a minimal, targeted fix that
+does not pull two unrelated pages into a zone that was never scoped for
+them, keeps the diff small (rule 2), and the constraint is exactly what a
+product id already is in every real case, not a heuristic. `LOCALIZED_ROUTES`
+gained a `kind` discriminant (`'static'` for the existing entries, `'dynamic'`
+for these two) since a dynamic route doesn't fit the old
+`{ path, matchSubpaths }` shape; both `isIntlRoute` (`src/middleware.js`) and
+`localizedHref` (`src/i18n/routing.ts`) build the exact same regex via the
+new `buildDynamicPattern(base, localePrefix?)`, so there is still one
+definition of "what counts as a product detail URL." `createRouteMatcher`
+(Clerk) accepts a raw `RegExp` as well as a path-to-regexp string - confirmed
+by reading `node_modules/@clerk/nextjs/dist/esm/server/routeMatcher.js`
+rather than assumed - so the dynamic entries pass a `RegExp` straight
+through instead of relying on path-to-regexp's own custom-param string
+syntax. Verified live (dev server) and in `tests/e2e/i18n.spec.js`/
+`tests/unit/routing.test.js`: `/antojos/game` and `/antojos/pqrs` still serve
+their own content, in Spanish, unprefixed; a real 24-hex id under either
+prefix gets the locale-aware treatment; `/antojos/sellers/<id>` (an extra
+segment, and a real seller id is also 24 hex chars) is not swallowed either.
+The old `src/app/antojos/[id]/page.jsx` and `src/app/marketplace/[id]/page.jsx`
+were deleted, not left dead - once `isIntlRoute` rewrites a matching request,
+Next's file router never reaches them again, same as the listing zone's old
+index pages. Both new `src/app/[locale]/.../[id]/page.jsx` files nest under
+the existing (already-duplicated) `.../layout.jsx` from the listing zone, so
+no new layout was needed. `ProductPage.jsx` and `ShareButton.jsx` had their
+interface copy (headings, buttons, aria-labels, the WhatsApp message
+template) moved into `messages/{es,en}.json` under new `ProductPage` and
+`ShareButton` namespaces - the product's own name/description stay
+untranslated, as data, per this task's long-standing rule.
+**Share link locale (human decision, 2026-09-17):** a shared product link
+now carries the sharer's locale (`/en/marketplace/<id>`, not the bare path),
+per the decision recorded in T-132. `src/lib/share-url.js`'s `buildShareUrl`
+takes a `locale` param (defaulting to the app's default locale, so every
+existing call site keeps building the same bare URL) and reuses
+`localizedHref` instead of re-implementing the prefixing rule. The seller
+share link (`/antojos/sellers/<id>`) stays bare regardless of locale - that
+zone isn't migrated, so a prefixed link would 404.
 **The honest limit of all of the above, worth knowing before trusting it.**
 `localizedHref` can only keep the locale on links *to* locale-aware routes.
 While the app is half-migrated, any soft navigation into a zone that is not
-migrated yet - product detail, seller profile, the seller's forms -
-necessarily lands on a URL with no prefix while the root layout stays frozen
-at the previous locale, which is the same desync in a place no helper can
-reach. A visitor browsing in English who opens a product is already in that
-state. This does not go away by patching more links; it goes away when every
-zone lives under `[locale]` and the prefix is always present. Treat it as
-another reason to finish the migration rather than as a bug to chase.
+migrated yet - seller profile, the seller's forms - necessarily lands on a
+URL with no prefix while the root layout stays frozen at the previous
+locale, which is the same desync in a place no helper can reach. A visitor
+browsing in English who opens a seller's profile is already in that state.
+This does not go away by patching more links; it goes away when every zone
+lives under `[locale]` and the prefix is always present. Treat it as another
+reason to finish the migration rather than as a bug to chase.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 

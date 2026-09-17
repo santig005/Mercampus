@@ -5,7 +5,9 @@ import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import SellerModal from '@/components/seller/index/SellerModal';
 import ShareButton from '@/components/products/share/ShareButton';
+import { localizedHref } from '@/i18n/routing';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -23,6 +25,8 @@ const ProductPage = ({ id, section = 'antojos' }) => {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('ProductPage');
 
   useEffect(() => {
     fetchProduct(id);
@@ -72,10 +76,16 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                     <div className='modal-action m-0 justify-between p-2'>
                       <button
                         className='btn btn-circle'
-                        aria-label='Volver'
+                        aria-label={t('back')}
                         onClick={() => {
                           //document.getElementById('product_modal').close();
-                          router.push(`/${section}`);
+                          // T-81: was `router.push(\`/${section}\`)`, dropping
+                          // the locale on a soft nav from an English page -
+                          // the call site PR #363 missed (see ROADMAP.md
+                          // T-81). localizedHref only prefixes /antojos and
+                          // /marketplace once they are LOCALIZED_ROUTES
+                          // entries, which they now are.
+                          router.push(localizedHref(`/${section}`, locale));
                         }}
                       >
                         <TbChevronLeft className='icon' />
@@ -125,7 +135,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                           <img
                             className='img-full'
                             src={seller.logo}
-                            alt={'Imagen del publicador del producto '}
+                            alt={t('sellerLogoAlt')}
                           />
                         </div>
                         <p className='my-card-subtitle !text-[14px] text-nowrap'>
@@ -133,7 +143,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                         </p>
                       </button>
                       <div className=''>
-                        <h2 className='card-title px-6'>Horario</h2>
+                        <h2 className='card-title px-6'>{t('scheduleHeading')}</h2>
                         {schedules && <TableSchema schedules={schedules} />}
                       </div>
                     </div>
@@ -152,24 +162,23 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                       href={`https://wa.me/+57${encodeURIComponent(
                         seller?.phoneNumber || ''
                       )}?text=${encodeURIComponent(
-                        `Hola ${
-                          seller?.businessName || 'estimado vendedor'
-                        }, te vi en Mercampus. Estoy interesado en el producto ${
-                          product.name
-                        }. Podrías decirme dónde te encuentras?`
+                        t('whatsappMessage', {
+                          seller: seller?.businessName || t('defaultSellerGreeting'),
+                          product: product.name,
+                        })
                       )}`}
-                      aria-label={`Contactar a ${
-                        seller?.businessName || 'el vendedor'
-                      } por WhatsApp`}
+                      aria-label={t('contactWhatsappAria', {
+                        seller: seller?.businessName || t('defaultSeller'),
+                      })}
                     >
-                      Contactar por WhatsApp{' '}
+                      {t('contactWhatsapp')}{' '}
                       <TbBrandWhatsapp className='icon' />
                     </a>
                     <button
                       className='btn btn-secondary w-full mt-2'
                       onClick={handleShowModal}
                     >
-                      Recomendar a un amigo <TbShare2 className='icon' />
+                      {t('recommend')} <TbShare2 className='icon' />
                     </button>
                   </div>
                 </div>

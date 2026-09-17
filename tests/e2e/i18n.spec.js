@@ -125,6 +125,144 @@ test.describe('i18n on the listing zone (/antojos, /marketplace)', () => {
     await expect(page).toHaveURL(/\/antojos\/game$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   });
+
+  // T-81 (product detail zone): /antojos/[id] is a *dynamic* route, unlike
+  // every other route migrated so far. A wildcard matcher would also match
+  // these two - real, single-segment sibling pages, not products - and
+  // rewrite them into a product lookup for id "game" / "pqrs", 404-ing both.
+  // The `dynamic` LOCALIZED_ROUTES entry constrains the id to a Mongo
+  // ObjectId shape instead, so these stay outside it. See
+  // src/i18n/routing.ts (buildDynamicPattern) and ROADMAP.md T-81.
+  test('/antojos/pqrs is not swallowed by the product detail matcher either', async ({
+    page,
+  }) => {
+    await page.goto('/antojos/pqrs');
+
+    await expect(page).toHaveURL(/\/antojos\/pqrs$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  });
+});
+
+// T-81: the product detail zone (/antojos/[id], /marketplace/[id]). Seed ids
+// come from scripts/e2e.mjs, same as tests/e2e/recorrido.spec.js.
+const PRODUCT_ID = process.env.E2E_PRODUCT_ID;
+const MARKETPLACE_PRODUCT_ID = process.env.E2E_MARKETPLACE_PRODUCT_ID;
+
+test.describe('i18n on the product detail zone (/antojos/[id], /marketplace/[id])', () => {
+  test('antojos product in Spanish (default, no prefix) - product copy stays as the seller typed it', async ({
+    page,
+  }) => {
+    await page.goto(`/antojos/${PRODUCT_ID}`);
+
+    await expect(page).toHaveURL(new RegExp(`/antojos/${PRODUCT_ID}$`));
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    // Interface copy, in Spanish.
+    await expect(page.getByRole('heading', { name: 'Horario' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Volver' })).toBeVisible();
+    // Product copy (what the seller typed) is data, not UI copy - unchanged.
+    await expect(page.getByText('Arepa de queso').first()).toBeVisible();
+
+    await shot(page, '12-product-antojos-es');
+  });
+
+  test('antojos product in English via /en/antojos/[id] - interface translates, product copy does not', async ({
+    page,
+  }) => {
+    await page.goto(`/en/antojos/${PRODUCT_ID}`);
+
+    await expect(page).toHaveURL(new RegExp(`/en/antojos/${PRODUCT_ID}$`));
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    // Interface copy, now in English.
+    await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+    // The WhatsApp contact CTA is an <a>, not a <button> - role 'link'. Its
+    // accessible name comes from aria-label, "Contact {seller} via
+    // WhatsApp" - the seller's business name sits in the middle, so match
+    // on the translated tail only.
+    await expect(
+      page.getByRole('link', { name: /via WhatsApp/ })
+    ).toBeVisible();
+    // Product copy (what the seller typed, in Spanish) is data, not UI copy -
+    // still Spanish, on purpose. See CLAUDE.md and ROADMAP.md T-81.
+    await expect(page.getByText('Arepa de queso').first()).toBeVisible();
+
+    await shot(page, '13-product-antojos-en');
+  });
+
+  test('marketplace product in Spanish (default, no prefix)', async ({ page }) => {
+    await page.goto(`/marketplace/${MARKETPLACE_PRODUCT_ID}`);
+
+    await expect(page).toHaveURL(
+      new RegExp(`/marketplace/${MARKETPLACE_PRODUCT_ID}$`)
+    );
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(page.getByRole('heading', { name: 'Horario' })).toBeVisible();
+    await expect(page.getByText('Termo Mercampus').first()).toBeVisible();
+
+    await shot(page, '14-product-marketplace-es');
+  });
+
+  test('marketplace product in English via /en/marketplace/[id]', async ({
+    page,
+  }) => {
+    await page.goto(`/en/marketplace/${MARKETPLACE_PRODUCT_ID}`);
+
+    await expect(page).toHaveURL(
+      new RegExp(`/en/marketplace/${MARKETPLACE_PRODUCT_ID}$`)
+    );
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible();
+    await expect(page.getByText('Termo Mercampus').first()).toBeVisible();
+
+    await shot(page, '15-product-marketplace-en');
+  });
+
+  // T-81 (ProductPage.jsx:78, the call site PR #363 missed): the back button
+  // used to do router.push(`/${section}`) - always bare, dropping the
+  // locale. Now routed through localizedHref, so this soft navigation from
+  // an English product page has to land on /en/antojos, not /antojos.
+  test('the back button keeps the locale on a soft navigation', async ({
+    page,
+  }) => {
+    await page.goto(`/en/antojos/${PRODUCT_ID}`);
+
+    await page.getByRole('button', { name: 'Back' }).click();
+
+    await expect(page).toHaveURL(/\/en\/antojos$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(
+      page.getByRole('heading', { name: 'Soothe your cravings' })
+    ).toBeVisible();
+  });
+
+  // The human decision (2026-09-17): a shared link carries the sharer's
+  // locale. window.open is intercepted instead of reading the clipboard, to
+  // avoid granting clipboard permissions just for this assertion - same
+  // technique as tests/e2e/recorrido.spec.js's T-132 coverage.
+  test('sharing a product from the English marketplace page carries /en in the link', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      window.__shareOpens = [];
+      window.open = url => {
+        window.__shareOpens.push(url);
+        return null;
+      };
+    });
+
+    await page.goto(`/en/marketplace/${MARKETPLACE_PRODUCT_ID}`);
+
+    await page.getByRole('button', { name: /Recommend to a friend/ }).click();
+    await page.getByRole('button', { name: /Share via WhatsApp/ }).click();
+
+    const opened = await page.evaluate(() => window.__shareOpens);
+    expect(opened).toHaveLength(1);
+
+    const decoded = decodeURIComponent(opened[0]);
+    expect(decoded).toContain(
+      `/en/marketplace/${MARKETPLACE_PRODUCT_ID}?source=share`
+    );
+  });
 });
 
 // T-81 follow-up (locale-aware-nav): the tests above check the URL after a
