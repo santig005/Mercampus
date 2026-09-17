@@ -7,6 +7,10 @@
     "tests/e2e/image-compression/playwright.config.js"
   ],
   "project": ["src/**/*.{js,jsx,ts,tsx}", "scripts/**/*.mjs", "tests/**/*.js"],
+  "ignore": [
+    "src/components/products/ProductGridFavorite.jsx",
+    "src/components/products/ProductCardFavorite.jsx"
+  ],
   "rules": {
     "files": "error",
     "dependencies": "warn",

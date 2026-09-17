@@ -22,10 +22,25 @@ const isProtectedRoute = createRouteMatcher([
 // source of truth.
 const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/(.*)/admin(.*)']);
 
-// T-46 v1: only /about is migrated to next-intl so far. Everything else
-// keeps working exactly as before, untouched by locale negotiation, until
-// it gets migrated zone by zone (see ROADMAP.md).
-const isIntlRoute = createRouteMatcher(['/about(.*)', '/en/about(.*)']);
+// T-46 v1 covered only /about. T-81 adds the listing zone's index pages:
+// /antojos and /marketplace (bare paths only, no sub-routes).
+//
+// isIntlRoute is checked before isProtectedRoute/isAdminRoute below and
+// returns early when it matches, so a wildcard here would bypass Clerk's
+// auth check entirely for anything it swallowed. /antojos/sellers/register,
+// /antojos/product/add, etc. all live under /antojos and are gated by
+// isProtectedRoute - so these two entries are exact paths (with their /en
+// counterpart), never `/antojos(.*)` or `/marketplace(.*)`. Everything else
+// keeps working exactly as before, untouched by locale negotiation, until it
+// gets migrated zone by zone (see ROADMAP.md).
+const isIntlRoute = createRouteMatcher([
+  '/about(.*)',
+  '/en/about(.*)',
+  '/antojos',
+  '/en/antojos',
+  '/marketplace',
+  '/en/marketplace',
+]);
 
 const intlMiddleware = createIntlMiddleware(routing);
 
