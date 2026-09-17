@@ -1,5 +1,6 @@
 'use client';
 import { logger } from '@/lib/logger';
+import { buildShareUrl } from '@/lib/share-url';
 import { TbShare2, TbBrandWhatsapp, TbLink, TbLinkPlus } from 'react-icons/tb';
 import { useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
@@ -12,16 +13,8 @@ export default function ShareButton({ data, type }) {
   });
 
   if (!data) return null;
-  const generateUrl = () => {
-    if (type === 'product') {
-      return `${window.location.origin}/antojos/${data._id}?source=share`;
-    } else if (type === 'seller') {
-      return `${window.location.origin}/antojos/sellers/${data._id}?source=share`;
-    }
-    return '';
-  };
 
-  const url = generateUrl();
+  const url = buildShareUrl({ origin: window.location.origin, type, data });
 
   const getText = () => {
     if (type === 'product') {

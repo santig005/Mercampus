@@ -176,6 +176,12 @@ export async function seedDatabase() {
       approvedProduct: products
         .find(product => product.sellerId.equals(approvedSeller._id))
         ._id.toString(),
+      // T-132: the marketplace product ('Termo Mercampus', above) - reused by
+      // the e2e to check that its share link derives from its own `section`
+      // instead of always pointing at /antojos.
+      marketplaceProduct: products
+        .find(product => product.section === 'marketplace')
+        ._id.toString(),
       // T-97: the product of the seller who is NOT approved. GET
       // /api/products/[id] used to answer 500 for exactly this shape - the
       // populate filters the owner out and the next line read `._id` off the
