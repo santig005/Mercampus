@@ -2469,6 +2469,28 @@ leak into the shared `Layout`/`Navbar` used by the still-unmigrated
 does not preserve query params (sort/category/availability) across a
 switch, matching the About switcher's existing behavior on purpose.
 `tests/e2e/i18n.spec.js` walks the switcher on both listing pages.
+**Locale-aware nav follow-up (tried on a branch, not merged):** the listing
+migration above left a real bug - `SidebarBtn` and a few other internal
+links hardcoded bare paths (`/marketplace`, `/antojos`), so a soft
+navigation from an English page landed on the Spanish URL while the root
+layout (`<html lang>`, Clerk's localization, `NextIntlClientProvider`) kept
+rendering English, because Next.js does not re-run the root layout on a
+client-side navigation. Fixed by exporting a single source of truth,
+`LOCALIZED_ROUTES` + `localizedHref()` in `src/i18n/routing.ts`: every
+route that has a locale-prefixed twin lives there once, `src/middleware.js`
+derives `isIntlRoute`'s patterns from it instead of hand-writing them, and
+internal links (`SidebarBtn`, the About-zone links, `not-found.jsx`,
+`Schedule.jsx`, `SellerPage.jsx`) call `localizedHref(path, locale)` before
+navigating. `localizedHref` prefixes an exact member of the list, and for a
+`matchSubpaths: true` entry (only `/about` today) anything nested under it
+too - mirroring `isIntlRoute`'s own `(.*)` wildcard for that same entry, so
+a future `/about/team` link would not silently regress into this same bug.
+A `matchSubpaths: false` entry (`/antojos`, `/marketplace`) stays exact-only,
+so unmigrated destinations like `/antojos/sellers/list` stay bare and don't
+404. Any future zone should add its route to `LOCALIZED_ROUTES` instead of
+hardcoding a new pattern in the middleware. Branch
+`agent/t-81-locale-aware-nav`, deliberately not merged - see the PR for the
+manual before/after verification.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 

@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { routing } from './i18n/routing';
+import { LOCALIZED_ROUTES, routing } from './i18n/routing';
 import { decideAdminAccess } from './utils/lib/adminAccess';
 import { isClerkAdmin } from './utils/lib/isClerkAdmin';
 
@@ -33,14 +33,26 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/(.*)/admin(.*)']);
 // counterpart), never `/antojos(.*)` or `/marketplace(.*)`. Everything else
 // keeps working exactly as before, untouched by locale negotiation, until it
 // gets migrated zone by zone (see ROADMAP.md).
-const isIntlRoute = createRouteMatcher([
-  '/about(.*)',
-  '/en/about(.*)',
-  '/antojos',
-  '/en/antojos',
-  '/marketplace',
-  '/en/marketplace',
-]);
+//
+// T-81 (locale-aware-nav): the patterns are now derived from
+// LOCALIZED_ROUTES (src/i18n/routing.ts) instead of hand-written here, so
+// nav links (localizedHref, same source) can't drift from what this
+// middleware actually treats as locale-aware. The exact-path-only rule
+// above still lives in that list's `matchSubpaths` flag per entry - it is
+// not flattened away.
+const nonDefaultLocales = routing.locales.filter(
+  (locale) => locale !== routing.defaultLocale
+);
+
+const isIntlRoute = createRouteMatcher(
+  LOCALIZED_ROUTES.flatMap(({ path, matchSubpaths }) => {
+    const suffix = matchSubpaths ? '(.*)' : '';
+    return [
+      `${path}${suffix}`,
+      ...nonDefaultLocales.map((locale) => `/${locale}${path}${suffix}`),
+    ];
+  })
+);
 
 const intlMiddleware = createIntlMiddleware(routing);
 

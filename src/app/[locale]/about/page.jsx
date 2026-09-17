@@ -4,10 +4,17 @@ import Link from 'next/link';
 import { FaHamburger, FaBook, FaHome, FaTicketAlt, FaInstagram, FaArrowRight, FaUsers, FaShieldAlt, FaRocket, FaSearch, FaClock, FaMobile, FaStar, FaCheckCircle } from 'react-icons/fa';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 
 const InfoPage = () => {
   const t = useTranslations('About');
+  const locale = useLocale();
+  // T-81: without the prefix, this link drops the locale on a soft nav from
+  // /en/about, landing on /antojos while the root layout - frozen across
+  // client-side navigation - keeps rendering English (see
+  // src/i18n/routing.ts).
+  const antojosHref = localizedHref('/antojos', locale);
 
   return (
     <div className="bg-base-100 text-gray-800 dark:text-base-content min-h-screen !w-full">
@@ -80,7 +87,7 @@ const InfoPage = () => {
                   {t('hero.ctaPrimary')}
                   <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
-                <Link href="/antojos" className="inline-flex items-center px-8 py-4 border-2 border-base-300 text-gray-700 dark:text-base-content rounded-2xl text-lg font-semibold hover:border-orange-500 hover:text-orange-600 transition-all duration-300">
+                <Link href={antojosHref} className="inline-flex items-center px-8 py-4 border-2 border-base-300 text-gray-700 dark:text-base-content rounded-2xl text-lg font-semibold hover:border-orange-500 hover:text-orange-600 transition-all duration-300">
                   {t('hero.ctaSecondary')}
                 </Link>
               </motion.div>

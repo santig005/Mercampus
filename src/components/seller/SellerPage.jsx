@@ -9,6 +9,7 @@ import {
   TbShare2,
 } from 'react-icons/tb';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
@@ -17,6 +18,7 @@ import SellerProductsBySection from '@/components/seller/SellerProductsBySection
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '../products/share/ShareButton';
 import { parseIfJSON } from '@/utils/utilFn';
+import { localizedHref } from '@/i18n/routing';
 
 export default function SellerPage({ id }) {
   const [seller, setSeller] = useState(null);
@@ -26,6 +28,7 @@ export default function SellerPage({ id }) {
   const [sellerModalId, setSellerModalId] = useState(null);
 
   const router = useRouter();
+  const locale = useLocale();
 
   useEffect(() => {
     if (!id) return;
@@ -88,7 +91,11 @@ export default function SellerPage({ id }) {
                       <button
                         className='btn btn-circle'
                         onClick={() => {
-                          router.push('/antojos');
+                          // T-81: bare push('/antojos') would land on the
+                          // Spanish URL while the root layout - frozen
+                          // across client-side navigation - keeps
+                          // rendering English (see src/i18n/routing.ts).
+                          router.push(localizedHref('/antojos', locale));
                         }}
                       >
                         <TbChevronLeft className='icon' />
