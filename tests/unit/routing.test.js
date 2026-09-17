@@ -39,3 +39,51 @@ describe('localizedHref (T-81)', () => {
     expect(localizedHref('/auth/login', 'en')).toBe('/auth/login');
   });
 });
+
+// T-81 (product detail): /antojos/<id> and /marketplace/<id> are `dynamic`
+// LOCALIZED_ROUTES entries - the id is constrained to a Mongo ObjectId (24
+// hex chars) instead of a wildcard, specifically so this can't swallow
+// single-segment siblings like /antojos/game or /antojos/pqrs. See
+// buildDynamicPattern in src/i18n/routing.ts and src/middleware.js.
+describe('localizedHref for the product detail zone (T-81)', () => {
+  const PRODUCT_ID = '652f1234567890abcdef1234'; // 24 hex chars, shaped like a Mongoose _id
+
+  it('prefixes a product detail path for a non-default locale', () => {
+    expect(localizedHref(`/antojos/${PRODUCT_ID}`, 'en')).toBe(
+      `/en/antojos/${PRODUCT_ID}`
+    );
+    expect(localizedHref(`/marketplace/${PRODUCT_ID}`, 'en')).toBe(
+      `/en/marketplace/${PRODUCT_ID}`
+    );
+  });
+
+  it('never prefixes a product detail path for the default locale', () => {
+    expect(localizedHref(`/antojos/${PRODUCT_ID}`, 'es')).toBe(
+      `/antojos/${PRODUCT_ID}`
+    );
+  });
+
+  // The trap this task exists to avoid: these are real, unmigrated
+  // single-segment sibling pages under /antojos, not products. A wildcard
+  // pattern would prefix them into a 404 (no [locale] file backs them).
+  it('does not prefix /antojos/game or /antojos/pqrs - real sibling pages, not products', () => {
+    expect(localizedHref('/antojos/game', 'en')).toBe('/antojos/game');
+    expect(localizedHref('/antojos/pqrs', 'en')).toBe('/antojos/pqrs');
+  });
+
+  // A seller id is also a Mongo ObjectId, but /antojos/sellers/<id> has an
+  // extra "sellers" segment before it - two segments after /antojos, not
+  // one - so it must not match the product detail pattern either.
+  it('does not prefix a seller profile path even when the id looks like an ObjectId', () => {
+    expect(localizedHref(`/antojos/sellers/${PRODUCT_ID}`, 'en')).toBe(
+      `/antojos/sellers/${PRODUCT_ID}`
+    );
+  });
+
+  it('does not prefix a malformed or non-ObjectId id', () => {
+    expect(localizedHref('/antojos/not-an-object-id', 'en')).toBe(
+      '/antojos/not-an-object-id'
+    );
+    expect(localizedHref('/antojos/652f123', 'en')).toBe('/antojos/652f123');
+  });
+});

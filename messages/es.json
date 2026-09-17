@@ -116,5 +116,25 @@
     },
     "emptyAvailable": "No hay productos disponibles en este momento",
     "emptyDefault": "No se encontraron productos"
+  },
+  "ProductPage": {
+    "back": "Volver",
+    "scheduleHeading": "Horario",
+    "sellerLogoAlt": "Imagen del publicador del producto",
+    "contactWhatsapp": "Contactar por WhatsApp",
+    "contactWhatsappAria": "Contactar a {seller} por WhatsApp",
+    "defaultSeller": "el vendedor",
+    "defaultSellerGreeting": "estimado vendedor",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus. Estoy interesado en el producto {product}. Podrías decirme dónde te encuentras?",
+    "recommend": "Recomendar a un amigo"
+  },
+  "ShareButton": {
+    "title": "Compartir producto",
+    "whatsapp": "Compartir por WhatsApp",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "close": "Cerrar",
+    "productMessage": "¡Mira este producto en Mercampus! \n{name} de {business}\n{url}",
+    "sellerMessage": "¡Mira este vendedor en Mercampus! \n{business}\n{url}"
   }
 }

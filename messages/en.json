@@ -116,5 +116,25 @@
     },
     "emptyAvailable": "No products available right now",
     "emptyDefault": "No products found"
+  },
+  "ProductPage": {
+    "back": "Back",
+    "scheduleHeading": "Schedule",
+    "sellerLogoAlt": "Image of the product's seller",
+    "contactWhatsapp": "Contact via WhatsApp",
+    "contactWhatsappAria": "Contact {seller} via WhatsApp",
+    "defaultSeller": "the seller",
+    "defaultSellerGreeting": "dear seller",
+    "whatsappMessage": "Hi {seller}, I saw you on Mercampus. I'm interested in the product {product}. Could you tell me where you're located?",
+    "recommend": "Recommend to a friend"
+  },
+  "ShareButton": {
+    "title": "Share product",
+    "whatsapp": "Share via WhatsApp",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "close": "Close",
+    "productMessage": "Check out this product on Mercampus! \n{name} from {business}\n{url}",
+    "sellerMessage": "Check out this seller on Mercampus! \n{business}\n{url}"
   }
 }
