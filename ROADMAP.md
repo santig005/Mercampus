@@ -2312,6 +2312,27 @@ only to pass `userId` to `SideBar`), and `src/server/sellers/
 getProfileChecklist.ts:15`. They are *not* the source of the 36 — `/about`
 renders none of them and still logs 6 — but whoever finds the cause should
 fix them in the same pass rather than one at a time.
+**A candidate request, seen locally (2026-09-17), not confirmed as the CI
+source — a lead, not a finding.** Running `npm run dev` and clicking around
+`/antojos` and `/marketplace` logged this exact warning with a path attached:
+```
+[warn] getSellerContextData: auth() threw, rendering as signed out {
+  path: 'http://localhost:3000/sw.js',
+  pathSource: 'referer',
+  error: "Clerk: auth() was called but Clerk can't detect usage of clerkMiddleware() ..."
+}
+```
+The mechanism is plausible: `/sw.js` is not in this repo and nothing here
+registers a service worker (likely a stale one from a browser profile, or
+the PWA `manifest.json`), so the browser requests it anyway; the
+middleware's matcher excludes `.js` files (`js(?!on)` in `config.matcher`),
+so that request never reaches `clerkMiddleware` at all; it 404s, and
+rendering that 404 through the root layout calls `auth()` without Clerk's
+context. **Why this is a lead and not the answer:** the CI baseline measured
+above is a flat, reproducible 6 errors on each of 6 budgeted URLs, all
+within one page load — a shape that doesn't obviously match a one-off
+`/sw.js` request. Worth ruling in or out with the same evidence-first
+approach as the rest of this entry, not assumed.
 **Model:** `opus` — subtle, and it runs through the root layout · **Nightly:**
 no
 
