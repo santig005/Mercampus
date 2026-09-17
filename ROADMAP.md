@@ -2509,9 +2509,29 @@ a future `/about/team` link would not silently regress into this same bug.
 A `matchSubpaths: false` entry (`/antojos`, `/marketplace`) stays exact-only,
 so unmigrated destinations like `/antojos/sellers/list` stay bare and don't
 404. Any future zone should add its route to `LOCALIZED_ROUTES` instead of
-hardcoding a new pattern in the middleware. Branch
-`agent/t-81-locale-aware-nav`, deliberately not merged - see the PR for the
-manual before/after verification.
+hardcoding a new pattern in the middleware. **Merged as PR #363** (opened on
+a branch for review first, at the human's request) - see it for the manual
+before/after verification in a real browser.
+**One call site that fix missed, found afterwards (rule 9, not fixed):**
+`src/components/products/ProductPage.jsx:78` does
+`router.push(\`/${section}\`)` - the same locale-dropping pattern, where
+`section` is `'antojos'` or `'marketplace'`, both exact members of
+`LOCALIZED_ROUTES`. The review grep that produced PR #363's call-site list
+searched for literal `'/antojos'`/`'/marketplace'` strings and a template
+literal with an interpolation does not match that shape. Whoever migrates
+the product detail zone should route it through `localizedHref` in the same
+pass, and should grep for interpolated pushes (`router.push(\``) rather than
+only quoted paths.
+**The honest limit of all of the above, worth knowing before trusting it.**
+`localizedHref` can only keep the locale on links *to* locale-aware routes.
+While the app is half-migrated, any soft navigation into a zone that is not
+migrated yet - product detail, seller profile, the seller's forms -
+necessarily lands on a URL with no prefix while the root layout stays frozen
+at the previous locale, which is the same desync in a place no helper can
+reach. A visitor browsing in English who opens a product is already in that
+state. This does not go away by patching more links; it goes away when every
+zone lives under `[locale]` and the prefix is always present. Treat it as
+another reason to finish the migration rather than as a bug to chase.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
