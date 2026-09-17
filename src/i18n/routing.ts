@@ -88,6 +88,22 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // /antojos/product/add) are not swallowed by these.
   { kind: 'dynamic', base: '/antojos' },
   { kind: 'dynamic', base: '/marketplace' },
+  // T-81 (seller profile): the public seller listing, exact path only - its
+  // sibling protected routes under the same /antojos/sellers prefix
+  // (register, profile/edit, products/edit, schedules, approving) have no
+  // [locale] file yet and stay gated by isProtectedRoute in
+  // src/middleware.js; matchSubpaths: true here would swallow every one of
+  // them and skip that auth check entirely (see the StaticLocalizedRoute
+  // note above and ROADMAP.md T-81).
+  { kind: 'static', path: '/antojos/sellers/list', matchSubpaths: false },
+  // A seller id is a Mongo ObjectId too, same shape as a product id, so this
+  // reuses the exact same DynamicLocalizedRoute machinery. The extra
+  // "sellers" segment before the id is what a naive wildcard on /antojos
+  // would not have respected - buildDynamicPattern anchors on `base` so
+  // /antojos/<id> (a product) and /antojos/sellers/<id> (a seller) never
+  // collide, and /antojos/sellers/register etc. (not 24 hex) still can't
+  // match either. Verified in tests/unit/routing.test.js.
+  { kind: 'dynamic', base: '/antojos/sellers' },
 ];
 
 // Prefixes `path` with `locale` when it falls under a LOCALIZED_ROUTES

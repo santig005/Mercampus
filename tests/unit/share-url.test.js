@@ -113,10 +113,12 @@ describe('buildShareUrl locale variants (T-81)', () => {
     expect(url).toBe(`${ORIGIN}/antojos/${PRODUCT_ID}?source=share`);
   });
 
-  // The seller zone (/antojos/sellers) is not migrated - a prefixed link
-  // would 404 - so the seller share link stays bare no matter which locale
-  // the sharer is browsing in.
-  it('never prefixes a seller link, even for a non-default locale', () => {
+  // T-81 (seller profile zone): /antojos/sellers/<id> is now a `dynamic`
+  // LOCALIZED_ROUTES entry too, so a seller link carries the sharer's locale
+  // exactly like a product link does. T-132's old note (stays bare, a
+  // prefixed link would 404) no longer applies now that this zone is
+  // migrated.
+  it('prefixes a seller link for a non-default locale', () => {
     const url = buildShareUrl({
       origin: ORIGIN,
       type: 'seller',
@@ -124,6 +126,6 @@ describe('buildShareUrl locale variants (T-81)', () => {
       locale: 'en',
     });
 
-    expect(url).toBe(`${ORIGIN}/antojos/sellers/${PRODUCT_ID}?source=share`);
+    expect(url).toBe(`${ORIGIN}/en/antojos/sellers/${PRODUCT_ID}?source=share`);
   });
 });

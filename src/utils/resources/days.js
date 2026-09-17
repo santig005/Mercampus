@@ -11,3 +11,11 @@ export const daysES = ["Lunes", "Martes", "MiÃ©rcoles", "Jueves", "Viernes", "SÃ
 export const Days = async () => {
   return daysOfWeekES;
 };
+
+// T-81 (seller profile zone): a locale-agnostic key per weekday, same order
+// (index 0 = Monday ... 6 = Sunday, matching `daysES` and Schedule.day
+// 1-7). AvailabilityBadge and TableSchema use this to look up a translated
+// day name/abbreviation in messages/{es,en}.json instead of hardcoding one
+// language - see `days.*` under the `AvailabilityBadge` and `TableSchema`
+// namespaces there.
+export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];

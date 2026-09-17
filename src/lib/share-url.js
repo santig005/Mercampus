@@ -42,10 +42,15 @@ export function buildShareUrl({ origin, type, data, locale = routing.defaultLoca
     // in both sections, so this is correct as a fixed path regardless of
     // which section the seller's products are shown in.
     //
-    // Stays bare regardless of `locale`, on purpose: /antojos/sellers is a
-    // later, unmigrated zone (see ROADMAP.md T-81's product detail entry and
-    // T-132), so a prefixed seller link would 404 today.
-    return `${origin}/antojos/sellers/${data._id}?source=share`;
+    // T-81 (seller profile zone, human decision 2026-09-17 - see T-132):
+    // now carries the sharer's locale too, same rule as the product branch
+    // above - /antojos/sellers/<id> is a `dynamic` LOCALIZED_ROUTES entry
+    // (src/i18n/routing.ts) now that this zone is migrated, so localizedHref
+    // prefixes it for a non-default locale and leaves it bare for the
+    // default one. T-132's old note ("stays bare, a prefixed link would
+    // 404") no longer applies - that reasoning expired with this PR.
+    const path = localizedHref(`/antojos/sellers/${data._id}`, locale);
+    return `${origin}${path}?source=share`;
   }
 
   return '';

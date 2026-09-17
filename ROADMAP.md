@@ -2463,7 +2463,7 @@ same pattern applied to a different migration):
 |---|---|---|
 | listing | `/antojos`, `/marketplace` (index pages only, not their sub-routes) | **done** |
 | product detail | `/antojos/[id]`, `/marketplace/[id]` | **done** |
-| seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | pending |
+| seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
 | auth | `/auth/login`, `/auth/register` | pending |
 | seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending |
 | admin | `/admin/*` | pending (or skip - one user, per the note above) |
@@ -2564,9 +2564,85 @@ now carries the sharer's locale (`/en/marketplace/<id>`, not the bare path),
 per the decision recorded in T-132. `src/lib/share-url.js`'s `buildShareUrl`
 takes a `locale` param (defaulting to the app's default locale, so every
 existing call site keeps building the same bare URL) and reuses
-`localizedHref` instead of re-implementing the prefixing rule. The seller
-share link (`/antojos/sellers/<id>`) stays bare regardless of locale - that
-zone isn't migrated, so a prefixed link would 404.
+`localizedHref` instead of re-implementing the prefixing rule.
+~~The seller share link (`/antojos/sellers/<id>`) stays bare regardless of
+locale - that zone isn't migrated, so a prefixed link would 404.~~ **No
+longer true as of the seller profile zone PR below** - that reasoning
+expired once `/antojos/sellers/<id>` became a `dynamic` `LOCALIZED_ROUTES`
+entry. The seller branch of `buildShareUrl` now calls `localizedHref` too,
+same as the product branch; see `tests/unit/share-url.test.js`.
+**Seller profile zone notes (this PR):** `/antojos/sellers/[id]` reused the
+product detail zone's `dynamic` entry machinery outright - a seller id is
+also a Mongo ObjectId, so `{ kind: 'dynamic', base: '/antojos/sellers' }`
+needed no new logic in `buildDynamicPattern`, just another entry in
+`LOCALIZED_ROUTES`. `/antojos/sellers/list` is a `static`, exact-only entry,
+same treatment as `/antojos` and `/marketplace` in the listing zone. **The
+protected-route proof this task exists for:** five sub-routes live under the
+same `/antojos/sellers` prefix and are gated by `isProtectedRoute` in
+`src/middleware.js` - `register`, `profile/edit`, `products/edit`,
+`schedules`, `approving` (plus `/antojos/product/add` from an earlier zone,
+and `/admin/sellers`, a different prefix entirely). None of them is a bare
+24-hex segment and none is the exact string `/antojos/sellers/list`, so
+neither new `LOCALIZED_ROUTES` entry swallows them - verified for all six
+(and their `/en/` twins, at the `buildDynamicPattern`/`localizedHref` level)
+in `tests/unit/routing.test.js`, and live against a dev server. The old
+`src/app/antojos/sellers/[id]/page.jsx` and
+`src/app/antojos/sellers/list/page.jsx` were deleted, not left dead, same
+reasoning as the previous two zones - both nest under the existing
+`src/app/[locale]/antojos/layout.jsx`, no new layout needed.
+**`AvailabilityBadge`/`TableSchema` translated (the gap the product detail
+zone's PR flagged under rule 9):** both render on this zone's seller profile
+and were still hardcoding Spanish. `AvailabilityBadge`'s four labels and
+`TableSchema`'s three headers plus the empty-state message moved into
+`messages/{es,en}.json` under their own namespaces; day names use a new
+locale-agnostic `DAY_KEYS` array (`src/utils/resources/days.js`) so both
+components resolve a translated name instead of hardcoding one language.
+`src/lib/store-availability.ts`'s `availabilityLabel()` - previously commented
+"Product copy, so Spanish" - is gone; what's left is `formatOpeningTime()`,
+a pure `{ hour, minute }` split with no language in it, still covered by
+`tests/unit/store-availability.test.js`. **A real seam found doing this, not
+fixed here:** `TableSchema` receives `schedule.day` already swapped for its
+*Spanish name* (`daysES[schedule.day - 1]`, done server-side in `GET
+/api/sellers/[id]` and `withDayNames()` in `src/utils/lib/schedules.ts`, for
+the still-unmigrated `Schedule.jsx` edit screen that also reads this shape).
+Translating it client-side means reversing that lookup
+(`daysES.indexOf(schedule.day)`) instead of keying off the locale-agnostic
+day number the schema actually stores - a workaround, not a fix. The real
+fix is having those two server routes return the numeric `day` and let every
+client format it, but that changes a response shape read by more than this
+zone (`Schedule.jsx`'s edit form, `SellerModal.jsx`, `ProductModal.jsx`) and
+was out of scope here.
+**Rule 9, found while doing this, not fixed here (would have pushed this PR
+past the previous zone's 15-file soft ceiling):** `SellerPage.jsx` (this
+zone's own screen) still hardcodes "Horario", "¡Conoce todos los productos de
+este vendedor!", "Recomendar a un amigo", "Instagram" and "WhatsApp" -
+confirmed it is the *only* importer of `SellerPage`, so translating it is
+contained. `SellerModal.jsx` duplicates almost the exact same copy, and is
+genuinely shared: it renders both here (via `SellerGrid` → `SellerCard` →
+`SellerModalHandler`) and on the already-migrated
+`src/app/[locale]/antojos/[id]/page.jsx` (`ProductPage.jsx` imports it too).
+`SellerGrid.jsx` also has its own untranslated empty-state copy ("No hay
+vendedores disponibles..."). None of these were required by this task's
+verification (badge + schedule table only), and translating all four well
+would mean deduplicating `SellerPage`/`SellerModal`'s copy rather than
+translating the same strings twice in two files - worth doing together, in
+its own follow-up.
+**Locale switcher gap on this zone, found while doing this, not fixed here:**
+`src/app/[locale]/antojos/layout.jsx` hardcodes `<LocaleSwitcher
+basePath="antojos" />` for every page under it, including the new
+`sellers/list` and `sellers/[id]`. Clicking the switcher from
+`/antojos/sellers/list` lands on `/en/antojos` (the listing), not
+`/en/antojos/sellers/list` - the switcher doesn't know which sub-route it's
+on. Same class of bug as the "locale-aware nav" follow-up two zones ago, but
+in the switcher itself this time, not an internal link; fixing it means
+generalizing `LocaleSwitcher` to take the current pathname instead of a
+fixed `basePath`, which touches the listing zone's shared layout too - out
+of scope for a seller-profile PR. Not covered by
+`tests/e2e/i18n.spec.js`'s new seller-zone tests for the same reason the
+listing zone's switcher tests don't run against `/antojos/[id]` either.
+**Seller share link now carries the sharer's locale too:** see the amended
+note above this one; `tests/unit/share-url.test.js` and
+`tests/e2e/i18n.spec.js` both cover it.
 **The honest limit of all of the above, worth knowing before trusting it.**
 `localizedHref` can only keep the locale on links *to* locale-aware routes.
 While the app is half-migrated, any soft navigation into a zone that is not
@@ -4257,7 +4333,11 @@ a full lean Mongo document from `GET /api/products/:id` or `GET
 schema itself declares `section` `required: true` with `default: 'antojos'` -
 so the `|| 'antojos'` fallback in `buildShareUrl` is defensive, not something
 any real call site forces. `SellerPage.jsx`/`SellerModal.jsx`'s
-`type === 'seller'` call sites are untouched, as scoped. Covered by
+`type === 'seller'` call sites are untouched, as scoped.
+**Update (T-81, seller profile zone):** the seller branch of
+`buildShareUrl` now also carries the sharer's locale, once
+`/antojos/sellers/<id>` became a migrated route - see that zone's notes in
+T-81. Covered by
 `tests/unit/share-url.test.js` (antojos, marketplace, missing-section
 fallback, seller, empty/unknown type) and a new e2e assertion in
 `tests/e2e/recorrido.spec.js` that opens the seeded marketplace product
