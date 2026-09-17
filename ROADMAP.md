@@ -1590,6 +1590,20 @@ has a catch
 **Why:** a "save for later" feature was started once — `favoriteSchema.js` —
 but never wired up anywhere (zero importers), and T-34 already deleted it as
 dead code. Doing this means starting over, not resuming.
+**Found while doing T-81 (rule 9, not fixed here):** the frontend half of
+that abandoned attempt is still around too —
+`src/components/products/ProductGridFavorite.jsx` and
+`ProductCardFavorite.jsx`. They were never rendered by anything (their only
+importers were unused imports in `src/app/antojos/page.jsx` and
+`src/app/marketplace/page.jsx`, confirmed by reference search), and
+`ProductGridFavorite` calls an undefined `getItems()` — it never worked even
+when "reachable". T-81's migration of those two page files dropped the dead
+imports, which made `npx knip`'s dead-file check start failing on them; both
+are now listed in `knip.json`'s `ignore` so `npm run verify` stays green
+without deleting code a human might still want for this task. T-130
+(2026-09-15) separately lists `ProductCardFavorite.jsx` as sharing the
+broken-image pattern to fix — worth checking with whoever filed it before
+deleting, in case it's slated for reuse rather than removal.
 **Blocked on:** whether this is worth building at all, and if so: favorite
 products only, or sellers too? Its own page, or just a filter/heart icon on
 the existing listings? Login required (almost certainly, it ties to `User`)?
@@ -2394,7 +2408,7 @@ T-81.
 **Model:** `sonnet` for batches a-d, `opus` for e · **Nightly:** yes for
 a-d, no for e
 
-### [ ] T-81 · Finish the i18n migration, zone by zone
+### [~] T-81 · Finish the i18n migration, zone by zone
 **Why:** T-46 shipped the scaffolding and `/about` as the proof screen,
 and closed with "afterward, one task per zone: listing, product detail,
 seller profile, forms, seller panel. Each with its own PR." Those tasks
@@ -2422,6 +2436,30 @@ routes that have nothing to do with i18n.
 **Still not solved by any of this:** what sellers write themselves —
 product names and descriptions — stays in whatever language they typed. A
 product decision, not an i18n one.
+**Split by zone**, one PR each, tracked here as it goes (see T-80 for the
+same pattern applied to a different migration):
+| Zone | Routes | State |
+|---|---|---|
+| listing | `/antojos`, `/marketplace` (index pages only, not their sub-routes) | **done** |
+| product detail | `/antojos/[id]`, `/marketplace/[id]` | pending |
+| seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | pending |
+| auth | `/auth/login`, `/auth/register` | pending |
+| seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending |
+| admin | `/admin/*` | pending (or skip - one user, per the note above) |
+**Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
+matches `/antojos`, `/en/antojos`, `/marketplace`, `/en/marketplace` as
+exact paths (no `(.*)` wildcard) - their sub-routes stay on the old,
+unmigrated tree under `src/app/antojos/` and `src/app/marketplace/` on
+purpose, so `isProtectedRoute`'s gate on `/antojos/sellers/register` etc.
+is untouched. `src/app/[locale]/antojos/layout.jsx` and
+`.../marketplace/layout.jsx` are deliberate duplicates of the old
+layouts, not shared - a `[locale]` segment can't span into the sibling
+non-locale tree that still owns those sub-routes. No visible locale
+switcher on these two pages yet: `LocaleSwitcher` only renders inside
+`AboutLayout` and its hrefs are hardcoded to `/about` - generalizing it to
+work from any zone is left for whichever zone does it first. Both
+languages are reachable directly by URL either way, which is what this
+task's "Done when" asks for.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 

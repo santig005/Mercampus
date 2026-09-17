@@ -84,5 +84,37 @@
       "instagram": "Síguenos en Instagram"
     },
     "footer": "© 2025 Mercampus. Todos los derechos reservados."
+  },
+  "Antojos": {
+    "greetingHi": "Hola",
+    "greetingTailWithName": "calma tus antojos",
+    "greetingTailNoName": "Calma tus antojos",
+    "allHeading": "Todos"
+  },
+  "Marketplace": {
+    "greetingHi": "Hola",
+    "greetingTailWithName": "explora el marketplace",
+    "greetingTailNoName": "Explora el marketplace",
+    "allHeading": "Todos"
+  },
+  "SearchBox": {
+    "placeholderAntojos": "Busca tu antojo más deseado",
+    "placeholderMarketplace": "Busca en el marketplace"
+  },
+  "ProductGrid": {
+    "filterAvailabilityLabel": "Filtrar por disponibilidad",
+    "sortLabel": "Ordenar productos",
+    "sortOptions": {
+      "default": "Recomendado",
+      "newest": "Más nuevo",
+      "priceAsc": "Precio: menor a mayor",
+      "priceDesc": "Precio: mayor a menor"
+    },
+    "availabilityOptions": {
+      "available": "Disponibles ahora",
+      "unavailable": "No disponibles"
+    },
+    "emptyAvailable": "No hay productos disponibles en este momento",
+    "emptyDefault": "No se encontraron productos"
   }
 }

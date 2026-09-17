@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { getProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
 import ProductModalHandler from '@/components/products/ProductModalHandler';
+import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useInView } from 'react-intersection-observer';
@@ -14,12 +15,14 @@ const PAGE_SIZE = 12;
 
 // T-70: the sort options GET /api/products exposes (see SORT_CONFIGS).
 // 'default' keeps the historical order (available first); the rest were added
-// by that task.
+// by that task. `value` is the wire contract with the API and stays as-is;
+// `labelKey` (T-81) is only how the display text is looked up in messages/
+// {es,en}.json under the ProductGrid namespace.
 const SORT_OPTIONS = [
-  { value: 'default', label: 'Recomendado' },
-  { value: 'newest', label: 'Más nuevo' },
-  { value: 'price_asc', label: 'Precio: menor a mayor' },
-  { value: 'price_desc', label: 'Precio: mayor a menor' },
+  { value: 'default', labelKey: 'sortOptions.default' },
+  { value: 'newest', labelKey: 'sortOptions.newest' },
+  { value: 'price_asc', labelKey: 'sortOptions.priceAsc' },
+  { value: 'price_desc', labelKey: 'sortOptions.priceDesc' },
 ];
 
 // T-123: either or both. Both selected is the default and is written as no
@@ -31,12 +34,12 @@ const SORT_OPTIONS = [
 const AVAILABILITY_OPTIONS = [
   {
     value: 'available',
-    label: 'Disponibles ahora',
+    labelKey: 'availabilityOptions.available',
     activeClass: 'availability-active-available',
   },
   {
     value: 'unavailable',
-    label: 'No disponibles',
+    labelKey: 'availabilityOptions.unavailable',
     activeClass: 'availability-active-unavailable',
   },
 ];
@@ -80,6 +83,7 @@ function isInViewOnceSettled(list, sentinel) {
 }
 
 export default function ProductGrid({ sellerIdParam = '', section = 'antojos' }) {
+  const t = useTranslations('ProductGrid');
   const [products, setProducts] = useState([]);
   const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -245,7 +249,7 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
             <div
               className='flex gap-2'
               role='group'
-              aria-label='Filtrar por disponibilidad'
+              aria-label={t('filterAvailabilityLabel')}
             >
               {AVAILABILITY_OPTIONS.map(option => {
                 const selected = isAvailabilitySelected(option.value);
@@ -259,20 +263,20 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
                     }`}
                     onClick={() => toggleAvailability(option.value)}
                   >
-                    {option.label}
+                    {t(option.labelKey)}
                   </button>
                 );
               })}
             </div>
             <select
               className='select select-bordered select-sm'
-              aria-label='Ordenar productos'
+              aria-label={t('sortLabel')}
               value={sort}
               onChange={e => setSort(e.target.value)}
             >
               {SORT_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </option>
               ))}
             </select>
@@ -308,8 +312,8 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
               <div className='w-full flex justify-center my-4'>
                 <p>
                   {availability === 'available'
-                    ? 'No hay productos disponibles en este momento'
-                    : 'No se encontraron productos'}
+                    ? t('emptyAvailable')
+                    : t('emptyDefault')}
                 </p>
               </div>
             )}
