@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  availabilityLabel,
   bogotaClock,
+  formatOpeningTime,
   isOpenAt,
   isOverrideActive,
   nextOpening,
@@ -189,19 +189,16 @@ describe('productAvailability (T-122)', () => {
   });
 });
 
-describe('availabilityLabel (T-122)', () => {
-  it('the four labels the buyer sees', () => {
-    expect(availabilityLabel({ state: 'available' })).toBe('Disponible');
-    expect(availabilityLabel({ state: 'off' })).toBe('No disponible');
-    expect(availabilityLabel({ state: 'no-schedule' })).toBe('Consultar horario');
-    expect(
-      availabilityLabel({ state: 'closed', nextOpening: { day: 2, startTime: '06:38' } })
-    ).toBe('Cerrado ahora · abre mar 6:38');
-  });
-
-  it('keeps the minutes and drops only the leading zero of the hour', () => {
-    expect(
-      availabilityLabel({ state: 'closed', nextOpening: { day: 6, startTime: '14:05' } })
-    ).toBe('Cerrado ahora · abre sáb 14:05');
+// T-81 (seller profile zone): availabilityLabel() used to return the whole
+// hardcoded Spanish string ("Disponible", "Cerrado ahora · abre mar 6:38",
+// ...) - moved into AvailabilityBadge.jsx + messages/{es,en}.json so the
+// component can render it through next-intl. What's left here in
+// store-availability.ts is only the pure, language-agnostic piece:
+// splitting `startTime` into the `{ hour, minute }` pair the component
+// interpolates into its translated template.
+describe('formatOpeningTime (T-122/T-81)', () => {
+  it('drops the leading zero of the hour but keeps the minutes as-is', () => {
+    expect(formatOpeningTime('06:38')).toEqual({ hour: 6, minute: '38' });
+    expect(formatOpeningTime('14:05')).toEqual({ hour: 14, minute: '05' });
   });
 });

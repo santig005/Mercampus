@@ -50,6 +50,15 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/(.*)/admin(.*)']);
 // /antojos/pqrs - real, unmigrated single-segment sibling pages that would
 // otherwise get rewritten into a product lookup for id "game" and 404.
 // Verified live against both (see ROADMAP.md T-81).
+//
+// T-81 (seller profile): the same `dynamic` mechanism now also covers
+// /antojos/sellers/<id> (base '/antojos/sellers'), plus a `static` exact
+// entry for /antojos/sellers/list. The five protected sub-routes under the
+// same /antojos/sellers prefix (register, profile/edit, products/edit,
+// schedules, approving - see isProtectedRoute below) are not 24-hex-only
+// single segments, so buildDynamicPattern's anchoring keeps them out of
+// isIntlRoute and still gated by isProtectedRoute. Verified in
+// tests/unit/routing.test.js and live (see ROADMAP.md T-81).
 const nonDefaultLocales = routing.locales.filter(
   (locale) => locale !== routing.defaultLocale
 );

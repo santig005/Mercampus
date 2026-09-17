@@ -150,22 +150,20 @@ export function productAvailability(
   return next ? { state: 'closed', nextOpening: next } : { state: 'no-schedule' };
 }
 
-// Product copy, so Spanish. Wording chosen by the human on 2026-09-14;
-// "Consultar horario" was their pick of a neutral label for no schedule.
-const SHORT_DAYS_ES = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
-
-export function availabilityLabel(status: AvailabilityStatus): string {
-  switch (status.state) {
-    case 'available':
-      return 'Disponible';
-    case 'off':
-      return 'No disponible';
-    case 'no-schedule':
-      return 'Consultar horario';
-    case 'closed': {
-      const { day, startTime } = status.nextOpening;
-      const [hours, minutes] = startTime.split(':');
-      return `Cerrado ahora · abre ${SHORT_DAYS_ES[day - 1]} ${Number(hours)}:${minutes}`;
-    }
-  }
+// T-81 (seller profile zone): this used to be `availabilityLabel(status)`,
+// returning a hardcoded Spanish string ("Disponible", "Cerrado ahora · abre
+// mar 6:38", ...) - the human's wording from T-122/2026-09-14, but fixed to
+// one language with no next-intl involved, because AvailabilityBadge (its
+// only caller) predates this zone's migration. Now that AvailabilityBadge
+// renders through next-intl, the language-specific strings moved into
+// messages/{es,en}.json under the `AvailabilityBadge` namespace, and this
+// file keeps only the pure, locale-agnostic part: turning `nextOpening`'s
+// 24h `startTime` into the `{ hour, minute }` pair the component interpolates
+// into its translated template. `hour` drops the leading zero (Number()),
+// `minute` keeps it (stays a string) - same behaviour as the deleted
+// function's template literal, still covered by
+// tests/unit/store-availability.test.js.
+export function formatOpeningTime(startTime: string): { hour: number; minute: string } {
+  const [hours, minutes] = startTime.split(':');
+  return { hour: Number(hours), minute: minutes };
 }

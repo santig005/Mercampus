@@ -265,6 +265,130 @@ test.describe('i18n on the product detail zone (/antojos/[id], /marketplace/[id]
   });
 });
 
+// T-81: the seller profile zone (/antojos/sellers/[id], /antojos/sellers/list).
+// SELLER_ID comes from scripts/e2e.mjs (E2E_SELLER_ID), the approved seller
+// seeded as "Arepas El Parche" with a Mon/Wed/Fri schedule and
+// availability: true (Seller schema default) - see scripts/seed.mjs.
+//
+// SellerPage.jsx's own interface copy (the "Recomendar a un amigo" CTA,
+// Instagram/WhatsApp buttons, the "Horario" heading) is NOT translated in
+// this PR - only AvailabilityBadge and TableSchema, the two shared
+// components the product detail zone's own PR flagged (rule 9) as leaking
+// Spanish. That is why the share button below is still found by its Spanish
+// accessible name even on the /en page - a known, deliberately scoped gap,
+// recorded in ROADMAP.md T-81 for a later pass (SellerPage.jsx is this
+// zone's own screen, not a shared component, but translating it fully would
+// have pushed this PR well past the file-count ceiling the last zone set).
+const SELLER_ID = process.env.E2E_SELLER_ID;
+
+test.describe('i18n on the seller profile zone (/antojos/sellers/[id], /antojos/sellers/list)', () => {
+  test('seller listing in Spanish (default, no prefix)', async ({ page }) => {
+    await page.goto('/antojos/sellers/list');
+
+    await expect(page).toHaveURL(/\/antojos\/sellers\/list$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(
+      page.getByRole('heading', { name: /¡Conoce a los maestros del sabor! 🎉/ })
+    ).toBeVisible();
+
+    await shot(page, '16-sellers-list-es');
+  });
+
+  test('seller listing in English via /en/antojos/sellers/list', async ({ page }) => {
+    await page.goto('/en/antojos/sellers/list');
+
+    await expect(page).toHaveURL(/\/en\/antojos\/sellers\/list$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(
+      page.getByRole('heading', { name: /Meet the masters of flavor! 🎉/ })
+    ).toBeVisible();
+
+    await shot(page, '17-sellers-list-en');
+  });
+
+  test('seller profile in Spanish (default, no prefix) - interface copy in Spanish, business name is data', async ({
+    page,
+  }) => {
+    await page.goto(`/antojos/sellers/${SELLER_ID}`);
+
+    await expect(page).toHaveURL(new RegExp(`/antojos/sellers/${SELLER_ID}$`));
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    // AvailabilityBadge and TableSchema, translated (this PR). .first() -
+    // the products listed further down the page render their own badges
+    // too (ProductCard), so "Disponible" is not unique on this page.
+    await expect(
+      page.getByText('Disponible', { exact: true }).first()
+    ).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Día' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Lunes' })).toBeVisible();
+    // The seller's own business name is data, not UI copy - unchanged.
+    await expect(page.getByText('Arepas El Parche')).toBeVisible();
+
+    await shot(page, '18-seller-profile-es');
+  });
+
+  test('seller profile in English via /en/antojos/sellers/[id] - badge and schedule table translate', async ({
+    page,
+  }) => {
+    await page.goto(`/en/antojos/sellers/${SELLER_ID}`);
+
+    await expect(page).toHaveURL(new RegExp(`/en/antojos/sellers/${SELLER_ID}$`));
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    // AvailabilityBadge, now in English (same .first() reasoning as above).
+    await expect(
+      page.getByText('Available', { exact: true }).first()
+    ).toBeVisible();
+    // TableSchema headers and day names, now in English.
+    await expect(page.getByRole('columnheader', { name: 'Day' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Start Time' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'End Time' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Monday' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Wednesday' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Friday' })).toBeVisible();
+    // The seller's own business name (data, in Spanish as typed) is
+    // unaffected, and SellerPage.jsx's own remaining chrome - out of scope
+    // here (see the note above) - stays Spanish too.
+    await expect(page.getByText('Arepas El Parche')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Recomendar a un amigo' })
+    ).toBeVisible();
+
+    await shot(page, '19-seller-profile-en');
+  });
+
+  // The human decision (2026-09-17, T-132): a shared seller link now also
+  // carries the sharer's locale, same rule as the product share link above -
+  // src/lib/share-url.js's `seller` branch reuses localizedHref instead of
+  // always building a bare path.
+  test('sharing a seller from the English profile page carries /en in the link', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      window.__shareOpens = [];
+      window.open = url => {
+        window.__shareOpens.push(url);
+        return null;
+      };
+    });
+
+    await page.goto(`/en/antojos/sellers/${SELLER_ID}`);
+
+    // The "Recomendar a un amigo" CTA is SellerPage's own chrome, not yet
+    // translated (see the note above), so it is still found by its Spanish
+    // text even here. ShareButton.jsx itself was already translated in the
+    // product detail zone's PR, so its own "Share via WhatsApp" label does
+    // read English on this page.
+    await page.getByRole('button', { name: 'Recomendar a un amigo' }).click();
+    await page.getByRole('button', { name: /Share via WhatsApp/ }).click();
+
+    const opened = await page.evaluate(() => window.__shareOpens);
+    expect(opened).toHaveLength(1);
+
+    const decoded = decodeURIComponent(opened[0]);
+    expect(decoded).toContain(`/en/antojos/sellers/${SELLER_ID}?source=share`);
+  });
+});
+
 // T-81 follow-up (locale-aware-nav): the tests above check the URL after a
 // navigation, which is exactly what let the original bug slip through -
 // SidebarBtn hardcoded `goto='/marketplace'` (no prefix), so a soft

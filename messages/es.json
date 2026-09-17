@@ -136,5 +136,45 @@
     "close": "Cerrar",
     "productMessage": "¡Mira este producto en Mercampus! \n{name} de {business}\n{url}",
     "sellerMessage": "¡Mira este vendedor en Mercampus! \n{business}\n{url}"
+  },
+  "SellerList": {
+    "headingAntojosLead": "¡Conoce a los",
+    "headingAntojosHighlight": "maestros",
+    "headingAntojosTail": "del sabor! 🎉",
+    "headingMarketplaceLead": "¡Conoce a los",
+    "headingMarketplaceHighlight": "expertos",
+    "headingMarketplaceTail": "del marketplace! 🛍️",
+    "antojosTab": "🍕 Antojos",
+    "marketplaceTab": "🛍️ Marketplace"
+  },
+  "AvailabilityBadge": {
+    "available": "Disponible",
+    "off": "No disponible",
+    "noSchedule": "Consultar horario",
+    "closed": "Cerrado ahora · abre {day} {hour}:{minute}",
+    "days": {
+      "mon": "lun",
+      "tue": "mar",
+      "wed": "mié",
+      "thu": "jue",
+      "fri": "vie",
+      "sat": "sáb",
+      "sun": "dom"
+    }
+  },
+  "TableSchema": {
+    "dayHeader": "Día",
+    "startTimeHeader": "Hora de Inicio",
+    "endTimeHeader": "Hora Final",
+    "empty": "No hay horarios disponibles",
+    "days": {
+      "mon": "Lunes",
+      "tue": "Martes",
+      "wed": "Miércoles",
+      "thu": "Jueves",
+      "fri": "Viernes",
+      "sat": "Sábado",
+      "sun": "Domingo"
+    }
   }
 }
