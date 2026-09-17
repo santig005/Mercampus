@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 
 export default function SidebarBtn({
   text,
@@ -10,7 +12,20 @@ export default function SidebarBtn({
   iconInactive,
 }) {
   const pathname = usePathname();
-  const isCurrent = pathname === goto;
+  const locale = useLocale();
+  // T-81: `goto` is always the default-locale (Spanish) path. On an English
+  // page (pathname prefixed with /en) a bare next/link href would point at
+  // the Spanish URL while the root layout - which Next.js does not
+  // re-execute on a soft navigation - keeps rendering English, the exact
+  // bug this task fixes (see src/i18n/routing.ts). localizedHref only
+  // prefixes `goto` when it is an exact locale-aware route, so unmigrated
+  // destinations like /antojos/sellers/list stay bare and don't 404.
+  const href = localizedHref(goto, locale);
+  // Compare against the resolved href, not the raw `goto`: once `href` can
+  // be `/en/antojos`, `pathname` on that same page is also `/en/antojos`,
+  // so comparing against unprefixed `goto` would silently break the active
+  // highlight (and aria-current) on every non-default locale.
+  const isCurrent = pathname === href;
 
   const handleSidebarClose = () => {
     // Only the /antojos and /marketplace layouts render the drawer, so the
@@ -27,7 +42,7 @@ export default function SidebarBtn({
   // difference being carried only by a background color.
   return (
     <Link
-      href={goto}
+      href={href}
       onClick={handleSidebarClose}
       aria-current={isCurrent ? 'page' : undefined}
       className={`btn-nav flex !justify-start ps-2 ${

@@ -126,3 +126,71 @@ test.describe('i18n on the listing zone (/antojos, /marketplace)', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   });
 });
+
+// T-81 follow-up (locale-aware-nav): the tests above check the URL after a
+// navigation, which is exactly what let the original bug slip through -
+// SidebarBtn hardcoded `goto='/marketplace'` (no prefix), so a soft
+// navigation from /en/antojos landed on the *Spanish* URL while the root
+// layout - which Next.js does not re-execute on a client-side navigation -
+// kept rendering English: <html lang> stayed "en" and every string on the
+// page was still English, only fixed by a hard reload. A test that only
+// reads the URL cannot see that mismatch. These assert URL, <html lang>,
+// and rendered copy together, right after an internal (soft) navigation.
+const openSidebar = async page => {
+  await page.locator('label[for="my-dibujador"]').first().click();
+};
+
+test.describe('internal navigation keeps URL, <html lang>, and copy in sync (T-81)', () => {
+  test('sidebar Marketplace link from English antojos stays in English', async ({ page }) => {
+    await page.goto('/en/antojos');
+    await openSidebar(page);
+
+    await page.getByRole('link', { name: 'Marketplace', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/en\/marketplace$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByPlaceholder('Search the marketplace')).toBeVisible();
+  });
+
+  test('sidebar Marketplace link from Spanish antojos stays in Spanish', async ({ page }) => {
+    await page.goto('/antojos');
+    await openSidebar(page);
+
+    await page.getByRole('link', { name: 'Marketplace', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/marketplace$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(page.getByPlaceholder('Busca en el marketplace')).toBeVisible();
+  });
+
+  test('About-zone "explore products" link from English about stays in English', async ({
+    page,
+  }) => {
+    await page.goto('/en/about');
+
+    // exact + the topbar's exact casing ("Explore Products"): the hero
+    // section below has its own CTA with the same words but a lowercase
+    // "products" (t('hero.ctaSecondary')), and getByRole's default matching
+    // is case-insensitive, so without `exact: true` this locator resolves
+    // to both links.
+    await page.getByRole('link', { name: 'Explore Products', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/en\/antojos$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { name: 'Soothe your cravings' })).toBeVisible();
+  });
+
+  test('About-zone "explore products" link from Spanish about stays in Spanish', async ({
+    page,
+  }) => {
+    await page.goto('/about');
+
+    // See the English case above: `exact: true` picks the topbar link over
+    // the hero's "Explorar productos" (lowercase p).
+    await page.getByRole('link', { name: 'Explorar Productos', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/antojos$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(page.getByRole('heading', { name: 'Calma tus antojos' })).toBeVisible();
+  });
+});
