@@ -45,15 +45,21 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: '/marketplace', matchSubpaths: false },
 ];
 
-// Prefixes `path` with `locale` only when it is an EXACT member of
-// LOCALIZED_ROUTES - never a prefix/subpath match, even for a
-// matchSubpaths:true entry. This is deliberately stricter than
-// isIntlRoute's matching: nav links to an unmigrated destination like
+// Prefixes `path` with `locale` when it falls under a LOCALIZED_ROUTES
+// entry: an exact match always counts, and for a matchSubpaths:true entry
+// (only /about today) so does any path nested under it (e.g. '/about/team'),
+// mirroring isIntlRoute's own `(.*)` wildcard for that same entry. A
+// matchSubpaths:false entry (/antojos, /marketplace) only ever matches
+// exactly - nav links to an unmigrated destination like
 // /antojos/sellers/list must stay bare, because that route has no
 // [locale] file and a prefixed link would 404. `path` must already be the
 // default-locale path (no leading locale segment).
 export function localizedHref(path: string, locale: string): string {
-  const isLocalized = LOCALIZED_ROUTES.some((route) => route.path === path);
+  const isLocalized = LOCALIZED_ROUTES.some(
+    (route) =>
+      route.path === path ||
+      (route.matchSubpaths && path.startsWith(`${route.path}/`))
+  );
   if (!isLocalized || locale === routing.defaultLocale) return path;
   return `/${locale}${path}`;
 }

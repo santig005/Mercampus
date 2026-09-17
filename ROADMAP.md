@@ -2481,8 +2481,12 @@ route that has a locale-prefixed twin lives there once, `src/middleware.js`
 derives `isIntlRoute`'s patterns from it instead of hand-writing them, and
 internal links (`SidebarBtn`, the About-zone links, `not-found.jsx`,
 `Schedule.jsx`, `SellerPage.jsx`) call `localizedHref(path, locale)` before
-navigating. `localizedHref` only prefixes an EXACT member of the list, so
-unmigrated destinations like `/antojos/sellers/list` stay bare and don't
+navigating. `localizedHref` prefixes an exact member of the list, and for a
+`matchSubpaths: true` entry (only `/about` today) anything nested under it
+too - mirroring `isIntlRoute`'s own `(.*)` wildcard for that same entry, so
+a future `/about/team` link would not silently regress into this same bug.
+A `matchSubpaths: false` entry (`/antojos`, `/marketplace`) stays exact-only,
+so unmigrated destinations like `/antojos/sellers/list` stay bare and don't
 404. Any future zone should add its route to `LOCALIZED_ROUTES` instead of
 hardcoding a new pattern in the middleware. Branch
 `agent/t-81-locale-aware-nav`, deliberately not merged - see the PR for the
