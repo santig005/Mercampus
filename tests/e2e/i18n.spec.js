@@ -91,8 +91,10 @@ test.describe('i18n on the listing zone (/antojos, /marketplace)', () => {
     await shot(page, '11-marketplace-en');
   });
 
-  // T-81 follow-up: LocaleSwitcher was generalized (basePath prop) and wired
-  // into both listing layouts, closing the gap noted in PR #361.
+  // T-81 follow-up: LocaleSwitcher was generalized and wired into both
+  // listing layouts, closing the gap noted in PR #361. It later stopped
+  // taking a hardcoded basePath and started deriving the twin from the live
+  // pathname - see the sub-page test further down for why.
   test('the language switcher navigates between /antojos and /en/antojos', async ({ page }) => {
     await page.goto('/antojos');
 
@@ -115,6 +117,44 @@ test.describe('i18n on the listing zone (/antojos, /marketplace)', () => {
     await page.getByRole('link', { name: 'Español' }).click();
     await expect(page).toHaveURL(/\/marketplace$/);
     await expect(page.getByRole('heading', { name: 'Explora el marketplace' })).toBeVisible();
+  });
+
+  // The regression that motivated deriving the target from the pathname:
+  // every page under the [locale]/antojos layout used to receive the same
+  // hardcoded basePath="antojos", so switching language from a product page
+  // or the seller list dumped the visitor on the listing instead of that
+  // page's own twin.
+  //
+  // Asserted on the href rather than by clicking, and that is not a shortcut:
+  // on the product detail page the switcher is in the DOM with the right
+  // href but is painted over by ProductPage's own full-bleed layout, so
+  // Playwright cannot click it (see ROADMAP.md T-81 - it is a real
+  // visibility bug this test found, filed separately). The href is exactly
+  // what this fix controls; the listing-page tests above still exercise a
+  // real click. Asserting the URL after a click would not have caught the
+  // original bug anyway - it landed on a real, valid page, just the wrong one.
+  test('the switcher points at the current page twin, not the listing', async ({
+    page,
+  }) => {
+    const productId = process.env.E2E_PRODUCT_ID;
+
+    await page.goto(`/antojos/${productId}`);
+    await expect(page.getByRole('link', { name: 'English' })).toHaveAttribute(
+      'href',
+      `/en/antojos/${productId}`
+    );
+
+    await page.goto(`/en/antojos/${productId}`);
+    await expect(page.getByRole('link', { name: 'Español' })).toHaveAttribute(
+      'href',
+      `/antojos/${productId}`
+    );
+
+    await page.goto('/antojos/sellers/list');
+    await expect(page.getByRole('link', { name: 'English' })).toHaveAttribute(
+      'href',
+      '/en/antojos/sellers/list'
+    );
   });
 
   test('their sub-routes are not migrated yet and stay in Spanish with no locale prefix', async ({

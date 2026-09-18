@@ -144,3 +144,25 @@ export function localizedHref(path: string, locale: string): string {
   if (!isLocalized || locale === routing.defaultLocale) return path;
   return `/${locale}${path}`;
 }
+
+// The inverse of localizedHref's prefixing: turns whatever the browser is
+// showing back into the default-locale path. `localePrefix: 'as-needed'`
+// means the default locale never carries a prefix, so only the non-default
+// ones are stripped. Feeding the result back through localizedHref is how
+// LocaleSwitcher builds the twin URL for the other locale.
+//
+// This exists because the switcher used to be told its page via a `basePath`
+// prop hardcoded per layout, which silently went wrong the moment a layout
+// covered more than one page: every route under [locale]/antojos sent the
+// visitor to /en/antojos, losing the product or seller they were looking at.
+// Deriving it from the live pathname cannot drift as more zones migrate.
+export function stripLocalePrefix(pathname: string): string {
+  for (const locale of routing.locales) {
+    if (locale === routing.defaultLocale) continue;
+    if (pathname === `/${locale}`) return '/';
+    if (pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(`/${locale}`.length);
+    }
+  }
+  return pathname;
+}

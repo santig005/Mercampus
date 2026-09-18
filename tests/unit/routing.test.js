@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildDynamicPattern, localizedHref } from '@/i18n/routing';
+import {
+  buildDynamicPattern,
+  localizedHref,
+  stripLocalePrefix,
+} from '@/i18n/routing';
 
 describe('localizedHref (T-81)', () => {
   it('prefixes an exact locale-aware route for a non-default locale', () => {
@@ -211,5 +215,49 @@ describe('localizedHref for the auth zone (T-81)', () => {
   it('never prefixes /auth/callback - it is deliberately excluded from LOCALIZED_ROUTES', () => {
     expect(localizedHref('/auth/callback', 'en')).toBe('/auth/callback');
     expect(localizedHref('/auth/callback', 'es')).toBe('/auth/callback');
+  });
+});
+
+// The switcher used to be handed its page via a `basePath` prop hardcoded in
+// each layout. That was right while a layout wrapped one page and silently
+// wrong once it wrapped several: from a product page or the seller list, the
+// switcher sent you to /en/antojos instead of that page's own twin. Round
+//tripping the live pathname through these two is what replaced it.
+describe('stripLocalePrefix (T-81)', () => {
+  const ID = '507f1f77bcf86cd799439011';
+
+  it('strips a non-default locale prefix', () => {
+    expect(stripLocalePrefix('/en/antojos')).toBe('/antojos');
+    expect(stripLocalePrefix(`/en/antojos/${ID}`)).toBe(`/antojos/${ID}`);
+    expect(stripLocalePrefix('/en/antojos/sellers/list')).toBe(
+      '/antojos/sellers/list'
+    );
+  });
+
+  it('leaves a default-locale path untouched', () => {
+    expect(stripLocalePrefix('/antojos')).toBe('/antojos');
+    expect(stripLocalePrefix(`/marketplace/${ID}`)).toBe(`/marketplace/${ID}`);
+  });
+
+  it('does not strip a path that merely starts with the locale letters', () => {
+    expect(stripLocalePrefix('/energia')).toBe('/energia');
+    expect(stripLocalePrefix('/english-muffin')).toBe('/english-muffin');
+  });
+
+  it('handles the bare locale root', () => {
+    expect(stripLocalePrefix('/en')).toBe('/');
+  });
+
+  // The actual regression: every one of these pages shares a layout, so the
+  // old hardcoded prop sent all of them to the listing.
+  it.each([
+    '/antojos',
+    `/antojos/${ID}`,
+    `/marketplace/${ID}`,
+    '/antojos/sellers/list',
+    `/antojos/sellers/${ID}`,
+  ])('round-trips %s to its own twin, not to the listing', (path) => {
+    expect(localizedHref(stripLocalePrefix(path), 'en')).toBe(`/en${path}`);
+    expect(localizedHref(stripLocalePrefix(`/en${path}`), 'es')).toBe(path);
   });
 });

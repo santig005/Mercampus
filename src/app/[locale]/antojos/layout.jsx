@@ -6,11 +6,12 @@ import { setRequestLocale } from 'next-intl/server';
 import LocaleSwitcher from '@/components/general/LocaleSwitcher';
 
 // T-81: duplicated from src/app/antojos/layout.jsx on purpose, not shared.
-// That tree still owns every unmigrated antojos sub-route (/antojos/[id],
-// /antojos/sellers/*, /antojos/product/add, /antojos/game, /antojos/pqrs)
-// and its layout keeps wrapping them exactly as before - a route segment
-// under [locale] cannot span into that sibling, non-locale tree. This copy
-// only wraps the migrated listing page. See ROADMAP.md T-81.
+// That tree still owns the antojos sub-routes that have not migrated yet
+// (/antojos/product/add, /antojos/game, /antojos/pqrs, and the seller's own
+// forms) and its layout keeps wrapping them exactly as before - a route
+// segment under [locale] cannot span into that sibling, non-locale tree.
+// This copy wraps the zones already migrated: the listing, product detail,
+// and the public seller profile and list. See ROADMAP.md T-81.
 //
 // LocaleSwitcher renders here, outside <Layout>, instead of going into
 // Layout/Navbar - those two are shared with the non-migrated
@@ -32,7 +33,7 @@ export default async function layout({ children, params }) {
       <input id='my-dibujador' type='checkbox' className='drawer-toggle' />
       <div className='drawer-content'>
         <div className='flex justify-end px-3 pt-2 sm:px-4 dark:bg-base-200'>
-          <LocaleSwitcher basePath="antojos" />
+          <LocaleSwitcher />
         </div>
         <Layout>
           {children}

@@ -30,7 +30,7 @@ export default async function layout({ children, params }) {
       <input id='my-dibujador' type='checkbox' className='drawer-toggle' />
       <div className='drawer-content'>
         <div className='flex justify-end px-3 pt-2 sm:px-4 dark:bg-base-200'>
-          <LocaleSwitcher basePath="marketplace" />
+          <LocaleSwitcher />
         </div>
         <Layout>
           {children}

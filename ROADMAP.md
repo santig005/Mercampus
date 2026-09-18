@@ -2481,9 +2481,10 @@ switcher on these two pages yet: `LocaleSwitcher` only renders inside
 work from any zone is left for whichever zone does it first. Both
 languages are reachable directly by URL either way, which is what this
 task's "Done when" asks for.
-**Locale switcher follow-up (closed):** `LocaleSwitcher` now takes a
-`basePath` prop (`about` / `antojos` / `marketplace`) instead of a
-hardcoded `/about` href, and renders in `src/app/[locale]/antojos/layout.jsx`
+**Locale switcher follow-up (closed; its `basePath` prop was later replaced
+- see the switcher fix further down):** `LocaleSwitcher` stopped hardcoding
+a `/about` href and took a `basePath` prop
+(`about` / `antojos` / `marketplace`), and renders in `src/app/[locale]/antojos/layout.jsx`
 and `.../marketplace/layout.jsx` too - outside `<Layout>`, so it does not
 leak into the shared `Layout`/`Navbar` used by the still-unmigrated
 `src/app/antojos/layout.jsx` and `src/app/marketplace/layout.jsx`. It still
@@ -2627,19 +2628,37 @@ verification (badge + schedule table only), and translating all four well
 would mean deduplicating `SellerPage`/`SellerModal`'s copy rather than
 translating the same strings twice in two files - worth doing together, in
 its own follow-up.
-**Locale switcher gap on this zone, found while doing this, not fixed here:**
-`src/app/[locale]/antojos/layout.jsx` hardcodes `<LocaleSwitcher
+**Locale switcher gap on this zone, found while doing this — FIXED, see
+below:** `src/app/[locale]/antojos/layout.jsx` hardcoded `<LocaleSwitcher
 basePath="antojos" />` for every page under it, including the new
 `sellers/list` and `sellers/[id]`. Clicking the switcher from
-`/antojos/sellers/list` lands on `/en/antojos` (the listing), not
-`/en/antojos/sellers/list` - the switcher doesn't know which sub-route it's
+`/antojos/sellers/list` landed on `/en/antojos` (the listing), not
+`/en/antojos/sellers/list` - the switcher didn't know which sub-route it was
 on. Same class of bug as the "locale-aware nav" follow-up two zones ago, but
-in the switcher itself this time, not an internal link; fixing it means
-generalizing `LocaleSwitcher` to take the current pathname instead of a
-fixed `basePath`, which touches the listing zone's shared layout too - out
-of scope for a seller-profile PR. Not covered by
-`tests/e2e/i18n.spec.js`'s new seller-zone tests for the same reason the
-listing zone's switcher tests don't run against `/antojos/[id]` either.
+in the switcher itself this time, not an internal link.
+**Switcher fix (done):** the `basePath` prop is gone. `LocaleSwitcher` is a
+client component that reads `usePathname()` and rebuilds the twin URL via a
+new `stripLocalePrefix()` + the existing `localizedHref()`, so it cannot
+drift as more zones migrate - there is no per-layout constant left to keep
+in sync. That prop was wrong by construction: it encoded "which page am I
+on" as a value each layout had to repeat, and a layout covers many pages.
+It affected 5 of the 7 migrated pages by the time it was caught.
+**A second bug the fix's test uncovered, NOT fixed (rule 9).** The
+regression test was written to *click* the switcher rather than just read
+the URL. It failed - not because the href was wrong (it was correct) but
+because on `/antojos/[id]` the switcher is in the DOM and unclickable:
+`ProductPage`'s own full-bleed layout paints over the row
+`[locale]/antojos/layout.jsx` renders it in. So a visitor on a product page
+has no way to change language at all. Screenshot evidence in the PR. The
+test now asserts the `href` and says why, and the click-through coverage
+stays on the listing pages where the control is actually reachable. Fixing
+it is a layout/design call - where the switcher belongs on a full-bleed
+page - not something to guess at; likely the same answer as the
+`SellerPage`/`SellerModal` dedup above, since both are about this zone's
+chrome. **Worth noting for the record:** the product detail zone shipped
+green through `quality`, `e2e` and `lighthouse`, with `<html lang>` and
+copy verified in a browser, and still left a UI control unreachable. Rule 3
+again.
 **Seller share link now carries the sharer's locale too:** see the amended
 note above this one; `tests/unit/share-url.test.js` and
 `tests/e2e/i18n.spec.js` both cover it.
