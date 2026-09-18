@@ -32,8 +32,13 @@ describe('localizedHref (T-81)', () => {
     );
   });
 
+  // T-81 (auth zone): /auth/login used to be the example "unrelated path"
+  // here, before that zone was migrated - now it has its own describe block
+  // below with its own coverage. /auth/callback replaces it: it is
+  // deliberately never a member of LOCALIZED_ROUTES (see that block for why),
+  // so it is a genuinely unrelated path for as long as this migration runs.
   it('leaves an unrelated path untouched', () => {
-    expect(localizedHref('/auth/login', 'en')).toBe('/auth/login');
+    expect(localizedHref('/auth/callback', 'en')).toBe('/auth/callback');
   });
 });
 
@@ -171,5 +176,40 @@ describe('localizedHref for the seller profile zone (T-81)', () => {
       false
     );
     expect(localizedHref('/admin/sellers', 'en')).toBe('/admin/sellers');
+  });
+});
+
+// T-81 (auth zone): /auth/login and /auth/register, static exact entries -
+// same treatment as /antojos and /marketplace in the listing zone.
+//
+// /auth/callback is deliberately absent from LOCALIZED_ROUTES: it is where
+// Clerk lands the user after an OAuth redirect (see
+// src/components/auth/ProvidersButton.jsx's redirectUrl), an external
+// contract, not just an internal route. This describe block's last test is
+// the guardrail that keeps that exclusion deliberate rather than
+// accidental - if a future edit ever added it back to LOCALIZED_ROUTES by
+// mistake, this assertion would fail.
+describe('localizedHref for the auth zone (T-81)', () => {
+  it('prefixes /auth/login for a non-default locale', () => {
+    expect(localizedHref('/auth/login', 'en')).toBe('/en/auth/login');
+  });
+
+  it('never prefixes /auth/login for the default locale', () => {
+    expect(localizedHref('/auth/login', 'es')).toBe('/auth/login');
+  });
+
+  it('prefixes /auth/register for a non-default locale', () => {
+    expect(localizedHref('/auth/register', 'en')).toBe('/en/auth/register');
+  });
+
+  it('never prefixes /auth/register for the default locale', () => {
+    expect(localizedHref('/auth/register', 'es')).toBe('/auth/register');
+  });
+
+  // The trap this task's warning exists to avoid: /auth/callback must never
+  // gain a locale-prefixed twin, in either direction.
+  it('never prefixes /auth/callback - it is deliberately excluded from LOCALIZED_ROUTES', () => {
+    expect(localizedHref('/auth/callback', 'en')).toBe('/auth/callback');
+    expect(localizedHref('/auth/callback', 'es')).toBe('/auth/callback');
   });
 });

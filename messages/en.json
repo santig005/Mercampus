@@ -176,5 +176,33 @@
       "sat": "Saturday",
       "sun": "Sunday"
     }
+  },
+  "SignInForm": {
+    "backAria": "Back to home",
+    "heading": "Sign In",
+    "subtitle": "Please sign in to your account to continue",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "submit": "Sign In",
+    "forgotPasswordQuestion": "Forgot your password?",
+    "forgotPasswordCta": "Reset it",
+    "noAccountQuestion": "Don't have an account?",
+    "noAccountCta": "Create one"
+  },
+  "SignUpForm": {
+    "backAria": "Back to home",
+    "heading": "Sign Up",
+    "subtitle": "Please sign up to get started",
+    "fullNameLabel": "Full name",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm password",
+    "passwordReqLength": "At least 8 characters",
+    "passwordReqNumber": "At least one number",
+    "passwordReqUppercase": "At least one uppercase letter",
+    "passwordMismatch": "Passwords don't match",
+    "submit": "Sign Up",
+    "haveAccountQuestion": "Already have an account?",
+    "haveAccountCta": "Sign in"
   }
 }
