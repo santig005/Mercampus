@@ -176,5 +176,33 @@
       "sat": "Sábado",
       "sun": "Domingo"
     }
+  },
+  "SignInForm": {
+    "backAria": "Volver al inicio",
+    "heading": "Inicia Sesión",
+    "subtitle": "Por favor ingresa a tu cuenta para continuar",
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "submit": "Iniciar Sesión",
+    "forgotPasswordQuestion": "¿Has olvidado tu contraseña?",
+    "forgotPasswordCta": "Recupérala",
+    "noAccountQuestion": "¿No tienes una cuenta?",
+    "noAccountCta": "Crea una"
+  },
+  "SignUpForm": {
+    "backAria": "Volver al inicio",
+    "heading": "Regístrate",
+    "subtitle": "Por favor regístrate para comenzar",
+    "fullNameLabel": "Nombre completo",
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "confirmPasswordLabel": "Repetir contraseña",
+    "passwordReqLength": "Al menos 8 caracteres",
+    "passwordReqNumber": "Al menos un número",
+    "passwordReqUppercase": "Al menos una mayúscula",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "submit": "Registrarse",
+    "haveAccountQuestion": "¿Ya tienes una cuenta?",
+    "haveAccountCta": "Inicia sesión"
   }
 }

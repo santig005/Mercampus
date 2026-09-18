@@ -11,9 +11,22 @@ import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import ForgotPassword from '@/components/auth/ForgotPassword';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 
+// T-81 (auth zone): the heading, subtitle, field labels and the cross-link
+// to /auth/register below moved into messages/{es,en}.json under
+// 'SignInForm'. The Clerk error dictionary further down (passwordErrorMessages)
+// stays Spanish-only for now - it is duplicated near-verbatim in SignUpForm
+// and ForgotPassword, so translating it here alone would leave the other two
+// half-done; see ROADMAP.md T-81 for that as a rule 9 finding, not fixed in
+// this PR. ForgotPassword's own modal (heading, buttons, verification copy)
+// is untouched for the same file-count-ceiling reason the seller profile
+// zone scoped SellerPage.jsx out.
 export default function SignInForm() {
   const router = useRouter();
+  const t = useTranslations('SignInForm');
+  const locale = useLocale();
   const { isLoaded, signIn, setActive } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -155,22 +168,20 @@ export default function SignInForm() {
         >
           <Link
             href='/'
-            aria-label='Volver al inicio'
+            aria-label={t('backAria')}
             className='btn btn-circle absolute top-4 left-4'
           >
             <TbChevronLeft className='icon' />
           </Link>
-          <h2 className='text-2xl font-semibold text-white'>Inicia Sesión</h2>
-          <p className='text-white'>
-            Por favor ingresa a tu cuenta para continuar
-          </p>
+          <h2 className='text-2xl font-semibold text-white'>{t('heading')}</h2>
+          <p className='text-white'>{t('subtitle')}</p>
         </div>
         <div className='h-full relative bg-[#393939]'>
           <div className='bg-base-100 text-base-content rounded-t-3xl h-full w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
-                  title='Correo electrónico'
+                  title={t('emailLabel')}
                   type='email'
                   placeholder='johndoe@gmail.com'
                   value={email}
@@ -178,7 +189,7 @@ export default function SignInForm() {
                   required
                 />
                 <InputFields
-                  title='Contraseña'
+                  title={t('passwordLabel')}
                   type='password'
                   placeholder='********'
                   secureText={true}
@@ -197,7 +208,7 @@ export default function SignInForm() {
                   {loading ? (
                     <span className='loading loading-infinity loading-lg'></span>
                   ) : (
-                    'Iniciar Sesión'
+                    t('submit')
                   )}
                 </button>
                 <div className='flex justify-center'>
@@ -207,9 +218,9 @@ export default function SignInForm() {
                     onClick={() => setForgotPassword(true)}
                   >
                     <span className='text-black dark:text-base-content'>
-                      ¿Has olvidado tu contraseña?
+                      {t('forgotPasswordQuestion')}
                     </span>{' '}
-                    Recupérala
+                    {t('forgotPasswordCta')}
                   </button>
                 </div>
               </div>
@@ -219,9 +230,14 @@ export default function SignInForm() {
               <ProvidersButton />
             </div> */}
             <div className='mt-4 flex justify-center'>
-              <Link href='/auth/register' className='text-center text-primary'>
-                <span className='text-black dark:text-base-content'>¿No tienes una cuenta?</span> Crea
-                una
+              <Link
+                href={localizedHref('/auth/register', locale)}
+                className='text-center text-primary'
+              >
+                <span className='text-black dark:text-base-content'>
+                  {t('noAccountQuestion')}
+                </span>{' '}
+                {t('noAccountCta')}
               </Link>
             </div>
           </div>

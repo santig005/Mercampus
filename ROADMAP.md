@@ -2464,7 +2464,7 @@ same pattern applied to a different migration):
 | listing | `/antojos`, `/marketplace` (index pages only, not their sub-routes) | **done** |
 | product detail | `/antojos/[id]`, `/marketplace/[id]` | **done** |
 | seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
-| auth | `/auth/login`, `/auth/register` | pending |
+| auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
 | seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending |
 | admin | `/admin/*` | pending (or skip - one user, per the note above) |
 **Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
@@ -2646,13 +2646,108 @@ note above this one; `tests/unit/share-url.test.js` and
 **The honest limit of all of the above, worth knowing before trusting it.**
 `localizedHref` can only keep the locale on links *to* locale-aware routes.
 While the app is half-migrated, any soft navigation into a zone that is not
-migrated yet - seller profile, the seller's forms - necessarily lands on a
+migrated yet - the seller's own forms, admin - necessarily lands on a
 URL with no prefix while the root layout stays frozen at the previous
 locale, which is the same desync in a place no helper can reach. A visitor
-browsing in English who opens a seller's profile is already in that state.
-This does not go away by patching more links; it goes away when every zone
-lives under `[locale]` and the prefix is always present. Treat it as another
-reason to finish the migration rather than as a bug to chase.
+browsing in English who opens one of the seller's forms is already in that
+state. This does not go away by patching more links; it goes away when every
+zone lives under `[locale]` and the prefix is always present. Treat it as
+another reason to finish the migration rather than as a bug to chase.
+(Corrected in the auth zone's PR: this used to say "seller profile" too -
+stale since that zone shipped.)
+**Auth zone notes (this PR):** `/auth/login` and `/auth/register` are
+`static` exact entries, same treatment as the listing zone. **Why
+`/auth/callback` is not one of them, and never should be:** it is where
+Clerk lands the user after an OAuth redirect
+(`ProvidersButton.jsx`'s `redirectUrl`) - an external contract, not just an
+internal route. `isIntlRoute` runs before Clerk's own gate and returns early
+on a match, so if it ever rewrote or locale-prefixed that URL, a visitor
+mid-handshake could land somewhere Clerk isn't expecting - a broken sign-in,
+not a cosmetic bug. It also has essentially no interface copy (a
+transitional screen rendering `AuthenticateWithRedirectCallback`). Left
+untouched, out of `LOCALIZED_ROUTES`, and out of this PR on purpose -
+`tests/unit/routing.test.js` asserts `localizedHref('/auth/callback', ...)`
+never prefixes it in either locale, so the exclusion stays deliberate rather
+than something a future edit silently undoes.
+**The compiled-in redirect target, unaffected:** `NEXT_PUBLIC_CLERK_SIGN_IN_URL`
+and `NEXT_PUBLIC_CLERK_SIGN_UP_URL` (`.env`, and pinned in `scripts/e2e.mjs`)
+point at the bare `/auth/login` and `/auth/register`. Both still resolve
+exactly as before - next-intl's middleware rewrites the bare, default-locale
+request internally to serve `src/app/[locale]/auth/login|register/page.jsx`,
+the same mechanism every previous zone's bare path relies on. Verified live
+(dev server) and in `tests/e2e/auth-gate.spec.js`, which was not touched and
+still passes: a signed-out visitor hitting a gated seller route still lands
+on bare `/auth/login`, in Spanish. The old `src/app/auth/login/page.jsx` and
+`src/app/auth/register/page.jsx` were deleted, not left dead, same reasoning
+as every previous zone - `src/app/auth/callback/page.jsx` is the only file
+left under the old `src/app/auth/` tree, and it stays there.
+**No shared layout, on purpose:** every previous zone added a `layout.jsx`
+under `[locale]` to call `setRequestLocale` (and, for listing/about, to hold
+`LocaleSwitcher`). `SignInForm`/`SignUpForm` render their own full-screen
+markup with no shared chrome to hang a layout off, so `setRequestLocale` is
+called directly in each `page.jsx` instead - one fewer file than the
+alternative, no behavior difference.
+**Scope of what was actually translated (kept deliberately small, same
+reasoning the seller profile zone used for `SellerPage.jsx`):** the heading,
+subtitle, back-button `aria-label`, field labels, submit button, and the
+cross-link between the two screens, under new `SignInForm`/`SignUpForm`
+namespaces in `messages/{es,en}.json`. `SignUpForm`'s password-strength
+checklist and its plain, client-side "passwords don't match" hint (shown
+while typing, not from a Clerk response) are translated too - they don't
+depend on a real Clerk API round trip, so they're actually verifiable in
+Playwright. **Not translated, and why:** the Clerk error dictionary
+(`passwordErrorMessages`, one raw-Spanish object literal keyed by Clerk error
+code) is duplicated near-verbatim across `SignInForm.jsx`, `SignUpForm.jsx`
+*and* `ForgotPassword.jsx` - translating it in one file would leave the other
+two half-done, and de-duplicating it first is its own piece of work, not an
+i18n one. It also only ever surfaces from a real Clerk API error, which is
+not realistically exercisable in this Playwright suite without a live Clerk
+submission. `ForgotPassword.jsx` (the whole "forgot password" modal - only
+reachable by clicking through) and `SignUpForm`'s OTP verification modal are
+untouched for the same reason plus the file-count ceiling: translating either
+well means untangling them from that shared error dictionary too.
+`ProvidersButton.jsx` (Google/Microsoft OAuth buttons) is untouched because
+it is not rendered - both call sites are commented out in `SignInForm.jsx`
+and `SignUpForm.jsx`. Confirmed by grep: its only importers are those two
+files, both commented. Left alone per rule 5 (not this PR's job to delete
+it, and it may be a paused feature rather than dead code - worth a follow-up
+question to the human, not a unilateral deletion).
+**One more call site caught by the same nav-gap pattern:** `src/app/[locale]/about/page.jsx`
+already had two `<Link href="/auth/register">`s (the hero and final CTA).
+Now that `/auth/register` is a `LOCALIZED_ROUTES` entry, a soft nav from
+`/en/about` through either link would have landed on the bare (Spanish) URL
+while the root layout kept rendering English - the exact "locale-aware nav"
+bug PR #363 fixed for `/antojos`/`/marketplace`. Fixed here since it reuses
+imports `about/page.jsx` already had (`useLocale`, `localizedHref`) - a
+two-line change, not a new one. **Not fixed in this PR, and left as a
+follow-up:** `src/context/SellerContext.js` (`router.push('/auth/login')`),
+`src/components/seller/SideBar.jsx` (`goto='/auth/login'`/`'/auth/register'`),
+`src/components/header/Navbar.jsx` (`href='/auth/login'`),
+`src/app/admin/sellers/page.jsx` and `src/app/antojos/sellers/panel/page.jsx`
+(both `redirect`/`router.push('/auth/login')`) all still hardcode the bare
+paths. Every one of these currently only runs from an unmigrated (Spanish,
+unprefixed) context, so they are not live bugs today - but the day any of
+their call sites gets wrapped in a migrated `[locale]` layout, the same
+desync bug becomes reachable. Left alone here to keep this PR scoped to the
+auth zone (rule 2); worth a grep-driven sweep of its own once more zones are
+migrated, same shape as the original "locale-aware-nav" follow-up.
+**No locale switcher on this zone:** unlike listing/about, `/auth/login` and
+`/auth/register` have no shared layout to hang `LocaleSwitcher` off (see
+above), and adding one just for these two screens felt like scope creep for
+a first pass. Both languages stay reachable by URL either way, which is what
+this task's "Done when" asks for - same tradeoff the listing zone shipped
+with initially. Noted here rather than fixed, consistent with the "honest
+limit" note above.
+**Verified live (dev/build, this PR):** `/auth/login` (Spanish, unprefixed)
+and `/en/auth/login` (English) both render with `<html lang>` matching the
+URL and the translated heading/labels visible; same for `/auth/register` and
+`/en/auth/register`. The cross-link from each screen to the other keeps the
+locale on a soft navigation. `/auth/callback` was left alone and not
+re-verified beyond the unit-level routing assertion, per the warning above -
+visiting it cold outside a real OAuth handshake is not a meaningful exercise
+of that screen. See `tests/e2e/i18n.spec.js` for the full walk in both
+locales and `tests/e2e/auth-gate.spec.js` (untouched, still green) for proof
+the bare paths still work as Clerk's redirect targets.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 

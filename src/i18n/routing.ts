@@ -104,6 +104,17 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // collide, and /antojos/sellers/register etc. (not 24 hex) still can't
   // match either. Verified in tests/unit/routing.test.js.
   { kind: 'dynamic', base: '/antojos/sellers' },
+  // T-81 (auth zone): /auth/login and /auth/register, exact paths only.
+  // /auth/callback is deliberately NOT here and never should be - it is
+  // where Clerk lands the user after an OAuth redirect, an external
+  // contract (see ProvidersButton.jsx's redirectUrl and the OAuth apps'
+  // configured callback URL), not just an internal route. If isIntlRoute
+  // ever rewrote or locale-prefixed it, a visitor mid-OAuth-handshake could
+  // land on a URL Clerk isn't expecting - a broken sign-in, not a cosmetic
+  // bug. It also carries no interface copy worth translating (a transitional
+  // screen). See ROADMAP.md T-81 for the full note.
+  { kind: 'static', path: '/auth/login', matchSubpaths: false },
+  { kind: 'static', path: '/auth/register', matchSubpaths: false },
 ];
 
 // Prefixes `path` with `locale` when it falls under a LOCALIZED_ROUTES

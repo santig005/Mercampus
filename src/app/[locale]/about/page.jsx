@@ -15,6 +15,12 @@ const InfoPage = () => {
   // client-side navigation - keeps rendering English (see
   // src/i18n/routing.ts).
   const antojosHref = localizedHref('/antojos', locale);
+  // T-81 (auth zone): same reasoning - a bare href would drop the locale on
+  // a soft nav from /en/about, landing on the Spanish /auth/register while
+  // the root layout keeps rendering English. /auth/register is now a
+  // LOCALIZED_ROUTES entry, so this call site needed the same fix the
+  // listing-zone nav follow-up made for /antojos and /marketplace.
+  const registerHref = localizedHref('/auth/register', locale);
 
   return (
     <div className="bg-base-100 text-gray-800 dark:text-base-content min-h-screen !w-full">
@@ -83,7 +89,7 @@ const InfoPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 1.0 }}
               >
-                <Link href="/auth/register" className="group inline-flex items-center px-8 py-4 bg-orange-500 text-white rounded-2xl text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                <Link href={registerHref} className="group inline-flex items-center px-8 py-4 bg-orange-500 text-white rounded-2xl text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                   {t('hero.ctaPrimary')}
                   <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
@@ -748,7 +754,7 @@ const InfoPage = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-6">
-            <Link href="/auth/register" className="group inline-flex items-center px-8 py-4 bg-white text-orange-600 rounded-2xl text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg">
+            <Link href={registerHref} className="group inline-flex items-center px-8 py-4 bg-white text-orange-600 rounded-2xl text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg">
               {t('finalCta.cta')}
               <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
             </Link>

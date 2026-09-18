@@ -389,6 +389,117 @@ test.describe('i18n on the seller profile zone (/antojos/sellers/[id], /antojos/
   });
 });
 
+// T-81: the auth zone (/auth/login, /auth/register). /auth/callback is
+// deliberately not walked here - it is Clerk's OAuth redirect target, an
+// external contract, not a UI screen, and it is not in LOCALIZED_ROUTES on
+// purpose (see src/i18n/routing.ts and ROADMAP.md T-81).
+//
+// Only the wrapper copy this PR actually translated is asserted here -
+// heading, subtitle, field labels, submit button, the cross-link between
+// the two screens. The Clerk error dictionary and SignUpForm's verification
+// (OTP) modal are untouched (see the notes at the top of SignInForm.jsx /
+// SignUpForm.jsx) and are not walked here either, same scoping the seller
+// profile zone's own PR used for SellerPage.jsx's untranslated chrome.
+test.describe('i18n on the auth zone (/auth/login, /auth/register)', () => {
+  test('login in Spanish (default, no prefix) - also Clerk\'s compiled-in redirect target', async ({
+    page,
+  }) => {
+    await page.goto('/auth/login');
+
+    await expect(page).toHaveURL(/\/auth\/login$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(
+      page.getByRole('heading', { name: 'Inicia Sesión' })
+    ).toBeVisible();
+    await expect(page.getByLabel('Correo electrónico')).toBeVisible();
+    await expect(page.getByLabel('Contraseña')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Iniciar Sesión' })
+    ).toBeVisible();
+
+    await shot(page, '20-auth-login-es');
+  });
+
+  test('login in English via /en/auth/login', async ({ page }) => {
+    await page.goto('/en/auth/login');
+
+    await expect(page).toHaveURL(/\/en\/auth\/login$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+    await expect(page.getByLabel('Email')).toBeVisible();
+    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
+
+    await shot(page, '21-auth-login-en');
+  });
+
+  test('register in Spanish (default, no prefix) - also Clerk\'s compiled-in redirect target', async ({
+    page,
+  }) => {
+    await page.goto('/auth/register');
+
+    await expect(page).toHaveURL(/\/auth\/register$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(
+      page.getByRole('heading', { name: 'Regístrate' })
+    ).toBeVisible();
+    await expect(page.getByLabel('Nombre completo')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Registrarse' })
+    ).toBeVisible();
+
+    await shot(page, '22-auth-register-es');
+  });
+
+  test('register in English via /en/auth/register', async ({ page }) => {
+    await page.goto('/en/auth/register');
+
+    await expect(page).toHaveURL(/\/en\/auth\/register$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { name: 'Sign Up' })).toBeVisible();
+    await expect(page.getByLabel('Full name')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign Up' })).toBeVisible();
+
+    await shot(page, '23-auth-register-en');
+  });
+
+  // The cross-link between the two screens keeps the locale on a soft
+  // navigation - same class of bug LOCALIZED_ROUTES/localizedHref exists to
+  // prevent (see src/i18n/routing.ts).
+  test('the "create one" link from English login keeps the locale', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/login');
+
+    await page.getByRole('link', { name: /Create one/ }).click();
+
+    await expect(page).toHaveURL(/\/en\/auth\/register$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { name: 'Sign Up' })).toBeVisible();
+  });
+
+  test('the "sign in" link from English register keeps the locale', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/register');
+
+    await page.getByRole('link', { name: /Sign in/ }).click();
+
+    await expect(page).toHaveURL(/\/en\/auth\/login$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+  });
+
+  // /auth/callback is deliberately not visited here - it renders Clerk's
+  // AuthenticateWithRedirectCallback, which expects an in-progress OAuth
+  // handshake; loading it cold in a test is not a realistic exercise of
+  // that screen and risks flakiness unrelated to i18n. The exclusion from
+  // LOCALIZED_ROUTES is proven in tests/unit/routing.test.js instead
+  // (localizedHref('/auth/callback', ...) never prefixes it), which is
+  // enough to guard the routing behavior this task is responsible for
+  // without touching that screen - see the warning in ROADMAP.md T-81.
+});
+
 // T-81 follow-up (locale-aware-nav): the tests above check the URL after a
 // navigation, which is exactly what let the original bug slip through -
 // SidebarBtn hardcoded `goto='/marketplace'` (no prefix), so a soft

@@ -59,6 +59,16 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/(.*)/admin(.*)']);
 // single segments, so buildDynamicPattern's anchoring keeps them out of
 // isIntlRoute and still gated by isProtectedRoute. Verified in
 // tests/unit/routing.test.js and live (see ROADMAP.md T-81).
+//
+// T-81 (auth zone): /auth/login and /auth/register are `static` exact
+// entries too. /auth/callback is intentionally absent - it is not gated by
+// isProtectedRoute (nobody needs to be signed in to land there), so leaving
+// it out is not an auth bypass risk the way a protected route would be, but
+// it is still deliberate: it is Clerk's OAuth redirect target, an external
+// contract, and NEXT_PUBLIC_CLERK_SIGN_IN_URL/SIGN_UP_URL are compiled-in
+// constants that always point at the bare paths (see scripts/e2e.mjs and
+// ROADMAP.md T-81), so those two bare paths must keep resolving exactly as
+// before.
 const nonDefaultLocales = routing.locales.filter(
   (locale) => locale !== routing.defaultLocale
 );
