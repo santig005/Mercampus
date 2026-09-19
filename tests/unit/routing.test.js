@@ -3,8 +3,15 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDynamicPattern,
   localizedHref,
+  routing,
   stripLocalePrefix,
 } from '@/i18n/routing';
+import {
+  ADMIN_ROUTE_PATTERNS,
+  PROTECTED_PATHS,
+  PROTECTED_ROUTE_PATTERNS,
+  isSupportedLocale,
+} from '@/lib/route-guards';
 
 describe('localizedHref (T-81)', () => {
   it('prefixes an exact locale-aware route for a non-default locale', () => {
@@ -148,15 +155,10 @@ describe('localizedHref for the seller profile zone (T-81)', () => {
   // cosmetic bug. None of the six is a bare 24-hex segment, so
   // buildDynamicPattern's anchoring keeps every one of them out, and none is
   // the exact string '/antojos/sellers/list' either.
-  const PROTECTED_PATHS = [
-    '/antojos/sellers/register',
-    '/antojos/sellers/profile/edit',
-    '/antojos/sellers/products/edit',
-    '/antojos/sellers/schedules',
-    '/antojos/sellers/approving',
-    '/antojos/product/add',
-  ];
-
+  // T-81 (middleware gate): this used to be a local copy of the list. It is
+  // now the imported PROTECTED_PATHS - the same array src/middleware.js
+  // builds its matcher from - so these assertions track the real gate
+  // instead of a snapshot of it that silently stops matching.
   it.each(PROTECTED_PATHS)(
     'does not prefix the protected route %s (would otherwise bypass the auth gate)',
     (path) => {
@@ -260,4 +262,129 @@ describe('stripLocalePrefix (T-81)', () => {
     expect(localizedHref(stripLocalePrefix(path), 'en')).toBe(`/en${path}`);
     expect(localizedHref(stripLocalePrefix(`/en${path}`), 'es')).toBe(path);
   });
+});
+
+// T-81 (middleware gate). The guardrail above proves that isIntlRoute does
+// not *swallow* the protected routes. This block proves the other half, which
+// nothing covered before: that src/middleware.js actually *gates* them - at
+// every URL that can reach them, not just the bare Spanish one.
+//
+// It asserts against PROTECTED_ROUTE_PATTERNS itself, the exact array
+// createRouteMatcher is built from in src/middleware.js, rather than against
+// a list re-declared here. middleware.js cannot be imported from vitest (it
+// pulls clerkMiddleware and the edge runtime), which is why that definition
+// lives in src/lib/route-guards.ts now. A guardrail that restates the list it
+// guards goes green while the two drift apart, and the thing that moved is
+// the gate.
+describe('the protected-route gate covers every locale (T-81)', () => {
+  // A local path-to-regexp-free reimplementation of what createRouteMatcher
+  // does with these patterns: they are all literal prefixes plus a trailing
+  // '(.*)'. Kept deliberately dumb - its job is to answer "is this URL
+  // covered", not to re-derive Clerk's matching.
+  const covers = (patterns, pathname) =>
+    patterns.some((pattern) => {
+      const prefix = pattern.replace(/\(\.\*\)$/, '');
+      return pathname === prefix || pathname.startsWith(`${prefix}/`);
+    });
+
+  // Not it.each over a hardcoded ['en']: iterating routing.locales is what
+  // makes this a default-deny. Add 'pt' to src/i18n/routing.ts and every
+  // assertion below starts demanding its twin too, so the gate cannot be
+  // widened for the app while being left narrow for the middleware.
+  const nonDefaultLocales = routing.locales.filter(
+    (locale) => locale !== routing.defaultLocale
+  );
+
+  it('has at least one non-default locale to test against', () => {
+    // Otherwise every loop below would pass vacuously and this whole block
+    // would be decoration.
+    expect(nonDefaultLocales.length).toBeGreaterThan(0);
+  });
+
+  it.each(PROTECTED_PATHS)('gates the bare path %s', (path) => {
+    expect(covers(PROTECTED_ROUTE_PATTERNS, path)).toBe(true);
+  });
+
+  it.each(PROTECTED_PATHS)('gates every locale twin of %s', (path) => {
+    for (const locale of nonDefaultLocales) {
+      expect(covers(PROTECTED_ROUTE_PATTERNS, `/${locale}${path}`)).toBe(true);
+    }
+  });
+
+  // The '(.*)' suffix each pattern carries: /products/edit also has to cover
+  // /products/edit/<id>, in every locale.
+  it('gates sub-paths under a protected route, in every locale', () => {
+    const subPath = '/antojos/sellers/products/edit/652f1234567890abcdef1234';
+    expect(covers(PROTECTED_ROUTE_PATTERNS, subPath)).toBe(true);
+    for (const locale of nonDefaultLocales) {
+      expect(covers(PROTECTED_ROUTE_PATTERNS, `/${locale}${subPath}`)).toBe(
+        true
+      );
+    }
+  });
+
+  // The admin area is NOT migrated to next-intl (see ROADMAP.md T-81), but
+  // its twins are generated anyway, so a later migration cannot open it
+  // silently. Its API half must NOT get twins: /en/api/... is a URL that
+  // cannot exist.
+  it('gates /admin and its locale twins', () => {
+    expect(covers(ADMIN_ROUTE_PATTERNS, '/admin/sellers')).toBe(true);
+    for (const locale of nonDefaultLocales) {
+      expect(covers(ADMIN_ROUTE_PATTERNS, `/${locale}/admin/sellers`)).toBe(
+        true
+      );
+    }
+  });
+
+  it('does not invent a locale twin for the admin API', () => {
+    expect(ADMIN_ROUTE_PATTERNS).toContain('/api/(.*)/admin(.*)');
+    for (const locale of nonDefaultLocales) {
+      expect(ADMIN_ROUTE_PATTERNS).not.toContain(
+        `/${locale}/api/(.*)/admin(.*)`
+      );
+    }
+  });
+
+  // The pattern said '/antojos/sellers/schedule' (singular) until this PR,
+  // while the route is src/app/antojos/sellers/schedules. It matched only via
+  // its own '(.*)'. Pin the real path so it cannot drift back.
+  it('names the schedules route as it actually exists on disk', () => {
+    expect(PROTECTED_PATHS).toContain('/antojos/sellers/schedules');
+  });
+
+  // Public routes must NOT be caught by the gate - otherwise "everything is
+  // protected" would pass every assertion above and break the whole app.
+  it.each([
+    '/antojos',
+    '/marketplace',
+    '/antojos/sellers/list',
+    '/antojos/game',
+    '/about',
+    '/auth/login',
+  ])('leaves the public route %s ungated', (path) => {
+    expect(covers(PROTECTED_ROUTE_PATTERNS, path)).toBe(false);
+    for (const locale of nonDefaultLocales) {
+      expect(covers(PROTECTED_ROUTE_PATTERNS, `/${locale}${path}`)).toBe(false);
+    }
+  });
+});
+
+// T-81 (middleware gate): the layer that makes the generated twins above a
+// complete set instead of a sample. [locale] is a catch-all segment with no
+// generateStaticParams, and src/i18n/request.ts silently falls back to the
+// default locale, so without this check /xx/antojos rendered (HTTP 200,
+// measured). '/xx/...' is not a twin withLocaleTwins can ever generate -
+// there are infinitely many - so rejecting unknown locale segments outright
+// is what closes that class of URL. Enforced in src/app/[locale]/layout.jsx.
+describe('isSupportedLocale (T-81)', () => {
+  it.each(routing.locales)('accepts the real locale %s', (locale) => {
+    expect(isSupportedLocale(locale)).toBe(true);
+  });
+
+  it.each(['xx', 'zz', 'EN', 'e', 'es-CO', 'admin', 'antojos', '..', ''])(
+    'rejects %s, which is not a locale this app serves',
+    (segment) => {
+      expect(isSupportedLocale(segment)).toBe(false);
+    }
+  );
 });
