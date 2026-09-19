@@ -2465,8 +2465,8 @@ same pattern applied to a different migration):
 | product detail | `/antojos/[id]`, `/marketplace/[id]` | **done** |
 | seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
 | auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
-| seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending |
-| admin | `/admin/*` | pending (or skip - one user, per the note above) |
+| seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending — **middleware gate done first, see below** |
+| admin | `/admin/*` | **skipped on purpose** (decision 2026-09-19, reasoning below) — gate hardened anyway |
 **Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
 matches `/antojos`, `/en/antojos`, `/marketplace`, `/en/marketplace` as
 exact paths (no `(.*)` wildcard) - their sub-routes stay on the old,
@@ -2767,6 +2767,87 @@ visiting it cold outside a real OAuth handshake is not a meaningful exercise
 of that screen. See `tests/e2e/i18n.spec.js` for the full walk in both
 locales and `tests/e2e/auth-gate.spec.js` (untouched, still green) for proof
 the bare paths still work as Clerk's redirect targets.
+**Middleware gate (this PR) - the prerequisite the forms zone was blocked
+on.** The forms zone is exactly `isProtectedRoute`'s list, and
+`src/middleware.js` ran `if (isIntlRoute(req)) return intlMiddleware(req)`
+*before* the auth gate, so migrating those screens would have un-gated them.
+Fixed here, before any page moves, so the zone PR that follows is mechanical.
+Three layers, because the obvious two are not enough:
+- **(a) Order.** The auth gate runs first and `isIntlRoute` is now the
+  **last** statement in the middleware. That is deliberate beyond "correct
+  today": with nothing after it, there is no early return left for a future
+  change to slip in front of the session check. Cost, stated rather than
+  discovered later: `await auth()` now runs on locale-aware routes too (it
+  already ran on every other route). `isClerkAdmin()` is still reached only
+  for an admin route with a `userId`, so **no new Clerk Backend API calls**.
+- **(b) Generated twins.** `isProtectedRoute`/`isAdminRoute` are built from
+  `src/lib/route-guards.ts`, which derives one twin per non-default locale
+  from `routing.locales`. Adding a locale widens the gate by itself. The
+  admin **API** pattern is deliberately excluded from that generation -
+  `/en/api/...` is a URL that cannot exist.
+- **(c) The layer nobody had spotted, and the reason (b) alone is not
+  enough.** `[locale]` is an unvalidated catch-all: no `generateStaticParams`,
+  no `dynamicParams`, and `src/i18n/request.ts` silently falls back to the
+  default locale. **Measured before the fix: `/xx/antojos` and `/zz/antojos`
+  answered HTTP 200 and rendered the real Spanish listing.** So `/en/` twins
+  close one door out of infinitely many. Proven with a throwaway page at
+  `[locale]/antojos/sellers/profile/edit`: with **no session**, `/en/...` and
+  `/xx/...` both returned 200 and rendered it, while the bare path correctly
+  redirected to the login. New `src/app/[locale]/layout.jsx` `notFound()`s any
+  locale segment not in `routing.locales`. It returns `children` unchanged -
+  a gate and nothing else, no wrapper markup.
+**The guardrail was extended, and proven to bite.** `tests/unit/routing.test.js`
+now imports `PROTECTED_PATHS`/`PROTECTED_ROUTE_PATTERNS` from
+`src/lib/route-guards.ts` - the same arrays the middleware builds its matchers
+from - instead of re-declaring the list (the old block had its own copy, which
+goes green while the two drift). The new assertions iterate `routing.locales`
+rather than a hardcoded `'en'`, so they are a **default-deny**: add `pt` to
+`src/i18n/routing.ts` and they start demanding its twins. Deliberately removing
+the twin generation turned **8 tests red** in exactly the right places, which is
+the check that the guardrail measures something. It also pins the public routes
+as *ungated*, so "protect everything" cannot pass it.
+**Why the e2e asserts rendered content and not status codes.** First draft
+asserted `404` on `/xx/...` and failed on six paths - because `notFound()`
+answers **HTTP 200 app-wide in this repo (T-91)**, so the assertion was
+measuring T-91, not this gate. Two of those failures were also genuinely
+interesting: `/xx/antojos/sellers/schedules` and `/xx/.../approving` are not
+routing misses at all - they resolve `[locale]/antojos/sellers/[id]` with
+`id="schedules"`, so the `[locale]` guard is the only thing stopping them.
+`tests/e2e/auth-gate.spec.js` now asserts the 404 page **renders** and the real
+page does not, plus that `/en/<protected>` redirects to the login, that
+`redirect_url` carries the locale back (an English visitor returns to `/en/...`
+after signing in), and that the real locales still serve their own pages so the
+check cannot pass by breaking what it guards. 23 tests there, 129 in the suite,
+all green.
+**Admin: skipped on purpose (human decision, 2026-09-19).** Not "pending" -
+decided, so the nightly agent does not pick it up. Reasons, in order: it has
+one user, who reads Spanish, so the i18n value is ~zero; the role lives in
+Clerk's `publicMetadata`, which this ROADMAP marks as not-without-a-human; and
+it is **the one page where the middleware is the only role check** - the page
+itself only asserts that a session exists, never the role. Its locale twins are
+generated anyway (cost: one shared helper), so a later migration of that area
+cannot open it silently. If it is ever migrated, the prerequisite is that the
+page stop depending on the middleware alone - a server-side `isClerkAdmin`,
+the way `/antojos/sellers/panel` already gates itself.
+**Rule 9, found on the way, not fixed here:**
+- `isProtectedRoute` said `/antojos/sellers/schedule(.*)` - **singular** - while
+  the route on disk is `src/app/antojos/sellers/schedules`. It matched only via
+  its own `(.*)`. Corrected in this PR because this PR rewrites that exact list;
+  pinned by a test so it cannot drift back.
+- **`/antojos/sellers/panel` is not in the protected list** and never was. It
+  gates itself server-side (`getSellerPanelStats()` -> `redirect()`), which is
+  better than relying on the middleware - but it means "the list" and "the
+  actually-protected surface" disagree. Left as is: adding it would change what
+  an anonymous visitor sees, which this PR has no reason to do.
+- **`src/app/robots.ts` lists only 4 of the 6 protected paths, and no locale
+  twins.** Not touched here; it matters once the forms have `/en/` URLs.
+- **~14 call sites hardcode bare protected paths** (`SideBar.jsx`'s 7 `goto`s,
+  `useCheckSeller`'s 4 `router.push`es including the authorization ones,
+  `EditProductForm`, `EditSellerForm`, `Schedule`, `register`, `products/edit`,
+  `panel`). Every one becomes the PR #363 locale-dropping bug the moment these
+  routes are migrated. That is the **next PR**, before the pages move.
+- **`GET /api/sellers/admin` has no authorization of its own** - filed
+  separately below, see T-133.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
@@ -5733,3 +5814,34 @@ pace of active tasks slowed down — it's a large diff competing for review
 attention with anything else open at the same time.
 **Model:** `opusplan` (needs judgment to not lose nuance in the security
 notes) · **Nightly:** no
+
+### [ ] T-133 · `GET /api/sellers/admin` has no authorization of its own
+**Why:** found while planning T-81's middleware gate, measured not assumed.
+[`src/app/api/sellers/admin/route.js`](src/app/api/sellers/admin/route.js)
+has no `auth()` and no `isClerkAdmin()`. Its own comment says so plainly —
+*"who gets here was already decided by the middleware"* (T-12). What it
+returns is `Seller.find()` with no filter and `.lean()`: **every seller,
+every field** — `phoneNumber`, `approved`, `userId`, unapproved profiles
+included. Measured against the real base, that is 54 sellers.
+**This is not a live vulnerability today** and the entry should not be read
+as one: `isAdminRoute` (`/api/(.*)/admin(.*)`) does gate it, and T-81's gate
+PR left that pattern intact and added a test for it. The problem is that it
+is gated by **exactly one layer, in a different file, with the handler
+unaware**. Its sibling `PATCH /api/sellers/admin/[id]` checks `isClerkAdmin`
+in the handler ([line 42](src/app/api/sellers/admin/[id]/route.js#L42)), so
+the **write is double-gated and the read is not** — an asymmetry with no
+reason behind it, and the read is the one that discloses the data.
+**Done when:** the handler verifies identity and role itself, the way the
+`[id]` route already does, so the middleware becomes defence in depth rather
+than the only defence. Consider also whether the response needs every field
+— the admin panel renders business name, approval state and schedules; it
+has no use for `phoneNumber` on the list view.
+**Careful:** the same comment explains that removing the old `currentUser()`
+call is what made Next treat this route as static, which is why
+`export const dynamic = 'force-dynamic'` is there. Adding a real auth check
+back makes the route request-specific again — confirm `force-dynamic` is
+still needed rather than deleting it on the assumption that it is not.
+**Related:** T-12 (which centralised the check into the middleware and is
+why the handler looks like this), T-104 (`isClerkAdmin` as the single
+definition), T-81 (where this was found).
+**Model:** `opus` (authorization) · **Nightly:** no

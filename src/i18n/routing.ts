@@ -22,10 +22,16 @@ type StaticLocalizedRoute = {
   // sub-route under it yet, but nothing stops one from being added later).
   // false: EXACT PATH ONLY. Required for /antojos and /marketplace, whose
   // sub-routes (/antojos/sellers/register, /antojos/product/add, ...) are
-  // gated by Clerk's isProtectedRoute in src/middleware.js. If isIntlRoute
-  // there swallowed them with a wildcard, they would skip that auth check
-  // entirely - a real auth bypass, not a cosmetic bug. PR #361 was careful
-  // about precisely this; keep it that way when adding routes here.
+  // gated by Clerk's isProtectedRoute in src/middleware.js.
+  //
+  // This used to say that a wildcard here would skip that auth check
+  // entirely - a real auth bypass. **That stopped being true in T-81's
+  // middleware-gate PR**, which moved isIntlRoute to run *after* both gates
+  // instead of before them. Keep the flag accurate anyway: a wildcard still
+  // rewrites sibling routes into a locale lookup that 404s them
+  // (/antojos/game, /antojos/pqrs are real pages), so it is now a routing
+  // bug rather than a security one. PR #361 was careful about precisely
+  // this; keep it that way when adding routes here.
   matchSubpaths: boolean;
 };
 
