@@ -90,6 +90,10 @@ test.describe('i18n on the seller onboarding zone (T-81)', () => {
     ).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByText(`Hi ${BUSINESS}`)).toBeVisible();
+    // Not a form, but a protected path, and the switcher hides on all of them
+    // (isProtectedPath, decided on PR #373) - pinned so that stays deliberate.
+    await expect(page.getByRole('link', { name: 'English' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Español' })).toHaveCount(0);
     await page.screenshot({ path: 'test-results/t81-onboarding-approving-en.png' });
 
     const link = page.getByRole('link', { name: 'Contact us / Request approval on WhatsApp' });
@@ -125,6 +129,10 @@ test.describe('i18n on the seller onboarding zone (T-81)', () => {
     await expect(page.getByText('Nombre del Negocio')).toBeVisible();
     await expect(page.getByText('+ Agregar')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Registrar Negocio' })).toBeVisible();
+    // No locale switcher on a form screen (decided on PR #373): it is a full
+    // page navigation, and would wipe what the seller had typed.
+    await expect(page.getByRole('link', { name: 'English' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Español' })).toHaveCount(0);
     await page.screenshot({ path: 'test-results/t81-onboarding-register-es.png', fullPage: true });
   });
 
@@ -152,6 +160,10 @@ test.describe('i18n on the seller onboarding zone (T-81)', () => {
         exact: false,
       })
     ).toBeVisible();
+    // No locale switcher on a form screen (decided on PR #373): it is a full
+    // page navigation, and would wipe what the seller had typed.
+    await expect(page.getByRole('link', { name: 'English' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Español' })).toHaveCount(0);
     await page.screenshot({ path: 'test-results/t81-onboarding-register-en.png', fullPage: true });
   });
 });

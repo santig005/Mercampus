@@ -13,6 +13,7 @@ import {
   ADMIN_ROUTE_PATTERNS,
   PROTECTED_PATHS,
   PROTECTED_ROUTE_PATTERNS,
+  isProtectedPath,
   isSupportedLocale,
 } from '@/lib/route-guards';
 
@@ -395,6 +396,44 @@ describe('the protected-route gate covers every locale (T-81)', () => {
 // measured). '/xx/...' is not a twin withLocaleTwins can ever generate -
 // there are infinitely many - so rejecting unknown locale segments outright
 // is what closes that class of URL. Enforced in src/app/[locale]/layout.jsx.
+// T-81, decided on PR #373: LocaleSwitcher hides itself where this is true,
+// because its full page navigation wiped a half-filled seller form.
+describe('isProtectedPath - where the locale switcher hides (T-81)', () => {
+  it.each(PROTECTED_PATHS)('is true for the protected route %s', (path) => {
+    expect(isProtectedPath(path)).toBe(true);
+  });
+
+  it('is true under a protected route (the product edit form)', () => {
+    expect(
+      isProtectedPath('/antojos/sellers/products/edit/652f1234567890abcdef1234')
+    ).toBe(true);
+  });
+
+  // The switcher must stay everywhere else, including the public seller
+  // pages that share the /antojos/sellers prefix.
+  it.each([
+    '/',
+    '/about',
+    '/antojos',
+    '/marketplace',
+    '/antojos/sellers/list',
+    '/antojos/sellers/652f1234567890abcdef1234',
+    '/auth/login',
+    // Shares the letters of a protected path without being under it.
+    '/antojos/sellers/registered',
+  ])('is false for %s', (path) => {
+    expect(isProtectedPath(path)).toBe(false);
+  });
+
+  // It takes a default-locale path; LocaleSwitcher strips the prefix first.
+  it('matches an English URL once its prefix is stripped', () => {
+    expect(isProtectedPath('/en/antojos/sellers/register')).toBe(false);
+    expect(
+      isProtectedPath(stripLocalePrefix('/en/antojos/sellers/register'))
+    ).toBe(true);
+  });
+});
+
 describe('isSupportedLocale (T-81)', () => {
   it.each(routing.locales)('accepts the real locale %s', (locale) => {
     expect(isSupportedLocale(locale)).toBe(true);
