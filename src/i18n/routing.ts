@@ -94,13 +94,12 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // /antojos/product/add) are not swallowed by these.
   { kind: 'dynamic', base: '/antojos' },
   { kind: 'dynamic', base: '/marketplace' },
-  // T-81 (seller profile): the public seller listing, exact path only - its
-  // sibling protected routes under the same /antojos/sellers prefix
-  // (register, profile/edit, products/edit, schedules, approving) have no
-  // [locale] file yet and stay gated by isProtectedRoute in
-  // src/middleware.js; matchSubpaths: true here would swallow every one of
-  // them and skip that auth check entirely (see the StaticLocalizedRoute
-  // note above and ROADMAP.md T-81).
+  // T-81 (seller profile): the public seller listing, exact path only. Its
+  // sibling protected routes under the same /antojos/sellers prefix migrate
+  // one by one (see the seller onboarding entries below), each as its own
+  // exact entry - matchSubpaths: true here would rewrite every one of them,
+  // migrated or not, into a [locale] lookup that 404s the ones with no
+  // [locale] file yet (see the StaticLocalizedRoute note above).
   { kind: 'static', path: '/antojos/sellers/list', matchSubpaths: false },
   // A seller id is a Mongo ObjectId too, same shape as a product id, so this
   // reuses the exact same DynamicLocalizedRoute machinery. The extra
@@ -121,6 +120,14 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // screen). See ROADMAP.md T-81 for the full note.
   { kind: 'static', path: '/auth/login', matchSubpaths: false },
   { kind: 'static', path: '/auth/register', matchSubpaths: false },
+  // T-81 (seller onboarding): the first two gated routes to migrate -
+  // signing up as a seller and waiting for approval. Safe to list only
+  // because the middleware now runs isProtectedRoute BEFORE isIntlRoute, and
+  // PROTECTED_ROUTE_PATTERNS (src/lib/route-guards.ts) already carry an /en
+  // twin of both. The rest of the seller's forms (products, profile/edit,
+  // schedules) stay bare until their own PRs.
+  { kind: 'static', path: '/antojos/sellers/register', matchSubpaths: false },
+  { kind: 'static', path: '/antojos/sellers/approving', matchSubpaths: false },
 ];
 
 // Prefixes `path` with `locale` when it falls under a LOCALIZED_ROUTES

@@ -1,5 +1,6 @@
 import { compressImageForUpload } from '@/lib/compressImageForUpload';
 import { logger } from '@/lib/logger';
+import { useTranslations } from 'next-intl';
 import React, { useRef, useState } from 'react';
 
 export default function ImageGrid({
@@ -9,6 +10,9 @@ export default function ImageGrid({
   title,
   maxImages,
 }) {
+  // T-81: shared by the seller's forms, migrated and not; the root layout's
+  // NextIntlClientProvider covers both, so the unmigrated ones get Spanish.
+  const t = useTranslations('ImageGrid');
   const [images, setImages] = useState(initialImages || []);
   const [loading, setLoading] = useState(false);
   // T-116b: the fileId each upload in this session returned, keyed by URL, and
@@ -44,9 +48,7 @@ export default function ImageGrid({
 
     if (!uploadFile) {
       setLoading(false);
-      alert(
-        'Esta imagen es muy pesada y no se pudo reducir lo suficiente para subirla. Prueba con otra foto o recórtala antes de subirla.'
-      );
+      alert(t('tooLarge'));
       return;
     }
 
@@ -73,7 +75,7 @@ export default function ImageGrid({
       onUpdateImages(updatedImages); // Update parent component
     } catch (error) {
       logger.error('Error uploading image:', error);
-      alert('Hubo un problema al subir la imagen. Inténtalo de nuevo.');
+      alert(t('uploadFailed'));
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ export default function ImageGrid({
       onUpdateImages(updatedImages);
     } catch (error) {
       logger.error('Error eliminando imagen:', error);
-      alert('Hubo un problema al eliminar la imagen.');
+      alert(t('deleteFailed'));
     }
   };
 
@@ -128,7 +130,7 @@ export default function ImageGrid({
           >
             <img
               src={image}
-              alt={`Imagen del producto ${index + 1}`}
+              alt={t('imageAlt', { index: index + 1 })}
               className='w-full h-full object-cover'
             />
             <button
@@ -145,11 +147,11 @@ export default function ImageGrid({
         {images.length < maxImages && (
           <div className='w-32 h-32 border-2 border-dashed border-base-300 flex items-center justify-center rounded-md'>
             {loading ? (
-              <p className='text-sm text-gray-500 dark:text-base-content/70'>Subiendo...</p>
+              <p className='text-sm text-gray-500 dark:text-base-content/70'>{t('uploading')}</p>
             ) : (
               <label className='cursor-pointer'>
                 <span className='text-gray-500 dark:text-base-content/70 text-sm font-medium'>
-                  + Agregar
+                  {t('add')}
                 </span>
                 <input
                   type='file'

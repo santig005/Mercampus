@@ -11,6 +11,9 @@ const gatedRoutes = [
   '/antojos/product/add',
   '/antojos/sellers/products/edit',
   '/antojos/sellers/approving',
+  // T-81 (seller onboarding): gated all along, missing here. It matters now
+  // that /en/antojos/sellers/register is a real page, not a 404.
+  '/antojos/sellers/register',
 ];
 
 test.describe('the seller screens are gated (T-84)', () => {

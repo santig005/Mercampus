@@ -85,8 +85,13 @@ const isAdminRoute = createRouteMatcher(ADMIN_ROUTE_PATTERNS);
 // same /antojos/sellers prefix (register, profile/edit, products/edit,
 // schedules, approving - see isProtectedRoute below) are not 24-hex-only
 // single segments, so buildDynamicPattern's anchoring keeps them out of
-// isIntlRoute and still gated by isProtectedRoute. Verified in
-// tests/unit/routing.test.js and live (see ROADMAP.md T-81).
+// that dynamic entry. Verified in tests/unit/routing.test.js and live (see
+// ROADMAP.md T-81).
+//
+// T-81 (seller onboarding): register and approving are now in isIntlRoute
+// on purpose, as `static` exact entries - the first gated routes to be. That
+// is only safe because of the ordering below: isProtectedRoute has already
+// run (with an /en twin) by the time isIntlRoute is reached.
 //
 // T-81 (auth zone): /auth/login and /auth/register are `static` exact
 // entries too. /auth/callback is intentionally absent - it is not gated by

@@ -1,18 +1,35 @@
 "use client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useSeller } from "@/context/SellerContext";
 import { useCheckSeller } from "@/context/SellerContext";
 import Loading from "@/components/general/Loading";
 import { BsWhatsapp } from 'react-icons/bs';
 
+// T-81 (seller onboarding): moved from src/app/antojos/sellers/approving/
+// (deleted). Client Component, so no `params`: src/app/[locale]/layout.jsx
+// sets the request locale for the subtree. useCheckSeller localizes its own
+// redirect, so an approved seller sent away from /en/... keeps English
+// wherever the destination has a twin.
 const SellerApprovalStatus = () => {
+  const t = useTranslations("SellerApproving");
   const { checkedSeller } = useCheckSeller("sellerNotApproved", "/antojos/sellers/schedules");
   const {seller} = useSeller();
   //const { checkedSeller, seller } = useCheckSeller("sellerNotApproved", "/antojos/sellers/schedules");
 
   if(!checkedSeller){return <Loading />}
-  const whatsappUrl = `https://wa.me/573197139921?text=Holaa,%20soy%20el%20vendedor%20${seller?.businessName},%20me%20registré%20en%20Mercampus,%20podrías%20revisar%20mi%20solicitud%20para%20aprobarme?`;
+  // `?? ''`: useCheckSeller lets seller === "None" (a signed-in user with no
+  // seller profile) through to this page - see ROADMAP.md T-134 - and an
+  // undefined ICU argument is a formatting error, where the old JSX just
+  // rendered "Hola .".
+  const name = seller?.businessName ?? "";
+  // The message is written in the seller's language: it is their words to
+  // the Mercampus team. encodeURIComponent, not hand-written %20s - the
+  // business name used to go into the URL raw, so an "&" in it cut the
+  // message short.
+  const whatsappUrl = `https://wa.me/573197139921?text=${encodeURIComponent(
+    t("whatsappMessage", { name })
+  )}`;
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-base-200 p-8">
@@ -30,17 +47,16 @@ const SellerApprovalStatus = () => {
           class that is not itself a daisyUI token. */}
       <div className="bg-primary-orange rounded-lg p-6 text-center">
       <h1 className="text-3xl font-bold mb-4 text-white">
-          <span>Hola {seller?.businessName}</span>.
+          <span>{t("greeting", { name })}</span>.
         </h1>
         <h1 className="text-3xl font-bold mb-4 text-white">
-          Tu estado de vendedor está en proceso de aprobación
+          {t("heading")}
         </h1>
         <p className="text-lg mb-4 text-white">
-          Por favor, espera mientras revisamos la información de tu negocio.
-          Entra más tarde.
+          {t("body")}
         </p>
         <p className="text-sm text-white mb-4">
-        Para más agilidad, o si tienes alguna pregunta, puedes contactarnos directamente.
+        {t("contactHint")}
         </p>
         <a
             href={whatsappUrl}
@@ -49,7 +65,7 @@ const SellerApprovalStatus = () => {
             className="inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 transition-colors"
           >
             <BsWhatsapp className="mr-2" />
-            Contactar/Pedir aprobación por WhatsApp
+            {t("whatsappCta")}
           </a>
       </div>
     </div>

@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -149,21 +152,35 @@ describe('localizedHref for the seller profile zone (T-81)', () => {
     );
   });
 
-  // The trap this whole task is built to avoid: isIntlRoute runs before
-  // isProtectedRoute in src/middleware.js and returns early on a match, so
-  // any of these being swallowed here would be a real auth bypass, not a
-  // cosmetic bug. None of the six is a bare 24-hex segment, so
-  // buildDynamicPattern's anchoring keeps every one of them out, and none is
-  // the exact string '/antojos/sellers/list' either.
-  // T-81 (middleware gate): this used to be a local copy of the list. It is
-  // now the imported PROTECTED_PATHS - the same array src/middleware.js
-  // builds its matcher from - so these assertions track the real gate
-  // instead of a snapshot of it that silently stops matching.
+  // This used to assert that NO protected route is ever prefixed, because
+  // isIntlRoute ran before isProtectedRoute in src/middleware.js and a match
+  // there skipped the auth check. T-81's middleware-gate PR reversed that
+  // order (the gate is proven for every locale in its own describe block
+  // below), so the seller onboarding zone could list its two routes.
+  //
+  // What is left to guard is that the list and the disk agree: a protected
+  // route is prefixed if and only if its page lives under src/app/[locale]/.
+  // Prefixed without the file, the English link 404s; the file without the
+  // entry, the page is only reachable in Spanish and a soft navigation drops
+  // the locale. Each future forms-zone PR flips its rows by moving the file
+  // and adding the entry together - neither half alone passes.
   it.each(PROTECTED_PATHS)(
-    'does not prefix the protected route %s (would otherwise bypass the auth gate)',
+    'prefixes the protected route %s only if it has a [locale] page',
     (path) => {
-      expect(localizedHref(path, 'en')).toBe(path);
+      const migrated = existsSync(
+        resolve(process.cwd(), `src/app/[locale]${path}/page.jsx`)
+      );
+      expect(localizedHref(path, 'en')).toBe(migrated ? `/en${path}` : path);
       expect(localizedHref(path, 'es')).toBe(path);
+    }
+  );
+
+  // Pinned by name, so the test above cannot pass by both halves vanishing
+  // at once (say, the pages moved back and the entries dropped).
+  it.each(['/antojos/sellers/register', '/antojos/sellers/approving'])(
+    'the seller onboarding route %s is migrated',
+    (path) => {
+      expect(localizedHref(path, 'en')).toBe(`/en${path}`);
     }
   );
 
@@ -258,6 +275,8 @@ describe('stripLocalePrefix (T-81)', () => {
     `/marketplace/${ID}`,
     '/antojos/sellers/list',
     `/antojos/sellers/${ID}`,
+    '/antojos/sellers/register',
+    '/antojos/sellers/approving',
   ])('round-trips %s to its own twin, not to the listing', (path) => {
     expect(localizedHref(stripLocalePrefix(path), 'en')).toBe(`/en${path}`);
     expect(localizedHref(stripLocalePrefix(`/en${path}`), 'es')).toBe(path);

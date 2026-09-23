@@ -2465,7 +2465,9 @@ same pattern applied to a different migration):
 | product detail | `/antojos/[id]`, `/marketplace/[id]` | **done** |
 | seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
 | auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
-| seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending — **middleware gate done first, see below** |
+| seller's own forms — onboarding | `/antojos/sellers/register`, `/antojos/sellers/approving` | **done** (see "Seller onboarding zone notes") |
+| seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | pending |
+| seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | pending |
 | admin | `/admin/*` | **skipped on purpose** (decision 2026-09-19, reasoning below) — gate hardened anyway |
 **Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
 matches `/antojos`, `/en/antojos`, `/marketplace`, `/en/marketplace` as
@@ -2848,6 +2850,59 @@ the way `/antojos/sellers/panel` already gates itself.
   routes are migrated. That is the **next PR**, before the pages move.
 - **`GET /api/sellers/admin` has no authorization of its own** - filed
   separately below, see T-133.
+**Seller onboarding zone notes (this PR, 2026-09-23).** The forms zone was
+split in three before starting (table above): its 7 pages are ~785 lines and
+pull in ~1,300 more of components with copy of their own (`EditSellerForm`,
+`Schedule`, `EditProductForm`, `ImageGrid`, `UniGraphicSelector`) - well past
+CLAUDE.md's ~15-file ceiling as one PR. Split by the seller's journey: sign up
+and wait (this PR), manage products, edit profile and schedule. Onboarding
+went first because `/approving` is where every other forms page redirects an
+unapproved seller, so it is already migrated when they are.
+- **The first gated routes in `LOCALIZED_ROUTES`.** `/antojos/sellers/register`
+  and `/antojos/sellers/approving` are `static` exact entries. Safe only
+  because of the middleware gate above: `isProtectedRoute` (with its `/en`
+  twin) runs before `isIntlRoute`. `tests/e2e/auth-gate.spec.js` was missing
+  `/register` entirely - added, so `/en/antojos/sellers/register` with no
+  session is proven to land on the login, not the page.
+- **The unit guardrail changed meaning, on purpose.** It asserted that *no*
+  protected route is ever prefixed - true while `isIntlRoute` ran first,
+  obsolete since the gate PR. It now asserts that a protected route is
+  prefixed **if and only if** `src/app/[locale]<path>/page.jsx` exists, so a
+  future forms PR has to move the file and add the entry together: the entry
+  alone 404s the English link, the file alone strands the page in Spanish.
+  Both onboarding routes are also pinned by name, so the check cannot pass by
+  both halves disappearing.
+- **`useCheckSeller` localizes every redirect** (`src/context/SellerContext.js`),
+  through `localizedHref`, which leaves a destination with no `[locale]` file
+  bare. That closes 5 of the ~14 call sites listed above in one place - the
+  hook's own 4, plus `routeIfNot` for every caller - without the callers
+  changing. The register page's own `router.push` to `/approving` is the 6th.
+  `SideBar`'s links were already covered: `SidebarBtn` calls `localizedHref`.
+  Still bare and still fine: `panel`'s server `redirect()`s (unmigrated page,
+  T-44's territory).
+- **Shared components translated, not forked:** `ImageGrid` (4 importers) and
+  `UniGraphicSelector` (2). The root layout's `NextIntlClientProvider` covers
+  every route, so on the unmigrated forms they keep rendering Spanish.
+  `InputFields` needed nothing - its copy arrives by props.
+- **The WhatsApp approval message is translated and now URL-encoded.** It
+  used to be hand-written `%20`s with the business name inserted raw, so an
+  `&` in a name cut the message short. `encodeURIComponent` fixes that as a
+  side effect of moving the text into `messages/`.
+- **Verified with the real screens, not just the redirects.** The T-84 session
+  is an approved seller, for whom neither page renders. The new
+  `tests/e2e/signed-in/seller-onboarding-i18n.spec.js` flips the fixture in the
+  e2e database (un-approves it, or unlinks its seller) to render each page in
+  both languages, and restores it in `afterEach`, failures included, because
+  later specs rely on it. It also proves the redirect this PR localizes: a
+  pending seller on `/en/.../register` lands on `/en/.../approving`.
+- **Rule 9, found on the way, not fixed here** - filed as **T-134**: the
+  register form never shows its errors and corrupts its own state on a failed
+  submit, and `useCheckSeller` lets a user with no seller profile onto
+  `/approving`. Also: the note above says `robots.ts` lists "4 of the 6"
+  protected paths - it lists all 6. What is really missing there is the `/en`
+  twins, of these two routes and of `/auth/` (since the auth zone). Low stakes,
+  since each of those URLs redirects a crawler with no session to the login,
+  but worth fixing with the last forms PR, once every twin exists.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
@@ -5845,3 +5900,30 @@ still needed rather than deleting it on the assumption that it is not.
 why the handler looks like this), T-104 (`isClerkAdmin` as the single
 definition), T-81 (where this was found).
 **Model:** `opus` (authorization) · **Nightly:** no
+
+### [ ] T-134 · The seller register form hides its errors and corrupts its own state
+**Why:** found during T-81's seller onboarding zone (rule 9), measured by
+reading the code, not reproduced in a browser.
+[`src/app/[locale]/antojos/sellers/register/page.jsx`](src/app/[locale]/antojos/sellers/register/page.jsx):
+- **Errors are never shown.** `handleSubmit` stores the API's message in
+  `errorCode`, and nothing renders it: `FcHighPriority` and `IoClose` are
+  imported for an error modal that is not in the JSX. A rejected submit (a
+  Zod 400, a duplicate) just re-enables the button. `/antojos/product/add`
+  has the modal and, since T-119, the per-field `fields` list; this page
+  has neither.
+- **A failed submit changes what the seller typed.** It assigns
+  `sellerData.logo` and `sellerData.description = JSON.stringify(...)` onto
+  the state object itself. After a failure the textarea shows the
+  description wrapped in quotes, and a retry stringifies it a second time.
+- **`useCheckSeller` lets a user with no seller profile onto `/approving`**
+  (`src/context/SellerContext.js`): `seller === "None"` is a truthy string,
+  so the `sellerNotApproved` branch reads `"None".approved` (undefined) and
+  lets them through to "Hola ." with an approval request for a business that
+  does not exist. Same shape in the `sellerApproved` branch, which sends them
+  to `routeIfNot` (usually `/approving`) instead of to `/register`.
+**Done when:** a rejected submit shows what was wrong (reuse product/add's
+modal and `fields` handling rather than a third copy), the submit builds its
+payload without mutating state, and `useCheckSeller` sends `"None"` to
+`/register` from both branches. Each proven by a test that fails before
+the change.
+**Model:** `sonnet` · **Nightly:** yes
