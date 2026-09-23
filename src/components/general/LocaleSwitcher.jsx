@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { localizedHref, routing, stripLocalePrefix } from '@/i18n/routing';
+import { isProtectedPath } from '@/lib/route-guards';
 
 // Plain <a> tags on purpose: NextIntlClientProvider lives in the root
 // layout (src/app/layout.jsx), which Next.js keeps mounted across
@@ -26,6 +27,12 @@ export default function LocaleSwitcher() {
   const t = useTranslations('LocaleSwitcher');
 
   const defaultLocalePath = stripLocalePrefix(pathname);
+
+  // Not on the seller's own screens: the full navigation below would throw
+  // away a half-filled form with no warning. The seller already arrives in
+  // their language (the sidebar keeps the locale); to change it they switch
+  // on any other page. See isProtectedPath for the decision.
+  if (isProtectedPath(defaultLocalePath)) return null;
 
   return (
     <div className="flex items-center gap-2 text-sm sm:text-base">

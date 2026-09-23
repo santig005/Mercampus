@@ -50,6 +50,11 @@ data or real access, and the human has asked for them to wait:
 - **T-117** (orphan images) - deletes against production media. T-116 is
   done, so its lookup (`findImageFile`) is there to build on.
 - **T-118** (ImageKit per environment) - waits on T-63 and a dashboard key.
+- **T-136** (`GET /api/users/[id]` / `GET /api/sellers/[id]` have no
+  authorization) - the fix itself is agent-sized (same shape as T-10), but
+  it touches the same identity/ownership surface as the admin-role work
+  above, and confirming nothing under `src/` still depends on the current
+  unauthenticated shape needs a full reference search before gating it.
 
 Everything below still assumes **rule 1**: branch from `agent/develop`, PR
 into `agent/develop`, never push to `main` or `develop`.
@@ -75,6 +80,8 @@ marked done. T-85 stays, batch 2 only.
 |---|---|---|
 | **T-85** (batch 2 only, 20 files listed in the entry) · Spanish left in test descriptions | Renames `describe`/`it` strings only. No source, no behaviour. The entry names the trap: renaming a test is safe, changing a string a test *asserts on* is not. | `npm run verify`. The same tests pass, with English names. |
 | **T-127** · The add-product error dialog is unreadable in dark mode | One `<dialog>`, a color problem the screenshots already pinned down (`docs/audits/t-119/`). No data, no auth, no other screen touched. | A real screenshot in both themes (rule 3), text legible in each. |
+| **T-142** · `sellerSchema2.ts` carries a stale `2` | A rename, no behavior change, no schema shape change. | `npm run verify`, plus a grep confirming no import still says `sellerSchema2`. |
+| **T-140** · No written boundary between `utils/`+`services/` and `server/`+`lib/` | Doc-only change to `CLAUDE.md`. No code touched. | The new lines describe what is actually true today, cross-checked against this task's own findings. |
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -94,6 +101,11 @@ already warns about, and getting it wrong wastes a PR:
 - **T-124** · Photos over 4.5 MB. Option (a), shrinking in the browser, is
   agent-sized; verifying it needs a real large file in a browser, and option
   (b) must not be taken without checking what the upload signature binds.
+- **T-141** · Two error-response shapes coexist in `src/app/api/`. Migrating
+  a route to `errorResponse()` is mechanical and well precedented, but do it
+  in small batches (like T-80's `console.log` cleanup) — a bad migration in
+  one route should not block the rest, and each route's tests need to keep
+  asserting the same status codes after the shape changes.
 - **T-44** · Seller panel. Unblocked (T-40 is done), but it is new UI, and
   CLAUDE.md rule 3 means a real screenshot, not a test that greps for a class
   name. If you cannot render it in your session, say so in the PR instead of
@@ -122,6 +134,15 @@ already warns about, and getting it wrong wastes a PR:
   already open awaiting review.
 - **T-30/31/32**, and the feature epics (**T-41/42/43/45/50/51/52/53/68**) -
   architecture and product shape, `opusplan` in an interactive session.
+- **T-137** · the `agent/develop → develop` promotion itself, and whatever
+  batching strategy replaces reviewing it commit by commit - a process
+  decision, not code.
+- **T-138** · how to split `ROADMAP.md` without breaking entries a rule in
+  CLAUDE.md still points to - needs sign-off before moving anything, per
+  rule 2 and "Qué NO hacer sin preguntar."
+- **T-139** · whether per-touch TypeScript conversion becomes a standing
+  rule in CLAUDE.md, or the current ~72% JS in `src/` is accepted as the
+  pace going forward - a scope decision, not a migration to execute.
 
 ---
 
@@ -2465,7 +2486,9 @@ same pattern applied to a different migration):
 | product detail | `/antojos/[id]`, `/marketplace/[id]` | **done** |
 | seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
 | auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
-| seller's own forms | `/antojos/sellers/register`, `/profile/edit`, `/products/edit(/[id])`, `/schedules`, `/approving`, `/antojos/product/add` | pending — **middleware gate done first, see below** |
+| seller's own forms — onboarding | `/antojos/sellers/register`, `/antojos/sellers/approving` | **done** (see "Seller onboarding zone notes") |
+| seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | pending |
+| seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | pending |
 | admin | `/admin/*` | **skipped on purpose** (decision 2026-09-19, reasoning below) — gate hardened anyway |
 **Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
 matches `/antojos`, `/en/antojos`, `/marketplace`, `/en/marketplace` as
@@ -2848,6 +2871,79 @@ the way `/antojos/sellers/panel` already gates itself.
   routes are migrated. That is the **next PR**, before the pages move.
 - **`GET /api/sellers/admin` has no authorization of its own** - filed
   separately below, see T-133.
+**Seller onboarding zone notes (this PR, 2026-09-23).** The forms zone was
+split in three before starting (table above): its 7 pages are ~785 lines and
+pull in ~1,300 more of components with copy of their own (`EditSellerForm`,
+`Schedule`, `EditProductForm`, `ImageGrid`, `UniGraphicSelector`) - well past
+CLAUDE.md's ~15-file ceiling as one PR. Split by the seller's journey: sign up
+and wait (this PR), manage products, edit profile and schedule. Onboarding
+went first because `/approving` is where every other forms page redirects an
+unapproved seller, so it is already migrated when they are.
+- **The first gated routes in `LOCALIZED_ROUTES`.** `/antojos/sellers/register`
+  and `/antojos/sellers/approving` are `static` exact entries. Safe only
+  because of the middleware gate above: `isProtectedRoute` (with its `/en`
+  twin) runs before `isIntlRoute`. `tests/e2e/auth-gate.spec.js` was missing
+  `/register` entirely - added, so `/en/antojos/sellers/register` with no
+  session is proven to land on the login, not the page.
+- **The unit guardrail changed meaning, on purpose.** It asserted that *no*
+  protected route is ever prefixed - true while `isIntlRoute` ran first,
+  obsolete since the gate PR. It now asserts that a protected route is
+  prefixed **if and only if** `src/app/[locale]<path>/page.jsx` exists, so a
+  future forms PR has to move the file and add the entry together: the entry
+  alone 404s the English link, the file alone strands the page in Spanish.
+  Both onboarding routes are also pinned by name, so the check cannot pass by
+  both halves disappearing.
+- **`useCheckSeller` localizes every redirect** (`src/context/SellerContext.js`),
+  through `localizedHref`, which leaves a destination with no `[locale]` file
+  bare. That closes 5 of the ~14 call sites listed above in one place - the
+  hook's own 4, plus `routeIfNot` for every caller - without the callers
+  changing. The register page's own `router.push` to `/approving` is the 6th.
+  `SideBar`'s links were already covered: `SidebarBtn` calls `localizedHref`.
+  Still bare and still fine: `panel`'s server `redirect()`s (unmigrated page,
+  T-44's territory).
+- **Shared components translated, not forked:** `ImageGrid` (4 importers) and
+  `UniGraphicSelector` (2). The root layout's `NextIntlClientProvider` covers
+  every route, so on the unmigrated forms they keep rendering Spanish.
+  `InputFields` needed nothing - its copy arrives by props.
+- **The WhatsApp approval message is translated and now URL-encoded.** It
+  used to be hand-written `%20`s with the business name inserted raw, so an
+  `&` in a name cut the message short. `encodeURIComponent` fixes that as a
+  side effect of moving the text into `messages/`.
+- **Verified with the real screens, not just the redirects.** The T-84 session
+  is an approved seller, for whom neither page renders. The new
+  `tests/e2e/signed-in/seller-onboarding-i18n.spec.js` flips the fixture in the
+  e2e database (un-approves it, or unlinks its seller) to render each page in
+  both languages, and restores it in `afterEach`, failures included, because
+  later specs rely on it. It also proves the redirect this PR localizes: a
+  pending seller on `/en/.../register` lands on `/en/.../approving`.
+- **Rule 9, found on the way, not fixed here** - filed as **T-134**: the
+  register form never shows its errors and corrupts its own state on a failed
+  submit, and `useCheckSeller` lets a user with no seller profile onto
+  `/approving`. Also: the note above says `robots.ts` lists "4 of the 6"
+  protected paths - it lists all 6. What is really missing there is the `/en`
+  twins, of these two routes and of `/auth/` (since the auth zone). Low stakes,
+  since each of those URLs redirects a crawler with no session to the login,
+  but worth fixing with the last forms PR, once every twin exists.
+**No locale switcher on the seller's gated screens (human decision on PR
+#373, 2026-09-23) - applies to all three forms zones, not just this one.**
+Found in review: moving `/register` under `[locale]/antojos/layout.jsx` gave
+it a `LocaleSwitcher` it never had, and the switcher is a full page
+navigation on purpose (T-46), while the form keeps everything in `useState`.
+Reproduced in a real browser: four fields filled, "English" clicked, the
+page came back at `/en/...` with every field empty and no warning. On the
+product forms it would be worse - `ImageGrid` uploads each photo the moment
+it is picked, so switching would also orphan those files in ImageKit (T-117).
+Options weighed: (A) hide the switcher on protected paths; (B) persist a
+draft before navigating; (C) a `beforeunload` warning - cheap, but it misses
+soft navigations and iOS Safari does not show it, which is where students
+are; (D) document it. **Chose A:** `LocaleSwitcher` returns `null` when
+`isProtectedPath()` (`src/lib/route-guards.ts`) matches, which reuses
+`PROTECTED_PATHS` instead of a second list, so the products and profile
+zones are covered without touching it again. It also hides on `/approving`
+and the product list, which are not forms - harmless. Cost, accepted: a
+seller who reads English and lands on a form in Spanish (an old bare link)
+has to switch on another page and come back. **B is filed as T-135**; when it
+lands, the switcher can come back to these routes.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
@@ -5845,3 +5941,254 @@ still needed rather than deleting it on the assumption that it is not.
 why the handler looks like this), T-104 (`isClerkAdmin` as the single
 definition), T-81 (where this was found).
 **Model:** `opus` (authorization) · **Nightly:** no
+
+### [ ] T-134 · The seller register form hides its errors and corrupts its own state
+**Why:** found during T-81's seller onboarding zone (rule 9), measured by
+reading the code, not reproduced in a browser.
+[`src/app/[locale]/antojos/sellers/register/page.jsx`](src/app/[locale]/antojos/sellers/register/page.jsx):
+- **Errors are never shown.** `handleSubmit` stores the API's message in
+  `errorCode`, and nothing renders it: `FcHighPriority` and `IoClose` are
+  imported for an error modal that is not in the JSX. A rejected submit (a
+  Zod 400, a duplicate) just re-enables the button. `/antojos/product/add`
+  has the modal and, since T-119, the per-field `fields` list; this page
+  has neither.
+- **A failed submit changes what the seller typed.** It assigns
+  `sellerData.logo` and `sellerData.description = JSON.stringify(...)` onto
+  the state object itself. After a failure the textarea shows the
+  description wrapped in quotes, and a retry stringifies it a second time.
+- **`useCheckSeller` lets a user with no seller profile onto `/approving`**
+  (`src/context/SellerContext.js`): `seller === "None"` is a truthy string,
+  so the `sellerNotApproved` branch reads `"None".approved` (undefined) and
+  lets them through to "Hola ." with an approval request for a business that
+  does not exist. Same shape in the `sellerApproved` branch, which sends them
+  to `routeIfNot` (usually `/approving`) instead of to `/register`.
+**Done when:** a rejected submit shows what was wrong (reuse product/add's
+modal and `fields` handling rather than a third copy), the submit builds its
+payload without mutating state, and `useCheckSeller` sends `"None"` to
+`/register` from both branches. Each proven by a test that fails before
+the change.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-135 · Seller forms lose everything on any full navigation - keep a draft
+**Why:** decided on PR #373 (T-81). Every seller form (`/register`,
+`/antojos/product/add`, `EditProductForm`, `EditSellerForm`) keeps its state
+in `useState` only, so a reload, the back button, or any full navigation
+throws away what the seller typed. T-81 hid the locale switcher on those
+screens (option A) because it had made that loss one click away; this is the
+fix that would let it come back, and it also covers the losses the switcher
+was never responsible for. Measured on `/register`: four fields filled, one
+full navigation, all four empty, no warning.
+**The traps, each a reason this is its own task:**
+- The edit forms are prefilled from the server. A saved draft must be keyed
+  by the entity id and dropped on a successful save, or it silently
+  overwrites data newer than itself.
+- `ImageGrid` reads `initialImages` only on mount, and its `fileId` map
+  (T-116b) is per-mount - a restored draft needs a remount and loses the
+  fast-delete path, falling back to delete-by-URL.
+- Photos are already in ImageKit when picked. Restoring their URLs is the
+  upside (no orphan, T-117); dropping a draft without deleting them is the
+  downside to decide.
+- `sessionStorage` would hold the seller's phone number - per tab and
+  cleared with it, but say so.
+**Done when:** a half-filled form survives a reload and a locale switch, a
+submitted one leaves no draft behind, an edit form never shows a draft older
+than the server's data, and each is proven in a real browser. Then decide
+whether `LocaleSwitcher` comes back on these routes (see T-81).
+**Model:** `opus` · **Nightly:** no (needs the human on the ImageKit trade-off)
+
+### [ ] T-136 · `GET /api/users/[id]` and `GET /api/sellers/[id]` have no authorization at all
+**Why:** flagged as "found, not fixed" during T-12 (see the note left in
+that entry) and never given its own ticket since. Measured by reading the
+handlers directly, not from the ROADMAP note alone:
+[`src/app/api/users/[id]/route.js`](src/app/api/users/[id]/route.js) takes
+whatever is in `params.id` — an ObjectId or an email, it branches on
+whether it contains `@` — and returns the full `User` document (`role`,
+`sellerId`, `clerkId`, email, name) with **no `auth()` call at all**. Same
+shape in
+[`src/app/api/sellers/[id]/route.js`](src/app/api/sellers/[id]/route.js)
+GET, which returns the full `Seller` document including `phoneNumber` and
+`userId` to anyone who supplies an id or email — that number is normally
+only ever handed out through the WhatsApp deep link the frontend builds,
+never through a direct query. Neither path is covered by
+`PROTECTED_ROUTE_PATTERNS` or `ADMIN_ROUTE_PATTERNS` in
+`src/lib/route-guards.ts`/`src/middleware.js`, so there is no outer layer
+covering them either. This is a live account-enumeration oracle: an email
+tried against `/api/users/<email>` confirms whether it is registered and
+with what role, exactly the shape T-12c already removed once from
+`/api/users/user-with-seller/[email]`.
+**Done when:** both routes require a session; each caller can only read
+their own `User`/`Seller` document unless they are an admin (reuse
+`getClerkUserId`/`isClerkAdmin` from `src/utils/lib/auth.ts`, not a new
+helper). If nothing under `src/` still calls these routes by id-that-isn't-
+the-caller's-own, consider deleting them instead of gating them — confirm
+with a reference search first (rule 7).
+**Also noticed in `users/[id]`, same file:** the `catch` block does
+`logger.debug(params)` before returning the generic 500 — harmless at
+`debug` level today, but worth checking it never gets bumped to a level
+that reaches production logs with a raw email in it.
+**Scope:** `src/app/api/users/[id]/route.js`,
+`src/app/api/sellers/[id]/route.js`, tests in `tests/integration/`
+following the same pattern as `autorizacion.test.js` (401 with no session,
+403 for someone else's id, 200 for the owner or an admin).
+**Model:** `opus` — same class of bug as T-10/T-10b, no corners cut
+**Nightly:** no
+
+### [ ] T-137 · The `agent/develop → develop` promotion has stalled, and the automation waiting behind it has never gone live
+**Why:** measured directly, not assumed — `git log --oneline develop..agent/develop`
+returns 316 commits, and `git log --oneline agent/develop..develop` returns
+zero: `develop` has nothing `agent/develop` doesn't already have, it is
+purely behind. Reviewing 316 commits one at a time to promote them, the way
+rule 1 describes the gate working, is no longer realistic at this size —
+whatever decides the promotion now needs to work in batches (e.g. trusting
+that each individual PR already passed `quality` against `agent/develop`,
+and reviewing the promotion PR's diff as a whole rather than commit by
+commit), or the gate itself needs rethinking.
+**What this is blocking, concretely:** `.github/workflows/agent-branch-cleanup.yml`
+and `.github/workflows/roadmap-review-reminder.yml` both exist, are
+presumably working (T-62/T-62c mark them done), and both use `schedule`,
+which GitHub Actions only fires from the repository's **default** branch.
+Neither has ever run on its own trigger, because neither has been promoted
+past `agent/develop`. Same for whatever `nightly-agent.yml` workflow is
+supposed to pick up tasks marked `Nightly: yes` — the "Starting a fresh
+session" section at the top of this file and the "From here on you can turn
+on the cron" note under T-06 both assume it exists; there is no
+`nightly-agent.yml` under `.github/workflows/` today.
+**Also piling up behind the same gate:** dozens of `worktree-agent-*` local
+branches and `.claude/worktrees/agent-*` directories, each with its own
+`node_modules` and `.next`. `agent-branch-cleanup.yml` only deletes merged
+`agent/<task-id>` branches (by design, see T-62); it does not touch
+worktrees. Once cleanup is live this may age out on its own, but it is worth
+confirming rather than assuming.
+**Done when:** either a human promotion happens (out of scope for an agent
+to do unilaterally) or, if the task is to make promotion itself easier,
+propose — don't execute — a batching strategy (e.g. promote in dated
+chunks, or gate promotion on `agent/develop`'s own CI history rather than
+re-reviewing) and write it up here for the human to decide. Confirm whether
+the stale `worktree-agent-*` directories are safe to remove and, if so,
+whether that belongs in `cleanup-agent-branches.mjs` or a separate script.
+**Model:** `opusplan` — this is a process/architecture decision, not
+mechanical work · **Nightly:** no (needs the human to decide the promotion
+strategy)
+
+### [ ] T-138 · `ROADMAP.md` itself is becoming too large to read at the start of a session
+**Why:** measured, not a feeling — the file is 5700+ lines long and reading
+it in full already exceeds a single normal read (2000 lines) for tooling
+that caps reads at that size. Every fresh session that follows CLAUDE.md's
+instruction to read this file first now pays for that in tokens before
+doing any actual work, and it will only grow: T-62c's monthly reminder
+helps prune what is stale but does not reduce what is already there.
+**Done when:** a decision (not necessarily this task's own execution) on
+how to split the file without breaking the "the entries are the contract"
+principle — candidates: move `[x]` tasks older than some cutoff, or entire
+phases that are fully done, into a `docs/roadmap-archive/` file per phase,
+linked from here, while `ROADMAP.md` keeps only `[ ]`/`[~]` tasks plus
+enough closed history to explain *why* a rule in CLAUDE.md exists (e.g. the
+T-12b–T-12h Clerk-instance story, or T-100's bad test, cannot move to an
+archive nobody reads if a rule still depends on that context being nearby).
+**Careful:** this is exactly the kind of large, mechanical-looking
+reorganization rule 2 and the "Qué NO hacer sin preguntar" section warn
+about (more than ~15 files is already too much for one PR; moving history
+out of the single most-read file in the repo is bigger than that in effect
+even if it only touches one or two files) — split it by phase, one PR per
+phase, and get sign-off before moving anything a rule elsewhere still
+points to.
+**Model:** `opusplan` · **Nightly:** no
+
+### [ ] T-139 · `src/` is still ~72% JavaScript, and nothing is migrating it forward
+**Why:** measured, not estimated — counting files directly under `src/`
+today: 112 `.js`/`.jsx` against 43 `.ts` (no `.tsx` exists at all: every
+component with JSX is still `.jsx`, even ones written after T-05). T-05
+deliberately scoped the initial TypeScript migration to `src/utils/models/`
+and `src/utils/lib/`, "the rest migrates task by task, not all at once" —
+but no task since has picked that up as its own goal. `src/server/` and
+`src/lib/` are TS because everything written there is new, not because
+anything old got converted. At the current rate, `src/components/` and most
+of `src/app/` stay untyped indefinitely by default, not by decision.
+**Not proposing a mass conversion** — that is exactly the "no rewrites past
+~15 files" rule, and a mechanical `.jsx` → `.tsx` pass with `any` sprinkled
+in to make the compiler quiet would cost the safety net it is supposed to
+add. What is missing is a decision: is the target still "eventually all of
+`src/`", and if so, does converting a file to TypeScript become part of the
+"cuestiona lo que ya está" checklist (rule 9) whenever a task already has a
+JS/JSX file open for an unrelated reason — the same way that rule already
+asks "should this be deleted?" for dead code.
+**Done when:** the human either confirms that per-touch conversion is the
+intended pace (in which case CLAUDE.md's "Convenciones de código" gets a
+line saying so, so an agent editing a `.jsx` file it already has open knows
+to convert it in the same PR when the diff is small) or decides the current
+pace is fine and this gets closed as "working as intended."
+**Model:** `opusplan` — needs a decision on pace and scope, not code
+**Nightly:** no
+
+### [ ] T-140 · `utils/`+`services/` and `server/`+`lib/` have no written boundary beyond the README's "old vs. new"
+**Why:** confirmed by reading both sides, not assumed from the folder
+names — `src/services/browserApi.js` (client → own API over a relative URL,
+Clerk's cookie carries identity) and `src/server/*` (9 `.ts` files, direct
+Mongo reads called straight from Server Components, no HTTP involved) do
+**not** duplicate the same logic; they solve genuinely different problems
+and neither is dead. Same for `src/utils/lib/auth.ts` (identity/ownership —
+`getClerkUserId`, `verifyOwnershipAndGetSellerId`, `verifySellerId`) sitting
+next to `src/lib/` (Zod validators, `logger`, `api-response.ts`): no route
+handler is confused about which one to import today. The actual gap is that
+this split — *why* `services/` survives next to `server/`, and that
+`utils/lib/auth.ts` is not migrating to `src/lib/` because auth is not the
+part of `utils/` that is "pre-refactor," it is core and simply parked in the
+old location — lives only in this ROADMAP's history and in scattered code
+comments, not in `CLAUDE.md`'s "Estructura objetivo" or the README's
+"Project structure," which both just say `utils/`/`services/` are "being
+phased out."
+**Why it matters before it becomes a real problem:** the day someone adds a
+new client-side API call, "does it go in `services/` or somewhere new" has
+no written answer, and the same for a new pure auth helper (`utils/lib/` or
+`lib/`). Today there is exactly one obvious answer each time because the
+codebase is small enough to grep; that stops being true as it grows.
+**Done when:** `CLAUDE.md`'s "Estructura objetivo" gains one line per
+surviving old folder explaining what it is for *today* (not just "legacy"),
+so the next agent does not have to reconstruct the reasoning from git
+history the way this task's investigation had to.
+**Model:** `sonnet` — this is documentation, not a code change
+**Nightly:** yes
+
+### [ ] T-141 · Two generations of error handling still coexist in `src/app/api/`
+**Why:** measured with a grep across every route's `catch` block, not from
+memory. Migrated to `errorResponse()`/`AppError` from `src/lib/api-response.ts`
+(consistent shape, never leaks a driver's raw message on a 500 — see T-97's
+F29 note under `products/[id]`): `products/[id]`, `images/route.js`,
+`sellers/admin/[id]/route.js`, `schedules/route.js` POST. Still on a bare
+`catch (error) { return NextResponse.json({ ...error.message }, {status:500}) }`,
+each shaped slightly differently from the others:
+[`src/app/api/users/[id]/route.js`](src/app/api/users/[id]/route.js#L21)
+(key: `error`), [`src/app/api/sellers/[id]/route.js`](src/app/api/sellers/[id]/route.js#L59)
+GET (key: `error`, plus a second, differently-shaped catch further down in
+the same file at line 97 using `message`),
+[`src/app/api/sellers/route.js`](src/app/api/sellers/route.js#L97) GET
+(`message` **and** `error` both, in the same body),
+[`src/app/api/products/seller/[id]/route.js`](src/app/api/products/seller/[id]/route.js#L20),
+[`src/app/api/schedules/[id]/route.js`](src/app/api/schedules/[id]/route.js#L28),
+and [`src/app/api/schedules/route.js`](src/app/api/schedules/route.js#L21)
+GET. A client reading the error body today cannot rely on a single key
+across routes, and every one of these leaks `error.message` — whatever a
+Mongoose `CastError` or driver exception says — straight to the response,
+exactly the pattern T-97/F29 already fixed once in `products/[id]`.
+**Done when:** every route handler under `src/app/api/` goes through
+`errorResponse()` (or is deliberately left out with a one-line reason, the
+way `sellers/admin/route.js`'s GET already explains why it skips an
+in-handler auth check). One PR per batch of routes, same pattern T-80 used
+for the `console.log` cleanup, small enough that a bad migration in one
+route does not block the rest.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-142 · `sellerSchema2.ts` — the `2` names a `v1` that no longer exists
+**Why:** confirmed with a repo-wide filename search: there is no
+`sellerSchema.ts`, `sellerSchema.js`, nor any git history importing one
+under that exact name in the current tree — `sellerSchema2.ts` is simply
+*the* seller schema, and has been for however long this repo has used
+Mongoose. The `2` answers a question ("what happened to v1?") that a new
+contributor or agent has no way to answer by reading the file, and every
+new importer has to type the `2` from memory or autocomplete, forever.
+**Done when:** renamed to `sellerSchema.ts` via a project-wide symbol/file
+rename (updates every importer automatically), `npm run verify` green,
+nothing else in the diff. Purely cosmetic — no behavior, no schema shape
+change — which is exactly why it is safe for a single small PR rather than
+something to bundle into an unrelated task.
+**Model:** `sonnet` · **Nightly:** yes

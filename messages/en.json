@@ -204,5 +204,42 @@
     "submit": "Sign Up",
     "haveAccountQuestion": "Already have an account?",
     "haveAccountCta": "Sign in"
+  },
+  "SellerRegister": {
+    "heading": "Register your business",
+    "subtitle": "Please fill in your business details",
+    "businessNameLabel": "Business name",
+    "businessNamePlaceholder": "Business name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe your business",
+    "sloganLabel": "Slogan",
+    "sloganPlaceholder": "Business slogan",
+    "universityLabel": "University",
+    "instagramLabel": "Instagram username",
+    "instagramPlaceholder": "username",
+    "phoneLabel": "Phone",
+    "phonePlaceholder": "Phone number",
+    "logoTitle": "Business logo or seller photo",
+    "submit": "Register business"
+  },
+  "SellerApproving": {
+    "greeting": "Hi {name}",
+    "heading": "Your seller account is pending approval",
+    "body": "Please wait while we review your business details. Check back later.",
+    "contactHint": "For a faster review, or if you have any questions, you can contact us directly.",
+    "whatsappCta": "Contact us / Request approval on WhatsApp",
+    "whatsappMessage": "Hi, I am the seller {name}, I signed up on Mercampus. Could you review my application to approve me?"
+  },
+  "ImageGrid": {
+    "tooLarge": "This image is too large and could not be shrunk enough to upload. Try another photo, or crop it before uploading.",
+    "uploadFailed": "There was a problem uploading the image. Please try again.",
+    "deleteFailed": "There was a problem deleting the image.",
+    "imageAlt": "Product image {index}",
+    "uploading": "Uploading...",
+    "add": "+ Add"
+  },
+  "UniGraphicSelector": {
+    "infoAria": "Information",
+    "disclaimer": "Mercampus is not affiliated with any of these universities; their names appear only to help filter searches."
   }
 }

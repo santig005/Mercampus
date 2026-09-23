@@ -85,3 +85,23 @@ export const ADMIN_ROUTE_PATTERNS = [
 export function isSupportedLocale(locale: string): boolean {
   return (routing.locales as readonly string[]).includes(locale);
 }
+
+// Whether a default-locale path (no /en prefix - run it through
+// stripLocalePrefix first) is one of the seller's own gated screens. Same
+// prefix semantics as the `(.*)` patterns above: the path itself or anything
+// under it, never a sibling that merely shares the letters.
+//
+// Used by LocaleSwitcher to hide itself there (T-81, decided on PR #373).
+// The switcher is a full page navigation on purpose (see that file), and the
+// seller's forms keep everything in useState, so switching language mid-form
+// silently wiped what the seller had typed - and on the product forms, left
+// the photos ImageGrid had already uploaded orphaned in ImageKit. Reusing
+// PROTECTED_PATHS rather than a second list means every forms-zone PR is
+// covered without touching the switcher; it also hides it on /approving and
+// the product list, which are not forms, and that is harmless.
+export function isProtectedPath(path: string): boolean {
+  return PROTECTED_PATHS.some(
+    (protectedPath) =>
+      path === protectedPath || path.startsWith(`${protectedPath}/`)
+  );
+}

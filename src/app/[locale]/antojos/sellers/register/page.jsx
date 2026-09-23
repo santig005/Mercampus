@@ -3,6 +3,8 @@ import { logger } from '@/lib/logger';
 import { toNationalPhone } from '@/lib/phone';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
@@ -12,8 +14,15 @@ import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
 import UniGraphicSelector from '@/components/university/UniGraphicSelector';
 
+// T-81 (seller onboarding): moved from src/app/antojos/sellers/register/
+// (deleted). Still a Client Component - it is a form with state - so it
+// takes no `params`; src/app/[locale]/layout.jsx already calls
+// setRequestLocale for the whole subtree. Gated by isProtectedRoute at both
+// /antojos/sellers/register and its /en twin (src/lib/route-guards.ts).
 const RegisterSeller = () => {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('SellerRegister');
   const [sellerData, setSellerData] = useState({
     businessName: '',
     instagramUser: '',
@@ -75,7 +84,7 @@ const RegisterSeller = () => {
       if (response.ok) {
         setSeller(sellerData);
         setDbUser({ ...dbUser, role: 'seller' });
-        router.push('/antojos/sellers/approving');
+        router.push(localizedHref('/antojos/sellers/approving', locale));
       } else {
         const errorData = await response.json();
         logger.error('Error:', errorData.message);
@@ -99,10 +108,10 @@ const RegisterSeller = () => {
             <TbChevronLeft className='icon' />
           </Link> */}
           <h2 className='text-2xl font-semibold text-white'>
-            Registra tu Negocio
+            {t('heading')}
           </h2>
           <p className='text-white'>
-            Por favor completa la información de tu negocio
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -112,33 +121,33 @@ const RegisterSeller = () => {
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
-                  title='Nombre del Negocio'
+                  title={t('businessNameLabel')}
                   type='text'
-                  placeholder='Nombre del negocio'
+                  placeholder={t('businessNamePlaceholder')}
                   value={sellerData.businessName}
                   onChange={handleChange}
                   name='businessName'
                   required
                 />
                 <InputFields
-                  title='Descripción'
+                  title={t('descriptionLabel')}
                   type='textarea'
-                  placeholder='Describe tu negocio'
+                  placeholder={t('descriptionPlaceholder')}
                   value={sellerData.description}
                   onChange={handleChange}
                   name='description'
                   required
                 />
                 <InputFields
-                  title='Slogan'
+                  title={t('sloganLabel')}
                   type='text'
-                  placeholder='Slogan del negocio'
+                  placeholder={t('sloganPlaceholder')}
                   value={sellerData.slogan}
                   onChange={handleChange}
                   name='slogan'
                 />
                 <div>
-                  <label>Universidad</label>
+                  <label>{t('universityLabel')}</label>
                   <UniGraphicSelector 
                     value={sellerData.university}
                     onUniversityChange={(selected) => setSellerData({ ...sellerData, university: selected })}
@@ -146,18 +155,18 @@ const RegisterSeller = () => {
                 </div>
 
                 <InputFields
-                  title='Usuario de Instagram'
+                  title={t('instagramLabel')}
                   type='text'
-                  placeholder='usuario'
+                  placeholder={t('instagramPlaceholder')}
                   value={sellerData.instagramUser}
                   onChange={handleChange}
                   name='instagramUser'
                 />
 
                 <InputFields
-                  title='Teléfono'
+                  title={t('phoneLabel')}
                   type='tel'
-                  placeholder='Número de teléfono'
+                  placeholder={t('phonePlaceholder')}
                   value={sellerData.phoneNumber}
                   onChange={handleChange}
                   name='phoneNumber'
@@ -167,7 +176,7 @@ const RegisterSeller = () => {
                   initialImages={sellerData.images}
                   onUpdateImages={handleImagesUpdate}
                   nameFolder='sellerlogos'
-                  title='Logo del Negocio o Foto del vendedor'
+                  title={t('logoTitle')}
                   maxImages={1}
                 />
                 <button
@@ -178,7 +187,7 @@ const RegisterSeller = () => {
                   {loading ? (
                     <span className='loading loading-infinity loading-lg'></span>
                   ) : (
-                    'Registrar Negocio'
+                    t('submit')
                   )}
                 </button>
               </div>
