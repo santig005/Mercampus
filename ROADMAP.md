@@ -7184,6 +7184,37 @@ removed on purpose) or, at minimum, a clear message instead of the login
 redirect; decided with the human because it touches identity (rule 8).
 **Model:** `opus` · **Nightly:** no (identity)
 
+### [x] T-170 · `GET /api/sellers/[id]` answered for an email: anyone could look up whose email has a store
+**Why:** found on 2026-09-26 while mapping the modals for T-167 (rule 9).
+The route is public and unauthenticated, and if `params.id` contained an
+`@` it looked the user up **by email** and returned their shop. Anyone
+could ask "does this email have a store on Mercampus?" and get the store
+back; and "User not found" vs "Seller not found" told them whether the email
+was registered at all, shop or not. Its only client,
+`getSellerByEmail()`, was deleted in T-112b ("no reference anywhere"); the
+branch had outlived it since commit `828fc51`. A malformed id also answered
+500 with Mongoose's CastError in the body.
+**Done (2026-09-26):** the email branch is gone; the id is validated with
+`sellerIdSchema` (400 for anything else, email included, so registered and
+unknown emails are indistinguishable); errors go through `errorResponse`
+instead of echoing `error.message`.
+- **Verified:** `npm run verify` green;
+  `tests/integration/seller-by-id-get.test.js` (6) - an owner's email no
+  longer returns the shop, an owner's, a buyer's and an unknown email get an
+  identical answer, the malformed id is a 400 with no CastError. Against
+  the old route, those three fail. `recorrido` and the T-165 modal e2e
+  still load the seller page.
+- **Deliberately unchanged:** visibility. The route still returns pending
+  sellers, because the admin reviews them on their public page
+  (`/admin/sellers` links to `/antojos/sellers/<id>`, and
+  `getSellerForMetadata` does not filter either). Filtering public reads
+  while keeping the admin's review working belongs with T-166.
+- **Rule 9, not fixed:** `PUT /api/sellers/[id]` keeps an email branch too
+  (`verifySellerEmail`). It is owner-checked, so not a leak, but its only
+  client (`updateSeller`) always passes an id - probably dead; confirm and
+  remove with the next change to that route.
+**Model:** `opus` (privacy) · **Nightly:** no
+
 ---
 
 ## Phase 8 — The two stories this repo can tell
