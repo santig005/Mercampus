@@ -6802,6 +6802,22 @@ traffic.
     next promotion; the unit test is what keeps the shape from drifting.
   - T-151's remaining parts (`Product`, seller, `BreadcrumbList`) stay in
     T-151; this only takes its `Organization` line.
+  - **Correction, same day, after promotion: the first version did not work
+    for crawlers.** The landing's layout renders under the root layout's
+    `<ClerkLoaded>`, which the server does not render (see T-163), so the
+    live HTML carried **zero** `application/ld+json` elements - the markup
+    existed only as a string inside React's payload and became an element
+    once Clerk loaded in a browser. The human ran both tools on the live
+    site: validator.schema.org (no JavaScript) errored, and Google's Rich
+    Results Test detected nothing. The e2e passed because it ran in a
+    browser that waited for Clerk - it measured what a user sees, not what
+    a crawler sees. **Fixed** by emitting the markup in the root layout's
+    `<head>`, which is server-rendered (the anti-flash theme script already
+    lives there), so it is now on every page - Google accepts
+    `Organization` site-wide. The e2e now reads the raw response with no
+    browser and expects exactly one real element on `/`, `/en` and
+    `/antojos`, plus no duplicate after hydration. **Re-run both validators
+    after this is promoted.**
 - **Found on the way (rule 9), not fixed:** `/marketplace` has the same
   shape - a `'use client'` page, so no metadata of its own, and its greeting
   is an `<h2>` with no `<h1>`. Same fix as T-152a; one small PR.
@@ -7030,6 +7046,47 @@ nothing new is added to `public/`.
   share preview matters for the CV link - a design decision, left open.
 - **Not checked with a real share debugger** (WhatsApp/LinkedIn) - they need
   the promoted URL. Do it after the next promotion.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-163 · No page's content is server-rendered: the root layout wraps everything in `<ClerkLoaded>`
+**Why:** found on 2026-09-26 while checking the live site after promotion
+(see the T-152c correction). `src/app/layout.jsx` renders
+`<ClerkLoading>…</ClerkLoading><ClerkLoaded>{children}</ClerkLoaded>`.
+`ClerkLoaded` renders nothing on the server, so **every page's HTML is the
+loading shell** - measured on production: `/` has 0 `<h1>` in the raw
+response, and the hero text exists only inside React's payload. Content
+appears only after Clerk's script loads in the browser.
+**Consequences:** anything that reads HTML without running JavaScript (the
+schema.org validator, most link-preview bots, some crawlers) sees an empty
+page; Google renders JavaScript but its Rich Results Test did not detect
+markup that was under this wrapper; T-152a/b's `<h1>` work is invisible to
+them; and first contentful paint on every page waits on a third-party
+script. `<head>` metadata (title, description, Open Graph) is unaffected -
+that is why share previews still work.
+**Done when:** page content renders on the server again, with components
+that genuinely need Clerk's client state guarding themselves (`useUser`'s
+`isLoaded`, `<SignedIn>`/`<SignedOut>`) instead of the whole tree waiting.
+Verified with a raw-HTML e2e (no browser) that finds the `<h1>` on `/` and
+`/antojos`, plus screenshots showing no flash of wrong auth state.
+**Careful:** find out *why* the wrapper was added before removing it
+(`git log -S ClerkLoaded -- src/app/layout.jsx`) - likely to hide a flash of
+signed-out UI, or because something under it throws before Clerk is ready.
+Every client component that reads Clerk or `SellerContext` needs checking.
+**Model:** `opus` · **Nightly:** no (architecture; needs the human)
+
+### [ ] T-164 · Single-segment unknown URLs answer 200 since `/` moved under `[locale]`
+**Why:** measured on production 2026-09-26 after T-152b: `/foo`, `/xx` and
+`/android-chrome-512x512.png` answer **200** with the not-found page, where
+they used to answer 404; two segments (`/foo/bar`) still 404. Since T-152b
+the home page is `src/app/[locale]/(landing)/page.jsx`, so any single
+segment now matches `[locale]`; the `[locale]` layout calls `notFound()`
+for an unsupported locale, but by then the status is already committed -
+the same soft-404 mechanism as T-91. Regression introduced by T-152b; it
+did not exist when `[locale]` had no root page.
+**Done when:** a single segment that is not a supported locale answers a
+real 404 - most directly, the middleware rejects it before rendering - with
+an e2e asserting the status (not just the rendered text) for `/foo`, and
+`/` and `/en` still 200.
 **Model:** `sonnet` · **Nightly:** yes
 
 ---

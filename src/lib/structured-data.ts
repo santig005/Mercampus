@@ -12,9 +12,9 @@ export const INSTAGRAM_URL = 'https://www.instagram.com/mercampus/';
 // never existed (T-162 removed that declaration).
 export const ORGANIZATION_LOGO_PATH = '/images/logo.png';
 
-// Emitted once, on the home page: who is behind the site. This is what lets
-// a search result or a link preview name the organization instead of just
-// showing a bare URL.
+// Emitted in the root layout's <head> (server-rendered, every page): who is
+// behind the site. This is what lets a search result or a link preview name
+// the organization instead of just showing a bare URL.
 export function buildOrganizationJsonLd() {
   return {
     '@context': 'https://schema.org',

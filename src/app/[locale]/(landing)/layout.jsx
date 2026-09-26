@@ -6,7 +6,6 @@ import LocaleSwitcher from '@/components/general/LocaleSwitcher';
 import StickyTopbar from '@/components/general/StickyTopbar';
 import { localizedHref } from '@/i18n/routing';
 import { SITE_NAME } from '@/lib/metadata';
-import { buildOrganizationJsonLd, serializeJsonLd } from '@/lib/structured-data';
 
 // T-152b: this was src/app/[locale]/about/. The (landing) route group adds
 // no URL segment, so the same layout and page now serve `/` and `/en`, and
@@ -40,12 +39,6 @@ export default async function layout({ children, params }) {
 
   return (
     <div className='w-full'>
-      {/* T-152c: Organization markup, once, on the home page only (this
-          layout serves `/` and `/en` and nothing else). */}
-      <script
-        type='application/ld+json'
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildOrganizationJsonLd()) }}
-      />
       {/* Topbar */}
       <StickyTopbar>
         <div className="mx-auto px-4 sm:px-6 py-3 sm:py-4 container">
