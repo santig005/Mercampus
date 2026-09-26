@@ -5,7 +5,7 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 import { User } from '@/utils/models/userSchema';
 
 // T-123: the listing filtered by the T-122 badge's rule, in the Mongo query,
@@ -193,6 +193,25 @@ describe('GET /api/products · availability filter (T-123)', () => {
       'Pan apagado',
       'Jugo de mango',
     ]);
+  });
+
+  // T-83. The ROADMAP note next to T-123 says the override "must count as
+  // open under whatever definition this lands" - this is that promise, at
+  // the level of the filter rather than just the per-product badge.
+  it('an active override moves a closed seller\'s products into the available block', async () => {
+    at(MONDAY_8PM);
+
+    const closedSellerId = (
+      await Product.findOne({ name: 'Arepa de queso' })
+    ).sellerId;
+    await Seller.findByIdAndUpdate(closedSellerId, {
+      availabilityOverrideUntil: new Date(MONDAY_8PM.getTime() + 60 * 60 * 1000),
+    });
+
+    const available = names(await collectPages('availability=available', 20));
+    expect(available).toEqual(expect.arrayContaining(['Arepa de queso']));
+    // The switched-off product of the same, now-overridden seller stays put.
+    expect(available).not.toContain('Jugo de mango');
   });
 
   it('a cursor made under one filter is rejected under another', async () => {

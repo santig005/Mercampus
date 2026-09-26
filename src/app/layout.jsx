@@ -11,7 +11,8 @@ import { getSellerContextData } from '@/utils/lib/auth';
 import React from 'react';
 import '../../public/css/main.css';
 import AnimationProvider from '@/components/AnimationProvider';
-import { SITE_URL, titleMetadata } from '@/lib/metadata';
+import { SITE_ICONS, SITE_OG_IMAGE, SITE_URL, titleMetadata } from '@/lib/metadata';
+import { APP_HOME } from '@/lib/app-home';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -28,17 +29,9 @@ export const metadata = {
   description:
     'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
   metadataBase: new URL(SITE_URL),
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  },
+  // T-162: five of the seven files declared here did not exist (404 in
+  // production). See SITE_ICONS in src/lib/metadata.ts.
+  icons: SITE_ICONS,
   manifest: '/manifest.json',
   openGraph: {
     type: 'website',
@@ -47,14 +40,7 @@ export const metadata = {
       'Plataforma que conecta estudiantes en la universidad para la compra y venta de alimentos',
     siteName: 'Mercampus',
     url: 'https://mercampus.vercel.app/',
-    images: [
-      {
-        url: '/android-chrome-512x512.png',
-        width: 512,
-        height: 512,
-        alt: 'Mercampus',
-      },
-    ],
+    images: [SITE_OG_IMAGE],
   },
 };
 
@@ -72,6 +58,9 @@ export default async function RootLayout({ children }) {
   return (
     <ClerkProvider
       localization={clerkLocalization}
+      // T-152b: Clerk's default is '/', which is about to become the landing
+      // page. Signing out keeps landing on the catalogue, as it always has.
+      afterSignOutUrl={APP_HOME}
       appearance={{
         // baseTheme: dark,
         variables: { colorPrimary: '#FF7622' },

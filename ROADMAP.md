@@ -26,6 +26,30 @@ beyond this file. It answers one question: **what can I safely pick up on my
 own right now?** Re-check it against the entries themselves before starting -
 this index goes stale, the entries are the contract.
 
+> **Read this before picking anything, added 2026-09-23.** The project's goal
+> changed: Mercampus is a **portfolio piece**, not a product trying to win back
+> users. Real user activity stopped on 2025-09-30 and is not expected to resume.
+>
+> What that does and does not mean:
+> - **It does not lower the bar.** Correctness, security, accessibility and
+>   verifiability still matter - arguably more, because the code itself is now
+>   the deliverable that gets read.
+> - **It does demote work whose only payoff was traffic.** Phase 7's header
+>   lists exactly which entries dropped (T-143, T-145, T-146, T-147, T-148,
+>   T-149, T-151, T-153) and which rose (T-152, T-154 through T-158, T-138).
+>   Those entries each carry a dated note explaining the change, so opening one
+>   in isolation is safe.
+> - **It adds a second goal:** Phase 8. This repo demonstrates *AI-assisted
+>   engineering* in depth (840 commits, 329 merged PRs, two years) and contains
+>   **no AI engineering at all** (measured: zero model SDKs in `package.json`).
+>   T-160 (an evaluation harness) and T-161 (a readable write-up of the
+>   pipeline's real failures) are the two entries that close that gap. The AI
+>   *features* themselves already have a home in Phase 5.
+>
+> If a demoted entry looks like easy nightly filler, check its note first -
+> several of them are demoted *and* still `opus`/`Nightly: no`, because touching
+> real user data is dangerous regardless of priority.
+
 ### Do not touch these without the human in the conversation
 
 Not because they are hard, but because getting them wrong costs real user
@@ -50,6 +74,11 @@ data or real access, and the human has asked for them to wait:
 - **T-117** (orphan images) - deletes against production media. T-116 is
   done, so its lookup (`findImageFile`) is there to build on.
 - **T-118** (ImageKit per environment) - waits on T-63 and a dashboard key.
+- **T-136** (`GET /api/users/[id]` / `GET /api/sellers/[id]` have no
+  authorization) - the fix itself is agent-sized (same shape as T-10), but
+  it touches the same identity/ownership surface as the admin-role work
+  above, and confirming nothing under `src/` still depends on the current
+  unauthenticated shape needs a full reference search before gating it.
 
 Everything below still assumes **rule 1**: branch from `agent/develop`, PR
 into `agent/develop`, never push to `main` or `develop`.
@@ -66,15 +95,20 @@ the number is taken, bump it before the merge, not after.
 
 One per PR, per rule 2. Ordered by how little can go wrong.
 
+**Refreshed 2026-09-15** - T-36, T-109, T-110 and T-113 shipped (see their
+entries); T-111's items 1-3 stopped applying when T-112b deleted
+`src/services/api.js`/`apiToken.js` outright, so that row is gone rather than
+marked done. T-85 stays, batch 2 only.
+
+**Refreshed 2026-09-25** - T-85 (batch 2, #351) and T-127 (#352) had both
+shipped and were still listed here, which got T-127 proposed again as if it
+were open. T-142 left in #375 and T-159 in #376. Rows go when their task
+ships.
+
 | Task | Why it is safe | How you know it worked |
 |---|---|---|
-| **T-85** · Spanish left in test descriptions | Renames `describe`/`it` strings only. No source, no behaviour. The entry names the trap: renaming a test is safe, changing a string a test *asserts on* is not. | `npm run verify`. The same tests pass, with English names. |
-| **T-36** · A real README | Touches no source at all. The human explicitly delegated it to an agent and said it gets rewritten by hand if it does not land, so a mediocre attempt costs nothing. | It builds, and it answers: what this is, stack, env vars, how to run it and the tests, the agentic pipeline. |
-| **T-109** · Drop the pre-Clerk dead dependencies | The half of T-35 that needs no product decision. Removing code nobody imports cannot change behaviour - and rule 5 tells you exactly how to prove nobody imports it. | `npm run verify`, `deadcode` green, and a reference search quoted in the PR. |
-| **T-110** · Stabilise the flaky e2e specs | Lives entirely in `tests/`. Worst case the suite stays as flaky as it already is. | The named specs pass on repeated runs of the same commit. |
-| **T-111** (items 1-3 only) · Tidy `src/services/api.js` | Deleting a commented-out draft that the function below it supersedes, and a `credentials` option that is inert server-side. The audit is already written in the entry, so the reference search is done. | `npm run verify`, `deadcode` green. Item 4 is **not** in this bucket. |
-| **T-119** · Show which field failed on the add-product page | A UI message change with no data or auth involved. | A real screenshot of the error state (rule 3). |
-| **T-113** · Fail loudly on missing env, and a `.env.example` drift test | All in-repo: a config check that turns a generic 500 into a message naming the variable, and a unit test comparing source against `.env.example`. No setting outside the repo is touched. | `npm run verify`; the new tests fail with the variables unset. |
+| **T-151** · No structured data (JSON-LD) anywhere | Additive markup; nothing existing changes shape. T-69's Open Graph work is the precedent. | Google's Rich Results Test, plus a snapshot test of the emitted JSON — not a grep for the string. |
+| **T-140** · No written boundary between `utils/`+`services/` and `server/`+`lib/` | Doc-only change to `CLAUDE.md`. No code touched. | The new lines describe what is actually true today, cross-checked against this task's own findings. |
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -94,6 +128,11 @@ already warns about, and getting it wrong wastes a PR:
 - **T-124** · Photos over 4.5 MB. Option (a), shrinking in the browser, is
   agent-sized; verifying it needs a real large file in a browser, and option
   (b) must not be taken without checking what the upload signature binds.
+- **T-141** · Two error-response shapes coexist in `src/app/api/`. Migrating
+  a route to `errorResponse()` is mechanical and well precedented, but do it
+  in small batches (like T-80's `console.log` cleanup) — a bad migration in
+  one route should not block the rest, and each route's tests need to keep
+  asserting the same status codes after the shape changes.
 - **T-44** · Seller panel. Unblocked (T-40 is done), but it is new UI, and
   CLAUDE.md rule 3 means a real screenshot, not a test that greps for a class
   name. If you cannot render it in your session, say so in the PR instead of
@@ -122,6 +161,37 @@ already warns about, and getting it wrong wastes a PR:
   already open awaiting review.
 - **T-30/31/32**, and the feature epics (**T-41/42/43/45/50/51/52/53/68**) -
   architecture and product shape, `opusplan` in an interactive session.
+- **T-137** · the `agent/develop → develop` promotion itself, and whatever
+  batching strategy replaces reviewing it commit by commit - a process
+  decision, not code.
+- **T-138** · how to split `ROADMAP.md` without breaking entries a rule in
+  CLAUDE.md still points to - needs sign-off before moving anything, per
+  rule 2 and "Qué NO hacer sin preguntar."
+- **T-139** · whether per-touch TypeScript conversion becomes a standing
+  rule in CLAUDE.md, or the current ~72% JS in `src/` is accepted as the
+  pace going forward - a scope decision, not a migration to execute.
+- **T-150** · **the domain** - now a cheap yes-or-no rather than a strategy
+  call (the portfolio premise removed two of its three justifications; the
+  entry has the rewritten arithmetic). Still costs money, so still yours.
+- **T-152** · what the homepage actually says - the copy is a product
+  decision. **Promoted:** it is the first screen anyone opening the link sees.
+- **T-154** · rate limiting - needs a call on a new dependency.
+- **T-156** · account and data deletion - irreversible, external service,
+  and a legal question (Ley 1581) behind it. Still applies to data already
+  collected, premise or no premise.
+- **T-157** · restoring a backup - runs against real infrastructure.
+- **T-160** · the evaluation harness, and **T-161** · the pipeline write-up -
+  Phase 8. Both need your judgement on scope before an agent starts: which
+  metrics count, and which incidents are worth telling.
+- **T-51** · add a product from a photo - the recommended first AI feature,
+  but only together with T-160. Note the `price range` decision flagged in its
+  entry.
+
+**Demoted 2026-09-23, do not treat as available work** without re-reading the
+premise note above: **T-143**, **T-145**, **T-146**, **T-147**, **T-148**,
+**T-149**, **T-151** (partially), **T-153**. They stay fully specified on
+purpose - the analysis in them is still correct, and the premise could change
+back.
 
 ---
 
@@ -1316,7 +1386,7 @@ to **T-30**, once the data layer absorbs the services. They stay as
 visible warnings in the log until then.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-35 · A single image provider
+### [x] T-35 · A single image provider
 **Why:** Cloudinary and ImageKit are both installed, each with its own
 route. `next-auth`, `bcryptjs`, `jsonwebtoken`, and `cookies` are also
 leftovers from before Clerk.
@@ -1331,9 +1401,17 @@ on Cloudinary, and every form uploads through `ImageGrid` -> `/api/images`,
 which is ImageKit. The Cloudinary route has no caller in the repo; see
 T-116. Keeping ImageKit is the path of least migration; the 2 Cloudinary
 URLs still render without any Cloudinary key, since they are public.
+**Decided by the human (2026-09-15): ImageKit.** Cloudinary was already dead
+code by the time the decision landed - T-116 had deleted its only route and
+importer, and T-109/T-113 had already found zero references left under
+`src/`. Done in the same PR: `cloudinary` and `next-cloudinary` removed from
+`package.json` (`npm uninstall`, lockfile updated), the `CLOUDINARY_*`
+section dropped from `.env.example`, and the matching `KNOWN_ORPHANS`
+entries removed from `tests/unit/env-publico.test.js` now that there is
+nothing left to be orphaned.
 **Model:** `sonnet` · **Nightly:** no (choosing the provider is yours)
 
-### [ ] T-109 · Drop the pre-Clerk dead dependencies
+### [x] T-109 · Drop the pre-Clerk dead dependencies
 **Why:** carved out of T-35 on 2026-09-10 so an agent can take it alone.
 T-35 bundles two things: *which image provider to keep*, which is the
 human's call, and *deleting the leftovers from before Clerk*, which is
@@ -1359,9 +1437,15 @@ named `NEXT_PUBLIC_IMAGEKIT_KEY` that **no workflow references** (the
 workflows use only `CLERK_SECRET_KEY`, `CRON_SECRET` and the automatic
 `GITHUB_TOKEN`) - almost certainly the placeholder CI carried before T-11b.
 Deleting it is a settings change, so it is listed here, not done.
+**Done (2026-09-14):** `next-auth`, `bcryptjs`, `jsonwebtoken` and `cookies`
+had zero references in `src/`, `scripts/` or `tests/` (only `package.json`,
+`package-lock.json` and this file mentioned them by name) and `npm ls` showed
+each as a bare top-level dependency with no other package depending on it.
+All four removed with `npm uninstall`; `npm run verify` green (lint, deadcode,
+typecheck, test, build). See PR for the full reference-search evidence.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-110 · Stabilise the flaky e2e specs
+### [x] T-110 · Stabilise the flaky e2e specs
 **Why:** the suite has now cried wolf three times on record, which is how a
 real regression gets waved through. T-80 logged two seller specs (`el perfil
 del vendedor carga su negocio`, `el listado de vendedores muestra las
@@ -1393,7 +1477,7 @@ there); the assertion is still first-poll-only. A wait on a real condition,
 such as "no `cursor=` request until the scroll", would pin it.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-36 · A real README
+### [x] T-36 · A real README
 **Why:** it's still `create-next-app`'s, with a stray `## Yes`.
 **Done when:** what the project is, screenshots, stack, environment
 variables, how to run it, how to run tests, and a section on the agentic
@@ -1480,9 +1564,46 @@ permissions requested at the right moment, not on load.
 **Depends on:** T-40
 **Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-44 · Seller panel
+### [x] T-44 · Seller panel
 **Done when:** sales per day, top-ordered products, peak hours,
 cancellation rate. Reads from `Order`, writes nothing new.
+**Done:** `/antojos/sellers/panel`, a Server Component that reads `Order`
+directly (`src/server/orders/getSellerPanelStats.ts`, no fetch to our own
+API). The aggregation itself is pure and unit tested apart from Mongo, same
+split T-72 used for the profile checklist: `src/lib/seller-panel-stats.ts`
+computes the last 14 days of sales bucketed by the day an order actually
+*completed* (from `history`, in Bogotá time - reuses `BOGOTA_OFFSET_HOURS`,
+now exported from `src/lib/store-availability.ts`), the top 5 products by
+quantity among completed orders, the top 5 peak hours across every order
+regardless of status (demand, not just fulfilled demand), and an all-time
+cancellation rate. Linked from the sidebar's "Gestionar" section as "Panel de
+ventas". No schema change, no new API route, no new dependency: bars are
+plain server-rendered `<div>`s against `bg-primary-orange`/`bg-base-200`
+(same tokens `ProfileChecklist` already proved safe in both themes), not a
+chart library.
+**Verified per rule 3 (2026-09-16):** the implementing agent's worktree had
+no `.env`, so it left this `[~]`. Closed out from a session with the real
+`.env`: `scripts/e2e.mjs`'s own recipe (in-memory Mongo + seed + a real
+throwaway Clerk account + build + Playwright) signed in as the seeded
+approved seller and hit `/antojos/sellers/panel` directly. The seed has no
+`Order` documents, so a handful of `completed`/`cancelled` orders were
+inserted by hand (script not committed - one-off, not a fixture anyone else
+needs) to see the bars with real data instead of the empty state.
+Screenshots in both themes: the `bg-primary-orange` bars render as
+brand-orange on `bg-base-200` in light mode and stay the same orange against
+the dark card background in dark mode, with legible text in both - none of
+the T-100 near-white regression. `npm run verify` already passed per the
+note above.
+**Worth knowing (rule 9, found while touching `EditSellerForm.jsx`'s
+neighbourhood):** that file has a commented-out back button
+(`{/* <Link href='/'>...<TbChevronLeft />...</Link> */}`) left over from
+T-72's extraction (`git log -L` traces it to that commit, already commented
+there) - `EditSellerForm.jsx` never imports `TbChevronLeft` at all, so
+un-commenting it as-is would throw. Every other screen with this same back
+button (`ProductPage.jsx`, `SellerPage.jsx`, `Schedule.jsx`,
+`SignUpForm.jsx`, register pages) imports the icon and renders it live, so
+this one reads as dead, not a deliberate omission - not removed here to
+avoid scope creep on a task that isn't this one.
 **Depends on:** T-40
 **Model:** `sonnet` · **Nightly:** yes
 
@@ -1539,6 +1660,20 @@ has a catch
 **Why:** a "save for later" feature was started once — `favoriteSchema.js` —
 but never wired up anywhere (zero importers), and T-34 already deleted it as
 dead code. Doing this means starting over, not resuming.
+**Found while doing T-81 (rule 9, not fixed here):** the frontend half of
+that abandoned attempt is still around too —
+`src/components/products/ProductGridFavorite.jsx` and
+`ProductCardFavorite.jsx`. They were never rendered by anything (their only
+importers were unused imports in `src/app/antojos/page.jsx` and
+`src/app/marketplace/page.jsx`, confirmed by reference search), and
+`ProductGridFavorite` calls an undefined `getItems()` — it never worked even
+when "reachable". T-81's migration of those two page files dropped the dead
+imports, which made `npx knip`'s dead-file check start failing on them; both
+are now listed in `knip.json`'s `ignore` so `npm run verify` stays green
+without deleting code a human might still want for this task. T-130
+(2026-09-15) separately lists `ProductCardFavorite.jsx` as sharing the
+broken-image pattern to fix — worth checking with whoever filed it before
+deleting, in case it's slated for reuse rather than removal.
 **Blocked on:** whether this is worth building at all, and if so: favorite
 products only, or sellers too? Its own page, or just a filter/heart icon on
 the existing listings? Login required (almost certainly, it ties to `User`)?
@@ -1725,7 +1860,18 @@ product. This is what sets the portfolio apart.
 document, Atlas vector search, hybrid with text search. Evaluated with 20
 reference queries and their expected results, to be able to demonstrate
 the improvement.
-**Depends on:** T-24
+**Note added 2026-09-23 — the "20 reference queries" line above is asking for
+T-160**, which now specifies that harness properly; use it rather than building
+a second one here.
+**And a warning about the likely outcome, which is not a reason to skip it:**
+the catalogue is small (135 indexable URLs live, of which most are products).
+At that scale, embeddings may well *not* beat the lexical search T-24 already
+built - which is why T-160 requires measuring the dumb baseline first. If that
+is the result, **report it**: "I measured, and the simpler thing won" is a
+stronger engineering signal than a vector database nobody needed. Just decide up
+front whether the goal is the finding or the demo, because they point at
+different amounts of work.
+**Depends on:** T-24, and T-160 for the evaluation
 **Model:** `opus` — new domain, non-obvious decisions
 **Nightly:** no
 
@@ -1735,14 +1881,107 @@ number-one source of friction for a seller between classes.
 **Done when:** the seller uploads the photo and a model proposes name,
 description, category, and price range; **everything editable before
 saving**, no autosave. Manual fallback if the API fails.
+**Promoted 2026-09-23: of the four AI entries in this file (T-50, T-51, T-52,
+T-129), this is the one to build first.** The reasoning, since the choice is not
+obvious:
+- **It is the only one whose evaluation set already exists.** See T-160: 54
+  sellers' real photos, each with a human-written name, a human-chosen category
+  and a description. This task's output is exactly those fields, so the
+  benchmark is the users' own work. Nothing has to be labelled by hand.
+- **The `Done when` above already has the right guardrail**, written before any
+  of this was framed as AI engineering: *everything editable before saving, no
+  autosave*. That is a human-in-the-loop design, and it is the same posture as
+  rule 3. Keep it exactly as it is - a model proposing and a person confirming
+  is both the safer product and the more defensible design.
+- **`price range` is the dangerous field and deserves its own decision.** A
+  hallucinated name is a typo the seller fixes; a plausible-but-wrong price
+  anchors what they charge. Consider deriving it from comparable products
+  already in the catalogue rather than asking the model to invent it, or drop it
+  from v1.
+**The continuity worth making explicit, because it is already a convention
+here:** CLAUDE.md says every body and query param passes a Zod schema before
+touching Mongoose, and never `new Model(body)` with raw data. **A model's output
+is raw data from an untrusted source** - structurally identical to a request
+body, and it gets the same treatment: parse it with a Zod schema, reject what
+does not fit, and never let it reach `Product` unvalidated. The validators in
+`src/lib/validators/product` are most of the work already.
+**Depends on:** T-160 (the harness) - build them together, not this one first.
+**Also relevant:** T-124 (photos over 4.5 MB) and T-117 (images orphaned by an
+abandoned form) both sit on this exact upload path; read them before touching it.
 **Model:** `opus` · **Nightly:** no
 
 ### [ ] T-52 · Listing moderation
+**Why:** raised again by the human on 2026-09-15, specifically as
+AI-based explicit-content detection - both the product photo and the
+text fields (name, description) - so a listing can't publish something a
+human never looked at.
 **Done when:** automatic review of photo and text on publish, with a
-human-review queue for uncertain cases instead of automatic blocking.
+human-review queue for uncertain cases instead of automatic blocking - not
+a hard block, since a false positive would refuse a legitimate seller with
+no recourse.
+**Open design questions for whoever picks this up (interactive session,
+not a nightly task):** which provider/model does the classification (an
+LLM vision call vs. a dedicated moderation API - cost and latency differ a
+lot at upload time); where the queue lives (an admin screen, extending the
+existing seller-approval surface, or its own); what "uncertain" means
+numerically for each classifier; and whether this blocks publish
+synchronously or runs after, with the listing live in the meantime.
 **Model:** `opusplan` · **Nightly:** no
 
-### [ ] T-53 · Evals for the AI features
+### [ ] T-129 · Mercarti, a support chatbot (the squirrel mascot)
+**Why:** raised by the human on 2026-09-15. Not scoped, not urgent - a
+backlog idea for later, and also a portfolio piece (an agentic feature
+looks good on the showcase T-36 already writes for). Named after the
+site's existing squirrel mascot, Mercarti.
+**The idea, roughly staged (each stage is its own decision, not a plan to
+execute as written):**
+1. **A widget on the site** a visitor can open to ask questions about
+   registration, how the site works, and its conventions - and that can
+   hand back a real link to the relevant page/resource rather than just
+   describing it in prose.
+2. **Read-only tools first - but two different risk levels, not one:**
+   - **Catalog/recommendation** ("algo frutal bajo $6000 que esté hoy"): a
+     natural-language front end to the same public listing `/antojos`
+     already shows anyone, logged in or not - no ownership check applies,
+     because none of the data is private. Best built as tool-calling on
+     top of **T-50** (semantic search) rather than a separate
+     implementation: the model extracts structured arguments (the semantic
+     text, a price bound, a day/time bound) and the tool executes them,
+     it never reasons over raw catalog text itself. Day/time reuses
+     `isOpenAt`/`src/lib/store-availability.ts` as-is (it already takes an
+     arbitrary `{day, time}`, not just "now"); a *range* query ("after 10,
+     before 3pm") needs one small overlap predicate added to that same
+     file, not a formula invented per query. University defaults from the
+     existing `UniversityContext` (`selectedUniversity` in
+     `localStorage` - client state, not server session, so the client has
+     to pass it explicitly), overridden only when the text names another
+     one. **Depends on T-50** existing - without it, this either doesn't
+     scale or duplicates it.
+   - **Mine/my-seller's data** (a product's or seller's approval status,
+     schedule, availability): this is the one that can leak what a
+     signed-in user could not already see through the UI, so it needs the
+     authorization boundary CLAUDE.md's convention already requires
+     ("Autorización explícita") - scoped to the caller's own seller/
+     product, never anyone else's.
+
+   Either way: for a claim read out of a seller's free-text description
+   that reads as health/dietary/allergy ("sin azúcar", "apto para X"),
+   quote what the seller wrote rather than assert it as verified - nobody
+   has checked it. Doesn't apply to taste/price/schedule, where a wrong
+   guess costs a follow-up question, not a false safety claim.
+3. **Agentic/write tools, later and separately:** editing a product's own
+   name, price, etc. on the seller's behalf. This is a materially
+   different risk level than (1)/(2) - it mutates real data through
+   natural language - and shouldn't be scoped until (1)/(2) exist and the
+   authorization model for a write made *by an assistant, on a user's
+   behalf* has been thought through on its own, not inherited by default
+   from the read-only stage.
+**Open questions for whoever designs this:** which model/provider, cost
+per conversation at any real traffic, where conversation history lives (a
+new collection, likely), how it's told apart from a real human in the
+UI, and how (2)/(3)'s tool calls get audited - "the assistant did it" is
+not an acceptable line in a log next to a real data mutation.
+**Model:** `opusplan` · **Nightly:** no
 **Why:** without evals, "I improved the prompt" is just an opinion. This
 is what separates a demo from a system.
 **Done when:** a case set with expected output for T-50 and T-51, a
@@ -2139,10 +2378,73 @@ number.
 **Careful, same as T-91:** that wrap is inside the root layout. Making it
 degrade gracefully is safe; restructuring what the root layout awaits is
 T-12d/T-91 territory and is not this task.
+**The defensive half is done (PR #TBD, 2026-09-15). The entry stays open
+because the cause is not found.** `getSellerContextData()` now catches the
+throw, returns the `{ user: false, seller: false }` it already returned for
+an anonymous visitor, and logs the pathname with `logger.warn`. What that
+buys: the root layout no longer renders through an error, and the next
+occurrence carries an address. What it does not buy: any answer to *why*
+`auth()` runs without Clerk's context.
+**Baseline, re-measured before the change:** run 34924504970, `lighthouse`
+job 104239568323, on `agent/develop`. **36 errors, and the distribution is
+flat: exactly 6 on each of the 6 budgeted URLs** — `/antojos`,
+`/antojos/<id>`, `/antojos/sellers/<id>`, `/antojos/sellers/list`,
+`/marketplace`, `/about`. Within each page the 6 arrive as 3 pairs, each
+pair ~2ms apart and the pairs ~20ms apart, all within one page load. That
+`/about` scores the same 6 as everything else is another nail in the
+intl-middleware theory, and the flat 6-per-URL says whatever it is happens
+a fixed number of times per render, not once per route.
+**Do not let the wrap swallow Next's control flow.** Next signals "this
+route is dynamic" by throwing `DynamicServerError` out of `headers()`, which
+is what Clerk's `auth()` calls underneath. Catching that one would let the
+root layout prerender and bake a signed-out session into every static page —
+permanently, not for one render, and far worse than the bug being defended
+against. The wrap rethrows anything carrying a `digest` string
+(`DYNAMIC_SERVER_USAGE`, `NEXT_REDIRECT`, `NEXT_NOT_FOUND`,
+`BAILOUT_TO_CLIENT_SIDE_RENDERING`); the build's route table staying all `ƒ`
+is the check that it worked.
+**The pathname is best-effort, and that is a real limitation.** Next 14 hands
+a Server Component no pathname, and the middleware that would normally set a
+header for it is exactly what is missing when this fires. The wrap reads an
+allowlist — `next-url` (client-side navigations), `x-matched-path` (Vercel),
+`x-invoke-path`, `x-pathname`, `referer` — and logs `pathSource: 'none'`
+when none of them is present, rather than inventing one. Nothing else is
+read off the request: it also carries Clerk's session cookie. On a cold
+document request in the `lighthouse` job none of those headers exist, so
+expect `path: 'unknown'` there; it is on Vercel and on soft navigations that
+this earns its keep.
+**Noticed while in there, not fixed (rule 9, rule 2).** Three other call
+sites `await auth()` with no try/catch and would throw the same way:
+`src/app/antojos/layout.jsx:8` and `src/app/marketplace/layout.jsx:8` (both
+only to pass `userId` to `SideBar`), and `src/server/sellers/
+getProfileChecklist.ts:15`. They are *not* the source of the 36 — `/about`
+renders none of them and still logs 6 — but whoever finds the cause should
+fix them in the same pass rather than one at a time.
+**A candidate request, seen locally (2026-09-17), not confirmed as the CI
+source — a lead, not a finding.** Running `npm run dev` and clicking around
+`/antojos` and `/marketplace` logged this exact warning with a path attached:
+```
+[warn] getSellerContextData: auth() threw, rendering as signed out {
+  path: 'http://localhost:3000/sw.js',
+  pathSource: 'referer',
+  error: "Clerk: auth() was called but Clerk can't detect usage of clerkMiddleware() ..."
+}
+```
+The mechanism is plausible: `/sw.js` is not in this repo and nothing here
+registers a service worker (likely a stale one from a browser profile, or
+the PWA `manifest.json`), so the browser requests it anyway; the
+middleware's matcher excludes `.js` files (`js(?!on)` in `config.matcher`),
+so that request never reaches `clerkMiddleware` at all; it 404s, and
+rendering that 404 through the root layout calls `auth()` without Clerk's
+context. **Why this is a lead and not the answer:** the CI baseline measured
+above is a flat, reproducible 6 errors on each of 6 budgeted URLs, all
+within one page load — a shape that doesn't obviously match a one-off
+`/sw.js` request. Worth ruling in or out with the same evidence-first
+approach as the rest of this entry, not assumed.
 **Model:** `opus` — subtle, and it runs through the root layout · **Nightly:**
 no
 
-### [ ] T-80 · Translate the existing code comments to English
+### [x] T-80 · Translate the existing code comments to English
 **Why:** the 2026-09-05 decision (see T-66) says code, comments and the
 ROADMAP go in English. T-66 delivered exactly what its own "Done when"
 asked for — `ROADMAP.md` — and CLAUDE.md's rule was updated, but the
@@ -2168,7 +2470,7 @@ each note's exact technical meaning rather than translating word for word
 | c2 | the pages under `src/app`, plus what the old scan missed in a/b | 16 | 41 | **done (#269)** |
 | d1 | `tests/integration` | 20 | 143 | **done (#271)** |
 | d2 | `tests/unit`, `tests/e2e`, `tests/setup.js` | 16 | 92 | **done (#272)** |
-| e | `scripts/` | 13 | 213 | **PR #273, awaiting human review** |
+| e | `scripts/` | 13 | 213 | merged (#273), human-reviewed |
 **Batch b was split in two (2026-09-07):** the estimate said ~19 files, the
 real count is 25 (169 lines) - over CLAUDE.md's ~15 guideline, so `src/utils`
 and `src/app/api` became b1 and b2.
@@ -2215,7 +2517,14 @@ re-run of the same commit, with only comment changes in the tree. Worth
 knowing before anyone reads a red e2e as a real regression — and worth its
 own look if it repeats, since a flaky suite that cries wolf is how a real
 break gets waved through.
-**Batch e needs a human, and should be last.** `scripts/` is where the
+**Batch e went last and was reviewed by the human before merging**, as
+this ticket required from the day it was filed.
+**Closed 2026-09-07.** All eight batches landed: 8 PRs, ~1,000 comment
+lines across `src/`, `tests/` and `scripts/`. Two comments stay Spanish on
+purpose and are listed in the guard's ALLOWED-style notes above:
+`ShareButton`'s commented-out share text (product copy) and an English
+comment quoting the product name "Buñuelo". The `describe`/`it` strings
+are a separate task, T-85. `scripts/` is where the
 dangerous notes live — `seed.mjs`'s "NUNCA apuntes esto a producción",
 `backup-db.mjs`, `reclaim-account.mjs`, `set-admin-metadata.mjs`. T-66
 already made this point about the ROADMAP: a translation that softens or
@@ -2228,7 +2537,7 @@ T-81.
 **Model:** `sonnet` for batches a-d, `opus` for e · **Nightly:** yes for
 a-d, no for e
 
-### [ ] T-81 · Finish the i18n migration, zone by zone
+### [~] T-81 · Finish the i18n migration, zone by zone
 **Why:** T-46 shipped the scaffolding and `/about` as the proof screen,
 and closed with "afterward, one task per zone: listing, product detail,
 seller profile, forms, seller panel. Each with its own PR." Those tasks
@@ -2256,6 +2565,472 @@ routes that have nothing to do with i18n.
 **Still not solved by any of this:** what sellers write themselves —
 product names and descriptions — stays in whatever language they typed. A
 product decision, not an i18n one.
+**Split by zone**, one PR each, tracked here as it goes (see T-80 for the
+same pattern applied to a different migration):
+| Zone | Routes | State |
+|---|---|---|
+| listing | `/antojos`, `/marketplace` (index pages only, not their sub-routes) | **done** |
+| product detail | `/antojos/[id]`, `/marketplace/[id]` | **done** |
+| seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
+| auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
+| seller's own forms — onboarding | `/antojos/sellers/register`, `/antojos/sellers/approving` | **done** (see "Seller onboarding zone notes") |
+| seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | pending |
+| seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | pending |
+| admin | `/admin/*` | **skipped on purpose** (decision 2026-09-19, reasoning below) — gate hardened anyway |
+**Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
+matches `/antojos`, `/en/antojos`, `/marketplace`, `/en/marketplace` as
+exact paths (no `(.*)` wildcard) - their sub-routes stay on the old,
+unmigrated tree under `src/app/antojos/` and `src/app/marketplace/` on
+purpose, so `isProtectedRoute`'s gate on `/antojos/sellers/register` etc.
+is untouched. `src/app/[locale]/antojos/layout.jsx` and
+`.../marketplace/layout.jsx` are deliberate duplicates of the old
+layouts, not shared - a `[locale]` segment can't span into the sibling
+non-locale tree that still owns those sub-routes. No visible locale
+switcher on these two pages yet: `LocaleSwitcher` only renders inside
+`AboutLayout` and its hrefs are hardcoded to `/about` - generalizing it to
+work from any zone is left for whichever zone does it first. Both
+languages are reachable directly by URL either way, which is what this
+task's "Done when" asks for.
+**Locale switcher follow-up (closed; its `basePath` prop was later replaced
+- see the switcher fix further down):** `LocaleSwitcher` stopped hardcoding
+a `/about` href and took a `basePath` prop
+(`about` / `antojos` / `marketplace`), and renders in `src/app/[locale]/antojos/layout.jsx`
+and `.../marketplace/layout.jsx` too - outside `<Layout>`, so it does not
+leak into the shared `Layout`/`Navbar` used by the still-unmigrated
+`src/app/antojos/layout.jsx` and `src/app/marketplace/layout.jsx`. It still
+does not preserve query params (sort/category/availability) across a
+switch, matching the About switcher's existing behavior on purpose.
+`tests/e2e/i18n.spec.js` walks the switcher on both listing pages.
+**Locale-aware nav follow-up (tried on a branch, not merged):** the listing
+migration above left a real bug - `SidebarBtn` and a few other internal
+links hardcoded bare paths (`/marketplace`, `/antojos`), so a soft
+navigation from an English page landed on the Spanish URL while the root
+layout (`<html lang>`, Clerk's localization, `NextIntlClientProvider`) kept
+rendering English, because Next.js does not re-run the root layout on a
+client-side navigation. Fixed by exporting a single source of truth,
+`LOCALIZED_ROUTES` + `localizedHref()` in `src/i18n/routing.ts`: every
+route that has a locale-prefixed twin lives there once, `src/middleware.js`
+derives `isIntlRoute`'s patterns from it instead of hand-writing them, and
+internal links (`SidebarBtn`, the About-zone links, `not-found.jsx`,
+`Schedule.jsx`, `SellerPage.jsx`) call `localizedHref(path, locale)` before
+navigating. `localizedHref` prefixes an exact member of the list, and for a
+`matchSubpaths: true` entry (only `/about` today) anything nested under it
+too - mirroring `isIntlRoute`'s own `(.*)` wildcard for that same entry, so
+a future `/about/team` link would not silently regress into this same bug.
+A `matchSubpaths: false` entry (`/antojos`, `/marketplace`) stays exact-only,
+so unmigrated destinations like `/antojos/sellers/list` stay bare and don't
+404. Any future zone should add its route to `LOCALIZED_ROUTES` instead of
+hardcoding a new pattern in the middleware. **Merged as PR #363** (opened on
+a branch for review first, at the human's request) - see it for the manual
+before/after verification in a real browser.
+**One call site that fix missed, found afterwards (fixed in the product
+detail zone PR):** `src/components/products/ProductPage.jsx:78` did
+`router.push(\`/${section}\`)` - the same locale-dropping pattern, where
+`section` is `'antojos'` or `'marketplace'`, both exact members of
+`LOCALIZED_ROUTES`. The review grep that produced PR #363's call-site list
+searched for literal `'/antojos'`/`'/marketplace'` strings and a template
+literal with an interpolation does not match that shape - a reminder that
+grepping for interpolated pushes (`router.push(\``) matters as much as
+quoted paths. Now `router.push(localizedHref(\`/${section}\`, locale))`.
+**Product detail zone notes (this PR):** `/antojos/[id]` and
+`/marketplace/[id]` are the first *dynamic* routes in this migration - every
+zone before this one was a static path. A naive wildcard matcher
+(`/antojos/:id` or `/antojos(.*)`) would also match `/antojos/game` and
+`/antojos/pqrs`, two real, single-segment sibling pages that are not
+products; `isIntlRoute` swallowing them would rewrite them into a product
+lookup for id `"game"`/`"pqrs"` and 404 both. Chose **option (a)** from the
+task brief - constrain the id to a Mongo ObjectId shape (24 hex chars, what
+a Mongoose `_id` always is) - over **option (b)** (migrating `/antojos/game`
+and `/antojos/pqrs` in the same PR): (a) is a minimal, targeted fix that
+does not pull two unrelated pages into a zone that was never scoped for
+them, keeps the diff small (rule 2), and the constraint is exactly what a
+product id already is in every real case, not a heuristic. `LOCALIZED_ROUTES`
+gained a `kind` discriminant (`'static'` for the existing entries, `'dynamic'`
+for these two) since a dynamic route doesn't fit the old
+`{ path, matchSubpaths }` shape; both `isIntlRoute` (`src/middleware.js`) and
+`localizedHref` (`src/i18n/routing.ts`) build the exact same regex via the
+new `buildDynamicPattern(base, localePrefix?)`, so there is still one
+definition of "what counts as a product detail URL." `createRouteMatcher`
+(Clerk) accepts a raw `RegExp` as well as a path-to-regexp string - confirmed
+by reading `node_modules/@clerk/nextjs/dist/esm/server/routeMatcher.js`
+rather than assumed - so the dynamic entries pass a `RegExp` straight
+through instead of relying on path-to-regexp's own custom-param string
+syntax. Verified live (dev server) and in `tests/e2e/i18n.spec.js`/
+`tests/unit/routing.test.js`: `/antojos/game` and `/antojos/pqrs` still serve
+their own content, in Spanish, unprefixed; a real 24-hex id under either
+prefix gets the locale-aware treatment; `/antojos/sellers/<id>` (an extra
+segment, and a real seller id is also 24 hex chars) is not swallowed either.
+The old `src/app/antojos/[id]/page.jsx` and `src/app/marketplace/[id]/page.jsx`
+were deleted, not left dead - once `isIntlRoute` rewrites a matching request,
+Next's file router never reaches them again, same as the listing zone's old
+index pages. Both new `src/app/[locale]/.../[id]/page.jsx` files nest under
+the existing (already-duplicated) `.../layout.jsx` from the listing zone, so
+no new layout was needed. `ProductPage.jsx` and `ShareButton.jsx` had their
+interface copy (headings, buttons, aria-labels, the WhatsApp message
+template) moved into `messages/{es,en}.json` under new `ProductPage` and
+`ShareButton` namespaces - the product's own name/description stay
+untranslated, as data, per this task's long-standing rule.
+**Share link locale (human decision, 2026-09-17):** a shared product link
+now carries the sharer's locale (`/en/marketplace/<id>`, not the bare path),
+per the decision recorded in T-132. `src/lib/share-url.js`'s `buildShareUrl`
+takes a `locale` param (defaulting to the app's default locale, so every
+existing call site keeps building the same bare URL) and reuses
+`localizedHref` instead of re-implementing the prefixing rule.
+~~The seller share link (`/antojos/sellers/<id>`) stays bare regardless of
+locale - that zone isn't migrated, so a prefixed link would 404.~~ **No
+longer true as of the seller profile zone PR below** - that reasoning
+expired once `/antojos/sellers/<id>` became a `dynamic` `LOCALIZED_ROUTES`
+entry. The seller branch of `buildShareUrl` now calls `localizedHref` too,
+same as the product branch; see `tests/unit/share-url.test.js`.
+**Seller profile zone notes (this PR):** `/antojos/sellers/[id]` reused the
+product detail zone's `dynamic` entry machinery outright - a seller id is
+also a Mongo ObjectId, so `{ kind: 'dynamic', base: '/antojos/sellers' }`
+needed no new logic in `buildDynamicPattern`, just another entry in
+`LOCALIZED_ROUTES`. `/antojos/sellers/list` is a `static`, exact-only entry,
+same treatment as `/antojos` and `/marketplace` in the listing zone. **The
+protected-route proof this task exists for:** five sub-routes live under the
+same `/antojos/sellers` prefix and are gated by `isProtectedRoute` in
+`src/middleware.js` - `register`, `profile/edit`, `products/edit`,
+`schedules`, `approving` (plus `/antojos/product/add` from an earlier zone,
+and `/admin/sellers`, a different prefix entirely). None of them is a bare
+24-hex segment and none is the exact string `/antojos/sellers/list`, so
+neither new `LOCALIZED_ROUTES` entry swallows them - verified for all six
+(and their `/en/` twins, at the `buildDynamicPattern`/`localizedHref` level)
+in `tests/unit/routing.test.js`, and live against a dev server. The old
+`src/app/antojos/sellers/[id]/page.jsx` and
+`src/app/antojos/sellers/list/page.jsx` were deleted, not left dead, same
+reasoning as the previous two zones - both nest under the existing
+`src/app/[locale]/antojos/layout.jsx`, no new layout needed.
+**`AvailabilityBadge`/`TableSchema` translated (the gap the product detail
+zone's PR flagged under rule 9):** both render on this zone's seller profile
+and were still hardcoding Spanish. `AvailabilityBadge`'s four labels and
+`TableSchema`'s three headers plus the empty-state message moved into
+`messages/{es,en}.json` under their own namespaces; day names use a new
+locale-agnostic `DAY_KEYS` array (`src/utils/resources/days.js`) so both
+components resolve a translated name instead of hardcoding one language.
+`src/lib/store-availability.ts`'s `availabilityLabel()` - previously commented
+"Product copy, so Spanish" - is gone; what's left is `formatOpeningTime()`,
+a pure `{ hour, minute }` split with no language in it, still covered by
+`tests/unit/store-availability.test.js`. **A real seam found doing this, not
+fixed here:** `TableSchema` receives `schedule.day` already swapped for its
+*Spanish name* (`daysES[schedule.day - 1]`, done server-side in `GET
+/api/sellers/[id]` and `withDayNames()` in `src/utils/lib/schedules.ts`, for
+the still-unmigrated `Schedule.jsx` edit screen that also reads this shape).
+Translating it client-side means reversing that lookup
+(`daysES.indexOf(schedule.day)`) instead of keying off the locale-agnostic
+day number the schema actually stores - a workaround, not a fix. The real
+fix is having those two server routes return the numeric `day` and let every
+client format it, but that changes a response shape read by more than this
+zone (`Schedule.jsx`'s edit form, `SellerModal.jsx`, `ProductModal.jsx`) and
+was out of scope here.
+**Rule 9, found while doing this, not fixed here (would have pushed this PR
+past the previous zone's 15-file soft ceiling):** `SellerPage.jsx` (this
+zone's own screen) still hardcodes "Horario", "¡Conoce todos los productos de
+este vendedor!", "Recomendar a un amigo", "Instagram" and "WhatsApp" -
+confirmed it is the *only* importer of `SellerPage`, so translating it is
+contained. `SellerModal.jsx` duplicates almost the exact same copy, and is
+genuinely shared: it renders both here (via `SellerGrid` → `SellerCard` →
+`SellerModalHandler`) and on the already-migrated
+`src/app/[locale]/antojos/[id]/page.jsx` (`ProductPage.jsx` imports it too).
+`SellerGrid.jsx` also has its own untranslated empty-state copy ("No hay
+vendedores disponibles..."). None of these were required by this task's
+verification (badge + schedule table only), and translating all four well
+would mean deduplicating `SellerPage`/`SellerModal`'s copy rather than
+translating the same strings twice in two files - worth doing together, in
+its own follow-up.
+**Locale switcher gap on this zone, found while doing this — FIXED, see
+below:** `src/app/[locale]/antojos/layout.jsx` hardcoded `<LocaleSwitcher
+basePath="antojos" />` for every page under it, including the new
+`sellers/list` and `sellers/[id]`. Clicking the switcher from
+`/antojos/sellers/list` landed on `/en/antojos` (the listing), not
+`/en/antojos/sellers/list` - the switcher didn't know which sub-route it was
+on. Same class of bug as the "locale-aware nav" follow-up two zones ago, but
+in the switcher itself this time, not an internal link.
+**Switcher fix (done):** the `basePath` prop is gone. `LocaleSwitcher` is a
+client component that reads `usePathname()` and rebuilds the twin URL via a
+new `stripLocalePrefix()` + the existing `localizedHref()`, so it cannot
+drift as more zones migrate - there is no per-layout constant left to keep
+in sync. That prop was wrong by construction: it encoded "which page am I
+on" as a value each layout had to repeat, and a layout covers many pages.
+It affected 5 of the 7 migrated pages by the time it was caught.
+**A second bug the fix's test uncovered, NOT fixed (rule 9).** The
+regression test was written to *click* the switcher rather than just read
+the URL. It failed - not because the href was wrong (it was correct) but
+because on `/antojos/[id]` the switcher is in the DOM and unclickable:
+`ProductPage`'s own full-bleed layout paints over the row
+`[locale]/antojos/layout.jsx` renders it in. So a visitor on a product page
+has no way to change language at all. Screenshot evidence in the PR. The
+test now asserts the `href` and says why, and the click-through coverage
+stays on the listing pages where the control is actually reachable. Fixing
+it is a layout/design call - where the switcher belongs on a full-bleed
+page - not something to guess at; likely the same answer as the
+`SellerPage`/`SellerModal` dedup above, since both are about this zone's
+chrome. **Worth noting for the record:** the product detail zone shipped
+green through `quality`, `e2e` and `lighthouse`, with `<html lang>` and
+copy verified in a browser, and still left a UI control unreachable. Rule 3
+again.
+**Seller share link now carries the sharer's locale too:** see the amended
+note above this one; `tests/unit/share-url.test.js` and
+`tests/e2e/i18n.spec.js` both cover it.
+**The honest limit of all of the above, worth knowing before trusting it.**
+`localizedHref` can only keep the locale on links *to* locale-aware routes.
+While the app is half-migrated, any soft navigation into a zone that is not
+migrated yet - the seller's own forms, admin - necessarily lands on a
+URL with no prefix while the root layout stays frozen at the previous
+locale, which is the same desync in a place no helper can reach. A visitor
+browsing in English who opens one of the seller's forms is already in that
+state. This does not go away by patching more links; it goes away when every
+zone lives under `[locale]` and the prefix is always present. Treat it as
+another reason to finish the migration rather than as a bug to chase.
+(Corrected in the auth zone's PR: this used to say "seller profile" too -
+stale since that zone shipped.)
+**Auth zone notes (this PR):** `/auth/login` and `/auth/register` are
+`static` exact entries, same treatment as the listing zone. **Why
+`/auth/callback` is not one of them, and never should be:** it is where
+Clerk lands the user after an OAuth redirect
+(`ProvidersButton.jsx`'s `redirectUrl`) - an external contract, not just an
+internal route. `isIntlRoute` runs before Clerk's own gate and returns early
+on a match, so if it ever rewrote or locale-prefixed that URL, a visitor
+mid-handshake could land somewhere Clerk isn't expecting - a broken sign-in,
+not a cosmetic bug. It also has essentially no interface copy (a
+transitional screen rendering `AuthenticateWithRedirectCallback`). Left
+untouched, out of `LOCALIZED_ROUTES`, and out of this PR on purpose -
+`tests/unit/routing.test.js` asserts `localizedHref('/auth/callback', ...)`
+never prefixes it in either locale, so the exclusion stays deliberate rather
+than something a future edit silently undoes.
+**The compiled-in redirect target, unaffected:** `NEXT_PUBLIC_CLERK_SIGN_IN_URL`
+and `NEXT_PUBLIC_CLERK_SIGN_UP_URL` (`.env`, and pinned in `scripts/e2e.mjs`)
+point at the bare `/auth/login` and `/auth/register`. Both still resolve
+exactly as before - next-intl's middleware rewrites the bare, default-locale
+request internally to serve `src/app/[locale]/auth/login|register/page.jsx`,
+the same mechanism every previous zone's bare path relies on. Verified live
+(dev server) and in `tests/e2e/auth-gate.spec.js`, which was not touched and
+still passes: a signed-out visitor hitting a gated seller route still lands
+on bare `/auth/login`, in Spanish. The old `src/app/auth/login/page.jsx` and
+`src/app/auth/register/page.jsx` were deleted, not left dead, same reasoning
+as every previous zone - `src/app/auth/callback/page.jsx` is the only file
+left under the old `src/app/auth/` tree, and it stays there.
+**No shared layout, on purpose:** every previous zone added a `layout.jsx`
+under `[locale]` to call `setRequestLocale` (and, for listing/about, to hold
+`LocaleSwitcher`). `SignInForm`/`SignUpForm` render their own full-screen
+markup with no shared chrome to hang a layout off, so `setRequestLocale` is
+called directly in each `page.jsx` instead - one fewer file than the
+alternative, no behavior difference.
+**Scope of what was actually translated (kept deliberately small, same
+reasoning the seller profile zone used for `SellerPage.jsx`):** the heading,
+subtitle, back-button `aria-label`, field labels, submit button, and the
+cross-link between the two screens, under new `SignInForm`/`SignUpForm`
+namespaces in `messages/{es,en}.json`. `SignUpForm`'s password-strength
+checklist and its plain, client-side "passwords don't match" hint (shown
+while typing, not from a Clerk response) are translated too - they don't
+depend on a real Clerk API round trip, so they're actually verifiable in
+Playwright. **Not translated, and why:** the Clerk error dictionary
+(`passwordErrorMessages`, one raw-Spanish object literal keyed by Clerk error
+code) is duplicated near-verbatim across `SignInForm.jsx`, `SignUpForm.jsx`
+*and* `ForgotPassword.jsx` - translating it in one file would leave the other
+two half-done, and de-duplicating it first is its own piece of work, not an
+i18n one. It also only ever surfaces from a real Clerk API error, which is
+not realistically exercisable in this Playwright suite without a live Clerk
+submission. `ForgotPassword.jsx` (the whole "forgot password" modal - only
+reachable by clicking through) and `SignUpForm`'s OTP verification modal are
+untouched for the same reason plus the file-count ceiling: translating either
+well means untangling them from that shared error dictionary too.
+`ProvidersButton.jsx` (Google/Microsoft OAuth buttons) is untouched because
+it is not rendered - both call sites are commented out in `SignInForm.jsx`
+and `SignUpForm.jsx`. Confirmed by grep: its only importers are those two
+files, both commented. Left alone per rule 5 (not this PR's job to delete
+it, and it may be a paused feature rather than dead code - worth a follow-up
+question to the human, not a unilateral deletion).
+**One more call site caught by the same nav-gap pattern:** `src/app/[locale]/about/page.jsx`
+already had two `<Link href="/auth/register">`s (the hero and final CTA).
+Now that `/auth/register` is a `LOCALIZED_ROUTES` entry, a soft nav from
+`/en/about` through either link would have landed on the bare (Spanish) URL
+while the root layout kept rendering English - the exact "locale-aware nav"
+bug PR #363 fixed for `/antojos`/`/marketplace`. Fixed here since it reuses
+imports `about/page.jsx` already had (`useLocale`, `localizedHref`) - a
+two-line change, not a new one. **Not fixed in this PR, and left as a
+follow-up:** `src/context/SellerContext.js` (`router.push('/auth/login')`),
+`src/components/seller/SideBar.jsx` (`goto='/auth/login'`/`'/auth/register'`),
+`src/components/header/Navbar.jsx` (`href='/auth/login'`),
+`src/app/admin/sellers/page.jsx` and `src/app/antojos/sellers/panel/page.jsx`
+(both `redirect`/`router.push('/auth/login')`) all still hardcode the bare
+paths. Every one of these currently only runs from an unmigrated (Spanish,
+unprefixed) context, so they are not live bugs today - but the day any of
+their call sites gets wrapped in a migrated `[locale]` layout, the same
+desync bug becomes reachable. Left alone here to keep this PR scoped to the
+auth zone (rule 2); worth a grep-driven sweep of its own once more zones are
+migrated, same shape as the original "locale-aware-nav" follow-up.
+**No locale switcher on this zone:** unlike listing/about, `/auth/login` and
+`/auth/register` have no shared layout to hang `LocaleSwitcher` off (see
+above), and adding one just for these two screens felt like scope creep for
+a first pass. Both languages stay reachable by URL either way, which is what
+this task's "Done when" asks for - same tradeoff the listing zone shipped
+with initially. Noted here rather than fixed, consistent with the "honest
+limit" note above.
+**Verified live (dev/build, this PR):** `/auth/login` (Spanish, unprefixed)
+and `/en/auth/login` (English) both render with `<html lang>` matching the
+URL and the translated heading/labels visible; same for `/auth/register` and
+`/en/auth/register`. The cross-link from each screen to the other keeps the
+locale on a soft navigation. `/auth/callback` was left alone and not
+re-verified beyond the unit-level routing assertion, per the warning above -
+visiting it cold outside a real OAuth handshake is not a meaningful exercise
+of that screen. See `tests/e2e/i18n.spec.js` for the full walk in both
+locales and `tests/e2e/auth-gate.spec.js` (untouched, still green) for proof
+the bare paths still work as Clerk's redirect targets.
+**Middleware gate (this PR) - the prerequisite the forms zone was blocked
+on.** The forms zone is exactly `isProtectedRoute`'s list, and
+`src/middleware.js` ran `if (isIntlRoute(req)) return intlMiddleware(req)`
+*before* the auth gate, so migrating those screens would have un-gated them.
+Fixed here, before any page moves, so the zone PR that follows is mechanical.
+Three layers, because the obvious two are not enough:
+- **(a) Order.** The auth gate runs first and `isIntlRoute` is now the
+  **last** statement in the middleware. That is deliberate beyond "correct
+  today": with nothing after it, there is no early return left for a future
+  change to slip in front of the session check. Cost, stated rather than
+  discovered later: `await auth()` now runs on locale-aware routes too (it
+  already ran on every other route). `isClerkAdmin()` is still reached only
+  for an admin route with a `userId`, so **no new Clerk Backend API calls**.
+- **(b) Generated twins.** `isProtectedRoute`/`isAdminRoute` are built from
+  `src/lib/route-guards.ts`, which derives one twin per non-default locale
+  from `routing.locales`. Adding a locale widens the gate by itself. The
+  admin **API** pattern is deliberately excluded from that generation -
+  `/en/api/...` is a URL that cannot exist.
+- **(c) The layer nobody had spotted, and the reason (b) alone is not
+  enough.** `[locale]` is an unvalidated catch-all: no `generateStaticParams`,
+  no `dynamicParams`, and `src/i18n/request.ts` silently falls back to the
+  default locale. **Measured before the fix: `/xx/antojos` and `/zz/antojos`
+  answered HTTP 200 and rendered the real Spanish listing.** So `/en/` twins
+  close one door out of infinitely many. Proven with a throwaway page at
+  `[locale]/antojos/sellers/profile/edit`: with **no session**, `/en/...` and
+  `/xx/...` both returned 200 and rendered it, while the bare path correctly
+  redirected to the login. New `src/app/[locale]/layout.jsx` `notFound()`s any
+  locale segment not in `routing.locales`. It returns `children` unchanged -
+  a gate and nothing else, no wrapper markup.
+**The guardrail was extended, and proven to bite.** `tests/unit/routing.test.js`
+now imports `PROTECTED_PATHS`/`PROTECTED_ROUTE_PATTERNS` from
+`src/lib/route-guards.ts` - the same arrays the middleware builds its matchers
+from - instead of re-declaring the list (the old block had its own copy, which
+goes green while the two drift). The new assertions iterate `routing.locales`
+rather than a hardcoded `'en'`, so they are a **default-deny**: add `pt` to
+`src/i18n/routing.ts` and they start demanding its twins. Deliberately removing
+the twin generation turned **8 tests red** in exactly the right places, which is
+the check that the guardrail measures something. It also pins the public routes
+as *ungated*, so "protect everything" cannot pass it.
+**Why the e2e asserts rendered content and not status codes.** First draft
+asserted `404` on `/xx/...` and failed on six paths - because `notFound()`
+answers **HTTP 200 app-wide in this repo (T-91)**, so the assertion was
+measuring T-91, not this gate. Two of those failures were also genuinely
+interesting: `/xx/antojos/sellers/schedules` and `/xx/.../approving` are not
+routing misses at all - they resolve `[locale]/antojos/sellers/[id]` with
+`id="schedules"`, so the `[locale]` guard is the only thing stopping them.
+`tests/e2e/auth-gate.spec.js` now asserts the 404 page **renders** and the real
+page does not, plus that `/en/<protected>` redirects to the login, that
+`redirect_url` carries the locale back (an English visitor returns to `/en/...`
+after signing in), and that the real locales still serve their own pages so the
+check cannot pass by breaking what it guards. 23 tests there, 129 in the suite,
+all green.
+**Admin: skipped on purpose (human decision, 2026-09-19).** Not "pending" -
+decided, so the nightly agent does not pick it up. Reasons, in order: it has
+one user, who reads Spanish, so the i18n value is ~zero; the role lives in
+Clerk's `publicMetadata`, which this ROADMAP marks as not-without-a-human; and
+it is **the one page where the middleware is the only role check** - the page
+itself only asserts that a session exists, never the role. Its locale twins are
+generated anyway (cost: one shared helper), so a later migration of that area
+cannot open it silently. If it is ever migrated, the prerequisite is that the
+page stop depending on the middleware alone - a server-side `isClerkAdmin`,
+the way `/antojos/sellers/panel` already gates itself.
+**Rule 9, found on the way, not fixed here:**
+- `isProtectedRoute` said `/antojos/sellers/schedule(.*)` - **singular** - while
+  the route on disk is `src/app/antojos/sellers/schedules`. It matched only via
+  its own `(.*)`. Corrected in this PR because this PR rewrites that exact list;
+  pinned by a test so it cannot drift back.
+- **`/antojos/sellers/panel` is not in the protected list** and never was. It
+  gates itself server-side (`getSellerPanelStats()` -> `redirect()`), which is
+  better than relying on the middleware - but it means "the list" and "the
+  actually-protected surface" disagree. Left as is: adding it would change what
+  an anonymous visitor sees, which this PR has no reason to do.
+- **`src/app/robots.ts` lists only 4 of the 6 protected paths, and no locale
+  twins.** Not touched here; it matters once the forms have `/en/` URLs.
+- **~14 call sites hardcode bare protected paths** (`SideBar.jsx`'s 7 `goto`s,
+  `useCheckSeller`'s 4 `router.push`es including the authorization ones,
+  `EditProductForm`, `EditSellerForm`, `Schedule`, `register`, `products/edit`,
+  `panel`). Every one becomes the PR #363 locale-dropping bug the moment these
+  routes are migrated. That is the **next PR**, before the pages move.
+- **`GET /api/sellers/admin` has no authorization of its own** - filed
+  separately below, see T-133.
+**Seller onboarding zone notes (this PR, 2026-09-23).** The forms zone was
+split in three before starting (table above): its 7 pages are ~785 lines and
+pull in ~1,300 more of components with copy of their own (`EditSellerForm`,
+`Schedule`, `EditProductForm`, `ImageGrid`, `UniGraphicSelector`) - well past
+CLAUDE.md's ~15-file ceiling as one PR. Split by the seller's journey: sign up
+and wait (this PR), manage products, edit profile and schedule. Onboarding
+went first because `/approving` is where every other forms page redirects an
+unapproved seller, so it is already migrated when they are.
+- **The first gated routes in `LOCALIZED_ROUTES`.** `/antojos/sellers/register`
+  and `/antojos/sellers/approving` are `static` exact entries. Safe only
+  because of the middleware gate above: `isProtectedRoute` (with its `/en`
+  twin) runs before `isIntlRoute`. `tests/e2e/auth-gate.spec.js` was missing
+  `/register` entirely - added, so `/en/antojos/sellers/register` with no
+  session is proven to land on the login, not the page.
+- **The unit guardrail changed meaning, on purpose.** It asserted that *no*
+  protected route is ever prefixed - true while `isIntlRoute` ran first,
+  obsolete since the gate PR. It now asserts that a protected route is
+  prefixed **if and only if** `src/app/[locale]<path>/page.jsx` exists, so a
+  future forms PR has to move the file and add the entry together: the entry
+  alone 404s the English link, the file alone strands the page in Spanish.
+  Both onboarding routes are also pinned by name, so the check cannot pass by
+  both halves disappearing.
+- **`useCheckSeller` localizes every redirect** (`src/context/SellerContext.js`),
+  through `localizedHref`, which leaves a destination with no `[locale]` file
+  bare. That closes 5 of the ~14 call sites listed above in one place - the
+  hook's own 4, plus `routeIfNot` for every caller - without the callers
+  changing. The register page's own `router.push` to `/approving` is the 6th.
+  `SideBar`'s links were already covered: `SidebarBtn` calls `localizedHref`.
+  Still bare and still fine: `panel`'s server `redirect()`s (unmigrated page,
+  T-44's territory).
+- **Shared components translated, not forked:** `ImageGrid` (4 importers) and
+  `UniGraphicSelector` (2). The root layout's `NextIntlClientProvider` covers
+  every route, so on the unmigrated forms they keep rendering Spanish.
+  `InputFields` needed nothing - its copy arrives by props.
+- **The WhatsApp approval message is translated and now URL-encoded.** It
+  used to be hand-written `%20`s with the business name inserted raw, so an
+  `&` in a name cut the message short. `encodeURIComponent` fixes that as a
+  side effect of moving the text into `messages/`.
+- **Verified with the real screens, not just the redirects.** The T-84 session
+  is an approved seller, for whom neither page renders. The new
+  `tests/e2e/signed-in/seller-onboarding-i18n.spec.js` flips the fixture in the
+  e2e database (un-approves it, or unlinks its seller) to render each page in
+  both languages, and restores it in `afterEach`, failures included, because
+  later specs rely on it. It also proves the redirect this PR localizes: a
+  pending seller on `/en/.../register` lands on `/en/.../approving`.
+- **Rule 9, found on the way, not fixed here** - filed as **T-134**: the
+  register form never shows its errors and corrupts its own state on a failed
+  submit, and `useCheckSeller` lets a user with no seller profile onto
+  `/approving`. Also: the note above says `robots.ts` lists "4 of the 6"
+  protected paths - it lists all 6. What is really missing there is the `/en`
+  twins, of these two routes and of `/auth/` (since the auth zone). Low stakes,
+  since each of those URLs redirects a crawler with no session to the login,
+  but worth fixing with the last forms PR, once every twin exists.
+**No locale switcher on the seller's gated screens (human decision on PR
+#373, 2026-09-23) - applies to all three forms zones, not just this one.**
+Found in review: moving `/register` under `[locale]/antojos/layout.jsx` gave
+it a `LocaleSwitcher` it never had, and the switcher is a full page
+navigation on purpose (T-46), while the form keeps everything in `useState`.
+Reproduced in a real browser: four fields filled, "English" clicked, the
+page came back at `/en/...` with every field empty and no warning. On the
+product forms it would be worse - `ImageGrid` uploads each photo the moment
+it is picked, so switching would also orphan those files in ImageKit (T-117).
+Options weighed: (A) hide the switcher on protected paths; (B) persist a
+draft before navigating; (C) a `beforeunload` warning - cheap, but it misses
+soft navigations and iOS Safari does not show it, which is where students
+are; (D) document it. **Chose A:** `LocaleSwitcher` returns `null` when
+`isProtectedPath()` (`src/lib/route-guards.ts`) matches, which reuses
+`PROTECTED_PATHS` instead of a second list, so the products and profile
+zones are covered without touching it again. It also hides on `/approving`
+and the product list, which are not forms - harmless. Cost, accepted: a
+seller who reads English and lands on a form in Spanish (an old bare link)
+has to switch on another page and come back. **B is filed as T-135**; when it
+lands, the switcher can come back to these routes.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
@@ -3121,7 +3896,7 @@ token is the half that works. And do not reintroduce anything shaped like
 `x-internal-fetch`: it has been tried, on a branch, and it is an auth bypass.
 **Model:** `opus` for 4, `sonnet` for 1-3 · **Nightly:** yes for 1-3
 
-### [ ] T-113 · Environment drift: fail loudly, and catch renames before they ship
+### [x] T-113 · Environment drift: fail loudly, and catch renames before they ship
 **Why:** on 2026-09-13 the first promotion in eight days broke two things in
 production at once, and **neither was a code bug** - both were a change
 that needed a value set outside the repo, recorded somewhere no promoter
@@ -3157,6 +3932,57 @@ which is exactly why they were missing from the example.
    trustworthy as *the* list to compare a dashboard against.
 **Not in scope:** anything that reads or writes Vercel or GitHub settings.
 That is the human's, and listing it is what T-11b and T-14 now do.
+**`getCloudinary()` no longer exists.** T-116 deleted `src/utils/cloudinary.js`
+along with its only importer (a route with no caller) - confirmed by grepping
+all of `src/` for `getCloudinary` and finding nothing outside this ROADMAP.
+Only `getImageKit()` (`src/utils/imagekit.js`) got the check.
+**Done:** `getImageKit()` checks its three variables and throws a new
+`ConfigError` (`src/utils/lib/errors.ts`) naming every one that's missing.
+`errorResponse` (`src/lib/api-response.ts`), the single choke point both
+`POST` and `DELETE /api/images` already funnel every error through, logs it
+at `error` (unchanged) and now answers `ConfigError` with a message that says
+"configuración" and that retrying won't help, instead of the generic
+"Error interno del servidor" - the specific variable name stays in the log,
+never in the response. `tests/unit/imagekit.test.js` is new: each of the
+three vars missing alone, and all three missing together, name themselves in
+the thrown message. `tests/unit/api-response.test.js` gained a `ConfigError`
+case covering both the log and the response body.
+`tests/unit/env-publico.test.js` gained the drift test: every `process.env.X`
+read under `src/` must be in `.env.example` (two runtime-only exceptions,
+`NODE_ENV`/`VITEST`, which a human never sets there), and every
+`.env.example` entry must be read in `src/`, read directly by a library
+(the two Clerk URLs, plus - newly confirmed by grep - `CLERK_SECRET_KEY` and
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`), or a named, evidenced orphan. Verified
+the negative case by hand: deleting `CRON_SECRET` from `.env.example` and
+rerunning the suite failed that exact test; restored before committing.
+**Orphans found while building the drift test (not deleted, rule 5):**
+`CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` are
+new orphans - T-116 deleted the only code that read them, and `.env.example`'s
+own comment ("T-35 decide con cual quedarse") shows that decision never
+happened. `NEXT_PUBLIC_URL` was already known-orphaned (T-112b); confirmed its
+only remaining readers are `scripts/e2e.mjs` and `scripts/lighthouse.mjs`,
+outside `src/`. `.env.example` now says so next to each. `LOG_LEVEL`
+(`src/lib/logger.ts`) was read in `src/` but undocumented; added as an
+optional entry.
+**Verified:** `npm run test` (451/451), `npm run typecheck` and `npm run build`
+all green. `npm run lint` (and the lint step inside `npm run build`) fails in
+this session's sandbox with `Plugin "@next/next" was conflicted between
+".eslintrc.json ..." and "..\..\..\.eslintrc.json ..."` - reproduced
+identically on the unmodified base commit, so it's the worktree sitting
+inside the main checkout (which has its own `.eslintrc.json` and
+`node_modules` three directories up), not this change. Ran raw `eslint
+--no-eslintrc -c .eslintrc.json` (bypasses the ancestor-directory config
+search `next lint` doesn't let you skip) over `src` and `tests`: 0 errors, 6
+pre-existing warnings, none in a file this PR touches.
+**Also noticed (rule 9), not fixed here:** `src/components/general/ImageGrid.jsx`
+ignores the upload response body and always shows a static "Hubo un problema
+al subir la imagen. Inténtalo de nuevo." alert, so a seller hitting the new
+`ConfigError` message still only sees "try again" client-side. Fixing that
+needs its own PR (and, per CLAUDE.md, a real render/screenshot if the UI copy
+changes) - the "Done when" for this task was the route's response, not this
+component.
+**Nothing outside the repo.** This is entirely in-repo: no Vercel, GitHub, or
+`.env` change required.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-115 · Creating a product answered 400 for every price typed in the form
@@ -3382,16 +4208,53 @@ Admin act on the media library with the signed-in account, delete included)
 **Model:** `opusplan` · **Nightly:** no (needs T-63 and an ImageKit
 dashboard key)
 
-### [ ] T-119 · The add-product page hides which field failed
+### [x] T-119 · The add-product page hides which field failed
 **Why:** found while diagnosing T-115. The API already answers a 400 with
 `fields` naming what was wrong; `/antojos/product/add` reads only
 `message` and shows "Datos inválidos". That is why a price-format bug
 looked like "something is invalid" for ten days instead of "precio". Its
 price input also has `value` commented out, so the field is uncontrolled.
-**Done when:** the page shows the per-field messages from `fields`, and the
-price input is controlled. Check `EditProductForm.jsx` for the same.
-**Careful:** this is a UI change, so rule 3 means a real screenshot of the
-error state, not a test that greps for a class name.
+**Done (2026-09-14):**
+- `/antojos/product/add`: restored `value={formData.price}` on the price
+  `<input>` (it was commented out), and removed the two `price`/
+  `displayPrice` states that were left dangling around that gap - declared,
+  never read, never set. The error dialog now renders the API's `fields`
+  array under the existing generic message, one line per field.
+- `EditProductForm.jsx`'s price input was already controlled - no bug there
+  - but its error banner had the same generic-only problem. It shows
+  `fields` too now.
+- To get `fields` there, `fetchFromApi` (`src/services/browserApi.js`) had to
+  change: it threw an `Error` whose `.message` baked in the failed
+  response's status and body as a JSON string - its own comment already
+  claimed "an Error carrying the status and body", which wasn't literally
+  true. `.status` and `.body` are real properties on the thrown Error now,
+  so `EditProductForm` reads `error.body?.fields` directly. `.message`'s
+  text is unchanged, so `sellerService.js`/`scheduleService.js`, the other
+  two callers, see no difference - both only ever read `.message`.
+- `.eslintrc.json` gained `"root": true`. Without it, ESLint's config
+  resolution walked up past this worktree into the parent checkout's own
+  `.eslintrc.json` and refused to run at all ("Plugin ... was conflicted") -
+  `npm run verify` could not run *at all*, for any task, in this harness's
+  nested-worktree layout (`.claude/worktrees/<id>` inside the repo it
+  worktrees). Not specific to this task, but required to satisfy rule 3.
+**Verified:** `npm run verify` green - lint, `deadcode`, `tsc --noEmit`, 443
+unit/integration tests (`vitest`), `next build`.
+**Not captured this round: real screenshots of the error state.** This
+worktree has no `.env` and no Clerk credentials at all, not even the
+publishable key (public by design). Per `scripts/e2e.mjs`'s own comment,
+Clerk's middleware answers 400 on *every* route without a real publishable
+key, so nothing in the app renders in this session regardless of sign-in -
+and `/antojos/product/add` needs a signed-in seller session besides. Tried
+and ruled out: pulling the Development environment's keys with `vercel env
+pull` - `vercel link` in this session, given only a team scope to pick from,
+created and GitHub-connected a **new, unintended Vercel project**
+(`mercampus-team/agent-abc53b5ffcded3fe6`) instead of linking the existing
+one. It was left in place (the sandbox refuses project deletion as an
+irreversible action) - **a human needs to delete it from the Vercel
+dashboard**, and check it triggered no unwanted deploy. Left for whoever
+promotes this to `develop`: capture the error dialog (add) and error banner
+(edit) in both themes with real Clerk credentials, following the recipe in
+`docs/audits/t-122/` and `docs/audits/t-123/`.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-120 · Store an image's `fileId` and `filePath`, not just its URL
@@ -3563,7 +4426,21 @@ the plan above:
   here: an index change goes in its own PR.
 - **Outside the repo:** nothing.
 
-### [ ] T-124 · Photos over 4.5 MB fail before reaching our code
+### [~] T-124 · Photos over 4.5 MB fail before reaching our code
+> **Option (a) is done and verified; option (b) is untouched.**
+> `src/lib/compressImageForUpload.js` shrinks an oversized file with the
+> Canvas API (resize, then re-encode as JPEG, stepping quality down and then
+> dimensions until it fits) and `ImageGrid.jsx` calls it before building the
+> upload's `FormData`, so `POST /api/images` still sees the same session and
+> `uploader:` tag as before (T-116's model intact). Verified against a real
+> generated file in a real headless Chromium via
+> `npm run test:e2e:image-compression` (`tests/e2e/image-compression/`, its
+> own standalone Playwright config since the main one needs a full `next
+> build` behind a real Clerk key) - **not** the actual add/edit-product form
+> end to end, which needs a signed-in session this worktree's missing `.env`
+> can't provide. Option (b) (signed direct upload to ImageKit) was not
+> attempted; it still needs the signature-binding check the entry below
+> describes before anyone starts it.
 **Why:** raised on 2026-09-13 while discussing who should upload images.
 Vercel Functions reject any request body over **4.5 MB** with `413
 FUNCTION_PAYLOAD_TOO_LARGE`, and the limit cannot be configured.
@@ -3574,12 +4451,12 @@ can exceed it. **Not measured** whether a seller has hit it yet.
 **Options:**
 - **(a) Shrink in the browser before uploading.** Keeps T-116's model intact:
   the upload still goes through our route, so the session check and the
-  `uploader:` tag still apply. The recommended first step.
+  `uploader:` tag still apply. The recommended first step. **Done.**
 - **(b) Signed direct upload to ImageKit.** ImageKit supports it (the backend
   issues `token`, `expire`, `signature`), and the bytes never touch Vercel.
   But the server-side resize is lost, and **it must be verified that the
   signature binds the folder and the tags** - if a client can change them,
-  T-116's uploader rule stops meaning anything.
+  T-116's uploader rule stops meaning anything. **Not started.**
 **Done when:** a photo over 4.5 MB uploads from the form, or the form says so
 before trying - verified with a real large file, not a mocked request body.
 **Model:** `sonnet` for (a), `opus` for (b) · **Nightly:** no (verifying it
@@ -3640,7 +4517,7 @@ the setup, including T-112b's writes); `npm run verify` green.
 **Outside the repo:** nothing.
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-126 · A failed image upload logs no reason
+### [x] T-126 · A failed image upload logs no reason
 **Why:** found alongside T-125 on 2026-09-14. The human's logo upload on the
 `agent/develop` preview (`POST /api/images`, 18:40 UTC) answered **500**, and
 the only log line was `{ status: 500, message: 'Error interno del servidor' }`.
@@ -3665,7 +4542,198 @@ a 500's detail stays), covered by a unit test with a plain-object rejection;
 and a retry of the failing upload on a preview shows the actual reason.
 **Careful:** log the error object's `message`/`help`, never the request or
 the SDK instance - it holds the private key.
+**Done:** `errorResponse` (`src/lib/api-response.ts`) now pulls `message`
+(and `help`, when present) from any thrown non-`Error` with a string
+`message`, logs it under `detailMessage`/`help` alongside the existing
+`status`/`message` fields, and still never puts it in the client response.
+Covered by `tests/unit/api-response.test.js`, proven meaningful by failing
+against the pre-fix code (`git stash push -- src`) and passing after
+(`git stash pop`). Callers of `errorResponse` that benefit: both
+`/api/images` verbs (the one that prompted this), `/api/sellers/admin/:id`
+PATCH, `/api/schedules` POST, and `/api/products/:id` GET/PUT/DELETE — any
+of them can be handed a non-`Error` rejection by a dependency the same way
+imagekit does.
+**Still pending (human, needs a live preview):** retrying the failing
+upload was explicitly out of reach from here (no preview access) - the
+actual root cause behind the 2026-09-14 500 is still unknown. Once the fix
+above ships, reproduce it on a preview and read the new `detailMessage`/
+`help` fields in the log.
 **Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-127 · The add-product error dialog is unreadable in dark mode
+**Why:** found on 2026-09-14 while capturing the real screenshots T-119's
+rule 3 required - the PR that shipped T-119 could not take them (no `.env`
+in its worktree, same Clerk blocker as T-100), so nobody had actually looked
+at this dialog rendered in dark mode before. `docs/audits/t-119/` has the
+screenshot and the computed styles.
+**The bug, measured (`docs/audits/t-119/error-state__dark.png`):** the
+errors `<dialog>` on `/antojos/product/add` (`src/app/antojos/product/add/page.jsx`)
+has `.modal-box` hardcoded to `bg-[#fde6e6]` - a light pink meant for the
+light theme, with no theme variant. Its heading and list text carry no
+explicit color, so they fall back to the ambient text color; in the `dark`
+theme that resolves to `base-content` (`#EDE6DE`, set in
+`tailwind.config.js` for text on the dark theme's near-black surfaces), not
+anything chosen for a light pink box. Computed in the browser:
+`.modal-box` background `rgb(253, 230, 230)`, heading/list color
+`oklch(0.928 0.013 71.3)` - both very light, so the error text a seller
+most needs to read is nearly invisible in dark mode. Same shape as the
+`bg-primary` caution in `CLAUDE.md`: a color that was only ever checked in
+one theme.
+**Scope:** `EditProductForm.jsx`'s error banner may share the same pattern -
+check it too before fixing.
+**Done when:** the dialog's background and text read correctly in both
+themes (a themed daisyUI token like `alert`/`alert-error`, or an explicit
+dark-mode text color, rather than a hardcoded hex), verified with a real
+screenshot in both themes (rule 3), not a class-name test.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-128 · Backlog idea: semantic color on the availability filter buttons
+**Why:** raised by the human on 2026-09-14, looking at T-123's filter.
+**Current state (before):** `ProductGrid.jsx`'s two filter buttons ("Disponibles
+ahora" / "No disponibles", `AVAILABILITY_OPTIONS`) both used the same
+`category-active` class when selected - the brand tint, no distinction
+between the two beyond which one was lit up.
+**The idea:** a green/red-ish tint per option (available vs. unavailable)
+so the state reads at a glance, without fighting the brand palette
+(`primary` `#FF7622`/`#FF8A3D`, the warm-charcoal `dark` theme) the way a
+literal traffic-light green/red would. Needed an actual color decision from
+the human before anyone touched it - same as "Consultar horario" in T-122/
+T-123 - and both themes had to be checked, not just light (see T-127 for
+what happens when only one theme gets checked).
+**Done 2026-09-14.** The human decided the palette (soft, brand-toned, not a
+literal traffic light): available `#1F6B3A` on `#DCEEDF` (light) /
+`#8FD8A6` on `#23372A` (dark); unavailable `#9A3B2A` on `#F7DFDB` (light) /
+`#E8A28F` on `#3A2620` (dark). Shipped as-is, no adjustment needed.
+- `public/css/main.css`: `.availability-active-available` /
+  `.availability-active-unavailable`, each with its own `dark:` pair (no
+  daisyUI token exists for this).
+- `ProductGrid.jsx`: each `AVAILABILITY_OPTIONS` entry carries its own
+  `activeClass`, applied instead of the shared `category-active`.
+- Verified two ways, not just the class string: `getComputedStyle` read back
+  from the live buttons matched the intended hex exactly in both themes, and
+  real Playwright screenshots for both selected states in both themes -
+  `docs/audits/t-128/`. Contrast checked: 5.4:1/7.6:1 (available,
+  light/dark), 5.5:1/6.8:1 (unavailable, light/dark), all past the 4.5:1 AA
+  floor.
+- **Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** no
+
+### [ ] T-130 · Backlog idea: broken product images show raw alt text, no fallback
+**Why:** raised by the human on 2026-09-15, looking at a screenshot of the
+`agent/develop` preview's `/antojos` listing - several cards showed
+"Imagen de Jugo de mango" etc. as visible text instead of a photo. Not
+scoped, not assigned - a note for whenever someone designs it.
+**Current state:** `ProductCard.jsx` renders
+`<img src={images[0]} alt={'Imagen de ' + name} />` with no `onError`
+handler and no default image - same bare pattern repeats in
+`ProductCardFavorite.jsx`, `ProductModal.jsx` and `ProductPage.jsx`. The
+Zod validator (`src/lib/validators/product.ts`) requires at least one URL
+shape, but a string that passes `.url()` is not a guarantee it still
+resolves. The screenshot's specific case: `scripts/seed.mjs`'s products
+carry placeholder URLs like `https://ik.imagekit.io/seed/arepa.jpg` that
+were never uploaded to ImageKit and never will resolve, so any preview or
+`e2e` run seeded from that script shows this. The same gap would also show
+in production for a real product whose ImageKit asset got deleted or
+expired.
+**The idea, two parts, not mutually exclusive:**
+1. Give `scripts/seed.mjs` placeholder images that actually resolve, so a
+   preview looks representative instead of broken.
+2. A default fallback image in the product card/page components when the
+   real URL fails to load - the same idea `DEFAULT_SELLER_LOGO`
+   (`sellerSchema2.ts`) already applies to sellers with no logo.
+**Not done when:** an agent picks the seed placeholders or the default
+image on its own judgement and ships them - same caution as T-128: this
+needs a decision, not a guess.
+**Model:** TBD (needs the human's call on the placeholder/default image
+first) · **Nightly:** no
+
+### [ ] T-131 · Backlog idea: the sort control looks like a bare browser dropdown
+**Why:** raised by the human on 2026-09-15, same screenshot as T-130. Not
+scoped, not assigned - a note for whenever someone designs it.
+**Current state:** `ProductGrid.jsx`'s sort control is a plain
+`<select className='select select-bordered select-sm'>` (`SORT_OPTIONS`,
+T-70) - daisyUI's default select chrome, unstyled beyond that, sitting
+next to the pill-shaped, brand-colored category and availability buttons
+the same page already uses (including T-128's tinted pair, right above
+it).
+**The idea:** restyle it to match the rest of the page's controls, or
+replace it with a custom dropdown, so it doesn't read as an afterthought.
+Needs a look from the human first - same caution as T-128's color choice:
+don't guess at what "matching" means visually.
+**Not done when:** an agent redesigns it on its own judgement and ships
+it.
+**Model:** TBD (needs the human's visual call first) · **Nightly:** no
+
+### [x] T-132 · Sharing a marketplace product hands out an `/antojos/` link
+**Why:** raised by the human on 2026-09-17 while testing T-81's listing
+zone. `ShareButton.jsx`'s `generateUrl()` hardcodes the section:
+```js
+return `${window.location.origin}/antojos/${data._id}?source=share`;
+```
+It never reads the product's own `section`, so every marketplace product
+gets shared as `/antojos/<id>`. Predates the i18n work entirely - this is
+not a locale bug.
+**What actually breaks, measured:** the link is not dead. Neither
+`src/app/antojos/[id]/page.jsx` nor `src/app/marketplace/[id]/page.jsx`
+filters by section; both just look the id up, so the product renders fine
+either way. The difference is the `section` prop: `marketplace/[id]` passes
+`section="marketplace"`, `antojos/[id]` passes nothing and
+`ProductPage` defaults it to `'antojos'` (line 18). That prop feeds exactly
+one thing - the back button's `router.push(\`/${section}\`)` on line 78. So
+whoever opens a shared marketplace link sees the right product and then gets
+sent to the wrong listing when they go back.
+**Done when:** the shared URL derives from the product's own `section`
+(`/${data.section}/${data._id}`), so a marketplace product shares as
+`/marketplace/<id>`, with a test covering both sections.
+**Leave the seller link alone:** `type === 'seller'` builds
+`/antojos/sellers/<id>`, which is correct - seller profiles live only
+there, in both sections. It looks like the same bug and is not one.
+**Not in scope, and do NOT guess at it:** whether a shared link should
+carry the sharer's locale (`/en/marketplace/<id>`). It cannot today - the
+product detail zone is not migrated yet, so `/en/antojos/<id>` would 404 -
+and when T-81 migrates that zone it becomes a **product** decision, not a
+technical one: this app sets `localeDetection: false` on purpose so that
+every visitor starts in Spanish and English is a deliberate opt-in (see
+T-46), which argues a link sent to *another person* should stay neutral.
+The opposite argument - one exchange student sharing with another - is just
+as reasonable. That call is the human's; whoever migrates the product
+detail zone should ask rather than pick.
+**Model:** `sonnet` - one-line fix plus a test · **Nightly:** yes
+
+**Done:** `generateUrl()` moved into a pure `buildShareUrl()` in the new
+`src/lib/share-url.js` (no JSX, same pattern as `src/lib/card-variant.js`, for
+the same reason: it makes the logic importable from a Vitest test without
+tripping Vite's JSX transform), and `ShareButton.jsx` calls it with
+`data.section`. Verified both `data.section` is always populated at every
+`<ShareButton>` call site - `ProductPage.jsx` and `ProductModal.jsx` both pass
+a full lean Mongo document from `GET /api/products/:id` or `GET
+/api/products` respectively, neither route projects fields out, and the
+schema itself declares `section` `required: true` with `default: 'antojos'` -
+so the `|| 'antojos'` fallback in `buildShareUrl` is defensive, not something
+any real call site forces. `SellerPage.jsx`/`SellerModal.jsx`'s
+`type === 'seller'` call sites are untouched, as scoped.
+**Update (T-81, seller profile zone):** the seller branch of
+`buildShareUrl` now also carries the sharer's locale, once
+`/antojos/sellers/<id>` became a migrated route - see that zone's notes in
+T-81. Covered by
+`tests/unit/share-url.test.js` (antojos, marketplace, missing-section
+fallback, seller, empty/unknown type) and a new e2e assertion in
+`tests/e2e/recorrido.spec.js` that opens the seeded marketplace product
+('Termo Mercampus', `E2E_MARKETPLACE_PRODUCT_ID` plumbed through
+`scripts/seed.mjs`/`scripts/e2e.mjs`) and checks the share link it generates
+carries `/marketplace`, not `/antojos`.
+**Rule 9, spotted in `ShareButton.jsx` while fixing this, not touched here:**
+several stretches of commented-out dead code - an old duplicate
+`productUrl`/`shareText` pair (now doubly stale, since the live version moved
+to `share-url.js`), a duplicated `<TbLink>` line inside the "Copiar enlace"
+button, and a commented-out "Cerrar" button. None are referenced anywhere;
+grepping the file's history isn't needed to tell they're inert JSX comments,
+not a flag or an experiment. Also: `TbShare2` is imported but never used in
+this file's JSX (pre-existing, not introduced by this task) - `knip`/eslint's
+`no-unused-vars` doesn't flag unused imports from a barrel-style icon
+package, which is presumably why it survived. Worth a small follow-up PR to
+delete the dead comments and the unused import; not done here to keep this
+PR to the one fix.
 
 ### [x] T-112 · A preview deployment calls production's API
 **Split on 2026-09-14, with the human:** option A (remove the self-fetch) was
@@ -3957,7 +5025,7 @@ lives in Clerk now, so a stray document no longer grants or denies it).
 Seller-ness is still not immune, which is why this is still worth doing.
 **Model:** `opus` · **Nightly:** no
 
-### [ ] T-108 · `set-admin-metadata`'s dry run can't tell "wrong instance" from "missing role"
+### [x] T-108 · `set-admin-metadata`'s dry run can't tell "wrong instance" from "missing role"
 **Why:** found while running it for T-104. `obtenerMetadataDeClerk` returns
 `{}` when the user lookup fails (`if (!ok) return {}`), so a `clerkId` that
 **404s** - because it belongs to a different Clerk instance - is reported as
@@ -3975,9 +5043,27 @@ while this is per id, and a database can hold ids from both.
 the role, and `--check` is not failed by ids from another instance. The
 existing tests already inject `obtenerMetadataDeClerk`, so this is testable
 without touching Clerk - the seam is there.
+**Done 2026-09-16.** `obtenerMetadataDeClerk`'s contract changed: it now
+returns `null` on a failed lookup instead of `{}`, so `syncAdminMetadata` can
+tell "does not exist here" apart from "exists, no role yet". A `null` result
+gets its own state, `otra-instancia`, pushed before the `role === 'admin'`
+check and *before* the `--apply` write, so it is excluded from `pendientes`
+(and therefore from `--check`) and is never written to. The CLI's real
+`obtenerMetadataDeClerk` was updated to return `null` on `!ok`, and a summary
+line was added so a dry run surfaces the count instead of it only showing up
+in the raw per-account list. Covered by three new tests in
+`tests/integration/set-admin-metadata.test.js` using the existing
+`obtenerMetadataDeClerk` injection seam (no real Clerk call): a lone 404'd id
+reports `otra-instancia` with `pendientes: 0`; `--apply` against it writes
+nothing; and a mix of all three states (has role / missing role / other
+instance) classifies each independently.
+**Verified:** `npm run verify` (lint + typecheck + test + build) - see PR.
+No real Clerk API calls were made; all Clerk responses are faked through the
+existing `clerkDeMentira` test double.
+**Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-85 · Spanish left in test descriptions
+### [x] T-85 · Spanish left in test descriptions
 **Why:** T-80 translated the comments and deliberately left the `describe`
 / `it` strings in Spanish, on the argument that they are prose for whoever
 reads a failure rather than code comments. The human overruled that on
@@ -3999,6 +5085,49 @@ task is for.
 needs): that one is test infrastructure, this one is language. They do
 touch: any `describe`/`it` T-84 adds should be written in English from the
 start rather than translated later.
+**Re-measured 2026-09-14, batch 1:** a keyword grep for Spanish inside
+`describe`/`it`/`test(...)` strings (accented characters plus a list of
+common Spanish function words) found **38 files**. That heuristic still
+missed three with unaccented, keyword-free Spanish
+(`tests/integration/register-cerrado.test.js`,
+`tests/integration/seller-approval.test.js`,
+`tests/integration/user-with-seller-cerrado.test.js` — each just one short
+phrase like `'ya no existe'` or a `describe` title), caught only by reading
+every file the grep didn't flag. **41 files total.** Whoever does batch 2
+should not trust a keyword grep alone either — eyeball the files the grep
+clears too, at least for `describe`/`it` lines.
+**Batch 1 — done, this PR (21 files):** `tests/e2e/dark-mode.spec.js`,
+`tests/e2e/i18n.spec.js`, `tests/e2e/recorrido.spec.js`,
+`tests/e2e/scroll-infinito.spec.js`,
+`tests/integration/autorizacion.test.js`,
+`tests/integration/availability-cron.test.js`,
+`tests/integration/backfill-clerk-id.test.js`,
+`tests/integration/busqueda-productos.test.js`,
+`tests/integration/horarios-n-mas-1.test.js`,
+`tests/integration/indices.test.js`,
+`tests/integration/middleware-admin.test.js`,
+`tests/integration/migracion-section.test.js`,
+`tests/integration/og-metadata.test.js`,
+`tests/integration/paginacion-productos.test.js`,
+`tests/integration/reclaim-account.test.js`,
+`tests/integration/register-cerrado.test.js`, `tests/integration/seed.test.js`,
+`tests/integration/seller-approval.test.js` (only its `describe` title —
+the rest of the file was already English),
+`tests/integration/seller-pause.test.js`,
+`tests/integration/sellerContextData.test.js`,
+`tests/integration/set-admin-metadata.test.js`.
+**Batch 2 — still pending (20 files):** `tests/integration/sitemap.test.js`,
+`tests/integration/user-with-seller-cerrado.test.js`,
+`tests/integration/validacion-sellers-schedules-pqrs.test.js`,
+`tests/integration/validacion.test.js`,
+`tests/integration/webhook-clerk.test.js`, `tests/unit/adminAccess.test.js`,
+`tests/unit/card-variants.test.js`, `tests/unit/env-publico.test.js`,
+`tests/unit/logger.test.js`, `tests/unit/metadata.test.js`,
+`tests/unit/orderSchema.test.js`, `tests/unit/orderStateMachine.test.js`,
+`tests/unit/phone.test.js`, `tests/unit/productSchema.test.js`,
+`tests/unit/profile-completeness.test.js`, `tests/unit/robots.test.js`,
+`tests/unit/search.test.js`, `tests/unit/sitemap.test.js`,
+`tests/unit/theme-tokens.test.js`, `tests/unit/utilFn.test.js`.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-86 · A visible keyboard focus ring (F5)
@@ -4285,7 +5414,7 @@ takes down another product's picture.
 **Model:** `opus` — a delete path that touches an external service and can
 half-fail · **Nightly:** no
 
-### [ ] T-83 · Extraordinary availability, overriding the schedule
+### [x] T-83 · Extraordinary availability, overriding the schedule
 **Why:** rescued from GitHub issue #120 (2025-02-25). A seller who opens
 outside their usual hours has no way to say so: `Seller.availability` is
 recomputed from `Schedule` by the T-14 cron on every run, so anything set by
@@ -4301,6 +5430,83 @@ window, the cron respects that window instead of overwriting it, and the
 public listing reflects it. The bound matters: an override with no expiry
 becomes a seller permanently marked available who is not.
 **Model:** `sonnet` · **Nightly:** yes
+**Done:** `Seller.availabilityOverrideUntil`, a nullable `Date` next to
+`availability` and `paused`, with a comment on the schema explaining which is
+which. A single timestamp rather than a boolean + expiry pair on purpose:
+there is no way to represent "override on, no expiry" — the exact bug this
+entry warns about — because the override *is* the expiry, and it self-expires
+by comparison against `now` instead of needing something to clear it.
+`updateSellerSchema` bounds it to at most `MAX_AVAILABILITY_OVERRIDE_HOURS`
+(6, an agent's choice — the entry only said "bounded" — since the task has no
+`Nightly: no` flag for a human wording/number decision the way T-73/T-122 did)
+hours ahead of "now"; `null` clears it early. Deliberately **not** required to
+be in the future: `EditSellerForm`'s full-form submit resends the seller's
+current `availabilityOverrideUntil` along with every other field, so
+rejecting a since-expired timestamp would have turned an unrelated profile
+edit into a 400 once the window passed. `isOverrideActive()`
+(`src/lib/store-availability.ts`) already treats a past timestamp as "no
+override", so allowing it through validation is harmless.
+- **Composition, not a parallel code path**, per the note already in this
+  file next to T-123: `isOpenAt(schedules, clock, overrideActive)` takes a
+  precomputed boolean and short-circuits the schedule check when it's true.
+  `isOverrideActive(overrideUntil, now)` turns the stored timestamp into that
+  boolean — the only place `now` is compared against it, so cron, the product
+  routes and the availability filter can't disagree on what "active" means.
+  - **The T-14 cron** (`GET /api/sellers/availability`) reads
+    `seller.availabilityOverrideUntil` off the hydrated document (not
+    `.lean()`, so the schema default already covers a seller who never used
+    it) and folds it into the same `isOpenAt()` call that recomputes
+    `availability` — it does not skip overridden sellers, it just computes the
+    right answer for them, so the write path stays a single line.
+  - **`productAvailability()`** takes the seller's `availabilityOverrideUntil`
+    as a fourth argument. Both product routes pass it from the already
+    -populated `sellerId` (no new query): `GET /api/products` and
+    `GET /api/products/[id]`.
+  - **`getAvailableSellerIds()`** (T-123's filter, `src/server/products/
+    availableSellers.ts`) adds a third query — sellers with
+    `availabilityOverrideUntil: { $gt: now }` — to the two it already ran, so
+    "Disponibles ahora" also includes an overridden seller. `$gt` already
+    excludes a seller without the field (a nonexistent field never satisfies
+    `$gt`), so this needed no `$ne`-style rewrite the way `paused` did.
+- **The toggle** lives on `/antojos/sellers/profile/edit`
+  (`EditSellerForm.jsx`), next to the T-71 pause switch: three preset
+  durations (1h/2h/4h, all under the cap) when there's no active override, a
+  "hasta las HH:MM" readout and a cancel button when there is one. Written
+  through the same `PUT /api/sellers/[id]` / `verifySellerId` as `paused` —
+  no new route.
+**Measured against the real database (read-only, no writes) — this session
+had no `.env`/Mongo credentials in the worktree, so this is the T-71 finding
+carried forward rather than a fresh read:** `availabilityOverrideUntil` did
+not exist in the schema before this PR, so by construction **all 54 real
+sellers** predate it, the same situation `paused` was in at T-71 (0 of 54).
+Unlike `paused`, nothing here needed an equality-filter workaround: the one
+Mongo-side filter (`getAvailableSellerIds`) uses `$gt: now`, which already
+excludes a missing field without an `$ne` rewrite, and every other read is
+either a hydrated document (schema default applies) or a plain `Boolean`
+-style check in `isOverrideActive()`. No migration script is needed — this is
+purely additive and self-defaulting, same conclusion as T-71.
+**Tests:** `tests/unit/store-availability.test.js` (isOpenAt/productAvailability
+with `overrideActive`/`overrideUntil`, `isOverrideActive` on its own),
+`tests/unit/seller-validators.test.js` (the bound, and that a past timestamp
+is accepted on purpose), `tests/integration/availability-cron.test.js` (the
+cron composes instead of overwriting, an expired override doesn't stick, a
+field-less document is unaffected), `tests/integration/
+seller-availability-override.test.js` (ownership, the cap, clearing early,
+old documents), `tests/integration/product-availability-status.test.js` and
+`tests/integration/availability-filter.test.js` (both product routes and the
+T-123 filter agree an override counts as open).
+**Left out on purpose, noted per rule 9:** `ToggleSwitch.jsx` has ~15 lines of
+commented-out JSX (an earlier, hand-rolled toggle implementation) above the
+`<input>` it was replaced by — dead code, not touched here since it's
+unrelated to this task; worth deleting in a future pass once someone confirms
+nothing still points at it in history. `EditSellerForm`'s `setDataSeller`
+calls (the ones that reach into `SellerContext`) still close over the stale
+`seller` variable and spread `{ ...seller, field }` instead of a functional
+update, on every optimistic toggle including this one's — pre-existing
+pattern from T-71's `handleSellerPaused`, followed here for consistency
+rather than fixed, since changing it would touch code this PR doesn't
+otherwise need to.
+**Outside the repo:** nothing.
 
 ### [x] T-63 · Separate the environments (database and Clerk)
 **Done 2026-09-14 (the Mongo half), with the human in the session.**
@@ -4791,3 +5997,1162 @@ pace of active tasks slowed down — it's a large diff competing for review
 attention with anything else open at the same time.
 **Model:** `opusplan` (needs judgment to not lose nuance in the security
 notes) · **Nightly:** no
+
+### [x] T-133 · `GET /api/sellers/admin` has no authorization of its own
+**Why:** found while planning T-81's middleware gate, measured not assumed.
+[`src/app/api/sellers/admin/route.js`](src/app/api/sellers/admin/route.js)
+has no `auth()` and no `isClerkAdmin()`. Its own comment says so plainly —
+*"who gets here was already decided by the middleware"* (T-12). What it
+returns is `Seller.find()` with no filter and `.lean()`: **every seller,
+every field** — `phoneNumber`, `approved`, `userId`, unapproved profiles
+included. Measured against the real base, that is 54 sellers.
+**This is not a live vulnerability today** and the entry should not be read
+as one: `isAdminRoute` (`/api/(.*)/admin(.*)`) does gate it, and T-81's gate
+PR left that pattern intact and added a test for it. The problem is that it
+is gated by **exactly one layer, in a different file, with the handler
+unaware**. Its sibling `PATCH /api/sellers/admin/[id]` checks `isClerkAdmin`
+in the handler ([line 42](src/app/api/sellers/admin/[id]/route.js#L42)), so
+the **write is double-gated and the read is not** — an asymmetry with no
+reason behind it, and the read is the one that discloses the data.
+**Done when:** the handler verifies identity and role itself, the way the
+`[id]` route already does, so the middleware becomes defence in depth rather
+than the only defence. Consider also whether the response needs every field
+— the admin panel renders business name, approval state and schedules; it
+has no use for `phoneNumber` on the list view.
+**Careful:** the same comment explains that removing the old `currentUser()`
+call is what made Next treat this route as static, which is why
+`export const dynamic = 'force-dynamic'` is there. Adding a real auth check
+back makes the route request-specific again — confirm `force-dynamic` is
+still needed rather than deleting it on the assumption that it is not.
+**Related:** T-12 (which centralised the check into the middleware and is
+why the handler looks like this), T-104 (`isClerkAdmin` as the single
+definition), T-81 (where this was found).
+**Done (2026-09-23):** the handler now calls `getClerkUserId()` (401 with no
+session) and `isClerkAdmin()` (403 for anyone else) before it touches Mongo,
+the same pattern as `PATCH /api/sellers/admin/[id]`. The middleware still
+gates the path, now as defence in depth.
+- **The response was trimmed as well (human decision).** It now returns only
+  what `/admin/sellers` renders: `SellerCard`'s `businessName`, `slogan`,
+  `description`, `logo` and `availability`, plus the page's own `approved`,
+  `university` and `createdAt` (and `_id`). `phoneNumber`, `userId`,
+  `instagramUser` and the rest are gone. **Correction to this entry:** it said
+  the panel renders schedules. It does not - checked against the page and
+  `SellerCard`. So the one `Schedule.find` per seller (54 queries, with the
+  `daysES` mapping) is gone too: one query instead of 55. If the panel ever
+  needs another field, add it to `ADMIN_LIST_FIELDS`.
+- **`force-dynamic` stays.** `auth()` reads headers, which already makes the
+  route dynamic, but that is a side effect. Keeping the line explicit means
+  moving the check again cannot silently turn the route static.
+- **Errors** go through `errorResponse` with `bodyKey: 'message'`, because
+  the page shows `data.message` when the call fails.
+- **Verified:** `tests/integration/sellers-admin-list.test.js` covers 401,
+  403, and an admin getting both sellers (pending included, newest first)
+  with only the allowed keys. Run against the old handler, 3 of its 4 tests
+  fail, so they measure the change. `seller-pause.test.js`, which read this
+  endpoint with no session, now signs in as an admin.
+- **Not verified in a browser:** rendering `/admin/sellers` needs a Clerk
+  account with the admin role, and minting one is T-95's
+  human-in-the-loop territory. The page reads nothing outside the trimmed
+  field list (checked by grep over the page and `SellerCard`), but a manual
+  look at the panel after the next promotion is the real check.
+**Model:** `opus` (authorization) · **Nightly:** no
+
+### [ ] T-134 · The seller register form hides its errors and corrupts its own state
+**Why:** found during T-81's seller onboarding zone (rule 9), measured by
+reading the code, not reproduced in a browser.
+[`src/app/[locale]/antojos/sellers/register/page.jsx`](src/app/[locale]/antojos/sellers/register/page.jsx):
+- **Errors are never shown.** `handleSubmit` stores the API's message in
+  `errorCode`, and nothing renders it: `FcHighPriority` and `IoClose` are
+  imported for an error modal that is not in the JSX. A rejected submit (a
+  Zod 400, a duplicate) just re-enables the button. `/antojos/product/add`
+  has the modal and, since T-119, the per-field `fields` list; this page
+  has neither.
+- **A failed submit changes what the seller typed.** It assigns
+  `sellerData.logo` and `sellerData.description = JSON.stringify(...)` onto
+  the state object itself. After a failure the textarea shows the
+  description wrapped in quotes, and a retry stringifies it a second time.
+- **`useCheckSeller` lets a user with no seller profile onto `/approving`**
+  (`src/context/SellerContext.js`): `seller === "None"` is a truthy string,
+  so the `sellerNotApproved` branch reads `"None".approved` (undefined) and
+  lets them through to "Hola ." with an approval request for a business that
+  does not exist. Same shape in the `sellerApproved` branch, which sends them
+  to `routeIfNot` (usually `/approving`) instead of to `/register`.
+**Done when:** a rejected submit shows what was wrong (reuse product/add's
+modal and `fields` handling rather than a third copy), the submit builds its
+payload without mutating state, and `useCheckSeller` sends `"None"` to
+`/register` from both branches. Each proven by a test that fails before
+the change.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-135 · Seller forms lose everything on any full navigation - keep a draft
+**Why:** decided on PR #373 (T-81). Every seller form (`/register`,
+`/antojos/product/add`, `EditProductForm`, `EditSellerForm`) keeps its state
+in `useState` only, so a reload, the back button, or any full navigation
+throws away what the seller typed. T-81 hid the locale switcher on those
+screens (option A) because it had made that loss one click away; this is the
+fix that would let it come back, and it also covers the losses the switcher
+was never responsible for. Measured on `/register`: four fields filled, one
+full navigation, all four empty, no warning.
+**The traps, each a reason this is its own task:**
+- The edit forms are prefilled from the server. A saved draft must be keyed
+  by the entity id and dropped on a successful save, or it silently
+  overwrites data newer than itself.
+- `ImageGrid` reads `initialImages` only on mount, and its `fileId` map
+  (T-116b) is per-mount - a restored draft needs a remount and loses the
+  fast-delete path, falling back to delete-by-URL.
+- Photos are already in ImageKit when picked. Restoring their URLs is the
+  upside (no orphan, T-117); dropping a draft without deleting them is the
+  downside to decide.
+- `sessionStorage` would hold the seller's phone number - per tab and
+  cleared with it, but say so.
+**Done when:** a half-filled form survives a reload and a locale switch, a
+submitted one leaves no draft behind, an edit form never shows a draft older
+than the server's data, and each is proven in a real browser. Then decide
+whether `LocaleSwitcher` comes back on these routes (see T-81).
+**Model:** `opus` · **Nightly:** no (needs the human on the ImageKit trade-off)
+
+### [ ] T-136 · `GET /api/users/[id]` and `GET /api/sellers/[id]` have no authorization at all
+**Why:** flagged as "found, not fixed" during T-12 (see the note left in
+that entry) and never given its own ticket since. Measured by reading the
+handlers directly, not from the ROADMAP note alone:
+[`src/app/api/users/[id]/route.js`](src/app/api/users/[id]/route.js) takes
+whatever is in `params.id` — an ObjectId or an email, it branches on
+whether it contains `@` — and returns the full `User` document (`role`,
+`sellerId`, `clerkId`, email, name) with **no `auth()` call at all**. Same
+shape in
+[`src/app/api/sellers/[id]/route.js`](src/app/api/sellers/[id]/route.js)
+GET, which returns the full `Seller` document including `phoneNumber` and
+`userId` to anyone who supplies an id or email — that number is normally
+only ever handed out through the WhatsApp deep link the frontend builds,
+never through a direct query. Neither path is covered by
+`PROTECTED_ROUTE_PATTERNS` or `ADMIN_ROUTE_PATTERNS` in
+`src/lib/route-guards.ts`/`src/middleware.js`, so there is no outer layer
+covering them either. This is a live account-enumeration oracle: an email
+tried against `/api/users/<email>` confirms whether it is registered and
+with what role, exactly the shape T-12c already removed once from
+`/api/users/user-with-seller/[email]`.
+**Done when:** both routes require a session; each caller can only read
+their own `User`/`Seller` document unless they are an admin (reuse
+`getClerkUserId`/`isClerkAdmin` from `src/utils/lib/auth.ts`, not a new
+helper). If nothing under `src/` still calls these routes by id-that-isn't-
+the-caller's-own, consider deleting them instead of gating them — confirm
+with a reference search first (rule 7).
+**Also noticed in `users/[id]`, same file:** the `catch` block does
+`logger.debug(params)` before returning the generic 500 — harmless at
+`debug` level today, but worth checking it never gets bumped to a level
+that reaches production logs with a raw email in it.
+**Scope:** `src/app/api/users/[id]/route.js`,
+`src/app/api/sellers/[id]/route.js`, tests in `tests/integration/`
+following the same pattern as `autorizacion.test.js` (401 with no session,
+403 for someone else's id, 200 for the owner or an admin).
+**Model:** `opus` — same class of bug as T-10/T-10b, no corners cut
+**Nightly:** no
+
+### [ ] T-137 · The `agent/develop → develop` promotion has stalled, and the automation waiting behind it has never gone live
+**Why:** measured directly, not assumed — `git log --oneline develop..agent/develop`
+returns 316 commits, and `git log --oneline agent/develop..develop` returns
+zero: `develop` has nothing `agent/develop` doesn't already have, it is
+purely behind. Reviewing 316 commits one at a time to promote them, the way
+rule 1 describes the gate working, is no longer realistic at this size —
+whatever decides the promotion now needs to work in batches (e.g. trusting
+that each individual PR already passed `quality` against `agent/develop`,
+and reviewing the promotion PR's diff as a whole rather than commit by
+commit), or the gate itself needs rethinking.
+**What this is blocking, concretely:** `.github/workflows/agent-branch-cleanup.yml`
+and `.github/workflows/roadmap-review-reminder.yml` both exist, are
+presumably working (T-62/T-62c mark them done), and both use `schedule`,
+which GitHub Actions only fires from the repository's **default** branch.
+Neither has ever run on its own trigger, because neither has been promoted
+past `agent/develop`. Same for whatever `nightly-agent.yml` workflow is
+supposed to pick up tasks marked `Nightly: yes` — the "Starting a fresh
+session" section at the top of this file and the "From here on you can turn
+on the cron" note under T-06 both assume it exists; there is no
+`nightly-agent.yml` under `.github/workflows/` today.
+**Also piling up behind the same gate:** dozens of `worktree-agent-*` local
+branches and `.claude/worktrees/agent-*` directories, each with its own
+`node_modules` and `.next`. `agent-branch-cleanup.yml` only deletes merged
+`agent/<task-id>` branches (by design, see T-62); it does not touch
+worktrees. Once cleanup is live this may age out on its own, but it is worth
+confirming rather than assuming.
+**Done when:** either a human promotion happens (out of scope for an agent
+to do unilaterally) or, if the task is to make promotion itself easier,
+propose — don't execute — a batching strategy (e.g. promote in dated
+chunks, or gate promotion on `agent/develop`'s own CI history rather than
+re-reviewing) and write it up here for the human to decide. Confirm whether
+the stale `worktree-agent-*` directories are safe to remove and, if so,
+whether that belongs in `cleanup-agent-branches.mjs` or a separate script.
+**Model:** `opusplan` — this is a process/architecture decision, not
+mechanical work · **Nightly:** no (needs the human to decide the promotion
+strategy)
+
+### [ ] T-138 · `ROADMAP.md` itself is becoming too large to read at the start of a session
+**Why:** measured, not a feeling — the file is 5700+ lines long and reading
+it in full already exceeds a single normal read (2000 lines) for tooling
+that caps reads at that size. Every fresh session that follows CLAUDE.md's
+instruction to read this file first now pays for that in tokens before
+doing any actual work, and it will only grow: T-62c's monthly reminder
+helps prune what is stale but does not reduce what is already there.
+**Done when:** a decision (not necessarily this task's own execution) on
+how to split the file without breaking the "the entries are the contract"
+principle — candidates: move `[x]` tasks older than some cutoff, or entire
+phases that are fully done, into a `docs/roadmap-archive/` file per phase,
+linked from here, while `ROADMAP.md` keeps only `[ ]`/`[~]` tasks plus
+enough closed history to explain *why* a rule in CLAUDE.md exists (e.g. the
+T-12b–T-12h Clerk-instance story, or T-100's bad test, cannot move to an
+archive nobody reads if a rule still depends on that context being nearby).
+**Careful:** this is exactly the kind of large, mechanical-looking
+reorganization rule 2 and the "Qué NO hacer sin preguntar" section warn
+about (more than ~15 files is already too much for one PR; moving history
+out of the single most-read file in the repo is bigger than that in effect
+even if it only touches one or two files) — split it by phase, one PR per
+phase, and get sign-off before moving anything a rule elsewhere still
+points to.
+**Model:** `opusplan` · **Nightly:** no
+
+### [ ] T-139 · `src/` is still ~72% JavaScript, and nothing is migrating it forward
+**Why:** measured, not estimated — counting files directly under `src/`
+today: 112 `.js`/`.jsx` against 43 `.ts` (no `.tsx` exists at all: every
+component with JSX is still `.jsx`, even ones written after T-05). T-05
+deliberately scoped the initial TypeScript migration to `src/utils/models/`
+and `src/utils/lib/`, "the rest migrates task by task, not all at once" —
+but no task since has picked that up as its own goal. `src/server/` and
+`src/lib/` are TS because everything written there is new, not because
+anything old got converted. At the current rate, `src/components/` and most
+of `src/app/` stay untyped indefinitely by default, not by decision.
+**Not proposing a mass conversion** — that is exactly the "no rewrites past
+~15 files" rule, and a mechanical `.jsx` → `.tsx` pass with `any` sprinkled
+in to make the compiler quiet would cost the safety net it is supposed to
+add. What is missing is a decision: is the target still "eventually all of
+`src/`", and if so, does converting a file to TypeScript become part of the
+"cuestiona lo que ya está" checklist (rule 9) whenever a task already has a
+JS/JSX file open for an unrelated reason — the same way that rule already
+asks "should this be deleted?" for dead code.
+**Done when:** the human either confirms that per-touch conversion is the
+intended pace (in which case CLAUDE.md's "Convenciones de código" gets a
+line saying so, so an agent editing a `.jsx` file it already has open knows
+to convert it in the same PR when the diff is small) or decides the current
+pace is fine and this gets closed as "working as intended."
+**Model:** `opusplan` — needs a decision on pace and scope, not code
+**Nightly:** no
+
+### [ ] T-140 · `utils/`+`services/` and `server/`+`lib/` have no written boundary beyond the README's "old vs. new"
+**Why:** confirmed by reading both sides, not assumed from the folder
+names — `src/services/browserApi.js` (client → own API over a relative URL,
+Clerk's cookie carries identity) and `src/server/*` (9 `.ts` files, direct
+Mongo reads called straight from Server Components, no HTTP involved) do
+**not** duplicate the same logic; they solve genuinely different problems
+and neither is dead. Same for `src/utils/lib/auth.ts` (identity/ownership —
+`getClerkUserId`, `verifyOwnershipAndGetSellerId`, `verifySellerId`) sitting
+next to `src/lib/` (Zod validators, `logger`, `api-response.ts`): no route
+handler is confused about which one to import today. The actual gap is that
+this split — *why* `services/` survives next to `server/`, and that
+`utils/lib/auth.ts` is not migrating to `src/lib/` because auth is not the
+part of `utils/` that is "pre-refactor," it is core and simply parked in the
+old location — lives only in this ROADMAP's history and in scattered code
+comments, not in `CLAUDE.md`'s "Estructura objetivo" or the README's
+"Project structure," which both just say `utils/`/`services/` are "being
+phased out."
+**Why it matters before it becomes a real problem:** the day someone adds a
+new client-side API call, "does it go in `services/` or somewhere new" has
+no written answer, and the same for a new pure auth helper (`utils/lib/` or
+`lib/`). Today there is exactly one obvious answer each time because the
+codebase is small enough to grep; that stops being true as it grows.
+**Done when:** `CLAUDE.md`'s "Estructura objetivo" gains one line per
+surviving old folder explaining what it is for *today* (not just "legacy"),
+so the next agent does not have to reconstruct the reasoning from git
+history the way this task's investigation had to.
+**Model:** `sonnet` — this is documentation, not a code change
+**Nightly:** yes
+
+### [ ] T-141 · Two generations of error handling still coexist in `src/app/api/`
+**Why:** measured with a grep across every route's `catch` block, not from
+memory. Migrated to `errorResponse()`/`AppError` from `src/lib/api-response.ts`
+(consistent shape, never leaks a driver's raw message on a 500 — see T-97's
+F29 note under `products/[id]`): `products/[id]`, `images/route.js`,
+`sellers/admin/[id]/route.js`, `schedules/route.js` POST. Still on a bare
+`catch (error) { return NextResponse.json({ ...error.message }, {status:500}) }`,
+each shaped slightly differently from the others:
+[`src/app/api/users/[id]/route.js`](src/app/api/users/[id]/route.js#L21)
+(key: `error`), [`src/app/api/sellers/[id]/route.js`](src/app/api/sellers/[id]/route.js#L59)
+GET (key: `error`, plus a second, differently-shaped catch further down in
+the same file at line 97 using `message`),
+[`src/app/api/sellers/route.js`](src/app/api/sellers/route.js#L97) GET
+(`message` **and** `error` both, in the same body),
+[`src/app/api/products/seller/[id]/route.js`](src/app/api/products/seller/[id]/route.js#L20),
+[`src/app/api/schedules/[id]/route.js`](src/app/api/schedules/[id]/route.js#L28),
+and [`src/app/api/schedules/route.js`](src/app/api/schedules/route.js#L21)
+GET. A client reading the error body today cannot rely on a single key
+across routes, and every one of these leaks `error.message` — whatever a
+Mongoose `CastError` or driver exception says — straight to the response,
+exactly the pattern T-97/F29 already fixed once in `products/[id]`.
+**Done when:** every route handler under `src/app/api/` goes through
+`errorResponse()` (or is deliberately left out with a one-line reason, the
+way `sellers/admin/route.js`'s GET already explains why it skips an
+in-handler auth check). One PR per batch of routes, same pattern T-80 used
+for the `console.log` cleanup, small enough that a bad migration in one
+route does not block the rest.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-142 · `sellerSchema2.ts` — the `2` names a `v1` that no longer exists
+**Why:** confirmed with a repo-wide filename search: there is no
+`sellerSchema.ts`, `sellerSchema.js`, nor any git history importing one
+under that exact name in the current tree — `sellerSchema2.ts` is simply
+*the* seller schema, and has been for however long this repo has used
+Mongoose. The `2` answers a question ("what happened to v1?") that a new
+contributor or agent has no way to answer by reading the file, and every
+new importer has to type the `2` from memory or autocomplete, forever.
+**Done when:** renamed to `sellerSchema.ts` via a project-wide symbol/file
+rename (updates every importer automatically), `npm run verify` green,
+nothing else in the diff. Purely cosmetic — no behavior, no schema shape
+change — which is exactly why it is safe for a single small PR rather than
+something to bundle into an unrelated task.
+**Done (2026-09-25):** `git mv` to `src/utils/models/sellerSchema.ts`, and the
+import path rewritten in its 35 importers (16 in `src/`, 18 tests, 1 script)
+plus one comment in `scripts/alias-hooks.mjs` - one line per file, nothing
+else in the diff. That is past the ~15-file split threshold in `CLAUDE.md`;
+it was not split because a rename cannot be done halfway without a
+re-export shim, which would add exactly the "which file is the real one?"
+question this task removes.
+- **No data impact (rule 8):** the model is still registered as
+  `mongoose.model('Seller', ...)`, so the collection name, indexes and every
+  existing document are untouched. Only the module path changed.
+- **Verified:** `npm run verify` green, and a repo-wide grep finds
+  `sellerSchema2` only in this file's historical entries.
+**Model:** `sonnet` · **Nightly:** yes
+
+---
+
+## Phase 7 — Engineering maturity, and the parts of the product worth finishing
+
+Filed 2026-09-23 from a read-only review of the whole repo plus live
+measurements against `mercampus.vercel.app`.
+
+> **Premise, set by the human on 2026-09-23, and it reorders this entire
+> phase.** Mercampus is no longer being built to win back public users. It is a
+> **portfolio piece**: its job is to demonstrate that its author can build and
+> operate something properly. Real user activity stopped on 2025-09-30 (T-64's
+> measurement) and is not expected to resume.
+>
+> **This premise is a filter, not an excuse.** It lowers the value of features
+> that only pay off with real buyers, and it *raises* the value of everything
+> that shows production judgement to a reader: correct HTTP semantics, abuse
+> limits, an audit trail, a restore that has actually been run, a visual check
+> the pipeline enforces. "No users" is not a reason to leave something broken;
+> it is a reason to stop building things whose only justification was traffic.
+
+**What this premise demotes** (filed, specified, deliberately not next):
+
+| Task | Why it drops |
+|---|---|
+| **T-143** · self-service account recovery | Its whole value was reaching the 63 locked-out users. `scripts/reclaim-account.mjs` already handles the case by hand if anyone ever asks. |
+| **T-145** · sold-out state · **T-146** · options and add-ons · **T-147** · pre-orders | Each is a bet on buyer behaviour, and T-144 - the only thing that could have told you whether the bet paid - now has no traffic to measure. |
+| **T-148** · verified-student badge · **T-149** · report a listing | Trust and safety mechanisms for a community that is not currently transacting. |
+| **T-151** · JSON-LD · **T-153** · per-university URLs | Both were justified by search ranking, which stops being a goal. T-151 keeps a *small* case (rich results make a shared portfolio link look credible); T-153 does not. |
+
+**What it promotes**, because these are what a reader actually evaluates:
+
+| Task | Why it rises |
+|---|---|
+| **T-152** · a real homepage, a real `<h1>` | `/` is a 308 to a listing whose title is the layout default and which has no `<h1>` at all. This is the first thing anyone opening the link sees, and the `<h1>` gap is an accessibility defect regardless of traffic. |
+| **T-158** · visual regression diffing | Makes CLAUDE.md rule 3 enforceable by the pipeline instead of by attention. The clearest "I understood the lesson from T-100" artifact in the repo. |
+| **T-157** · a restore that has been run · **T-154** · rate limiting · **T-155** · admin audit log · **T-156** · account deletion | Production thinking, each cheap, each independently demonstrable. T-156 also remains a real legal obligation for data already collected (Ley 1581), users or no users. |
+| **T-138** · splitting this file | Reclassified: this is no longer housekeeping. The agent pipeline is this project's strongest asset and 6000 lines make it unreadable. See **T-161**. |
+
+One measurement from this review that still stands on its own, independent of
+the premise: **the only conversion event in the product is the WhatsApp click,
+and it is recorded nowhere we own** (T-144). It stays worth doing, for a
+changed reason - `Order` (T-40) and the seller panel (T-44) are both built on
+data that is never written, so the panel has nothing real to show a reader
+either.
+
+### [ ] T-143 · Self-service account recovery ("reclama tu cuenta")
+**Why:** T-64b built `scripts/reclaim-account.mjs` and deliberately ruled out
+a self-service screen, on the grounds that it "isn't worth it for the expected
+volume." That judgement deserves revisiting with the number next to it: the
+volume is **63 of 79 users** - 80% of the base, and it is precisely the group
+that owns published products. Today each one needs a human to run
+`npm run reclaim:account -- --email <email> --clerk-id <id> --apply` by hand,
+which means in practice nobody is recovered. A returning seller signs up, the
+webhook creates a fresh empty `User`, and they land as a buyer with no store
+while their real store and products sit there orphaned.
+**What makes it safe, and it is worth being precise:** the matching signal is
+not "an email typed into a form" - it is an email **Clerk has already
+verified** as part of the sign-up that just happened. That is strictly stronger
+than what the manual script relies on today, which is a human reading an email
+off a spreadsheet. The risk to design against is not impersonation via a
+guessed address, it is the `conflict` case the script already models.
+**Done when:** a signed-in user whose `User` document is empty (no `sellerId`,
+freshly created by the webhook) and whose verified email matches exactly one
+other `User` carrying a different `clerkId` is offered a "this looks like your
+old account - recover it" step; accepting runs the same transition
+`reclaim-account.mjs` already implements, reusing that module rather than a
+second copy of the logic. The `no-match`, `already-reclaimed` and `conflict`
+states surface as real UI, not a silent no-op. Integration tests for all four
+states plus a real screenshot of the screen in both themes (rule 3).
+**Careful:** this writes to real user documents, so **rule 8 applies** -
+measure against the real base read-only first. And it must stay idempotent:
+someone clicking twice cannot end up merging two live accounts.
+**Depends on:** T-64b (the script and its state machine)
+**Demoted 2026-09-23 by the portfolio premise (see this phase's header).** It
+was filed as the highest-leverage entry in Phase 7 on the assumption that
+reaching those 63 people mattered; under the new premise it does not. Kept
+filed rather than deleted for two reasons: the analysis of *why* the manual
+script is insufficient stays correct, and `reclaim-account.mjs` covers the case
+by hand if a single person ever asks. **Do not take this as nightly filler** -
+it still writes to real user documents, so if it is ever revived, rule 8 and
+the `opus` flag below still apply.
+**Model:** `opus` — touches identity and real user data · **Nightly:** no
+
+### [ ] T-144 · The WhatsApp click is the only conversion in the product, and it is not recorded anywhere we own
+**Why:** measured by grep across `src/`, not assumed. Contacting a seller is
+the entire funnel - there is no cart and no checkout - and it is instrumented
+only as a Google Analytics event:
+[`ProductModal.jsx`](src/components/products/ProductModal.jsx) fires
+`sendGAEvent('event', 'click_whatsapp_product', ...)`, and
+[`SellerPage.jsx`](src/components/seller/SellerPage.jsx) /
+[`SellerModal.jsx`](src/components/seller/index/SellerModal.jsx) fire
+`click_whatsapp_seller`. Two consequences, both real:
+1. **Nothing reaches our database.** `Order` (T-40) exists as a schema with no
+   writer, and the seller panel (T-44) reports on data that is never created.
+   The business has no idea which product produced contact.
+2. **The instrumentation is already inconsistent.**
+   [`ProductPage.jsx`](src/components/products/ProductPage.jsx) - the product
+   detail page, the one migrated to next-intl in T-81 and the most important
+   of the three surfaces - renders its WhatsApp `<a>` with `href` and
+   `aria-label` but **no `onClick`**, so it reports nothing at all. Whatever GA
+   shows today is therefore a partial count of unknown bias, which is worse
+   than no number.
+**Done when:** clicking any "contact over WhatsApp" surface records an
+intent-to-buy in our own database (product, seller, university, timestamp; no
+buyer PII beyond the signed-in user's id, and it must work for a signed-out
+visitor too), all three surfaces go through **one** shared component or helper
+so a fourth surface cannot forget it again, and `ProductPage.jsx` stops being
+the odd one out. Decide explicitly whether this writes `Order` with a
+`contacted` state or a lighter `ContactIntent` collection - do not create a
+half-populated `Order` that T-40's state machine cannot move forward.
+**~~Why it is worth doing before the feature work below:~~** T-145, T-146 and
+T-147 are all bets about buyer behaviour, and this was the only thing that
+would have told you whether any of them worked. **Those three are demoted as of
+2026-09-23 (see this phase's header), so that argument is gone** - and this
+entry survives it on a different one.
+**Why it still stands under the portfolio premise:** finding #2 above is a
+defect regardless of traffic - three surfaces do the same thing and one of them
+silently does not, which is exactly the class of inconsistency this repo's
+rule 9 asks to report and fix. And `Order` (T-40) plus the seller panel (T-44)
+are both shipped, both read from data nothing writes: a reader who opens the
+panel sees an empty dashboard. Writing the intent gives the two most
+"product-looking" pieces already built something real to display.
+**Scope note under the new premise:** prefer the lighter option. A dedicated
+contact-intent record is honest about what it is; forcing a half-populated
+`Order` through T-40's state machine to make the panel light up would be
+building a demo prop, and the state machine's missing caller is T-147's
+problem, not this one's.
+**Model:** `opus` — the `Order`-vs-new-collection call shapes later work
+**Nightly:** no
+
+### [ ] T-145 · A product shows "Disponible" when the seller has sold out
+**Why:** the availability work so far (T-122, T-123, T-83, T-71) all answers
+"is the **store** open right now", computed from the weekly `Schedule`, the
+pause flag and the extraordinary override. None of it answers "is there any
+**left**", because no product carries a quantity. A student who makes 20
+arepas is listed identically at 7am and at 2pm once they are gone, and the
+buyer finds out only after sending a WhatsApp message - the exact friction the
+product exists to remove.
+**Done when:** a seller can mark a product sold out, and optionally set a
+quantity for the day that decrements or can be adjusted; the card and the
+detail page show it distinctly from "store closed" (they are different
+states and must not collapse into one badge); the listing's availability
+filter (T-123) accounts for it; and a sold-out product cannot be contacted
+with the normal CTA.
+**Careful, rule 8:** existing products have no such field. The `$ne: true`
+trap T-71 hit applies exactly - an equality filter on a field 100% of current
+products lack will drop every one of them. Measure against the real base
+read-only first, and decide whether "no field" means available (almost
+certainly yes, for backwards compatibility).
+**Open question for the human:** does the quantity reset daily on its own
+(tied to the schedule) or does the seller reset it? Automatic is friendlier and
+much harder to get right across timezones; ask before building it.
+**Demoted 2026-09-23 by the portfolio premise.** The buyer friction this
+removes is real but nobody is currently hitting it. If one of T-145/T-146/T-147
+is ever built as a showcase of data-model work, this is the one to pick: it is
+the smallest, and the `$ne: true` / rule 8 trap it describes is a genuinely
+instructive problem.
+**Model:** `opus` · **Nightly:** no (the reset semantics need deciding first)
+
+### [ ] T-146 · One price per product, but food has sizes and add-ons
+**Why:** `productSchema` carries a single `price`, so a seller with a small and
+a large arepa has to publish two products that duplicate the photo, the
+description and the category - or publish one and negotiate the difference
+over WhatsApp, which puts the price back into a chat the platform cannot see
+(and undoes T-144's measurement). Every real food marketplace models this.
+**Done when:** a product can carry options (a named choice with a price delta,
+e.g. size) and/or add-ons (additive extras), the card shows a "from $X" price
+when options exist, the detail page lets the buyer pick before contacting, and
+the WhatsApp message carries the selection so the seller receives an
+unambiguous order.
+**Scope warning:** this touches `productSchema`, `src/lib/validators/product`,
+the add and edit forms, the cards, the detail page and the WhatsApp message
+builder. That is close to the ~15-file limit in CLAUDE.md's "Qué NO hacer sin
+preguntar" - split it (schema + validator first, then the forms, then the
+display) rather than taking it in one PR.
+**Depends on:** worth doing after T-144, so the message builder is already
+centralised.
+**Demoted 2026-09-23 by the portfolio premise** - a bet on seller and buyer
+behaviour, and the largest of the three in scope.
+**Model:** `opusplan` — data model design · **Nightly:** no
+
+### [ ] T-147 · Pre-orders: let a buyer reserve for a time slot the seller is open
+**Why:** the platform already knows each seller's weekly opening hours
+(`Schedule`, T-22/T-83) and already has an `Order` model with a state machine
+(T-40, `src/server/orders/stateMachine.ts`) and no UI. The gap between "a
+WhatsApp link" and "a full checkout" (T-41's chat, a cart, payments) is where
+this product actually lives: a student wants to say "guárdame dos para las
+10am" without either party negotiating in a chat thread.
+**Done when:** a buyer can request a product for a slot inside the seller's
+published schedule, the seller sees and accepts or declines it, both
+transitions are driven by the existing `Order` state machine rather than a new
+parallel one, and the notification still goes over WhatsApp (no push yet -
+that is T-43).
+**Explicitly not in scope:** payments. Money in the product is a different
+decision with legal and provider implications, and it is not needed for a
+reservation to be useful.
+**Depends on:** T-40 (done), and realistically T-144 (so an order has a
+recorded origin) and T-145 (a reservation against unlimited stock is
+meaningless).
+**Demoted 2026-09-23 by the portfolio premise.** Worth noting what is lost, so
+a future reader can weigh it: this is the entry that would finally give
+`Order`'s state machine (`src/server/orders/stateMachine.ts`, built in T-40) a
+real caller. A state machine with no caller is the kind of thing a reviewer
+notices - if the goal ever shifts back to product, this is the most
+architecturally satisfying of the demoted set.
+**Model:** `opusplan` · **Nightly:** no
+
+### [ ] T-148 · Verified-student badge from the institutional email
+**Why:** this is a campus marketplace whose entire trust model today is "the
+seller filled in a business name and an admin approved them." The `university`
+field already exists on `Seller` and is already the primary filter of the
+catalogue, but nothing verifies that the seller actually attends it. A badge
+backed by a verified institutional address (`@eafit.edu.co` and friends) is the
+cheapest real trust signal available, and Clerk already verifies email
+ownership - the work is the domain allowlist and the UI, not the verification.
+**Done when:** a seller whose Clerk account carries a verified email on their
+university's domain shows a distinct badge on their profile and cards; the
+allowlist of domains per university lives next to
+`src/utils/resources/universities`, not scattered; and a seller **without** it
+is not punished visually beyond the absence of the badge (this is a positive
+signal, not a scarlet letter - an unverified seller may simply use a personal
+address).
+**Careful:** do not gate selling on it. Some students legitimately have no
+working institutional mail, and turning a trust signal into a hard requirement
+would silently lock out real sellers - the kind of "perfect for new data, locks
+out everyone who already existed" mistake rule 8 is about.
+**Demoted 2026-09-23 by the portfolio premise** - a trust signal for a
+community that is not transacting.
+**Model:** `sonnet` · **Nightly:** no (the "does this gate anything?" call is
+the human's)
+
+### [ ] T-149 · No way to report a product or a seller
+**Why:** T-52 (listing moderation) is about the admin's side of moderation, but
+there is no input to moderate from: a buyer who finds a misleading listing, a
+wrong price or something that should not be sold has exactly one channel, the
+generic PQRS form at `/antojos/pqrs`, which is not attached to the thing being
+reported. For a marketplace of food between strangers this is the missing half
+of T-52, and it is much cheaper than T-52 itself.
+**Done when:** a product and a seller page each carry a report action; a report
+records what was reported, by whom (if signed in), and a reason from a short
+fixed list plus optional free text; reports land somewhere the admin can see
+them (reuse `/admin`, do not build a new surface); and rate limiting applies
+(see T-154) so the form is not itself an abuse vector.
+**Feeds:** T-52.
+**Demoted 2026-09-23 by the portfolio premise** - moderation input with nothing
+being posted. Note the coupling if T-52 is ever built as the AI showcase (see
+Phase 5 and Phase 8): T-52 without T-149 is a classifier with no human appeal
+path, which
+is a worse demo than either alone.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-150 · The brand's domain is dead and the site lives on a `vercel.app` subdomain — decide the domain
+> **This is the root cause of the SEO problem, and the only entry in the SEO
+> cluster an agent cannot start on its own.** T-151, T-152 and T-153 are worth
+> doing regardless of what is decided here, but none of them can compensate
+> for this.
+
+**Why:** measured on 2026-09-23, not inferred.
+- **`mercampus.com` does not resolve at all.** `getaddrinfo ENOTFOUND
+  mercampus.com` - it is not parked, not redirecting, it is gone. This matches
+  T-64's note that the domain expired in January 2026 and the team decided not
+  to renew it.
+- **Every historical brand signal still points at that dead domain.** The
+  project's own Instagram posts say "Entra a Mercampus.com"; there are Reddit
+  threads and press mentions. All of that accumulated link equity now points
+  into nothing, which is the SEO equivalent of changing your phone number and
+  not telling anyone.
+- **A Google search for "mercampus" does not return the live site on the first
+  page** (observed by the human, 2026-09-23). What ranks instead: a teammate's
+  portfolio (`mgomezp.com`) describing the project, the project's Instagram,
+  a Reddit thread — and a large block of results for an **unrelated homonym**,
+  the "MerCAMPUS" agroecological fair at Madrid's Ciudad Universitaria, carried
+  by institutional domains (`madrid.es`, `tribuna.ucm.es`) and YouTube. Those
+  are far more authoritative than anything we can put on a shared subdomain.
+- **`vercel.app` is on the Public Suffix List**, which is the technically
+  precise way of saying you cannot accumulate domain authority for a brand on
+  it: every `*.vercel.app` is a separate site as far as cookies and, in
+  practice, trust signals are concerned. It is a perfectly good place to host;
+  it is a bad place to *be* a brand.
+**Done when:** the human decides between (a) registering a domain again - which
+also unblocks the Clerk production instance that T-64 had to abandon, since
+that blocker was the domain and nothing else, (b) accepting that the site is a
+portfolio piece on `vercel.app` and dropping brand-ranking as a goal, or (c) a
+cheaper middle path (a different, cheap domain). Whatever is decided, write it
+here with the reasoning, because T-64, T-118 and this entry all bend around
+this one question.
+**~~Worth stating plainly:~~ Rewritten 2026-09-23 under the portfolio premise,
+because the arithmetic changed.** It used to read: option (a) is the only one
+that makes the other 63 users reachable *and* fixes SEO *and* retires the
+development-instance compromise - three problems, one purchase. Two of those
+three no longer count. What remains, and it is still not nothing:
+
+- **The link is the artifact.** A portfolio's live demo is a URL someone else
+  clicks. `mercampus.vercel.app` reads as a deployment; a domain reads as a
+  product. That is the entire remaining case for spending money here, and it is
+  a legitimate one - but it is a presentation argument now, not an SEO or user
+  argument, and it should be weighed as such.
+- **The development-instance compromise stays either way** unless a domain
+  appears: `X-Clerk-Auth-Reason: dev-browser-missing` on every response from
+  the live site confirms it. Under the old premise that was a liability. Under
+  this one it is mostly a curiosity - *except* that it is the kind of detail a
+  technically sharp reader might notice and ask about, and "we ran on a dev
+  auth instance because the domain expired, here is the incident write-up"
+  (T-64) is a genuinely good answer. The compromise is more valuable documented
+  than hidden.
+- **Ranking for the brand is off the table**, and the homonym analysis above
+  explains why chasing it was always going to be expensive: institutional `.es`
+  domains for an unrelated Madrid food fair are not competition worth fighting
+  for a dormant student project.
+**Revised recommendation:** this is now a cheap yes-or-no rather than a
+strategic decision. If a domain is bought, buy it for the link and let the
+Clerk production instance follow as a bonus; if not, close this entry as
+"deliberately not doing" with the reasoning, so T-64, T-118 and T-153 stop
+bending around an open question that is no longer open.
+**Model:** `opusplan` · **Nightly:** no (costs money)
+
+### [ ] T-151 · No structured data anywhere — a marketplace with no `Product` markup
+**Why:** confirmed by grep across `src/`: zero occurrences of
+`application/ld+json`, `schema.org` or any JSON-LD. T-69 gave product and
+seller pages real Open Graph tags (which is what makes a shared WhatsApp link
+look right) but Open Graph is for social previews; it tells Google nothing
+about price, availability or that these pages are products at all. For a
+catalogue of 135 indexable URLs (measured from the live sitemap) this is the
+single largest on-page win available, and it is the difference between a plain
+blue link and a result carrying a price.
+**Done when:** product pages emit `Product` with `Offer` (price,
+`priceCurrency: 'COP'`, availability - and availability should agree with
+whatever T-145 decides, so either do it after or leave a note), seller pages
+emit something appropriate for a campus food business, the listing emits
+`BreadcrumbList`, and the root emits `Organization` once. Validated against
+Google's Rich Results Test, with the output asserted in a unit test the way
+`src/lib/metadata.ts`'s builders already are - a snapshot of the emitted JSON,
+not a grep for the string.
+**Careful:** price and availability in markup that disagree with the page are
+a manual-action risk, not just a wasted effort. If T-145 lands first, the
+availability field must reflect sold-out state.
+**Reframed 2026-09-23 by the portfolio premise.** Ranking stops being the
+justification, so this drops in priority - but not to zero, and the surviving
+reason is narrower and worth stating: `Organization` at the root plus `Product`
+on one page is what makes a link pasted into a CV, a message or a review render
+as something credible rather than a bare URL. Build it for that, which means
+the root `Organization` markup is the part that matters and the full catalogue
+sweep is not.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-152 · The site has no homepage — `/` is a 308 to `/antojos`, which has no `<h1>` and the default title
+**Why:** measured live on 2026-09-23:
+- `GET https://mercampus.vercel.app/` answers **308 Permanent Redirect** to
+  `/antojos`. So the strongest URL on the site - the one a brand query wants to
+  land on, and the one every backlink points at - is not a page.
+- `/antojos`, which receives that redirect, returns `<title>Mercampus</title>`:
+  the root layout's `default`, not a title of its own. Its meta description is
+  the root layout's generic one too.
+- **`/antojos` contains zero `<h1>` elements.** That is both an on-page SEO
+  defect and an accessibility one (a screen-reader user has no page heading),
+  which means it belongs to the same family as T-93's accessible-names work.
+**Done when:** there is a real page at `/` that states what Mercampus is, in
+Spanish, with its own `<h1>`, a title and description of its own, and the
+`Organization` markup from T-151; `/antojos` likewise gets a descriptive title,
+description and a single `<h1>`. Decide deliberately whether `/` becomes a
+landing page or the catalogue itself lives there - the current 308 was
+presumably a shortcut when the catalogue was the only screen worth showing.
+**Related:** T-76 fixed the title *template* so page titles interpolate; this
+is the other half - pages that never set a title in the first place.
+**Note:** `/about` already exists and is migrated to next-intl (T-46), so some
+of the copy may already be written.
+**Promoted 2026-09-23 by the portfolio premise — this is now the highest-value
+entry in the SEO cluster, and the justification changes completely.** Not
+ranking: **this is the first screen anyone who opens the link sees.** A
+portfolio whose root URL 308s into a listing with the site's default title and
+no heading undercuts the work behind it before a reader reaches any of it. Two
+of the three defects here are also not SEO defects at all - a missing `<h1>` is
+an accessibility failure (same family as T-93), and a page inheriting the
+layout's generic description is just unfinished. Both are true with zero
+traffic.
+**Split 2026-09-26, with the human's decisions recorded:**
+- **[x] T-152a · `/antojos` gets an `<h1>`, a title and a description.**
+  The greeting ("Calma tus antojos" / "Soothe your cravings") is now the
+  page's single `<h1>` - it was an `<h2>` with nothing above it. The listing
+  moved to `src/components/products/AntojosListing.jsx` so that
+  `src/app/[locale]/antojos/page.jsx` can be a Server Component exporting
+  `generateMetadata`: "Antojos · Mercampus" / "Cravings · Mercampus", with a
+  description of its own in `messages/{es,en}.json` (`Antojos.metaTitle`,
+  `Antojos.metaDescription`). Verified by `npm run verify`, an e2e test in
+  `tests/e2e/listing-copy.spec.js` (exactly one `<h1>`, title and
+  description, both locales), and screenshots in both themes at desktop and
+  mobile in `docs/audits/t-152/`. No Open Graph change: a child `openGraph`
+  replaces the root layout's whole object (image, site name), so shared
+  links keep the site-wide card.
+- **[x] T-152b · a real page at `/`.** **Decided by the human: `/` becomes
+  the existing `/about` landing** (already written, translated, and
+  dark-mode audited under T-75), and `/about` redirects to `/`. The
+  landing's copy stays as it is, figures included ("#1", "+100
+  estudiantes", "100% seguro") - asked and answered, do not reopen it in
+  this task.
+  **Prerequisite, done first (2026-09-26):** nine call sites used `'/'` to
+  mean "the catalogue" - after sign-in, sign-up, Google/Microsoft OAuth,
+  password reset and sign-out (Clerk's default `afterSignOutUrl`), after
+  adding a product or saving the seller profile, the login/register back
+  buttons, and the middleware turning a non-admin away from `/admin`. They
+  only reached `/antojos` through the 308. They now use
+  `APP_HOME` (`src/lib/app-home.ts`), and `ClerkProvider` sets
+  `afterSignOutUrl`, so turning `/` into the landing moves nobody. Found
+  when T-152b's CI e2e failed on sign-out landing on a page with no sidebar.
+  `tests/unit/app-home.test.js` fails on any new navigation to the bare root.
+  The two auth forms use `localizedHref(APP_HOME, locale)`, so an English
+  sign-in now lands on `/en/antojos` instead of dropping to Spanish.
+  **Done (2026-09-26):** `src/app/[locale]/about/` moved to the route group
+  `src/app/[locale]/(landing)/`, so the same layout and page serve `/` and
+  `/en`. `next.config.mjs` drops the `/` -> `/antojos` 308 and adds
+  `/about` -> `/` and `/en/about` -> `/en` (308). `LOCALIZED_ROUTES` lists
+  `/` (exact path) instead of `/about`; a new `prefixLocale()` joins locale
+  and path so the root becomes `/en` rather than `/en/`, used by both
+  `localizedHref` and the middleware. The landing's layout sets its own
+  title ("Mercampus · Conecta, compra y vende dentro de tu universidad") and
+  description, both from the hero's existing copy. Sitemap lists `/` (with
+  its `/en` alternate) and drops `/about`; the sidebar's "Sobre Mercampus"
+  points at `/`. `src/app/page.jsx` (a `<p>Home</p>` placeholder from the
+  project's first commit, unreachable behind the 308 and imported by
+  nothing) is deleted.
+  - **Verified:** `npm run verify` green; e2e `home.spec.js` (new: `/` and
+    `/en` answer 200 with one `<h1>`, their own title and description;
+    `/about` and `/en/about` answer 308 to them) plus the updated `i18n`,
+    `about-topbar`, `auth-gate`, `listing-copy`, `sidebar-nav`, `recorrido`
+    (now walks `/` -> "Explorar productos" -> `/antojos`) and
+    `session-context` (sign-out still lands on the catalogue) specs;
+    screenshots in both themes at desktop and mobile in
+    `docs/audits/t-152/home__*.png`.
+  - **Browsers cache permanent redirects.** Anyone who already followed the
+    old `/` -> `/antojos` 308 may keep being sent to `/antojos` from their
+    own cache until it expires or they clear it. Nothing server-side can
+    undo that; fresh visitors and crawlers get the new page.
+  - **Found in the screenshots (rule 9), not fixed:** at 390px the topbar's
+    "Mercampus" wordmark runs into the locale switcher's "Español"
+    (`docs/audits/t-152/home__mobile__*.png`, both themes). Pre-existing -
+    the layout is byte-for-byte the old `/about` one plus `generateMetadata`
+    - but it is now on the first screen anyone sees. Likely the switcher
+    (added in T-81) squeezed a row sized for the logo and one button. A
+    small layout fix with its own before/after screenshots. **Fixed in
+    T-152d below.**
+- **[x] T-152d · the landing's topbar overlaps on phones.** Measured from
+  the rendered boxes (2026-09-26): logo + wordmark need 143px, the locale
+  switcher 117px, the explore button 84px even with its short label - about
+  396px with padding and gaps, on a 390px phone. The wordmark was squeezed
+  under "Español" at **every width below 640px** (not just 390), and at 320px
+  the button ran off the screen. No label or spacing change fits all three
+  in that width, so below `sm` the topbar's explore button is hidden - the
+  hero's "Explorar productos", right below and above the fold, is the same
+  call to action - and the logo link is `shrink-0`. The `exploreShort` label
+  had no other use and is removed from both message files.
+  - **Verified:** `npm run verify` green; new e2e in
+    `tests/e2e/about-topbar.spec.js` measures the boxes at 320/360/390/414px
+    (wordmark ends before the switcher starts, nothing wider than the
+    viewport) and checks the button is back at 640px; `i18n`, `home` and
+    `recorrido` still pass (57 total). Before/after screenshots in both
+    themes in `docs/audits/t-152d/`.
+  - **Rule 9, not fixed:** the `xs` screen (`375px`) in `tailwind.config.js`
+    was only used by this button; a grep over `src/` finds no other `xs:`
+    class. Removing it is a one-line cleanup.
+- **[x] T-152c · `Organization` JSON-LD on `/`.** The last part of the
+  original "Done when", split off to keep T-152b to the route move: T-151
+  asks for the emitted JSON to be asserted as a snapshot in a unit test, the
+  way `src/lib/metadata.ts`'s builders are. Name, URL (`SITE_URL`), logo, and
+  the Instagram profile the landing already links
+  (`https://www.instagram.com/mercampus/`) as `sameAs`.
+  **Done (2026-09-26):** `src/lib/structured-data.ts` builds it
+  (`buildOrganizationJsonLd`) and serializes it with `<` escaped
+  (`serializeJsonLd`, so a future value from the database cannot close the
+  `<script>` - T-151's `Product` markup will need that). The landing's layout
+  emits it once, so it is on `/` and `/en` and nowhere else. Logo is
+  `/images/logo.png` (500x500, the topbar's), **not**
+  `/android-chrome-512x512.png` - see T-162.
+  - **Verified:** `npm run verify` green;
+    `tests/unit/structured-data.test.js` pins the whole emitted object and
+    the escaping; e2e in `home.spec.js` checks the rendered page has exactly
+    one `application/ld+json` that parses as the `Organization`, that its
+    logo path is served (200), and that `/antojos` has none.
+  - **Not validated with Google's Rich Results Test** - it needs a public
+    URL, and this runs before promotion. Do it on the live site after the
+    next promotion; the unit test is what keeps the shape from drifting.
+  - T-151's remaining parts (`Product`, seller, `BreadcrumbList`) stay in
+    T-151; this only takes its `Organization` line.
+- **Found on the way (rule 9), not fixed:** `/marketplace` has the same
+  shape - a `'use client'` page, so no metadata of its own, and its greeting
+  is an `<h2>` with no `<h1>`. Same fix as T-152a; one small PR.
+**Model:** `sonnet` · **Nightly:** no (what the homepage says is a product
+decision)
+
+### [ ] T-153 · The university is only in `localStorage`, so no university has a URL
+**Why:** [`src/context/UniversityContext.js`](src/context/UniversityContext.js)
+keeps the selected university in
+`useLocalStorage('selectedUniversity', universities[0])` and nothing else. The
+consequences are bigger than they look:
+- **There is no URL for "antojos at EAFIT."** A crawler, a shared link and a
+  first-time visitor all get `universities[0]`, whatever that happens to be.
+  The catalogue's primary dimension - the one thing that makes this a *campus*
+  marketplace - is invisible to search engines and unshareable between
+  students.
+- It also means the 135 URLs in the sitemap collapse onto one default view,
+  and a student at another university who receives a shared listing sees the
+  wrong campus selected.
+**Done when:** each university has a real, indexable URL (a path segment or a
+search param - decide which, and prefer the one that composes with the existing
+`[locale]` segment and T-92's shareable search URLs), the selector navigates
+rather than only writing to `localStorage`, `localStorage` degrades to a
+remembered *preference* rather than being the source of truth, the sitemap
+lists the per-university pages, and each gets its own title, `<h1>` and
+description (per T-152).
+**Careful:** the middleware's locale patterns are exact-path or
+ObjectId-anchored on purpose (see the long note in `src/middleware.js`, T-81).
+Adding a university segment to those paths is exactly the "a zone needs the
+matcher rethought" case T-81's entry says to stop and ask about.
+**~~This is the highest-value SEO work after the domain~~** - it was, under the
+old premise, because it turns one thin page into one genuinely distinct page
+per campus.
+**Demoted 2026-09-23 by the portfolio premise.** Ranking per campus is no
+longer a goal, and this is the most expensive entry in the SEO cluster (it
+touches the middleware matcher, which T-81's entry explicitly says to stop and
+ask about). **The non-SEO half of the finding does not go away, though, and is
+worth keeping in view:** a shared link shows the recipient the wrong campus,
+because the selection lives only in `localStorage`. That is a correctness bug
+with a much cheaper fix than full per-university routing - accepting the
+university as a URL parameter that seeds the context would do it - and if
+anyone ever demos this app by sharing a link, it is the bug they will hit.
+**Depends on:** reads better after T-152 (so there is a title/`<h1>` pattern to
+follow). Coordinate with T-81, which owns the middleware matcher.
+**Model:** `opusplan` — routing design that touches the middleware
+**Nightly:** no
+
+### [ ] T-154 · No rate limiting anywhere on the public API
+**Why:** confirmed by grep across `src/`: no rate limiting, no throttling, no
+Upstash, nothing. The exposed surface includes `POST /api/pqrs` (a public form
+that writes a document), the image routes (which cost real money and storage on
+ImageKit, and were only closed to anonymous callers in T-116), `POST /api/sellers`,
+and the Clerk webhook. T-11 closed `/api/register` precisely because it was "a
+direct spam vector into the database" - the same reasoning applies to what is
+still open, just with authentication in front of some of it.
+**Done when:** public and write-heavy routes are rate limited per IP and, where
+there is a session, per user; the limit returns 429 with a shape consistent
+with `src/lib/api-response.ts`; the limiter degrades safely if its backing
+store is unreachable (fail open for reads, and decide explicitly for writes);
+and the choice of store is written down - an in-memory counter does not work on
+Vercel's serverless functions, which is exactly the trap the in-memory `Map`
+in the old `sellers/admin` route fell into (see T-12).
+**Careful:** this is a new dependency, so CLAUDE.md's "Qué NO hacer sin
+preguntar" applies - one dependency, justified, and not chosen by an agent
+alone.
+**Model:** `opus` — abuse surface, and the failure mode matters
+**Nightly:** no (needs a call on the dependency)
+
+### [ ] T-155 · Approving or rejecting a seller leaves no trace of who did it
+**Why:** T-105 made approval actually write, and T-114 is about the approval
+surface, but neither records **who** approved or rejected a seller, **when**, or
+**why**. `PATCH /api/sellers/admin/[id]` flips a field on the `Seller`
+document. With more than one admin (T-12 found 4 accounts with the admin role)
+and real sellers whose livelihood depends on the decision, "who approved this
+and when" has no answer, and a wrong rejection cannot be traced or undone.
+**Done when:** every admin state change on a seller appends an immutable audit
+record (actor's `clerkId`, action, target, timestamp, optional reason), the
+admin UI shows the history for a seller, and nothing deletes or rewrites past
+records. Reasons are optional for approval and worth requiring for rejection -
+a rejected student asking "why?" is the case that motivates this.
+**Related:** T-105, T-114, T-52 (moderation will want the same log).
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-156 · No way to delete an account and its data
+**Why:** the app stores personal data of real people - name, email, and
+`phoneNumber` on every seller - and there is no path for someone to have it
+removed. Colombia's **Ley 1581 de 2012** gives data subjects a right to
+deletion, and the product's users are Colombian students. There *is* a Clerk
+`user.deleted` webhook event handled with a test, but what it removes has not
+been audited against the rest of the data: a deleted Clerk account plausibly
+leaves the `Seller` document, its products and its images (which are on
+ImageKit, an external service) in place.
+**Done when:** the actual current behaviour is measured first and written down
+(what does `user.deleted` remove today?), then: a signed-in user can request
+deletion; deletion removes or anonymises their `User`, `Seller`, products,
+schedules and any contact-intent records from T-144; product images are deleted
+from ImageKit (coordinate with T-82 and T-117, which already own image
+deletion and its irreversibility); and the operation is logged (T-155) without
+retaining the data it just deleted.
+**Careful:** irreversible, against real user data and an external service -
+this is squarely in "do not touch without the human" territory, dry run first,
+same posture as T-82 and T-117.
+**Legal note, not legal advice:** the specific retention and response-time
+obligations under Ley 1581 should be checked by a person before this is
+advertised to users as a formal privacy right.
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-157 · The backups have never been restored, so they are not yet backups
+**Why:** T-121 added `npm run backup:images` and there is `npm run backup:db`,
+with real output in `backups/` (four dated folders). What has never happened is
+a **restore**. An untested backup is a hypothesis: the failure modes that bite
+are the boring ones - a dump missing indexes, a partial collection, an
+ImageKit export whose paths no longer match what the database references after
+T-120's `fileId`/`filePath` work. The moment this matters is the moment it is
+too late to find out.
+**Done when:** a documented, repeated procedure restores a dump into a
+throwaway database (the `mercampus_dev` project or a local Mongo, **never**
+production), verified by counting documents per collection against the source
+and by booting the app against the restored copy; the same for an ImageKit
+export; and the procedure is written where a panicking human will find it
+(README or a `docs/runbooks/` entry), not only in this ROADMAP.
+**Careful:** the restore target must be impossible to confuse with production.
+The `--yes`-outside-localhost guard on `npm run seed` exists for this class of
+mistake; a restore script needs the same posture.
+**Model:** `sonnet` · **Nightly:** no (runs against real infrastructure)
+
+### [ ] T-158 · Screenshots are taken but never compared — the T-100 class of bug can still ship
+**Why:** this one is about the process, and the repo already paid for the
+lesson. CLAUDE.md's rule 3 ("for colour, theme or layout, *verified* means a
+real screenshot") exists because in T-100 a test asserted that `bg-primary`
+appeared in the markup, passed green, and shipped a card that rendered nearly
+white on white (see `docs/audits/t-100/README.md`). The rule fixed the
+*policy*; it did not add a mechanism. Playwright already captures screenshots
+on every e2e run and uploads them as artifacts (T-04), and `docs/audits/`
+holds hand-curated baselines - but nothing compares a new screenshot to a
+previous one, so catching a visual regression still depends on a human
+remembering to look at the artifact.
+**Done when:** the e2e run compares its screenshots against committed
+baselines and fails on a meaningful pixel difference, in **both themes**;
+updating a baseline is an explicit, reviewable action (a committed file
+change), never automatic; and the tolerance is tuned against the real suite so
+it does not cry wolf - T-110 already had to stabilise flaky specs, and a
+noisy visual check would undo that work and get ignored, which is worse than
+not having it.
+**Careful:** font rendering and animation make naive pixel diffing flaky.
+`@formkit/auto-animate` and `framer-motion` are both in use; decide how to
+freeze or wait out animation before comparing, and prefer masking volatile
+regions over raising the tolerance globally.
+**Why it is worth it here specifically:** more of this project's work is done
+by an agent than by a human, and an agent cannot glance at an artifact and
+notice that a card looks wrong. This is the check that makes rule 3 enforceable
+by the pipeline instead of by attention.
+**Model:** `opus` — getting the flakiness/tolerance trade-off wrong wastes the
+whole mechanism · **Nightly:** no
+
+### [x] T-159 · The support WhatsApp number is hardcoded three times, as two different numbers
+**Why:** found by grep while reviewing the WhatsApp surfaces for T-144.
+- [`src/app/antojos/pqrs/page.jsx`](src/app/antojos/pqrs/page.jsx) uses
+  `3054213899`
+- [`src/app/antojos/game/page.jsx`](src/app/antojos/game/page.jsx) uses
+  `3197139921`
+- [`src/app/[locale]/antojos/sellers/approving/page.jsx`](src/app/[locale]/antojos/sellers/approving/page.jsx)
+  uses `3197139921`
+So "contact support" reaches two different phones depending on which screen
+the user was on, and whichever is the stale one is silently dropping messages
+from students - including, on the `approving` screen, sellers asking why their
+approval is taking so long.
+**Done when:** one exported constant (next to the other shared resources under
+`src/utils/resources/`, or an env var if it should differ per environment -
+prefer the constant, it is not a secret and not environment-specific), all
+three call sites use it, the correct number is confirmed by the human, and a
+test asserts no literal `wa.me` phone number is left in a page component.
+**Done (2026-09-25, #376):** the human confirmed **`3054213899`** (the one
+`/antojos/pqrs` had) as current. It lives in `src/utils/resources/support.js`
+as `SUPPORT_WHATSAPP_NUMBER = '573054213899'`, with a
+`supportWhatsAppUrl(text)` helper that all three pages now call.
+- **Behaviour change:** `/antojos/game` and the seller `approving` screen
+  now reach 3054213899 instead of 3197139921.
+- Links moved from `wa.me/+57...` to `wa.me/57...`, the form wa.me documents.
+- **Verified:** `npm run verify` green. `tests/unit/support-whatsapp.test.js`
+  scans `src/app` and `src/components` for a literal number in a `wa.me`
+  link; its pattern matched all three files as they were before the change.
+  Sellers' own links (`wa.me/+57${seller.phoneNumber}`) are interpolated and
+  do not match. No visual change - only the `href` - so no screenshot.
+- This entry was marked in a follow-up PR: when #376 merged, the entry only
+  existed in the uncommitted Phase 7 block (landed in #378).
+**Model:** `sonnet` · **Nightly:** yes (once the human says which number is
+the right one)
+
+### [x] T-162 · The site-wide share image and four icons are 404 in production
+**Why:** found during T-152c (rule 9), measured 2026-09-26.
+`src/app/layout.jsx` declares `/favicon-16x16.png`, `/favicon-32x32.png`,
+`/android-chrome-192x192.png`, `/android-chrome-512x512.png` and
+`/apple-touch-icon.png`, and **none of them exist in `public/`** (git history
+shows they were never added). Only `/favicon.ico` and `/manifest.json` do.
+`https://mercampus.vercel.app/android-chrome-512x512.png` answers **404**.
+That file is also the root `openGraph.images`, so **every shared link that is
+not a product or seller page - the home page included - previews with a
+broken image.** Under the portfolio premise that is the link on a CV.
+**Done when:** every icon path the root layout declares is served (either add
+the files, generated from `public/images/logo.png`, or point the metadata at
+the ones that exist - `manifest.json` already uses `icon512_rounded.png` and
+`icon512_maskable.png`), the Open Graph image is a real 1200x630-ish card or
+at least an existing square logo, and a test requests each declared icon and
+expects 200 - not a grep of the metadata. Check the preview with a real
+share-debugger (WhatsApp/LinkedIn) after promotion.
+**Related:** T-69 (per-page Open Graph), T-152c (chose `/images/logo.png`
+for the `Organization` logo for this reason).
+**Done (2026-09-26):** the declarations moved to `SITE_ICONS` and
+`SITE_OG_IMAGE` in `src/lib/metadata.ts` and now name only files that ship:
+`/favicon.ico` (a 512x512 PNG, now declared as one), `/icon512_rounded.png`
+for the tab, and `/icon512_maskable.png` - the full-bleed orange square - for
+the iOS home screen and as the Open Graph image, where transparent corners
+would render black or white. The five missing paths are gone rather than
+generated: every size a browser needs is served from the 512 files, and
+nothing new is added to `public/`.
+- **Verified:** `npm run verify` green; `tests/unit/site-icons.test.js`
+  checks every declared path and every `manifest.json` icon exists in
+  `public/`; `tests/e2e/site-icons.spec.js` reads the icons and
+  `og:image` from the **rendered** `<head>` of `/` and `/antojos` and
+  requests each one, expecting 200.
+- **Still a square logo, not a 1200x630 card.** WhatsApp shows it as a
+  thumbnail, which is fine; LinkedIn and X prefer a wide card and will show
+  a small square. A designed card (Next's `opengraph-image` file convention
+  can render one from JSX with no new dependency) is the next step if the
+  share preview matters for the CV link - a design decision, left open.
+- **Not checked with a real share debugger** (WhatsApp/LinkedIn) - they need
+  the promoted URL. Do it after the next promotion.
+**Model:** `sonnet` · **Nightly:** yes
+
+---
+
+## Phase 8 — The two stories this repo can tell
+
+Filed 2026-09-23, from the same conversation that set the portfolio premise on
+Phase 7. It exists because of a distinction that is easy to blur and that this
+phase is built around.
+
+**Note on Phase 5.** This repo already has a "Phase 5 — AI as a feature, not as
+a tool", which is where T-50, T-51, T-52 and T-129 live, and that title was
+already making the right distinction. This phase does not replace it: Phase 5
+holds the *features*, and this one holds the two things those features need and
+do not have - a way to know whether a model's output is any good (T-160), and a
+readable account of the engineering practice around all of it (T-161). Build
+T-160 alongside whichever Phase 5 entry goes first.
+
+The distinction this phase is built around:
+
+- **AI-assisted engineering** — building *with* an agent. This repo has two
+  years of it: 840 commits between 2024-08-12 and 2026-09-17, 329 PRs merged
+  into `agent/develop`, a verification gate (`npm run verify`), branch
+  protection with `enforce_admins`, and a rule set in `CLAUDE.md` where every
+  rule is a scar from a specific documented failure.
+- **AI engineering** — building a system that *contains* a model: evaluation of
+  non-deterministic output, cost and latency budgets, retrieval design,
+  guardrails, structured-output validation.
+
+**Measured, so the gap is stated rather than implied: the second one is
+currently at zero.** `package.json` contains no model SDK of any kind - no
+`openai`, no `@ai-sdk/*`, no `anthropic`, no embeddings library, nothing. Every
+AI entry in this file (T-50, T-51, T-52, T-129) is unstarted. The first story is
+strong and invisible; the second does not exist yet. This phase addresses one
+each.
+
+### [ ] T-160 · An evaluation harness, before any model is called in product
+> **Build this with, or before, the first AI feature — not after.** It is the
+> entry that makes the difference between "called a vision API" and having done
+> AI engineering, and retrofitting it means grading a system whose behaviour has
+> already been tuned by hand against the examples you were going to grade it
+> with.
+
+**Why:** T-50 already asks for "20 reference queries and their expected
+results" and T-52 already asks what "uncertain" means numerically. Both are
+describing the same missing piece from opposite ends, and neither can be built
+honestly without it. Everything in this repo's culture points the same way: rule
+3 says an unverifiable change should not be made, and a model call is the least
+verifiable thing that could be added to this codebase - it has no fixed output
+to assert on, so the existing harness (`npm run verify`) cannot say yes or no
+about it at all.
+**The asset that makes this unusually cheap here, and it is worth spelling
+out: a labelled dataset already exists in production.** 54 sellers with real
+product photos, each carrying a human-written `name`, a human-chosen `category`
+from a fixed list, and a human-written `description`. That is ground truth,
+produced by the actual users, for free - the single hardest thing to obtain when
+starting an eval set, and most portfolio projects have no equivalent.
+**Done when:**
+- A golden set is extracted from the real database **read-only** (rule 8) and
+  committed as a fixture - images referenced by URL, the human-written fields as
+  expected values. Small enough to run cheaply, and it must be a *frozen
+  snapshot*, not a live query, or the benchmark moves under the results.
+- Metrics that suit each task, chosen deliberately rather than by default:
+  exact-match accuracy is right for `category` (a fixed enum); it is the wrong
+  metric for `name` and `description`, and this entry should say what replaces
+  it instead of pretending the choice is obvious.
+- A **measured baseline of the dumb approach** for every task before any model
+  runs: for category, the majority class and a keyword rule; for T-50, the
+  existing lexical search from T-24. A model that cannot beat these is a
+  finding, and reporting it is a better result than shipping it quietly.
+- Cost and latency recorded per run, per item, in the report - not estimated
+  from a pricing page.
+- The suite runs **on demand, never in `npm run verify`**. The quality gate must
+  stay deterministic and free; a flaky paid network call inside it would
+  undermine the one mechanism this whole pipeline depends on.
+- The report is committed per run (like `docs/audits/`, which is the precedent
+  this repo already set for screenshot evidence) so results are comparable
+  across changes.
+**Deliberately out of scope:** any product surface. This task calls models
+offline against fixtures and prints numbers. Wiring one into the app is T-51.
+**Model:** `opus` — new domain, and the metric choices are the substance
+**Nightly:** no
+
+### [ ] T-161 · The pipeline is this repo's best asset and nobody can read it
+**Why:** under the portfolio premise, the strongest thing here is not the
+marketplace - it is the record of running an agent against a real codebase for
+two years *and catching it when it was confidently wrong*. That record exists,
+in full, and it is 6000+ lines long, interleaved with routine work, which means
+its intended audience will never reach it. The material is already written; what
+is missing is a readable distillation.
+**The incidents worth distilling** (all already documented, each with the rule
+it produced):
+- **T-11b** — six environment variables renamed in code, marked done, and
+  production broke ten days later because renaming a variable where it is *read*
+  is half the change. Produced the "anything that must happen outside the repo"
+  rule in CLAUDE.md's PR section, and T-113's fail-loudly work.
+- **T-100** — a test asserted `bg-primary` appeared in the markup, passed green,
+  and shipped a card that rendered nearly invisible. Produced rule 3's "a real
+  screenshot, not a test that reads a class string", and is the direct
+  motivation for T-158.
+- **T-12f / T-12b** — an agent asserted "there are no users in production" from
+  reading a stale document rather than the database; there were 54 sellers and
+  79 user documents. Produced rule 8 (measure against the real base) and the
+  habit of writing measurements with their date attached.
+- **T-64** — the Clerk production switch, attempted, took the site down because
+  the domain had expired, and was reverted the same session. The entry is titled
+  "ATTEMPTED AND REVERTED" in the file, which is the part worth showing.
+- **T-111** — `apiToken.js` looked like an abandoned experiment and turned out
+  to be the only thing carrying identity in three mutations. Produced rule 9's
+  "do not delete on suspicion; `git log` beats intuition".
+**Done when:** a short document - target two pages, not twenty - states the
+pipeline in a diagram or a paragraph, then presents four or five incidents as
+*what was believed, what was true, how the gap was found, what rule came out of
+it*, each linking to the full ROADMAP entry for anyone who wants the depth.
+Written in English (T-66's decision). Linked from the README, whose "The
+agentic pipeline" section (T-36) is the natural home and already sketches the
+flow.
+**What this is not:** a rewrite of this file, and not a blog post about how good
+agents are. The credibility comes entirely from the failures being reported as
+failures, with numbers. An account where the agent always did well would prove
+nothing and read as marketing.
+**Relationship to T-138:** T-138 splits this file so it stays usable by agents;
+this one extracts a narrative for humans. Doing T-161 first is reasonable - it
+forces a decision about which history actually matters, which is the hard part
+of T-138.
+**Model:** `opusplan` — judgement about what to keep · **Nightly:** no

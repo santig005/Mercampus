@@ -30,7 +30,7 @@ const findLegacy = () =>
     .collection('products')
     .findOne({ name: 'Producto heredado' });
 
-describe('migracion de section fuera del handler', () => {
+describe('section migration outside the handler', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     productsRoute = await import('@/app/api/products/route.js');
@@ -44,7 +44,7 @@ describe('migracion de section fuera del handler', () => {
     ({ ids } = await seedDatabase());
   });
 
-  it('la migracion pone section a los productos que no la tienen', async () => {
+  it('the migration sets section on products that lack it', async () => {
     await insertLegacyProduct(ids.approvedSeller);
     expect((await findLegacy()).section).toBeUndefined();
 
@@ -54,11 +54,11 @@ describe('migracion de section fuera del handler', () => {
     expect((await findLegacy()).section).toBe('antojos');
   });
 
-  it('es idempotente: sin pendientes no escribe nada', async () => {
+  it('is idempotent: with nothing pending it writes nothing', async () => {
     expect(await migrateProductSection()).toEqual({ pending: 0, updated: 0 });
   });
 
-  it('GET /api/products no escribe en la base', async () => {
+  it('GET /api/products does not write to the database', async () => {
     await insertLegacyProduct(ids.approvedSeller);
 
     await productsRoute.GET(

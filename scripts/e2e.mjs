@@ -126,6 +126,9 @@ try {
     E2E_PORT: String(PORT),
     E2E_PRODUCT_ID: summary.ids.approvedProduct,
     E2E_SELLER_ID: summary.ids.approvedSeller,
+    // T-132: 'Termo Mercampus', the seeded marketplace product - lets the
+    // e2e open a marketplace product and check its share link.
+    E2E_MARKETPLACE_PRODUCT_ID: summary.ids.marketplaceProduct,
     // T-97: a product that exists and belongs to somebody else - the
     // unapproved seller's. Opening it in the edit screen is the shape that
     // used to answer 500 (F28), and there is no way to reach it through the

@@ -30,11 +30,23 @@ export function productPath(product: SitemapProduct): string {
     : `/antojos/${product.id}`;
 }
 
-// `/` is a permanent redirect to /antojos (next.config.mjs), so the listing is
-// the entry point, not the root. Seller-only, admin and auth screens are not
-// public content.
+// T-152b: `/` is the home page (it used to be a 308 to /antojos, which is why
+// the listing was the first entry here). /about is gone from this list: it is
+// now a redirect to `/`, and a sitemap must not list redirects. Seller-only,
+// admin and auth screens are not public content.
 function staticEntries(now: Date): SitemapEntry[] {
   return [
+    {
+      url: absolute('/'),
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 1,
+      // Migrated to next-intl (T-46, as /about), so it exists in two
+      // languages and each should point at the other.
+      alternates: {
+        languages: { es: absolute('/'), en: absolute('/en') },
+      },
+    },
     { url: absolute('/antojos'), lastModified: now, changeFrequency: 'daily', priority: 1 },
     { url: absolute('/marketplace'), lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     {
@@ -42,17 +54,6 @@ function staticEntries(now: Date): SitemapEntry[] {
       lastModified: now,
       changeFrequency: 'daily',
       priority: 0.8,
-    },
-    {
-      url: absolute('/about'),
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.5,
-      // T-46 migrated /about to next-intl, so it genuinely exists in two
-      // languages and each should point at the other.
-      alternates: {
-        languages: { es: absolute('/about'), en: absolute('/en/about') },
-      },
     },
   ];
 }

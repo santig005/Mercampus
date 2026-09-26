@@ -8,7 +8,7 @@ import { productCardClassName, sellerCardClassName } from '@/lib/card-variant';
 // covering that variant until there is one.
 
 describe('productCardClassName', () => {
-  it('standalone trae fondo, sombra y cursor-pointer', () => {
+  it('standalone brings background, shadow and cursor-pointer', () => {
     const className = productCardClassName({ variant: 'standalone', isClicked: false });
 
     expect(className).toContain('bg-base-100');
@@ -17,14 +17,14 @@ describe('productCardClassName', () => {
     expect(className).toContain('scale-100');
   });
 
-  it('standalone con isClicked aplica la escala reducida', () => {
+  it('standalone with isClicked applies the reduced scale', () => {
     const className = productCardClassName({ variant: 'standalone', isClicked: true });
 
     expect(className).toContain('scale-[0.95]');
     expect(className).not.toContain('scale-100');
   });
 
-  it('embedded no trae fondo, sombra ni escala, pase lo que pase con isClicked', () => {
+  it('embedded brings no background, shadow or scale, regardless of isClicked', () => {
     const sinClick = productCardClassName({ variant: 'embedded', isClicked: false });
     const conClick = productCardClassName({ variant: 'embedded', isClicked: true });
 
@@ -39,7 +39,7 @@ describe('productCardClassName', () => {
 });
 
 describe('sellerCardClassName', () => {
-  it('standalone trae fondo, sombra y escala', () => {
+  it('standalone brings background, shadow and scale', () => {
     const className = sellerCardClassName({ variant: 'standalone', isClicked: false });
 
     expect(className).toContain('bg-base-100');
@@ -48,7 +48,7 @@ describe('sellerCardClassName', () => {
     expect(className).not.toContain('w-full');
   });
 
-  it('embedded trae w-full y ni fondo ni sombra ni escala', () => {
+  it('embedded brings w-full and neither background, shadow nor scale', () => {
     const className = sellerCardClassName({ variant: 'embedded', isClicked: true });
 
     expect(className).toContain('w-full');
@@ -57,7 +57,7 @@ describe('sellerCardClassName', () => {
     expect(className).not.toContain('scale-');
   });
 
-  it('cursor-pointer y el layout base son iguales en las dos variantes', () => {
+  it('cursor-pointer and the base layout are the same in both variants', () => {
     const standalone = sellerCardClassName({ variant: 'standalone', isClicked: false });
     const embedded = sellerCardClassName({ variant: 'embedded', isClicked: false });
 

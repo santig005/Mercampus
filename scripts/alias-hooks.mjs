@@ -1,7 +1,7 @@
 // Resolution hooks for jsconfig.json's '@/' alias.
 //
 // The Mongoose models import '@/utils/resources/...' (productSchema and
-// sellerSchema2). Next and Vitest resolve that alias on their own, plain
+// sellerSchema). Next and Vitest resolve that alias on their own, plain
 // Node does not, so any script in scripts/ that imports a model fails
 // without this. Future migrations (T-11, T-20) will need it just the same.
 //

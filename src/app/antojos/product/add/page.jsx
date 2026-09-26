@@ -12,6 +12,7 @@ import { useCheckSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
 import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
+import { APP_HOME } from '@/lib/app-home';
 
 const AddProduct = () => {
   const router = useRouter();
@@ -32,8 +33,16 @@ const AddProduct = () => {
   const [categories, setCategories] = useState([]); // State for storing categories
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
-  const [price, setPrice] = useState('');
-  const [displayPrice, setDisplayPrice] = useState('');
+  // T-119: the API's 400s carry a `fields` array naming exactly what was
+  // wrong (see invalidPayload in src/lib/api-response.ts) - this page used to
+  // read only `.message` and show the generic "Datos inválidos", which is
+  // why a price-format bug looked like an opaque error for ten days (T-115).
+  const [fieldErrors, setFieldErrors] = useState([]);
+
+  const closeErrorModal = () => {
+    setErrorCode('');
+    setFieldErrors([]);
+  };
 
   const categoryOptions = categories.map(category => ({
     value: category,
@@ -90,11 +99,12 @@ const AddProduct = () => {
       });
 
       if (response.ok) {
-        router.push('/'); // Redirect to seller profile
+        router.push(APP_HOME);
       } else {
         const errorData = await response.json();
         logger.error('Error:', errorData.message);
         setErrorCode(errorData.message);
+        setFieldErrors(Array.isArray(errorData.fields) ? errorData.fields : []);
       }
     } catch (error) {
       logger.error('Network Error:', error);
@@ -115,25 +125,44 @@ const AddProduct = () => {
           id='errors'
           className={`modal ${errorCode ? 'modal-open' : ''}`}
         >
-          <div className='modal-box bg-[#fde6e6] p-3'>
-            <div className='flex justify-start items-center gap-3 w-full'>
+          <div className='modal-box p-3'>
+            {/* T-127: this used to be `bg-[#fde6e6]`, a light pink with no
+                dark-theme variant - heading/list text had no explicit color
+                so it fell back to base-content, nearly invisible on that
+                pink in the dark theme (see docs/audits/t-119/
+                error-state__dark.png and t-127 in ROADMAP.md). `alert
+                alert-error` is the same themed daisyUI token
+                EditProductForm.jsx already uses for its error banner - its
+                background and text both come from the current theme's
+                error/error-content CSS vars, so they track light/dark
+                instead of being hardcoded for one of them. */}
+            <div
+              role='alert'
+              className='alert alert-error flex justify-start items-start gap-3 w-full'
+            >
               <div className=''>
-                <FcHighPriority className='text-red-400 text-4xl' />
+                <FcHighPriority className='text-4xl' />
               </div>
               <div className='w-full'>
                 <h3 className='font-bold text-lg flex justify-between'>
                   ¡Atención!
                   <form method='dialog'>
                     {/* if there is a button in form, it will close the modal */}
-                    <button
-                      className='font-normal'
-                      onClick={() => setErrorCode('')}
-                    >
-                      <IoClose className='text-red-400 text-2xl' />
+                    <button className='font-normal' onClick={closeErrorModal}>
+                      <IoClose className='text-2xl' />
                     </button>
                   </form>
                 </h3>
                 <p className='py-2'>{errorCode}</p>
+                {fieldErrors.length > 0 && (
+                  <ul className='list-disc list-inside text-sm -mt-1 pb-1'>
+                    {fieldErrors.map(({ field, message }) => (
+                      <li key={field}>
+                        <span className='font-semibold'>{field}:</span> {message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
@@ -213,7 +242,7 @@ const AddProduct = () => {
                   type='text'
                   name='price'
                   placeholder='Precio del producto'
-                  // value={formData.price}
+                  value={formData.price}
                   onChange={handleChange}
                   required
                 />

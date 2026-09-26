@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { decideAdminAccess } from '@/utils/lib/adminAccess';
 
 describe('decideAdminAccess', () => {
-  it('deja pasar una ruta que no es de admin, sin importar sesion ni rol', () => {
+  it('lets through a route that is not an admin route, regardless of session or role', () => {
     expect(
       decideAdminAccess({
         isAdminRoute: false,
@@ -14,7 +14,7 @@ describe('decideAdminAccess', () => {
     ).toEqual({ action: 'allow' });
   });
 
-  it('pagina de admin sin sesion: manda a login', () => {
+  it('admin page with no session: sends to login', () => {
     expect(
       decideAdminAccess({
         isAdminRoute: true,
@@ -25,7 +25,7 @@ describe('decideAdminAccess', () => {
     ).toEqual({ action: 'signin' });
   });
 
-  it('api de admin sin sesion: 401, no redirige', () => {
+  it('admin api with no session: 401, does not redirect', () => {
     expect(
       decideAdminAccess({
         isAdminRoute: true,
@@ -36,7 +36,7 @@ describe('decideAdminAccess', () => {
     ).toEqual({ action: 'json', status: 401 });
   });
 
-  it('pagina de admin con sesion pero sin rol: manda al home', () => {
+  it('admin page with a session but no role: sends home', () => {
     expect(
       decideAdminAccess({
         isAdminRoute: true,
@@ -47,7 +47,7 @@ describe('decideAdminAccess', () => {
     ).toEqual({ action: 'redirect-home' });
   });
 
-  it('api de admin con sesion pero sin rol: 403', () => {
+  it('admin api with a session but no role: 403', () => {
     expect(
       decideAdminAccess({
         isAdminRoute: true,
@@ -58,7 +58,7 @@ describe('decideAdminAccess', () => {
     ).toEqual({ action: 'json', status: 403 });
   });
 
-  it('pagina de admin con rol: deja pasar', () => {
+  it('admin page with the role: lets through', () => {
     expect(
       decideAdminAccess({
         isAdminRoute: true,
@@ -69,7 +69,7 @@ describe('decideAdminAccess', () => {
     ).toEqual({ action: 'allow' });
   });
 
-  it('api de admin con rol: deja pasar', () => {
+  it('admin api with the role: lets through', () => {
     expect(
       decideAdminAccess({
         isAdminRoute: true,

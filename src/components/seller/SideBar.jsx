@@ -24,6 +24,8 @@ import {
   BsBagCheckFill,
   BsBagPlus,
   BsBagPlusFill,
+  BsBarChart,
+  BsBarChartFill,
   BsBuildingFillGear,
   BsCalendarCheck,
   BsCalendarCheckFill,
@@ -135,6 +137,14 @@ const SideBar = ({ userId }) => {
                 <ul className='flex flex-col gap-2'>
                   <li>
                     <SidebarBtn
+                      text='Panel de ventas'
+                      goto='/antojos/sellers/panel'
+                      iconActive={<BsBarChartFill className='size-5' />}
+                      iconInactive={<BsBarChart className='size-5' />}
+                    />
+                  </li>
+                  <li>
+                    <SidebarBtn
                       text='Agregar productos'
                       goto='/antojos/product/add'
                       iconActive={<BsBagPlusFill className='size-5' />}
@@ -200,7 +210,7 @@ const SideBar = ({ userId }) => {
           <li>
             <SidebarBtn
               text='Sobre Mercampus'
-              goto='/about'
+              goto='/'
               iconActive={<MdInfo className='size-5' />}
               iconInactive={<MdOutlineInfo className='size-5' />}
             />

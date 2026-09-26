@@ -16,8 +16,13 @@
 // GitHub Actions schedule, every 10-20 minutes as measured on 2026-09-14), and
 // "abre mar 6:38" needs the schedules anyway.
 //
-// T-83 (opening outside the schedule for a bounded window) does not exist yet.
-// When it lands, its override belongs in isOpenAt(), so both callers see it.
+// T-83: `Seller.availabilityOverrideUntil` (a nullable timestamp) opens the
+// store outside its schedule for a bounded window. Its override lives in
+// isOpenAt(), so both callers - the T-14 cron and productAvailability() -
+// see it the same way. isOpenAt() itself never touches the database or reads
+// `now`: callers resolve the timestamp into a plain boolean with
+// isOverrideActive() and pass that in, keeping isOpenAt() a pure function of
+// `clock` (Bogotá day + HH:MM) exactly as before.
 
 export type ScheduleSlot = {
   day: number; // 1 = Monday ... 7 = Sunday, as stored
@@ -40,8 +45,10 @@ export type AvailabilityStatus =
 
 // Colombia has no daylight saving, so a fixed offset is enough. "Now" in the
 // runtime's timezone (UTC on Vercel) would not match the local time the seller
-// typed into their schedule.
-const BOGOTA_OFFSET_HOURS = 5;
+// typed into their schedule. Exported so other read-only aggregations that
+// need to bucket a UTC timestamp into Bogotá local time (T-44's seller panel)
+// reuse the same constant instead of re-typing the magic number.
+export const BOGOTA_OFFSET_HOURS = 5;
 
 export function bogotaClock(now: Date): BogotaClock {
   const bogota = new Date(now.getTime() - BOGOTA_OFFSET_HOURS * 60 * 60 * 1000);
@@ -60,13 +67,40 @@ const validSlots = (schedules: ScheduleSlot[]) =>
 
 // Both ends inclusive, exactly what the cron has always done. A slot that
 // crosses midnight (endTime < startTime) never matches, as before.
-export function isOpenAt(schedules: ScheduleSlot[], clock: BogotaClock): boolean {
-  return validSlots(schedules).some(
-    slot =>
-      slot.day === clock.day &&
-      slot.startTime <= clock.time &&
-      slot.endTime >= clock.time
+//
+// T-83: `overrideActive` short-circuits the schedule check entirely - a
+// seller with an active override is open no matter what Schedule says.
+// Defaults to `false` so every pre-T-83 caller (and every existing test)
+// keeps behaving exactly as before without passing a third argument.
+export function isOpenAt(
+  schedules: ScheduleSlot[],
+  clock: BogotaClock,
+  overrideActive = false
+): boolean {
+  return (
+    overrideActive ||
+    validSlots(schedules).some(
+      slot =>
+        slot.day === clock.day &&
+        slot.startTime <= clock.time &&
+        slot.endTime >= clock.time
+    )
   );
+}
+
+// T-83: turns `Seller.availabilityOverrideUntil` into the boolean isOpenAt()
+// wants. A missing/null value (every seller before this field existed, and
+// every seller who never used it) is "no override" - not an error - so this
+// is a plain falsy check, not a `$ne`-style Mongo filter: there is no query
+// here, just a value already read off a document.
+export function isOverrideActive(
+  overrideUntil: Date | string | null | undefined,
+  now: Date
+): boolean {
+  if (!overrideUntil) {
+    return false;
+  }
+  return new Date(overrideUntil).getTime() > now.getTime();
 }
 
 // The next slot that starts after `clock`, looking a full week ahead: the same
@@ -98,16 +132,17 @@ export function nextOpening(
 export function productAvailability(
   productOn: unknown,
   schedules: ScheduleSlot[],
-  now: Date = new Date()
+  now: Date = new Date(),
+  overrideUntil: Date | string | null | undefined = null
 ): AvailabilityStatus {
   // The seller's switch wins: a product they turned off is not coming back
-  // when the store opens.
+  // when the store opens, override or not.
   if (!productOn) {
     return { state: 'off' };
   }
 
   const clock = bogotaClock(now);
-  if (isOpenAt(schedules, clock)) {
+  if (isOpenAt(schedules, clock, isOverrideActive(overrideUntil, now))) {
     return { state: 'available' };
   }
 
@@ -115,22 +150,20 @@ export function productAvailability(
   return next ? { state: 'closed', nextOpening: next } : { state: 'no-schedule' };
 }
 
-// Product copy, so Spanish. Wording chosen by the human on 2026-09-14;
-// "Consultar horario" was their pick of a neutral label for no schedule.
-const SHORT_DAYS_ES = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
-
-export function availabilityLabel(status: AvailabilityStatus): string {
-  switch (status.state) {
-    case 'available':
-      return 'Disponible';
-    case 'off':
-      return 'No disponible';
-    case 'no-schedule':
-      return 'Consultar horario';
-    case 'closed': {
-      const { day, startTime } = status.nextOpening;
-      const [hours, minutes] = startTime.split(':');
-      return `Cerrado ahora · abre ${SHORT_DAYS_ES[day - 1]} ${Number(hours)}:${minutes}`;
-    }
-  }
+// T-81 (seller profile zone): this used to be `availabilityLabel(status)`,
+// returning a hardcoded Spanish string ("Disponible", "Cerrado ahora · abre
+// mar 6:38", ...) - the human's wording from T-122/2026-09-14, but fixed to
+// one language with no next-intl involved, because AvailabilityBadge (its
+// only caller) predates this zone's migration. Now that AvailabilityBadge
+// renders through next-intl, the language-specific strings moved into
+// messages/{es,en}.json under the `AvailabilityBadge` namespace, and this
+// file keeps only the pure, locale-agnostic part: turning `nextOpening`'s
+// 24h `startTime` into the `{ hour, minute }` pair the component interpolates
+// into its translated template. `hour` drops the leading zero (Number()),
+// `minute` keeps it (stays a string) - same behaviour as the deleted
+// function's template literal, still covered by
+// tests/unit/store-availability.test.js.
+export function formatOpeningTime(startTime: string): { hour: number; minute: string } {
+  const [hours, minutes] = startTime.split(':');
+  return { hour: Number(hours), minute: minutes };
 }

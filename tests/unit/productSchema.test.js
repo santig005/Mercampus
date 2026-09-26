@@ -20,25 +20,25 @@ const buildProduct = overrides =>
 
 const categoryError = doc => doc.validateSync()?.errors?.category;
 
-describe('productSchema · categorias por seccion', () => {
-  it('acepta una categoria de antojos en la seccion antojos', () => {
+describe('productSchema · categories per section', () => {
+  it('accepts an antojos category in the antojos section', () => {
     const doc = buildProduct({ section: 'antojos', category: ['Dulces'] });
     expect(categoryError(doc)).toBeUndefined();
   });
 
-  it('rechaza una categoria de marketplace en la seccion antojos', () => {
+  it('rejects a marketplace category in the antojos section', () => {
     const doc = buildProduct({ section: 'antojos', category: ['Tecnología'] });
     expect(categoryError(doc)?.message).toBe(
       'Las categorías deben pertenecer a la sección del producto'
     );
   });
 
-  it('acepta una categoria de marketplace en la seccion marketplace', () => {
+  it('accepts a marketplace category in the marketplace section', () => {
     const doc = buildProduct({ section: 'marketplace', category: ['Termos'] });
     expect(categoryError(doc)).toBeUndefined();
   });
 
-  it('rechaza una categoria de antojos en la seccion marketplace', () => {
+  it('rejects an antojos category in the marketplace section', () => {
     const doc = buildProduct({
       section: 'marketplace',
       category: ['Frituras'],
@@ -46,7 +46,7 @@ describe('productSchema · categorias por seccion', () => {
     expect(categoryError(doc)).toBeDefined();
   });
 
-  it('rechaza si una sola de varias categorias es de otra seccion', () => {
+  it('rejects if just one of several categories is from another section', () => {
     const doc = buildProduct({
       section: 'antojos',
       category: ['Dulces', 'Galletas', 'Libros'],
@@ -54,7 +54,7 @@ describe('productSchema · categorias por seccion', () => {
     expect(categoryError(doc)).toBeDefined();
   });
 
-  it('acepta varias categorias validas de la misma seccion', () => {
+  it('accepts several valid categories from the same section', () => {
     const doc = buildProduct({
       section: 'antojos',
       category: ['Dulces', 'Galletas', 'Snacks'],
@@ -62,7 +62,7 @@ describe('productSchema · categorias por seccion', () => {
     expect(categoryError(doc)).toBeUndefined();
   });
 
-  it('acepta "Otros", que existe en ambas listas', () => {
+  it('accepts "Otros", which exists in both lists', () => {
     expect(antojosCategories).toContain('Otros');
     expect(marketplaceCategories).toContain('Otros');
 
@@ -72,25 +72,25 @@ describe('productSchema · categorias por seccion', () => {
     }
   });
 
-  it('rechaza una categoria que no existe en ninguna lista', () => {
+  it('rejects a category that exists in neither list', () => {
     const doc = buildProduct({ section: 'antojos', category: ['Inventada'] });
     expect(categoryError(doc)).toBeDefined();
   });
 });
 
-describe('productSchema · seccion por defecto', () => {
-  it('usa "antojos" cuando no se envia seccion', () => {
+describe('productSchema · default section', () => {
+  it('uses "antojos" when no section is sent', () => {
     const doc = buildProduct({ category: ['Dulces'] });
     expect(doc.section).toBe('antojos');
     expect(categoryError(doc)).toBeUndefined();
   });
 
-  it('valida contra antojos cuando la seccion viene por defecto', () => {
+  it('validates against antojos when the section is the default', () => {
     const doc = buildProduct({ category: ['Termos'] });
     expect(categoryError(doc)).toBeDefined();
   });
 
-  it('rechaza una seccion fuera del enum', () => {
+  it('rejects a section outside the enum', () => {
     const doc = buildProduct({ section: 'inventada', category: ['Dulces'] });
     expect(doc.validateSync()?.errors?.section).toBeDefined();
   });

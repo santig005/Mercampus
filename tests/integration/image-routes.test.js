@@ -125,7 +125,7 @@ describe('T-116 · image routes', () => {
     process.env.IMAGEKIT_URL_ENDPOINT = media.endpoint;
     imagesRoute = await import('@/app/api/images/route.js');
     ({ Product } = await import('@/utils/models/productSchema'));
-    ({ Seller, DEFAULT_SELLER_LOGO } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller, DEFAULT_SELLER_LOGO } = await import('@/utils/models/sellerSchema'));
     ({ User } = await import('@/utils/models/userSchema'));
     png = await sharp({
       create: { width: 4, height: 4, channels: 3, background: '#ff7a00' },

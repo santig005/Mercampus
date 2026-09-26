@@ -26,7 +26,7 @@ const UNMIGRATED_SURFACE =
 // here should come with a reason, not just a path.
 const ALLOWED = [
   {
-    file: 'src/app/[locale]/about/page.jsx',
+    file: 'src/app/[locale]/(landing)/page.jsx',
     classes: ['bg-white', 'bg-gray-100'],
     reason:
       'CTA button on the orange band: white IS the contrast colour there, ' +
@@ -34,7 +34,7 @@ const ALLOWED = [
       'bg-orange-500.',
   },
   {
-    file: 'src/app/[locale]/about/page.jsx',
+    file: 'src/app/[locale]/(landing)/page.jsx',
     classes: ['text-gray-400'],
     reason: 'Footer text inside a self-contained bg-gray-900 block.',
   },
@@ -46,7 +46,7 @@ const ALLOWED = [
 ];
 
 // Comments mention these class names when explaining why they are there
-// (about/page.jsx and card-variant.js both do). Stripping them keeps the scan
+// ((landing)/page.jsx and card-variant.js both do). Stripping them keeps the scan
 // about code, without having to allowlist a whole file over a comment.
 function stripComments(source) {
   return source
@@ -83,26 +83,26 @@ const isAllowed = hit =>
     entry => entry.file === hit.file && entry.classes.includes(hit.className)
   );
 
-describe('T-75 · tokens de tema en toda la app', () => {
-  it('no queda ninguna clase sin migrar fuera de las excepciones documentadas', () => {
+describe('T-75 · theme tokens across the app', () => {
+  it('no unmigrated class remains outside the documented exceptions', () => {
     const unexpected = scan().filter(hit => !isAllowed(hit));
 
     // The message lists file and class: if this fails it says exactly what to
     // migrate, not just that something broke.
     expect(
       unexpected.map(hit => `${hit.file}: ${hit.className}`),
-      'clases sin migrar (ver la regla de T-75 en ROADMAP.md)'
+      'unmigrated classes (see the T-75 rule in ROADMAP.md)'
     ).toEqual([]);
   });
 
-  it('cada excepcion sigue existiendo: si se migro, sobra en la lista', () => {
+  it('each exception still exists: if it was migrated, it is stale in the list', () => {
     const hits = scan();
 
     for (const entry of ALLOWED) {
       for (const className of entry.classes) {
         expect(
           hits.some(hit => hit.file === entry.file && hit.className === className),
-          `${entry.file} ya no usa ${className}: borra esa excepcion de ALLOWED`
+          `${entry.file} no longer uses ${className}: remove that exception from ALLOWED`
         ).toBe(true);
       }
     }

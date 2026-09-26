@@ -46,8 +46,8 @@ beforeEach(async () => {
   session.userId = null;
 });
 
-describe('backfill de clerkId', () => {
-  it('no escribe nada sin --apply', async () => {
+describe('clerkId backfill', () => {
+  it('writes nothing without --apply', async () => {
     await crearUsuario('ana@example.test');
 
     const informe = await backfillClerkIds({
@@ -60,7 +60,7 @@ describe('backfill de clerkId', () => {
     expect((await User.findOne({})).clerkId).toBeUndefined();
   });
 
-  it('enlaza la cuenta con su usuario con --apply', async () => {
+  it('links the account to its user with --apply', async () => {
     await crearUsuario('ana@example.test');
 
     const informe = await backfillClerkIds({
@@ -72,7 +72,7 @@ describe('backfill de clerkId', () => {
     expect((await User.findOne({})).clerkId).toBe('user_ana');
   });
 
-  it('es idempotente: la segunda pasada no deja nada pendiente', async () => {
+  it('is idempotent: the second pass leaves nothing pending', async () => {
     await crearUsuario('ana@example.test');
     const listarUsuariosDeClerk = clerkCon(cuenta('user_ana', 'ana@example.test'));
 
@@ -84,7 +84,7 @@ describe('backfill de clerkId', () => {
     expect(await User.countDocuments({ clerkId: 'user_ana' })).toBe(1);
   });
 
-  it('con el email duplicado se queda con el que tiene perfil de vendedor', async () => {
+  it('with a duplicate email, keeps the one with a seller profile', async () => {
     // The real production case: the same person twice, one copy with a seller
     // and one empty, because the old POST /api/register created users with no
     // authentication and the email's unique is still commented out (T-11).
@@ -104,7 +104,7 @@ describe('backfill de clerkId', () => {
     expect((await User.findById(vacio._id)).clerkId).toBeUndefined();
   });
 
-  it('crea el usuario si la cuenta de Clerk no tiene ninguno', async () => {
+  it('creates the user if the Clerk account has none', async () => {
     const informe = await backfillClerkIds({
       listarUsuariosDeClerk: clerkCon(cuenta('user_nuevo', 'nuevo@example.test')),
       apply: true,
@@ -116,7 +116,7 @@ describe('backfill de clerkId', () => {
     expect(creado.role).toBe('buyer');
   });
 
-  it('no toca ni cuenta como pendientes los documentos sin cuenta en Clerk', async () => {
+  it('does not touch or count as pending the documents with no Clerk account', async () => {
     // There are 65 of these in production. They are not locked out: with no
     // Clerk account they can't sign in, so they aren't this migration's job.
     await crearUsuario('fantasma1@example.test');
@@ -133,7 +133,7 @@ describe('backfill de clerkId', () => {
     expect((await User.findOne({ email: 'fantasma1@example.test' })).clerkId).toBeUndefined();
   });
 
-  it('no roba el usuario de otra cuenta ya enlazada', async () => {
+  it('does not steal the user from another account already linked', async () => {
     // If the document already has a different clerkId it is another person:
     // dos cuentas y ademas reventaria el indice unique.
     await crearUsuario('compartido@example.test', { clerkId: 'user_primero' });
@@ -150,7 +150,7 @@ describe('backfill de clerkId', () => {
     expect(await User.countDocuments({ clerkId: 'user_segundo' })).toBe(1);
   });
 
-  it('deja al usuario pudiendo operar otra vez', async () => {
+  it('leaves the user able to operate again', async () => {
     // El recorrido entero: bloqueado como estaria en produccion, backfill, y
     // can register as a seller again.
     await crearUsuario('ana@example.test');
@@ -174,17 +174,17 @@ describe('backfill de clerkId', () => {
   });
 });
 
-describe('guarda de instancia', () => {
+describe('instance guard', () => {
   const desarrollo = async () => ({ id: 'ins_dev', environment_type: 'development' });
   const produccion = async () => ({ id: 'ins_prod', environment_type: 'production' });
 
-  it('se planta si las claves son de una instancia de desarrollo', async () => {
+  it('bails if the keys are from a development instance', async () => {
     await expect(
       comprobarInstancia({ describirInstancia: desarrollo })
     ).rejects.toThrow(/no es la de producción|"development"/);
   });
 
-  it('deja pasar si se pide explícitamente', async () => {
+  it('lets it through when explicitly requested', async () => {
     const instancia = await comprobarInstancia({
       describirInstancia: desarrollo,
       permitirDesarrollo: true,
@@ -192,13 +192,13 @@ describe('guarda de instancia', () => {
     expect(instancia.id).toBe('ins_dev');
   });
 
-  it('deja pasar una instancia de producción', async () => {
+  it('lets a production instance through', async () => {
     expect(
       (await comprobarInstancia({ describirInstancia: produccion })).id
     ).toBe('ins_prod');
   });
 
-  it('se planta si la base ya está enlazada a otra instancia', async () => {
+  it('bails if the database is already linked to another instance', async () => {
     await crearUsuario('ana@example.test', { clerkId: 'user_de_otra_instancia' });
 
     await expect(
@@ -209,7 +209,7 @@ describe('guarda de instancia', () => {
     ).rejects.toThrow(/otra instancia/);
   });
 
-  it('no se planta si los enlaces existentes son de esta instancia', async () => {
+  it('does not bail if the existing links are from this instance', async () => {
     await crearUsuario('ana@example.test', { clerkId: 'user_de_esta' });
 
     const instancia = await comprobarInstancia({

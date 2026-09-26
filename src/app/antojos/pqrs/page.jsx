@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import InputFields from '@/components/auth/register/InputFields';
 import { pqrsTypes } from '@/utils/resources/pqrs';
+import { supportWhatsAppUrl } from '@/utils/resources/support';
 import { TbBrandWhatsapp } from 'react-icons/tb';
 export default function PqrsForm() {
   const [pqrs, setPqrs] = useState({
@@ -113,7 +114,7 @@ export default function PqrsForm() {
 
         <div className="flex justify-between">
         <a
-            href={`https://wa.me/+57${encodeURIComponent(3054213899)}?text=${encodeURIComponent(`Hola Mercampus. Tengo una solicitud PQRS. Podrías ayudarme?`)}`}
+            href={supportWhatsAppUrl('Hola Mercampus. Tengo una solicitud PQRS. Podrías ayudarme?')}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-secondary"

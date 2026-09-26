@@ -4,7 +4,7 @@ import { getImageKit } from '@/utils/imagekit';
 import { AppError } from '@/utils/lib/errors';
 import { isClerkAdmin } from '@/utils/lib/isClerkAdmin';
 import { Product } from '@/utils/models/productSchema';
-import { DEFAULT_SELLER_LOGO, Seller } from '@/utils/models/sellerSchema2';
+import { DEFAULT_SELLER_LOGO, Seller } from '@/utils/models/sellerSchema';
 import { User } from '@/utils/models/userSchema';
 
 // The only folders the image routes upload to or delete from.

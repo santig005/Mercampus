@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
  * in Next's App Router, with no `route.js` the real request answers 404.
  */
 describe('POST /api/register', () => {
-  it('ya no existe', async () => {
+  it('no longer exists', async () => {
     await expect(import('@/app/api/register/route')).rejects.toThrow();
   });
 });
