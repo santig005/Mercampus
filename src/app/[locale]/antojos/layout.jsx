@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import SideBar from '@/components/seller/SideBar';
 import { setRequestLocale } from 'next-intl/server';
 import LocaleSwitcher from '@/components/general/LocaleSwitcher';
+import { ModalStackProvider } from '@/components/modals/ModalStack';
 
 // T-81: duplicated from src/app/antojos/layout.jsx on purpose, not shared.
 // That tree still owns the antojos sub-routes that have not migrated yet
@@ -36,7 +37,9 @@ export default async function layout({ children, params }) {
           <LocaleSwitcher />
         </div>
         <Layout>
-          {children}
+          {/* T-167: one product modal for every list in this layout, kept
+              in the URL (?producto=) so the back button closes it. */}
+          <ModalStackProvider>{children}</ModalStackProvider>
         </Layout>
       </div>
       <SideBar userId={userId} />

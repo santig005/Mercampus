@@ -7155,6 +7155,31 @@ in memory and still gets back-button and shareable links.
 `replaceState` does on each transition, what a cold load of
 `/antojos?producto=<id>` does, how the individual pages fit) for the human
 to approve.
+**Design approved by the human on 2026-09-26** (`?producto=` rather than
+changing the pathname; four PRs). Progress:
+- **[x] T-167a - the stack, for the product modal opened from the
+  listing.** `src/components/modals/ModalStack.jsx` (provider + one host in
+  the `[locale]/antojos` and `[locale]/marketplace` layouts),
+  `src/lib/modal-url.ts` (the only place that knows the parameter names),
+  `ProductModal` controllable through `open`/`onClose` (its old
+  id-driven mode kept for the callers not migrated yet), and `ProductGrid`
+  opening through the stack instead of its own `ProductModalHandler`.
+  Opening pushes `?producto=<id>` (other parameters kept); back, the
+  close button and Escape all close it; a cold load fetches
+  `GET /api/products/[id]` and closing it replaces the URL instead of
+  leaving the site. Two traps found on the way and pinned in comments: the
+  parameter cannot be `product` (ProductGrid's search text), and
+  `replaceState` must be handed `null` - Next's patched version skips
+  syncing `useSearchParams` when given a state that already carries its
+  internals. Verified: `npm run verify`, `tests/unit/modal-url.test.js`,
+  `tests/e2e/modal-stack.spec.js` (back closes it with no listing request
+  and the drawer's scroll unchanged; close button; Escape; cold load; filters
+  kept; `/en`), plus 37 more listing/modal e2e.
+- [ ] T-167b - the seller modal and the product <-> seller chain.
+- [ ] T-167c - product page, seller page and seller list on the same host.
+- [ ] T-167d - delete `ProductModalHandler`, `SellerModalHandler` and the
+  nested modals; the `sellerId` branch removed from ProductGrid in T-167a
+  had no caller (no prop, no `?sellerId=` link).
 **Model:** `opus` · **Nightly:** no (design with the human first)
 
 ### [ ] T-168 · `/admin/sellers` has no app chrome - no way back but the browser button
