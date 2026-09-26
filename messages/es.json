@@ -89,7 +89,9 @@
     "greetingHi": "Hola",
     "greetingTailWithName": "calma tus antojos",
     "greetingTailNoName": "Calma tus antojos",
-    "allHeading": "Todos"
+    "allHeading": "Todos",
+    "metaTitle": "Antojos",
+    "metaDescription": "Comida hecha por estudiantes de tu universidad. Busca por categoría y escríbele al vendedor por WhatsApp."
   },
   "Marketplace": {
     "greetingHi": "Hola",
