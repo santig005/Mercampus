@@ -26,6 +26,30 @@ beyond this file. It answers one question: **what can I safely pick up on my
 own right now?** Re-check it against the entries themselves before starting -
 this index goes stale, the entries are the contract.
 
+> **Read this before picking anything, added 2026-09-23.** The project's goal
+> changed: Mercampus is a **portfolio piece**, not a product trying to win back
+> users. Real user activity stopped on 2025-09-30 and is not expected to resume.
+>
+> What that does and does not mean:
+> - **It does not lower the bar.** Correctness, security, accessibility and
+>   verifiability still matter - arguably more, because the code itself is now
+>   the deliverable that gets read.
+> - **It does demote work whose only payoff was traffic.** Phase 7's header
+>   lists exactly which entries dropped (T-143, T-145, T-146, T-147, T-148,
+>   T-149, T-151, T-153) and which rose (T-152, T-154 through T-158, T-138).
+>   Those entries each carry a dated note explaining the change, so opening one
+>   in isolation is safe.
+> - **It adds a second goal:** Phase 8. This repo demonstrates *AI-assisted
+>   engineering* in depth (840 commits, 329 merged PRs, two years) and contains
+>   **no AI engineering at all** (measured: zero model SDKs in `package.json`).
+>   T-160 (an evaluation harness) and T-161 (a readable write-up of the
+>   pipeline's real failures) are the two entries that close that gap. The AI
+>   *features* themselves already have a home in Phase 5.
+>
+> If a demoted entry looks like easy nightly filler, check its note first -
+> several of them are demoted *and* still `opus`/`Nightly: no`, because touching
+> real user data is dangerous regardless of priority.
+
 ### Do not touch these without the human in the conversation
 
 Not because they are hard, but because getting them wrong costs real user
@@ -82,6 +106,8 @@ were open. T-142 left in #375. Rows go when their task ships.
 
 | Task | Why it is safe | How you know it worked |
 |---|---|---|
+| **T-159** · The support WhatsApp number is hardcoded 3 times as 2 different numbers | Three call sites, one constant. No data, no auth. Needs the human only to confirm *which* number is current. | A grep showing no literal `wa.me` number left in a page component. |
+| **T-151** · No structured data (JSON-LD) anywhere | Additive markup; nothing existing changes shape. T-69's Open Graph work is the precedent. | Google's Rich Results Test, plus a snapshot test of the emitted JSON — not a grep for the string. |
 | **T-140** · No written boundary between `utils/`+`services/` and `server/`+`lib/` | Doc-only change to `CLAUDE.md`. No code touched. | The new lines describe what is actually true today, cross-checked against this task's own findings. |
 
 ### Fine for an agent, but read the caveat in the entry first
@@ -144,6 +170,28 @@ already warns about, and getting it wrong wastes a PR:
 - **T-139** · whether per-touch TypeScript conversion becomes a standing
   rule in CLAUDE.md, or the current ~72% JS in `src/` is accepted as the
   pace going forward - a scope decision, not a migration to execute.
+- **T-150** · **the domain** - now a cheap yes-or-no rather than a strategy
+  call (the portfolio premise removed two of its three justifications; the
+  entry has the rewritten arithmetic). Still costs money, so still yours.
+- **T-152** · what the homepage actually says - the copy is a product
+  decision. **Promoted:** it is the first screen anyone opening the link sees.
+- **T-154** · rate limiting - needs a call on a new dependency.
+- **T-156** · account and data deletion - irreversible, external service,
+  and a legal question (Ley 1581) behind it. Still applies to data already
+  collected, premise or no premise.
+- **T-157** · restoring a backup - runs against real infrastructure.
+- **T-160** · the evaluation harness, and **T-161** · the pipeline write-up -
+  Phase 8. Both need your judgement on scope before an agent starts: which
+  metrics count, and which incidents are worth telling.
+- **T-51** · add a product from a photo - the recommended first AI feature,
+  but only together with T-160. Note the `price range` decision flagged in its
+  entry.
+
+**Demoted 2026-09-23, do not treat as available work** without re-reading the
+premise note above: **T-143**, **T-145**, **T-146**, **T-147**, **T-148**,
+**T-149**, **T-151** (partially), **T-153**. They stay fully specified on
+purpose - the analysis in them is still correct, and the premise could change
+back.
 
 ---
 
@@ -1812,7 +1860,18 @@ product. This is what sets the portfolio apart.
 document, Atlas vector search, hybrid with text search. Evaluated with 20
 reference queries and their expected results, to be able to demonstrate
 the improvement.
-**Depends on:** T-24
+**Note added 2026-09-23 — the "20 reference queries" line above is asking for
+T-160**, which now specifies that harness properly; use it rather than building
+a second one here.
+**And a warning about the likely outcome, which is not a reason to skip it:**
+the catalogue is small (135 indexable URLs live, of which most are products).
+At that scale, embeddings may well *not* beat the lexical search T-24 already
+built - which is why T-160 requires measuring the dumb baseline first. If that
+is the result, **report it**: "I measured, and the simpler thing won" is a
+stronger engineering signal than a vector database nobody needed. Just decide up
+front whether the goal is the finding or the demo, because they point at
+different amounts of work.
+**Depends on:** T-24, and T-160 for the evaluation
 **Model:** `opus` — new domain, non-obvious decisions
 **Nightly:** no
 
@@ -1822,6 +1881,33 @@ number-one source of friction for a seller between classes.
 **Done when:** the seller uploads the photo and a model proposes name,
 description, category, and price range; **everything editable before
 saving**, no autosave. Manual fallback if the API fails.
+**Promoted 2026-09-23: of the four AI entries in this file (T-50, T-51, T-52,
+T-129), this is the one to build first.** The reasoning, since the choice is not
+obvious:
+- **It is the only one whose evaluation set already exists.** See T-160: 54
+  sellers' real photos, each with a human-written name, a human-chosen category
+  and a description. This task's output is exactly those fields, so the
+  benchmark is the users' own work. Nothing has to be labelled by hand.
+- **The `Done when` above already has the right guardrail**, written before any
+  of this was framed as AI engineering: *everything editable before saving, no
+  autosave*. That is a human-in-the-loop design, and it is the same posture as
+  rule 3. Keep it exactly as it is - a model proposing and a person confirming
+  is both the safer product and the more defensible design.
+- **`price range` is the dangerous field and deserves its own decision.** A
+  hallucinated name is a typo the seller fixes; a plausible-but-wrong price
+  anchors what they charge. Consider deriving it from comparable products
+  already in the catalogue rather than asking the model to invent it, or drop it
+  from v1.
+**The continuity worth making explicit, because it is already a convention
+here:** CLAUDE.md says every body and query param passes a Zod schema before
+touching Mongoose, and never `new Model(body)` with raw data. **A model's output
+is raw data from an untrusted source** - structurally identical to a request
+body, and it gets the same treatment: parse it with a Zod schema, reject what
+does not fit, and never let it reach `Product` unvalidated. The validators in
+`src/lib/validators/product` are most of the work already.
+**Depends on:** T-160 (the harness) - build them together, not this one first.
+**Also relevant:** T-124 (photos over 4.5 MB) and T-117 (images orphaned by an
+abandoned form) both sit on this exact upload path; read them before touching it.
 **Model:** `opus` · **Nightly:** no
 
 ### [ ] T-52 · Listing moderation
@@ -6233,3 +6319,675 @@ question this task removes.
 - **Verified:** `npm run verify` green, and a repo-wide grep finds
   `sellerSchema2` only in this file's historical entries.
 **Model:** `sonnet` · **Nightly:** yes
+
+---
+
+## Phase 7 — Engineering maturity, and the parts of the product worth finishing
+
+Filed 2026-09-23 from a read-only review of the whole repo plus live
+measurements against `mercampus.vercel.app`.
+
+> **Premise, set by the human on 2026-09-23, and it reorders this entire
+> phase.** Mercampus is no longer being built to win back public users. It is a
+> **portfolio piece**: its job is to demonstrate that its author can build and
+> operate something properly. Real user activity stopped on 2025-09-30 (T-64's
+> measurement) and is not expected to resume.
+>
+> **This premise is a filter, not an excuse.** It lowers the value of features
+> that only pay off with real buyers, and it *raises* the value of everything
+> that shows production judgement to a reader: correct HTTP semantics, abuse
+> limits, an audit trail, a restore that has actually been run, a visual check
+> the pipeline enforces. "No users" is not a reason to leave something broken;
+> it is a reason to stop building things whose only justification was traffic.
+
+**What this premise demotes** (filed, specified, deliberately not next):
+
+| Task | Why it drops |
+|---|---|
+| **T-143** · self-service account recovery | Its whole value was reaching the 63 locked-out users. `scripts/reclaim-account.mjs` already handles the case by hand if anyone ever asks. |
+| **T-145** · sold-out state · **T-146** · options and add-ons · **T-147** · pre-orders | Each is a bet on buyer behaviour, and T-144 - the only thing that could have told you whether the bet paid - now has no traffic to measure. |
+| **T-148** · verified-student badge · **T-149** · report a listing | Trust and safety mechanisms for a community that is not currently transacting. |
+| **T-151** · JSON-LD · **T-153** · per-university URLs | Both were justified by search ranking, which stops being a goal. T-151 keeps a *small* case (rich results make a shared portfolio link look credible); T-153 does not. |
+
+**What it promotes**, because these are what a reader actually evaluates:
+
+| Task | Why it rises |
+|---|---|
+| **T-152** · a real homepage, a real `<h1>` | `/` is a 308 to a listing whose title is the layout default and which has no `<h1>` at all. This is the first thing anyone opening the link sees, and the `<h1>` gap is an accessibility defect regardless of traffic. |
+| **T-158** · visual regression diffing | Makes CLAUDE.md rule 3 enforceable by the pipeline instead of by attention. The clearest "I understood the lesson from T-100" artifact in the repo. |
+| **T-157** · a restore that has been run · **T-154** · rate limiting · **T-155** · admin audit log · **T-156** · account deletion | Production thinking, each cheap, each independently demonstrable. T-156 also remains a real legal obligation for data already collected (Ley 1581), users or no users. |
+| **T-138** · splitting this file | Reclassified: this is no longer housekeeping. The agent pipeline is this project's strongest asset and 6000 lines make it unreadable. See **T-161**. |
+
+One measurement from this review that still stands on its own, independent of
+the premise: **the only conversion event in the product is the WhatsApp click,
+and it is recorded nowhere we own** (T-144). It stays worth doing, for a
+changed reason - `Order` (T-40) and the seller panel (T-44) are both built on
+data that is never written, so the panel has nothing real to show a reader
+either.
+
+### [ ] T-143 · Self-service account recovery ("reclama tu cuenta")
+**Why:** T-64b built `scripts/reclaim-account.mjs` and deliberately ruled out
+a self-service screen, on the grounds that it "isn't worth it for the expected
+volume." That judgement deserves revisiting with the number next to it: the
+volume is **63 of 79 users** - 80% of the base, and it is precisely the group
+that owns published products. Today each one needs a human to run
+`npm run reclaim:account -- --email <email> --clerk-id <id> --apply` by hand,
+which means in practice nobody is recovered. A returning seller signs up, the
+webhook creates a fresh empty `User`, and they land as a buyer with no store
+while their real store and products sit there orphaned.
+**What makes it safe, and it is worth being precise:** the matching signal is
+not "an email typed into a form" - it is an email **Clerk has already
+verified** as part of the sign-up that just happened. That is strictly stronger
+than what the manual script relies on today, which is a human reading an email
+off a spreadsheet. The risk to design against is not impersonation via a
+guessed address, it is the `conflict` case the script already models.
+**Done when:** a signed-in user whose `User` document is empty (no `sellerId`,
+freshly created by the webhook) and whose verified email matches exactly one
+other `User` carrying a different `clerkId` is offered a "this looks like your
+old account - recover it" step; accepting runs the same transition
+`reclaim-account.mjs` already implements, reusing that module rather than a
+second copy of the logic. The `no-match`, `already-reclaimed` and `conflict`
+states surface as real UI, not a silent no-op. Integration tests for all four
+states plus a real screenshot of the screen in both themes (rule 3).
+**Careful:** this writes to real user documents, so **rule 8 applies** -
+measure against the real base read-only first. And it must stay idempotent:
+someone clicking twice cannot end up merging two live accounts.
+**Depends on:** T-64b (the script and its state machine)
+**Demoted 2026-09-23 by the portfolio premise (see this phase's header).** It
+was filed as the highest-leverage entry in Phase 7 on the assumption that
+reaching those 63 people mattered; under the new premise it does not. Kept
+filed rather than deleted for two reasons: the analysis of *why* the manual
+script is insufficient stays correct, and `reclaim-account.mjs` covers the case
+by hand if a single person ever asks. **Do not take this as nightly filler** -
+it still writes to real user documents, so if it is ever revived, rule 8 and
+the `opus` flag below still apply.
+**Model:** `opus` — touches identity and real user data · **Nightly:** no
+
+### [ ] T-144 · The WhatsApp click is the only conversion in the product, and it is not recorded anywhere we own
+**Why:** measured by grep across `src/`, not assumed. Contacting a seller is
+the entire funnel - there is no cart and no checkout - and it is instrumented
+only as a Google Analytics event:
+[`ProductModal.jsx`](src/components/products/ProductModal.jsx) fires
+`sendGAEvent('event', 'click_whatsapp_product', ...)`, and
+[`SellerPage.jsx`](src/components/seller/SellerPage.jsx) /
+[`SellerModal.jsx`](src/components/seller/index/SellerModal.jsx) fire
+`click_whatsapp_seller`. Two consequences, both real:
+1. **Nothing reaches our database.** `Order` (T-40) exists as a schema with no
+   writer, and the seller panel (T-44) reports on data that is never created.
+   The business has no idea which product produced contact.
+2. **The instrumentation is already inconsistent.**
+   [`ProductPage.jsx`](src/components/products/ProductPage.jsx) - the product
+   detail page, the one migrated to next-intl in T-81 and the most important
+   of the three surfaces - renders its WhatsApp `<a>` with `href` and
+   `aria-label` but **no `onClick`**, so it reports nothing at all. Whatever GA
+   shows today is therefore a partial count of unknown bias, which is worse
+   than no number.
+**Done when:** clicking any "contact over WhatsApp" surface records an
+intent-to-buy in our own database (product, seller, university, timestamp; no
+buyer PII beyond the signed-in user's id, and it must work for a signed-out
+visitor too), all three surfaces go through **one** shared component or helper
+so a fourth surface cannot forget it again, and `ProductPage.jsx` stops being
+the odd one out. Decide explicitly whether this writes `Order` with a
+`contacted` state or a lighter `ContactIntent` collection - do not create a
+half-populated `Order` that T-40's state machine cannot move forward.
+**~~Why it is worth doing before the feature work below:~~** T-145, T-146 and
+T-147 are all bets about buyer behaviour, and this was the only thing that
+would have told you whether any of them worked. **Those three are demoted as of
+2026-09-23 (see this phase's header), so that argument is gone** - and this
+entry survives it on a different one.
+**Why it still stands under the portfolio premise:** finding #2 above is a
+defect regardless of traffic - three surfaces do the same thing and one of them
+silently does not, which is exactly the class of inconsistency this repo's
+rule 9 asks to report and fix. And `Order` (T-40) plus the seller panel (T-44)
+are both shipped, both read from data nothing writes: a reader who opens the
+panel sees an empty dashboard. Writing the intent gives the two most
+"product-looking" pieces already built something real to display.
+**Scope note under the new premise:** prefer the lighter option. A dedicated
+contact-intent record is honest about what it is; forcing a half-populated
+`Order` through T-40's state machine to make the panel light up would be
+building a demo prop, and the state machine's missing caller is T-147's
+problem, not this one's.
+**Model:** `opus` — the `Order`-vs-new-collection call shapes later work
+**Nightly:** no
+
+### [ ] T-145 · A product shows "Disponible" when the seller has sold out
+**Why:** the availability work so far (T-122, T-123, T-83, T-71) all answers
+"is the **store** open right now", computed from the weekly `Schedule`, the
+pause flag and the extraordinary override. None of it answers "is there any
+**left**", because no product carries a quantity. A student who makes 20
+arepas is listed identically at 7am and at 2pm once they are gone, and the
+buyer finds out only after sending a WhatsApp message - the exact friction the
+product exists to remove.
+**Done when:** a seller can mark a product sold out, and optionally set a
+quantity for the day that decrements or can be adjusted; the card and the
+detail page show it distinctly from "store closed" (they are different
+states and must not collapse into one badge); the listing's availability
+filter (T-123) accounts for it; and a sold-out product cannot be contacted
+with the normal CTA.
+**Careful, rule 8:** existing products have no such field. The `$ne: true`
+trap T-71 hit applies exactly - an equality filter on a field 100% of current
+products lack will drop every one of them. Measure against the real base
+read-only first, and decide whether "no field" means available (almost
+certainly yes, for backwards compatibility).
+**Open question for the human:** does the quantity reset daily on its own
+(tied to the schedule) or does the seller reset it? Automatic is friendlier and
+much harder to get right across timezones; ask before building it.
+**Demoted 2026-09-23 by the portfolio premise.** The buyer friction this
+removes is real but nobody is currently hitting it. If one of T-145/T-146/T-147
+is ever built as a showcase of data-model work, this is the one to pick: it is
+the smallest, and the `$ne: true` / rule 8 trap it describes is a genuinely
+instructive problem.
+**Model:** `opus` · **Nightly:** no (the reset semantics need deciding first)
+
+### [ ] T-146 · One price per product, but food has sizes and add-ons
+**Why:** `productSchema` carries a single `price`, so a seller with a small and
+a large arepa has to publish two products that duplicate the photo, the
+description and the category - or publish one and negotiate the difference
+over WhatsApp, which puts the price back into a chat the platform cannot see
+(and undoes T-144's measurement). Every real food marketplace models this.
+**Done when:** a product can carry options (a named choice with a price delta,
+e.g. size) and/or add-ons (additive extras), the card shows a "from $X" price
+when options exist, the detail page lets the buyer pick before contacting, and
+the WhatsApp message carries the selection so the seller receives an
+unambiguous order.
+**Scope warning:** this touches `productSchema`, `src/lib/validators/product`,
+the add and edit forms, the cards, the detail page and the WhatsApp message
+builder. That is close to the ~15-file limit in CLAUDE.md's "Qué NO hacer sin
+preguntar" - split it (schema + validator first, then the forms, then the
+display) rather than taking it in one PR.
+**Depends on:** worth doing after T-144, so the message builder is already
+centralised.
+**Demoted 2026-09-23 by the portfolio premise** - a bet on seller and buyer
+behaviour, and the largest of the three in scope.
+**Model:** `opusplan` — data model design · **Nightly:** no
+
+### [ ] T-147 · Pre-orders: let a buyer reserve for a time slot the seller is open
+**Why:** the platform already knows each seller's weekly opening hours
+(`Schedule`, T-22/T-83) and already has an `Order` model with a state machine
+(T-40, `src/server/orders/stateMachine.ts`) and no UI. The gap between "a
+WhatsApp link" and "a full checkout" (T-41's chat, a cart, payments) is where
+this product actually lives: a student wants to say "guárdame dos para las
+10am" without either party negotiating in a chat thread.
+**Done when:** a buyer can request a product for a slot inside the seller's
+published schedule, the seller sees and accepts or declines it, both
+transitions are driven by the existing `Order` state machine rather than a new
+parallel one, and the notification still goes over WhatsApp (no push yet -
+that is T-43).
+**Explicitly not in scope:** payments. Money in the product is a different
+decision with legal and provider implications, and it is not needed for a
+reservation to be useful.
+**Depends on:** T-40 (done), and realistically T-144 (so an order has a
+recorded origin) and T-145 (a reservation against unlimited stock is
+meaningless).
+**Demoted 2026-09-23 by the portfolio premise.** Worth noting what is lost, so
+a future reader can weigh it: this is the entry that would finally give
+`Order`'s state machine (`src/server/orders/stateMachine.ts`, built in T-40) a
+real caller. A state machine with no caller is the kind of thing a reviewer
+notices - if the goal ever shifts back to product, this is the most
+architecturally satisfying of the demoted set.
+**Model:** `opusplan` · **Nightly:** no
+
+### [ ] T-148 · Verified-student badge from the institutional email
+**Why:** this is a campus marketplace whose entire trust model today is "the
+seller filled in a business name and an admin approved them." The `university`
+field already exists on `Seller` and is already the primary filter of the
+catalogue, but nothing verifies that the seller actually attends it. A badge
+backed by a verified institutional address (`@eafit.edu.co` and friends) is the
+cheapest real trust signal available, and Clerk already verifies email
+ownership - the work is the domain allowlist and the UI, not the verification.
+**Done when:** a seller whose Clerk account carries a verified email on their
+university's domain shows a distinct badge on their profile and cards; the
+allowlist of domains per university lives next to
+`src/utils/resources/universities`, not scattered; and a seller **without** it
+is not punished visually beyond the absence of the badge (this is a positive
+signal, not a scarlet letter - an unverified seller may simply use a personal
+address).
+**Careful:** do not gate selling on it. Some students legitimately have no
+working institutional mail, and turning a trust signal into a hard requirement
+would silently lock out real sellers - the kind of "perfect for new data, locks
+out everyone who already existed" mistake rule 8 is about.
+**Demoted 2026-09-23 by the portfolio premise** - a trust signal for a
+community that is not transacting.
+**Model:** `sonnet` · **Nightly:** no (the "does this gate anything?" call is
+the human's)
+
+### [ ] T-149 · No way to report a product or a seller
+**Why:** T-52 (listing moderation) is about the admin's side of moderation, but
+there is no input to moderate from: a buyer who finds a misleading listing, a
+wrong price or something that should not be sold has exactly one channel, the
+generic PQRS form at `/antojos/pqrs`, which is not attached to the thing being
+reported. For a marketplace of food between strangers this is the missing half
+of T-52, and it is much cheaper than T-52 itself.
+**Done when:** a product and a seller page each carry a report action; a report
+records what was reported, by whom (if signed in), and a reason from a short
+fixed list plus optional free text; reports land somewhere the admin can see
+them (reuse `/admin`, do not build a new surface); and rate limiting applies
+(see T-154) so the form is not itself an abuse vector.
+**Feeds:** T-52.
+**Demoted 2026-09-23 by the portfolio premise** - moderation input with nothing
+being posted. Note the coupling if T-52 is ever built as the AI showcase (see
+Phase 5 and Phase 8): T-52 without T-149 is a classifier with no human appeal
+path, which
+is a worse demo than either alone.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-150 · The brand's domain is dead and the site lives on a `vercel.app` subdomain — decide the domain
+> **This is the root cause of the SEO problem, and the only entry in the SEO
+> cluster an agent cannot start on its own.** T-151, T-152 and T-153 are worth
+> doing regardless of what is decided here, but none of them can compensate
+> for this.
+
+**Why:** measured on 2026-09-23, not inferred.
+- **`mercampus.com` does not resolve at all.** `getaddrinfo ENOTFOUND
+  mercampus.com` - it is not parked, not redirecting, it is gone. This matches
+  T-64's note that the domain expired in January 2026 and the team decided not
+  to renew it.
+- **Every historical brand signal still points at that dead domain.** The
+  project's own Instagram posts say "Entra a Mercampus.com"; there are Reddit
+  threads and press mentions. All of that accumulated link equity now points
+  into nothing, which is the SEO equivalent of changing your phone number and
+  not telling anyone.
+- **A Google search for "mercampus" does not return the live site on the first
+  page** (observed by the human, 2026-09-23). What ranks instead: a teammate's
+  portfolio (`mgomezp.com`) describing the project, the project's Instagram,
+  a Reddit thread — and a large block of results for an **unrelated homonym**,
+  the "MerCAMPUS" agroecological fair at Madrid's Ciudad Universitaria, carried
+  by institutional domains (`madrid.es`, `tribuna.ucm.es`) and YouTube. Those
+  are far more authoritative than anything we can put on a shared subdomain.
+- **`vercel.app` is on the Public Suffix List**, which is the technically
+  precise way of saying you cannot accumulate domain authority for a brand on
+  it: every `*.vercel.app` is a separate site as far as cookies and, in
+  practice, trust signals are concerned. It is a perfectly good place to host;
+  it is a bad place to *be* a brand.
+**Done when:** the human decides between (a) registering a domain again - which
+also unblocks the Clerk production instance that T-64 had to abandon, since
+that blocker was the domain and nothing else, (b) accepting that the site is a
+portfolio piece on `vercel.app` and dropping brand-ranking as a goal, or (c) a
+cheaper middle path (a different, cheap domain). Whatever is decided, write it
+here with the reasoning, because T-64, T-118 and this entry all bend around
+this one question.
+**~~Worth stating plainly:~~ Rewritten 2026-09-23 under the portfolio premise,
+because the arithmetic changed.** It used to read: option (a) is the only one
+that makes the other 63 users reachable *and* fixes SEO *and* retires the
+development-instance compromise - three problems, one purchase. Two of those
+three no longer count. What remains, and it is still not nothing:
+
+- **The link is the artifact.** A portfolio's live demo is a URL someone else
+  clicks. `mercampus.vercel.app` reads as a deployment; a domain reads as a
+  product. That is the entire remaining case for spending money here, and it is
+  a legitimate one - but it is a presentation argument now, not an SEO or user
+  argument, and it should be weighed as such.
+- **The development-instance compromise stays either way** unless a domain
+  appears: `X-Clerk-Auth-Reason: dev-browser-missing` on every response from
+  the live site confirms it. Under the old premise that was a liability. Under
+  this one it is mostly a curiosity - *except* that it is the kind of detail a
+  technically sharp reader might notice and ask about, and "we ran on a dev
+  auth instance because the domain expired, here is the incident write-up"
+  (T-64) is a genuinely good answer. The compromise is more valuable documented
+  than hidden.
+- **Ranking for the brand is off the table**, and the homonym analysis above
+  explains why chasing it was always going to be expensive: institutional `.es`
+  domains for an unrelated Madrid food fair are not competition worth fighting
+  for a dormant student project.
+**Revised recommendation:** this is now a cheap yes-or-no rather than a
+strategic decision. If a domain is bought, buy it for the link and let the
+Clerk production instance follow as a bonus; if not, close this entry as
+"deliberately not doing" with the reasoning, so T-64, T-118 and T-153 stop
+bending around an open question that is no longer open.
+**Model:** `opusplan` · **Nightly:** no (costs money)
+
+### [ ] T-151 · No structured data anywhere — a marketplace with no `Product` markup
+**Why:** confirmed by grep across `src/`: zero occurrences of
+`application/ld+json`, `schema.org` or any JSON-LD. T-69 gave product and
+seller pages real Open Graph tags (which is what makes a shared WhatsApp link
+look right) but Open Graph is for social previews; it tells Google nothing
+about price, availability or that these pages are products at all. For a
+catalogue of 135 indexable URLs (measured from the live sitemap) this is the
+single largest on-page win available, and it is the difference between a plain
+blue link and a result carrying a price.
+**Done when:** product pages emit `Product` with `Offer` (price,
+`priceCurrency: 'COP'`, availability - and availability should agree with
+whatever T-145 decides, so either do it after or leave a note), seller pages
+emit something appropriate for a campus food business, the listing emits
+`BreadcrumbList`, and the root emits `Organization` once. Validated against
+Google's Rich Results Test, with the output asserted in a unit test the way
+`src/lib/metadata.ts`'s builders already are - a snapshot of the emitted JSON,
+not a grep for the string.
+**Careful:** price and availability in markup that disagree with the page are
+a manual-action risk, not just a wasted effort. If T-145 lands first, the
+availability field must reflect sold-out state.
+**Reframed 2026-09-23 by the portfolio premise.** Ranking stops being the
+justification, so this drops in priority - but not to zero, and the surviving
+reason is narrower and worth stating: `Organization` at the root plus `Product`
+on one page is what makes a link pasted into a CV, a message or a review render
+as something credible rather than a bare URL. Build it for that, which means
+the root `Organization` markup is the part that matters and the full catalogue
+sweep is not.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-152 · The site has no homepage — `/` is a 308 to `/antojos`, which has no `<h1>` and the default title
+**Why:** measured live on 2026-09-23:
+- `GET https://mercampus.vercel.app/` answers **308 Permanent Redirect** to
+  `/antojos`. So the strongest URL on the site - the one a brand query wants to
+  land on, and the one every backlink points at - is not a page.
+- `/antojos`, which receives that redirect, returns `<title>Mercampus</title>`:
+  the root layout's `default`, not a title of its own. Its meta description is
+  the root layout's generic one too.
+- **`/antojos` contains zero `<h1>` elements.** That is both an on-page SEO
+  defect and an accessibility one (a screen-reader user has no page heading),
+  which means it belongs to the same family as T-93's accessible-names work.
+**Done when:** there is a real page at `/` that states what Mercampus is, in
+Spanish, with its own `<h1>`, a title and description of its own, and the
+`Organization` markup from T-151; `/antojos` likewise gets a descriptive title,
+description and a single `<h1>`. Decide deliberately whether `/` becomes a
+landing page or the catalogue itself lives there - the current 308 was
+presumably a shortcut when the catalogue was the only screen worth showing.
+**Related:** T-76 fixed the title *template* so page titles interpolate; this
+is the other half - pages that never set a title in the first place.
+**Note:** `/about` already exists and is migrated to next-intl (T-46), so some
+of the copy may already be written.
+**Promoted 2026-09-23 by the portfolio premise — this is now the highest-value
+entry in the SEO cluster, and the justification changes completely.** Not
+ranking: **this is the first screen anyone who opens the link sees.** A
+portfolio whose root URL 308s into a listing with the site's default title and
+no heading undercuts the work behind it before a reader reaches any of it. Two
+of the three defects here are also not SEO defects at all - a missing `<h1>` is
+an accessibility failure (same family as T-93), and a page inheriting the
+layout's generic description is just unfinished. Both are true with zero
+traffic.
+**Model:** `sonnet` · **Nightly:** no (what the homepage says is a product
+decision)
+
+### [ ] T-153 · The university is only in `localStorage`, so no university has a URL
+**Why:** [`src/context/UniversityContext.js`](src/context/UniversityContext.js)
+keeps the selected university in
+`useLocalStorage('selectedUniversity', universities[0])` and nothing else. The
+consequences are bigger than they look:
+- **There is no URL for "antojos at EAFIT."** A crawler, a shared link and a
+  first-time visitor all get `universities[0]`, whatever that happens to be.
+  The catalogue's primary dimension - the one thing that makes this a *campus*
+  marketplace - is invisible to search engines and unshareable between
+  students.
+- It also means the 135 URLs in the sitemap collapse onto one default view,
+  and a student at another university who receives a shared listing sees the
+  wrong campus selected.
+**Done when:** each university has a real, indexable URL (a path segment or a
+search param - decide which, and prefer the one that composes with the existing
+`[locale]` segment and T-92's shareable search URLs), the selector navigates
+rather than only writing to `localStorage`, `localStorage` degrades to a
+remembered *preference* rather than being the source of truth, the sitemap
+lists the per-university pages, and each gets its own title, `<h1>` and
+description (per T-152).
+**Careful:** the middleware's locale patterns are exact-path or
+ObjectId-anchored on purpose (see the long note in `src/middleware.js`, T-81).
+Adding a university segment to those paths is exactly the "a zone needs the
+matcher rethought" case T-81's entry says to stop and ask about.
+**~~This is the highest-value SEO work after the domain~~** - it was, under the
+old premise, because it turns one thin page into one genuinely distinct page
+per campus.
+**Demoted 2026-09-23 by the portfolio premise.** Ranking per campus is no
+longer a goal, and this is the most expensive entry in the SEO cluster (it
+touches the middleware matcher, which T-81's entry explicitly says to stop and
+ask about). **The non-SEO half of the finding does not go away, though, and is
+worth keeping in view:** a shared link shows the recipient the wrong campus,
+because the selection lives only in `localStorage`. That is a correctness bug
+with a much cheaper fix than full per-university routing - accepting the
+university as a URL parameter that seeds the context would do it - and if
+anyone ever demos this app by sharing a link, it is the bug they will hit.
+**Depends on:** reads better after T-152 (so there is a title/`<h1>` pattern to
+follow). Coordinate with T-81, which owns the middleware matcher.
+**Model:** `opusplan` — routing design that touches the middleware
+**Nightly:** no
+
+### [ ] T-154 · No rate limiting anywhere on the public API
+**Why:** confirmed by grep across `src/`: no rate limiting, no throttling, no
+Upstash, nothing. The exposed surface includes `POST /api/pqrs` (a public form
+that writes a document), the image routes (which cost real money and storage on
+ImageKit, and were only closed to anonymous callers in T-116), `POST /api/sellers`,
+and the Clerk webhook. T-11 closed `/api/register` precisely because it was "a
+direct spam vector into the database" - the same reasoning applies to what is
+still open, just with authentication in front of some of it.
+**Done when:** public and write-heavy routes are rate limited per IP and, where
+there is a session, per user; the limit returns 429 with a shape consistent
+with `src/lib/api-response.ts`; the limiter degrades safely if its backing
+store is unreachable (fail open for reads, and decide explicitly for writes);
+and the choice of store is written down - an in-memory counter does not work on
+Vercel's serverless functions, which is exactly the trap the in-memory `Map`
+in the old `sellers/admin` route fell into (see T-12).
+**Careful:** this is a new dependency, so CLAUDE.md's "Qué NO hacer sin
+preguntar" applies - one dependency, justified, and not chosen by an agent
+alone.
+**Model:** `opus` — abuse surface, and the failure mode matters
+**Nightly:** no (needs a call on the dependency)
+
+### [ ] T-155 · Approving or rejecting a seller leaves no trace of who did it
+**Why:** T-105 made approval actually write, and T-114 is about the approval
+surface, but neither records **who** approved or rejected a seller, **when**, or
+**why**. `PATCH /api/sellers/admin/[id]` flips a field on the `Seller`
+document. With more than one admin (T-12 found 4 accounts with the admin role)
+and real sellers whose livelihood depends on the decision, "who approved this
+and when" has no answer, and a wrong rejection cannot be traced or undone.
+**Done when:** every admin state change on a seller appends an immutable audit
+record (actor's `clerkId`, action, target, timestamp, optional reason), the
+admin UI shows the history for a seller, and nothing deletes or rewrites past
+records. Reasons are optional for approval and worth requiring for rejection -
+a rejected student asking "why?" is the case that motivates this.
+**Related:** T-105, T-114, T-52 (moderation will want the same log).
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-156 · No way to delete an account and its data
+**Why:** the app stores personal data of real people - name, email, and
+`phoneNumber` on every seller - and there is no path for someone to have it
+removed. Colombia's **Ley 1581 de 2012** gives data subjects a right to
+deletion, and the product's users are Colombian students. There *is* a Clerk
+`user.deleted` webhook event handled with a test, but what it removes has not
+been audited against the rest of the data: a deleted Clerk account plausibly
+leaves the `Seller` document, its products and its images (which are on
+ImageKit, an external service) in place.
+**Done when:** the actual current behaviour is measured first and written down
+(what does `user.deleted` remove today?), then: a signed-in user can request
+deletion; deletion removes or anonymises their `User`, `Seller`, products,
+schedules and any contact-intent records from T-144; product images are deleted
+from ImageKit (coordinate with T-82 and T-117, which already own image
+deletion and its irreversibility); and the operation is logged (T-155) without
+retaining the data it just deleted.
+**Careful:** irreversible, against real user data and an external service -
+this is squarely in "do not touch without the human" territory, dry run first,
+same posture as T-82 and T-117.
+**Legal note, not legal advice:** the specific retention and response-time
+obligations under Ley 1581 should be checked by a person before this is
+advertised to users as a formal privacy right.
+**Model:** `opus` · **Nightly:** no
+
+### [ ] T-157 · The backups have never been restored, so they are not yet backups
+**Why:** T-121 added `npm run backup:images` and there is `npm run backup:db`,
+with real output in `backups/` (four dated folders). What has never happened is
+a **restore**. An untested backup is a hypothesis: the failure modes that bite
+are the boring ones - a dump missing indexes, a partial collection, an
+ImageKit export whose paths no longer match what the database references after
+T-120's `fileId`/`filePath` work. The moment this matters is the moment it is
+too late to find out.
+**Done when:** a documented, repeated procedure restores a dump into a
+throwaway database (the `mercampus_dev` project or a local Mongo, **never**
+production), verified by counting documents per collection against the source
+and by booting the app against the restored copy; the same for an ImageKit
+export; and the procedure is written where a panicking human will find it
+(README or a `docs/runbooks/` entry), not only in this ROADMAP.
+**Careful:** the restore target must be impossible to confuse with production.
+The `--yes`-outside-localhost guard on `npm run seed` exists for this class of
+mistake; a restore script needs the same posture.
+**Model:** `sonnet` · **Nightly:** no (runs against real infrastructure)
+
+### [ ] T-158 · Screenshots are taken but never compared — the T-100 class of bug can still ship
+**Why:** this one is about the process, and the repo already paid for the
+lesson. CLAUDE.md's rule 3 ("for colour, theme or layout, *verified* means a
+real screenshot") exists because in T-100 a test asserted that `bg-primary`
+appeared in the markup, passed green, and shipped a card that rendered nearly
+white on white (see `docs/audits/t-100/README.md`). The rule fixed the
+*policy*; it did not add a mechanism. Playwright already captures screenshots
+on every e2e run and uploads them as artifacts (T-04), and `docs/audits/`
+holds hand-curated baselines - but nothing compares a new screenshot to a
+previous one, so catching a visual regression still depends on a human
+remembering to look at the artifact.
+**Done when:** the e2e run compares its screenshots against committed
+baselines and fails on a meaningful pixel difference, in **both themes**;
+updating a baseline is an explicit, reviewable action (a committed file
+change), never automatic; and the tolerance is tuned against the real suite so
+it does not cry wolf - T-110 already had to stabilise flaky specs, and a
+noisy visual check would undo that work and get ignored, which is worse than
+not having it.
+**Careful:** font rendering and animation make naive pixel diffing flaky.
+`@formkit/auto-animate` and `framer-motion` are both in use; decide how to
+freeze or wait out animation before comparing, and prefer masking volatile
+regions over raising the tolerance globally.
+**Why it is worth it here specifically:** more of this project's work is done
+by an agent than by a human, and an agent cannot glance at an artifact and
+notice that a card looks wrong. This is the check that makes rule 3 enforceable
+by the pipeline instead of by attention.
+**Model:** `opus` — getting the flakiness/tolerance trade-off wrong wastes the
+whole mechanism · **Nightly:** no
+
+### [ ] T-159 · The support WhatsApp number is hardcoded three times, as two different numbers
+**Why:** found by grep while reviewing the WhatsApp surfaces for T-144.
+- [`src/app/antojos/pqrs/page.jsx`](src/app/antojos/pqrs/page.jsx) uses
+  `3054213899`
+- [`src/app/antojos/game/page.jsx`](src/app/antojos/game/page.jsx) uses
+  `3197139921`
+- [`src/app/[locale]/antojos/sellers/approving/page.jsx`](src/app/[locale]/antojos/sellers/approving/page.jsx)
+  uses `3197139921`
+So "contact support" reaches two different phones depending on which screen
+the user was on, and whichever is the stale one is silently dropping messages
+from students - including, on the `approving` screen, sellers asking why their
+approval is taking so long.
+**Done when:** one exported constant (next to the other shared resources under
+`src/utils/resources/`, or an env var if it should differ per environment -
+prefer the constant, it is not a secret and not environment-specific), all
+three call sites use it, the correct number is confirmed by the human, and a
+test asserts no literal `wa.me` phone number is left in a page component.
+**Model:** `sonnet` · **Nightly:** yes (once the human says which number is
+the right one)
+
+---
+
+## Phase 8 — The two stories this repo can tell
+
+Filed 2026-09-23, from the same conversation that set the portfolio premise on
+Phase 7. It exists because of a distinction that is easy to blur and that this
+phase is built around.
+
+**Note on Phase 5.** This repo already has a "Phase 5 — AI as a feature, not as
+a tool", which is where T-50, T-51, T-52 and T-129 live, and that title was
+already making the right distinction. This phase does not replace it: Phase 5
+holds the *features*, and this one holds the two things those features need and
+do not have - a way to know whether a model's output is any good (T-160), and a
+readable account of the engineering practice around all of it (T-161). Build
+T-160 alongside whichever Phase 5 entry goes first.
+
+The distinction this phase is built around:
+
+- **AI-assisted engineering** — building *with* an agent. This repo has two
+  years of it: 840 commits between 2024-08-12 and 2026-09-17, 329 PRs merged
+  into `agent/develop`, a verification gate (`npm run verify`), branch
+  protection with `enforce_admins`, and a rule set in `CLAUDE.md` where every
+  rule is a scar from a specific documented failure.
+- **AI engineering** — building a system that *contains* a model: evaluation of
+  non-deterministic output, cost and latency budgets, retrieval design,
+  guardrails, structured-output validation.
+
+**Measured, so the gap is stated rather than implied: the second one is
+currently at zero.** `package.json` contains no model SDK of any kind - no
+`openai`, no `@ai-sdk/*`, no `anthropic`, no embeddings library, nothing. Every
+AI entry in this file (T-50, T-51, T-52, T-129) is unstarted. The first story is
+strong and invisible; the second does not exist yet. This phase addresses one
+each.
+
+### [ ] T-160 · An evaluation harness, before any model is called in product
+> **Build this with, or before, the first AI feature — not after.** It is the
+> entry that makes the difference between "called a vision API" and having done
+> AI engineering, and retrofitting it means grading a system whose behaviour has
+> already been tuned by hand against the examples you were going to grade it
+> with.
+
+**Why:** T-50 already asks for "20 reference queries and their expected
+results" and T-52 already asks what "uncertain" means numerically. Both are
+describing the same missing piece from opposite ends, and neither can be built
+honestly without it. Everything in this repo's culture points the same way: rule
+3 says an unverifiable change should not be made, and a model call is the least
+verifiable thing that could be added to this codebase - it has no fixed output
+to assert on, so the existing harness (`npm run verify`) cannot say yes or no
+about it at all.
+**The asset that makes this unusually cheap here, and it is worth spelling
+out: a labelled dataset already exists in production.** 54 sellers with real
+product photos, each carrying a human-written `name`, a human-chosen `category`
+from a fixed list, and a human-written `description`. That is ground truth,
+produced by the actual users, for free - the single hardest thing to obtain when
+starting an eval set, and most portfolio projects have no equivalent.
+**Done when:**
+- A golden set is extracted from the real database **read-only** (rule 8) and
+  committed as a fixture - images referenced by URL, the human-written fields as
+  expected values. Small enough to run cheaply, and it must be a *frozen
+  snapshot*, not a live query, or the benchmark moves under the results.
+- Metrics that suit each task, chosen deliberately rather than by default:
+  exact-match accuracy is right for `category` (a fixed enum); it is the wrong
+  metric for `name` and `description`, and this entry should say what replaces
+  it instead of pretending the choice is obvious.
+- A **measured baseline of the dumb approach** for every task before any model
+  runs: for category, the majority class and a keyword rule; for T-50, the
+  existing lexical search from T-24. A model that cannot beat these is a
+  finding, and reporting it is a better result than shipping it quietly.
+- Cost and latency recorded per run, per item, in the report - not estimated
+  from a pricing page.
+- The suite runs **on demand, never in `npm run verify`**. The quality gate must
+  stay deterministic and free; a flaky paid network call inside it would
+  undermine the one mechanism this whole pipeline depends on.
+- The report is committed per run (like `docs/audits/`, which is the precedent
+  this repo already set for screenshot evidence) so results are comparable
+  across changes.
+**Deliberately out of scope:** any product surface. This task calls models
+offline against fixtures and prints numbers. Wiring one into the app is T-51.
+**Model:** `opus` — new domain, and the metric choices are the substance
+**Nightly:** no
+
+### [ ] T-161 · The pipeline is this repo's best asset and nobody can read it
+**Why:** under the portfolio premise, the strongest thing here is not the
+marketplace - it is the record of running an agent against a real codebase for
+two years *and catching it when it was confidently wrong*. That record exists,
+in full, and it is 6000+ lines long, interleaved with routine work, which means
+its intended audience will never reach it. The material is already written; what
+is missing is a readable distillation.
+**The incidents worth distilling** (all already documented, each with the rule
+it produced):
+- **T-11b** — six environment variables renamed in code, marked done, and
+  production broke ten days later because renaming a variable where it is *read*
+  is half the change. Produced the "anything that must happen outside the repo"
+  rule in CLAUDE.md's PR section, and T-113's fail-loudly work.
+- **T-100** — a test asserted `bg-primary` appeared in the markup, passed green,
+  and shipped a card that rendered nearly invisible. Produced rule 3's "a real
+  screenshot, not a test that reads a class string", and is the direct
+  motivation for T-158.
+- **T-12f / T-12b** — an agent asserted "there are no users in production" from
+  reading a stale document rather than the database; there were 54 sellers and
+  79 user documents. Produced rule 8 (measure against the real base) and the
+  habit of writing measurements with their date attached.
+- **T-64** — the Clerk production switch, attempted, took the site down because
+  the domain had expired, and was reverted the same session. The entry is titled
+  "ATTEMPTED AND REVERTED" in the file, which is the part worth showing.
+- **T-111** — `apiToken.js` looked like an abandoned experiment and turned out
+  to be the only thing carrying identity in three mutations. Produced rule 9's
+  "do not delete on suspicion; `git log` beats intuition".
+**Done when:** a short document - target two pages, not twenty - states the
+pipeline in a diagram or a paragraph, then presents four or five incidents as
+*what was believed, what was true, how the gap was found, what rule came out of
+it*, each linking to the full ROADMAP entry for anyone who wants the depth.
+Written in English (T-66's decision). Linked from the README, whose "The
+agentic pipeline" section (T-36) is the natural home and already sketches the
+flow.
+**What this is not:** a rewrite of this file, and not a blog post about how good
+agents are. The credibility comes entirely from the failures being reported as
+failures, with numbers. An account where the agent always did well would prove
+nothing and read as marketing.
+**Relationship to T-138:** T-138 splits this file so it stays usable by agents;
+this one extracts a narrative for humans. Doing T-161 first is reasonable - it
+forces a decision about which history actually matters, which is the hard part
+of T-138.
+**Model:** `opusplan` — judgement about what to keep · **Nightly:** no
