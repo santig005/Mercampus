@@ -93,3 +93,49 @@ test.describe('home page sticky topbar (T-87, was /about)', () => {
     await page.screenshot({ path: 'test-results/13-about-topbar-scrolled-dark.png' });
   });
 });
+
+// T-152d: under 640px the row (logo + wordmark, locale switcher, explore
+// button) did not fit. The wordmark was squeezed under "Español" at every
+// width below `sm`, and at 320px the button ran off the screen. Measured from
+// the rendered boxes, not from class names: the fix is only real if the boxes
+// stop colliding.
+test.describe('home page topbar fits on a phone (T-152d)', () => {
+  for (const width of [320, 360, 390, 414]) {
+    test(`${width}px: nothing overlaps and nothing overflows`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/');
+
+      const bar = topbar(page);
+      const logo = bar.getByRole('link', { name: /Mercampus/ }).first();
+      const switcher = bar.locator('a[aria-current="true"]').locator('..');
+
+      const logoBox = await logo.boundingBox();
+      const switcherBox = await switcher.boundingBox();
+      // The wordmark's own text must end before the switcher starts.
+      const wordmarkRight = await logo.evaluate(el => {
+        const box = el.querySelector('span').getBoundingClientRect();
+        return box.right;
+      });
+
+      expect(wordmarkRight).toBeLessThanOrEqual(switcherBox.x);
+      expect(logoBox.x + logoBox.width).toBeLessThanOrEqual(switcherBox.x);
+      expect(switcherBox.x + switcherBox.width).toBeLessThanOrEqual(width);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width
+      );
+
+      // The topbar's explore button is desktop-only now; the hero's is not.
+      await expect(bar.getByRole('link', { name: 'Explorar Productos', exact: true })).toBeHidden();
+      await expect(page.getByRole('link', { name: 'Explorar productos', exact: true })).toBeVisible();
+    });
+  }
+
+  test('640px and up: the explore button is back in the topbar', async ({ page }) => {
+    await page.setViewportSize({ width: 640, height: 800 });
+    await page.goto('/');
+
+    await expect(
+      topbar(page).getByRole('link', { name: 'Explorar Productos', exact: true })
+    ).toBeVisible();
+  });
+});

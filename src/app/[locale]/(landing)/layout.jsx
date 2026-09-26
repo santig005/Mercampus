@@ -42,9 +42,17 @@ export default async function layout({ children, params }) {
       {/* Topbar */}
       <StickyTopbar>
         <div className="mx-auto px-4 sm:px-6 py-3 sm:py-4 container">
-          <div className="flex items-center justify-between">
+          {/* T-152d: below `sm` this row does not fit. Measured: logo +
+              wordmark 143px, locale switcher 117px, and the explore button
+              84px even with its short label - about 396px with padding and
+              gaps, on a 390px phone. The wordmark got squeezed under the
+              switcher at every width under 640px, and at 320px the button
+              ran off the screen. So under `sm` the button goes (the hero,
+              right below, has the same "Explorar productos" call to action),
+              and the logo can no longer shrink. */}
+          <div className="flex items-center justify-between gap-3">
             {/* Logo */}
-            <Link href={antojosHref} className="flex items-center space-x-2">
+            <Link href={antojosHref} className="flex shrink-0 items-center space-x-2">
               <Image
                 src="/images/logo.png"
                 alt={t('logoAlt')}
@@ -61,10 +69,9 @@ export default async function layout({ children, params }) {
               {/* Explore products button */}
               <Link
                 href={antojosHref}
-                className="bg-orange-500 text-white px-3 py-1.5 sm:px-6 sm:py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
+                className="hidden sm:inline-block whitespace-nowrap bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors duration-200 shadow-md hover:shadow-lg text-base"
               >
-                <span className="hidden xs:inline">{t('exploreLong')}</span>
-                <span className="xs:hidden">{t('exploreShort')}</span>
+                {t('exploreLong')}
               </Link>
             </div>
           </div>

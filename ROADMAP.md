@@ -6758,7 +6758,27 @@ traffic.
     the layout is byte-for-byte the old `/about` one plus `generateMetadata`
     - but it is now on the first screen anyone sees. Likely the switcher
     (added in T-81) squeezed a row sized for the logo and one button. A
-    small layout fix with its own before/after screenshots.
+    small layout fix with its own before/after screenshots. **Fixed in
+    T-152d below.**
+- **[x] T-152d · the landing's topbar overlaps on phones.** Measured from
+  the rendered boxes (2026-09-26): logo + wordmark need 143px, the locale
+  switcher 117px, the explore button 84px even with its short label - about
+  396px with padding and gaps, on a 390px phone. The wordmark was squeezed
+  under "Español" at **every width below 640px** (not just 390), and at 320px
+  the button ran off the screen. No label or spacing change fits all three
+  in that width, so below `sm` the topbar's explore button is hidden - the
+  hero's "Explorar productos", right below and above the fold, is the same
+  call to action - and the logo link is `shrink-0`. The `exploreShort` label
+  had no other use and is removed from both message files.
+  - **Verified:** `npm run verify` green; new e2e in
+    `tests/e2e/about-topbar.spec.js` measures the boxes at 320/360/390/414px
+    (wordmark ends before the switcher starts, nothing wider than the
+    viewport) and checks the button is back at 640px; `i18n`, `home` and
+    `recorrido` still pass (57 total). Before/after screenshots in both
+    themes in `docs/audits/t-152d/`.
+  - **Rule 9, not fixed:** the `xs` screen (`375px`) in `tailwind.config.js`
+    was only used by this button; a grep over `src/` finds no other `xs:`
+    class. Removing it is a one-line cleanup.
 - **[ ] T-152c · `Organization` JSON-LD on `/`.** The last part of the
   original "Done when", split off to keep T-152b to the route move: T-151
   asks for the emitted JSON to be asserted as a snapshot in a unit test, the
