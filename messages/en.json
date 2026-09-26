@@ -89,7 +89,9 @@
     "greetingHi": "Hi",
     "greetingTailWithName": "soothe your cravings",
     "greetingTailNoName": "Soothe your cravings",
-    "allHeading": "All"
+    "allHeading": "All",
+    "metaTitle": "Cravings",
+    "metaDescription": "Food made by students at your university. Browse by category and message the seller on WhatsApp."
   },
   "Marketplace": {
     "greetingHi": "Hi",

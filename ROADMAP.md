@@ -6695,6 +6695,32 @@ of the three defects here are also not SEO defects at all - a missing `<h1>` is
 an accessibility failure (same family as T-93), and a page inheriting the
 layout's generic description is just unfinished. Both are true with zero
 traffic.
+**Split 2026-09-26, with the human's decisions recorded:**
+- **[x] T-152a · `/antojos` gets an `<h1>`, a title and a description.**
+  The greeting ("Calma tus antojos" / "Soothe your cravings") is now the
+  page's single `<h1>` - it was an `<h2>` with nothing above it. The listing
+  moved to `src/components/products/AntojosListing.jsx` so that
+  `src/app/[locale]/antojos/page.jsx` can be a Server Component exporting
+  `generateMetadata`: "Antojos · Mercampus" / "Cravings · Mercampus", with a
+  description of its own in `messages/{es,en}.json` (`Antojos.metaTitle`,
+  `Antojos.metaDescription`). Verified by `npm run verify`, an e2e test in
+  `tests/e2e/listing-copy.spec.js` (exactly one `<h1>`, title and
+  description, both locales), and screenshots in both themes at desktop and
+  mobile in `docs/audits/t-152/`. No Open Graph change: a child `openGraph`
+  replaces the root layout's whole object (image, site name), so shared
+  links keep the site-wide card.
+- **[ ] T-152b · a real page at `/`.** **Decided by the human: `/` becomes
+  the existing `/about` landing** (already written, translated, and
+  dark-mode audited under T-75), and `/about` redirects to `/`. The
+  landing's copy stays as it is, figures included ("#1", "+100
+  estudiantes", "100% seguro") - asked and answered, do not reopen it in
+  this task. Still to do: remove the 308 in `next.config.mjs`, move the
+  route (and its `/en` twin, `src/i18n/routing.ts`, the middleware's
+  `isIntlRoute`), update the sitemap and every link to `/about`, and the
+  `Organization` markup from T-151.
+- **Found on the way (rule 9), not fixed:** `/marketplace` has the same
+  shape - a `'use client'` page, so no metadata of its own, and its greeting
+  is an `<h2>` with no `<h1>`. Same fix as T-152a; one small PR.
 **Model:** `sonnet` · **Nightly:** no (what the homepage says is a product
 decision)
 

@@ -16,8 +16,8 @@ test.describe('listing header copy (T-88)', () => {
     await expect(heading).toHaveText('Calma tus antojos');
 
     // The regression is the comma, so assert on it directly rather than only
-    // on the happy string.
-    await expect(page.locator('h2', { hasText: 'Hola,' })).toHaveCount(0);
+    // on the happy string. (h1 since T-152 - the greeting is the page heading.)
+    await expect(page.locator('h1, h2', { hasText: 'Hola,' })).toHaveCount(0);
   });
 
   test('marketplace: its own greeting and its own search placeholder', async ({ page }) => {
@@ -37,4 +37,38 @@ test.describe('listing header copy (T-88)', () => {
 
     await expect(page.getByPlaceholder('Busca tu antojo más deseado')).toBeVisible();
   });
+});
+
+// T-152: /antojos is where `/` lands, and it had no <h1> at all (the greeting
+// was an <h2>) and inherited the root layout's generic title and
+// description, because a 'use client' page cannot export metadata.
+test.describe('antojos page heading and metadata (T-152)', () => {
+  for (const { path, h1, title, description } of [
+    {
+      path: '/antojos',
+      h1: 'Calma tus antojos',
+      title: 'Antojos · Mercampus',
+      description: /^Comida hecha por estudiantes/,
+    },
+    {
+      path: '/en/antojos',
+      h1: 'Soothe your cravings',
+      title: 'Cravings · Mercampus',
+      description: /^Food made by students/,
+    },
+  ]) {
+    test(`${path}: exactly one h1, and its own title and description`, async ({ page }) => {
+      await page.goto(path);
+
+      const headings = page.locator('h1');
+      await expect(headings).toHaveCount(1);
+      await expect(headings).toHaveText(h1);
+
+      await expect(page).toHaveTitle(title);
+      await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+        'content',
+        description
+      );
+    });
+  }
 });
