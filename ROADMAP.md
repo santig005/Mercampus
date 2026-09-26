@@ -7089,6 +7089,101 @@ an e2e asserting the status (not just the rendered text) for `/foo`, and
 `/` and `/en` still 200.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-165 · A product opened from a seller's product list loses its seller
+**Why:** reported by the human on the live site, 2026-09-26: /antojos ->
+product -> its seller -> one of that seller's products opened a product modal
+with no seller name, logo or schedule. Same from a seller page
+(`/antojos/sellers/<id>` -> product). Cause, read in the code:
+`SellerProductsBySection` (used by `SellerModal` and `SellerPage`) reads
+`GET /api/products/seller/[id]`, which was a bare `Product.find()` -
+`sellerId` a plain id, no `schedules`, no `availabilityStatus` - while
+`ProductModal` expects the listing's shape. Worse than cosmetic: the modal's
+WhatsApp button, the product's only conversion, became
+`wa.me/+57?text=...` with no number, and the availability badge said
+"Disponible" for a seller that was closed.
+**Done (2026-09-26):** the route returns the same shape as the listing and
+the product detail: `sellerId` populated, the seller's `schedules` with day
+names, and `availabilityStatus` (T-122/T-83's definition). The id and the
+`section` query are validated with Zod (400, not a 500 carrying a
+CastError). The id is lowercased before keying the schedules map.
+- **Verified:** `npm run verify` green;
+  `tests/integration/seller-products.test.js` (8: populated seller with
+  phone, schedules with day names, `availabilityStatus`, uppercase id,
+  section filter, 400s, pending seller unchanged);
+  `tests/e2e/seller-products-modal.spec.js` walks both reported paths and
+  checks the seller name and a WhatsApp href **with a number** - run
+  against the old route, both fail. Before/after in `docs/audits/t-165/`.
+- **Deliberately unchanged:** visibility. The route still returns the
+  products of any seller id, approved or not, because the seller's own edit
+  screen (`/antojos/sellers/products/edit`) reads it too - see T-166.
+- **Not fixed here:** the modals themselves (nesting, duplicate dialog ids,
+  a refetch at every level) - that is T-167.
+**Model:** `sonnet` · **Nightly:** no
+
+### [ ] T-166 · `GET /api/products/seller/[id]` serves the products of sellers the public should not see
+**Why:** found in T-165 (rule 9). The route answers for any seller id with
+no visibility filter, so an unapproved or paused seller's products are
+readable by anyone who has the id - every other public read goes through
+`publicSellerFilter()` (T-74, T-97). It could not be filtered in T-165
+because the seller's own edit screen reads the same route and must keep
+seeing its products while pending or paused.
+**Done when:** the edit screen reads its products through an
+owner-authenticated path (server-side, like T-97's `getProductForEdit`),
+and the public route applies `publicSellerFilter()` - 404 or an empty list
+for a non-public seller, decided and tested. Integration tests for both.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-167 · Product and seller modals: one stack, URL-synced (option C)
+**Why:** the human asked for the modal logic to be rethought after T-165,
+comparing alternatives (2026-09-26). Today `ProductModal` renders its own
+`SellerModal`, which renders `SellerProductsBySection`, which renders its own
+`ProductModalHandler` and `ProductModal`, and so on: every level mounts new
+`<dialog>`s and refetches the seller's products, several dialogs share an id
+(`seller_modal`, `product_modal_secondary`) so `getElementById` opens
+whichever comes first, and `ProductModalHandler.showModal` looks the dialog
+up with the *previous* `selectedKey`. The browser's back button does not
+close a modal, and an open modal has no URL to share.
+**Decided by the human:** option **C** - a single product modal and a
+single seller modal at the root, driven by one context (open / replace /
+back), with the URL kept in sync through `window.history.pushState`
+(`?producto=<id>` / `?vendedor=<id>`), which Next 14.2's app router
+integrates natively (verified in `node_modules/next`, no flag). Chosen over
+intercepting routes (option D) because D fetches every modal from the
+server - 100 ms to 1 s per open - while C opens instantly from data already
+in memory and still gets back-button and shareable links.
+**Before code:** a short design (state shape, what `pushState` vs
+`replaceState` does on each transition, what a cold load of
+`/antojos?producto=<id>` does, how the individual pages fit) for the human
+to approve.
+**Model:** `opus` · **Nightly:** no (design with the human first)
+
+### [ ] T-168 · `/admin/sellers` has no app chrome - no way back but the browser button
+**Why:** requested by the human (2026-09-26). `src/app/admin/` has no
+layout, so the panel renders bare: no navbar, no sidebar.
+**Done when:** `/admin/*` renders inside the same `Layout` + `SideBar` as
+the rest of the app, the sidebar's admin item marks it as current, and
+screenshots in both themes show it.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-169 · A signed-in user with no `User` document is sent to the login page
+**Why:** reported by the human (2026-09-26): signed in as admin, "Quiero ser
+vendedor" landed on `/auth/login`. `useCheckSeller` does
+`if (!dbUser) go('/auth/login')`, and `getSellerContextData` returns no user
+when there is a Clerk session but no `User` with that `clerkId` - a lost
+webhook (T-12b) or an account from the other Clerk instance (T-64). The
+sidebar meanwhile shows both "Cerrar sesión" and "Quiero ser vendedor": the
+app believes the person is signed in and not signed in at once, and sends
+them to a login they cannot complete.
+**For the human's own account:** probably the T-64 case (their seller
+belongs to their `clerkId` on the other instance); `npm run reclaim:account`
+re-links it. Confirming needs a read of the production database, which this
+session was not permitted - the human runs it.
+**Done when:** a signed-in session with no `User` gets one created or
+repaired (an upsert by `clerkId` - never a join by email, which T-12c
+removed on purpose) or, at minimum, a clear message instead of the login
+redirect; decided with the human because it touches identity (rule 8).
+**Model:** `opus` · **Nightly:** no (identity)
+
 ---
 
 ## Phase 8 — The two stories this repo can tell
