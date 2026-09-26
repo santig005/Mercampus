@@ -10,6 +10,7 @@ import { IoClose } from 'react-icons/io5';
 import InputFields from '@/components/auth/register/InputFields';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import ForgotPasswordImg from '@/../public/images/forgot_password.svg';
+import { APP_HOME } from '@/lib/app-home';
 
 export default function ForgotPassword({ setForgotPassword }) {
   const [email, setEmail] = useState('');
@@ -85,7 +86,7 @@ export default function ForgotPassword({ setForgotPassword }) {
   // If the user is already signed in,
   // redirect them to the home page
   if (isSignedIn) {
-    router.push('/');
+    router.push(APP_HOME);
   }
 
   const checkPasswordSecurity = password => {

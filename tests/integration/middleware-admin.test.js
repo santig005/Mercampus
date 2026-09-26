@@ -68,7 +68,10 @@ describe('middleware · admin routes (T-12)', () => {
     session.userId = 'user_buyer';
     const res = await middleware(new NextRequest('http://localhost/admin/sellers'));
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toBe('http://localhost/');
+    // T-152b: straight to the catalogue (APP_HOME). It used to be '/', which
+    // only reached /antojos through a second, permanent redirect - and '/' is
+    // about to become the landing page.
+    expect(res.headers.get('location')).toBe('http://localhost/antojos');
   });
 
   it('admin api with a session but no role responds 403', async () => {
