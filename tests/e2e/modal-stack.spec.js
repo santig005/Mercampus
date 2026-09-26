@@ -120,3 +120,64 @@ test.describe('product modal stack (T-167)', () => {
     await expect(page).toHaveURL(/\/en\/antojos$/);
   });
 });
+
+// T-167b: the seller modal joins the stack. Product -> its seller -> one of
+// that seller's products is three history entries now, not three nested
+// dialogs, and the back button walks them in reverse.
+const SELLER_ID = process.env.E2E_SELLER_ID; // 'Arepas El Parche'
+const OBJECT_ID = '[0-9a-f]{24}';
+// The open modal is the last query parameter. [?&] needs no escaping.
+const modalInUrl = (param, id) => new RegExp('[?&]' + param + '=' + id + '$');
+
+test.describe('seller modal in the stack (T-167b)', () => {
+  test('product -> seller -> product, then back walks it in reverse', async ({ page }) => {
+    await page.goto('/antojos');
+    await expect(page.locator('dialog[id^="seller_modal"]')).toHaveCount(1);
+
+    await page.getByText('Arepa de queso').first().click();
+    await expect(page).toHaveURL(modalInUrl('producto', PRODUCT_ID));
+
+    await openDialog(page).getByRole('button', { name: /Arepas El Parche/ }).click();
+    await expect(page).toHaveURL(modalInUrl('vendedor', SELLER_ID));
+    await expect(openDialog(page)).toHaveCount(1);
+    await expect(
+      openDialog(page).getByText('¡Conoce todos los productos de este vendedor!')
+    ).toBeVisible();
+
+    await openDialog(page).getByText('Buñuelo').first().click();
+    await expect(page).toHaveURL(modalInUrl('producto', OBJECT_ID));
+    await expect(page).not.toHaveURL(modalInUrl('producto', PRODUCT_ID));
+    await expect(openDialog(page)).toHaveCount(1);
+    // The T-165 bug, through the new path: the seller is still there.
+    await expect(whatsapp(page)).toHaveAttribute('href', /^https:\/\/wa\.me\/\+57\d{7,}\?text=/);
+
+    await page.goBack();
+    await expect(page).toHaveURL(modalInUrl('vendedor', SELLER_ID));
+    await expect(
+      openDialog(page).getByText('¡Conoce todos los productos de este vendedor!')
+    ).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL(modalInUrl('producto', PRODUCT_ID));
+    await expect(whatsapp(page)).toBeVisible();
+
+    await page.goBack();
+    await expect(openDialog(page)).toHaveCount(0);
+    await expect(page).toHaveURL(/\/antojos$/);
+  });
+
+  test('a cold load of ?vendedor= opens the seller, and closing stays on the listing', async ({
+    page,
+  }) => {
+    await page.goto(`/antojos?vendedor=${SELLER_ID}`);
+
+    await expect(openDialog(page).getByText('Arepas El Parche').first()).toBeVisible();
+    await expect(
+      openDialog(page).getByText('¡Conoce todos los productos de este vendedor!')
+    ).toBeVisible();
+
+    await openDialog(page).locator('button[aria-label="Cerrar"]').first().click();
+    await expect(openDialog(page)).toHaveCount(0);
+    await expect(page).toHaveURL(/\/antojos$/);
+  });
+});

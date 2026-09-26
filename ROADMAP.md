@@ -7175,7 +7175,20 @@ changing the pathname; four PRs). Progress:
   `tests/e2e/modal-stack.spec.js` (back closes it with no listing request
   and the drawer's scroll unchanged; close button; Escape; cold load; filters
   kept; `/en`), plus 37 more listing/modal e2e.
-- [ ] T-167b - the seller modal and the product <-> seller chain.
+- **[x] T-167b - the seller modal and the product <-> seller chain.** The
+  stack gains `openSeller` and a host for `?vendedor=<id>` (cold load:
+  `GET /api/sellers/[id]`). `ProductModal` is stack-only now: its nested
+  `SellerModal` is gone and its seller button opens the seller through the
+  stack with the schedules the product already carries. `SellerModal` is
+  controllable (stack copy has its own id, `seller_modal_stack`; its old
+  id-driven mode stays for SellerGrid and the two pages until T-167c) and
+  its back button is now named ("Cerrar"). `SellerProductsBySection` opens
+  products through the stack, which left `ProductModalHandler` with no
+  caller - deleted. Verified: `npm run verify`; `modal-stack.spec.js` now
+  walks product -> seller -> product and back x3 in reverse (one open dialog
+  at every step, the T-165 WhatsApp number intact), and a cold
+  `?vendedor=`; 30 more modal/listing e2e pass, including T-165's
+  seller-page path.
 - [ ] T-167c - product page, seller page and seller list on the same host.
 - [ ] T-167d - delete `ProductModalHandler`, `SellerModalHandler` and the
   nested modals; the `sellerId` branch removed from ProductGrid in T-167a
@@ -7239,6 +7252,20 @@ instead of echoing `error.message`.
   client (`updateSeller`) always passes an id - probably dead; confirm and
   remove with the next change to that route.
 **Model:** `opus` (privacy) · **Nightly:** no
+
+### [ ] T-171 · Builds fail when Google Fonts does not answer: self-host Montserrat
+**Why:** `src/app/layout.jsx` loads Montserrat with `next/font/google`, which
+downloads it from Google **at build time**. Twice on 2026-09-26 a build failed
+inside `next/font` with `TypeError: Cannot read properties of null (reading
+'1')` in `@next/font/dist/google/loader.js` - once in a local `npm run
+verify` (T-170) and once in CI's `lighthouse` job on #391 - and both passed
+on a plain re-run. A network blip at build time is enough to fail a deploy or
+a required check.
+**Done when:** the font is self-hosted with `next/font/local` (the four
+weights the layout asks for, committed under `src/fonts/` or `public/`), so
+no build reaches out to Google; the rendered font is unchanged (a screenshot
+comparison of one page in both themes); `npm run verify` green offline.
+**Model:** `sonnet` · **Nightly:** yes
 
 ---
 

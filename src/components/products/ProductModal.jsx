@@ -11,29 +11,24 @@ import {
 } from 'react-icons/tb';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import ShareButton from './share/ShareButton';
-import SellerModal from '@/components/seller/index/SellerModal';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
 
-// T-167: `open` and `onClose` make the dialog controlled - the modal stack
-// (components/modals/ModalStack.jsx) opens it from the URL and closes it by
-// going back in history. Without them it behaves as before, opened by id from
-// ProductModalHandler, for the callers the stack has not reached yet.
-function ProductModal({ product, theKey, open, onClose }) {
+// T-167: rendered once, by the modal stack (components/modals/ModalStack.jsx),
+// which opens it from the URL (?producto=) and closes it by going back in
+// history. It used to be rendered by a ProductModalHandler in every list and
+// opened by element id, and it carried its own nested SellerModal - so every
+// product -> seller -> product hop mounted another pair of dialogs. Now the
+// seller is opened through the stack too (`onOpenSeller`), as its own entry.
+function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
   const dialogRef = useRef(null);
-  const controlled = typeof onClose === 'function';
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!controlled || !dialog) return;
+    if (!dialog) return;
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
-  }, [controlled, open]);
-
-  const closeModal = () => {
-    if (controlled) onClose();
-    else document.getElementById(`product_modal_${theKey}`).close();
-  };
+  }, [open]);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -42,7 +37,6 @@ function ProductModal({ product, theKey, open, onClose }) {
   const [images, setImages] = useState([]);
   const [seller, setSeller] = useState({});
   const [schedules, setSchedules] = useState([]);
-  const [sellerModalId, setSellerModalId] = useState(null);
 
   useEffect(() => {
     if (product) {
@@ -74,10 +68,9 @@ function ProductModal({ product, theKey, open, onClose }) {
         ref={dialogRef}
         id={`product_modal_${theKey}`}
         className='modal modal-top h-dvh backdrop-blur-md'
-        // Escape: controlled, the URL has to change too, so the stack closes
-        // it (history.back) instead of the browser closing only the dialog.
+        // Escape: the URL has to change too, so the stack closes it
+        // (history.back) instead of the browser closing only the dialog.
         onCancel={event => {
-          if (!controlled) return;
           event.preventDefault();
           onClose();
         }}
@@ -95,13 +88,12 @@ function ProductModal({ product, theKey, open, onClose }) {
                     <button
                       className='btn btn-circle'
                       aria-label='Cerrar'
-                      onClick={closeModal}
+                      onClick={onClose}
                     >
                       <TbChevronLeft className='icon' />
                     </button>
                   </div>
                 </div>
-                <SellerModal seller={sellerModalId} set={setSellerModalId} />
                 <Carousel key={product._id} images={images} _id={product._id} />
               </div>
 
@@ -122,11 +114,9 @@ function ProductModal({ product, theKey, open, onClose }) {
                     </p>
                     <button
                       className='btn max-w-min flex-nowrap mx-6'
-                      onClick={() => {
-                        const newSeller = { ...seller, schedules };
-                        setSellerModalId(newSeller);
-                        document.getElementById('seller_modal').showModal();
-                      }}
+                      // The seller with the schedules this product already
+                      // carries: SellerModal's shape, no request needed.
+                      onClick={() => onOpenSeller({ ...seller, schedules })}
                     >
                       <div className='rounded-full size-10 overflow-hidden'>
                         <img
@@ -191,7 +181,7 @@ function ProductModal({ product, theKey, open, onClose }) {
           <div className='relative'>
             <div className='absolute w-full z-10'>
               <div className='modal-action m-0 justify-between p-2'>
-                <button className='btn btn-circle' aria-label='Cerrar' onClick={closeModal}>
+                <button className='btn btn-circle' aria-label='Cerrar' onClick={onClose}>
                   <TbChevronLeft className='icon' />
                 </button>
                 {/* T-93: named, not wired. This heart has no onClick and never
