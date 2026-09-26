@@ -17,3 +17,19 @@ on both backgrounds.
 
 The broken product images are the e2e seed's (no ImageKit in that run), not
 part of this change.
+
+# T-152b — `/` screenshots
+
+The `/about` landing, now served at `/`. Taken the same way, 2026-09-26,
+after `/` stopped being a 308. The page file is byte-for-byte the old
+`/about` one and the layout only gained `generateMetadata`, so these are
+expected to match the old `/about` render.
+
+| | Light | Dark |
+| --- | --- | --- |
+| Desktop | `home__desktop__light.png` | `home__desktop__dark.png` |
+| Mobile | `home__mobile__light.png` | `home__mobile__dark.png` |
+
+**Pre-existing defect visible in both mobile shots:** at 390px the topbar's
+"Mercampus" wordmark overlaps the locale switcher's "Español". Not introduced
+here (see the T-152b entry in `ROADMAP.md`); filed there for its own fix.

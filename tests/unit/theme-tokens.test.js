@@ -26,7 +26,7 @@ const UNMIGRATED_SURFACE =
 // here should come with a reason, not just a path.
 const ALLOWED = [
   {
-    file: 'src/app/[locale]/about/page.jsx',
+    file: 'src/app/[locale]/(landing)/page.jsx',
     classes: ['bg-white', 'bg-gray-100'],
     reason:
       'CTA button on the orange band: white IS the contrast colour there, ' +
@@ -34,7 +34,7 @@ const ALLOWED = [
       'bg-orange-500.',
   },
   {
-    file: 'src/app/[locale]/about/page.jsx',
+    file: 'src/app/[locale]/(landing)/page.jsx',
     classes: ['text-gray-400'],
     reason: 'Footer text inside a self-contained bg-gray-900 block.',
   },
@@ -46,7 +46,7 @@ const ALLOWED = [
 ];
 
 // Comments mention these class names when explaining why they are there
-// (about/page.jsx and card-variant.js both do). Stripping them keeps the scan
+// ((landing)/page.jsx and card-variant.js both do). Stripping them keeps the scan
 // about code, without having to allowlist a whole file over a comment.
 function stripComments(source) {
   return source

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDynamicPattern,
   localizedHref,
+  prefixLocale,
   routing,
   stripLocalePrefix,
 } from '@/i18n/routing';
@@ -21,21 +22,28 @@ describe('localizedHref (T-81)', () => {
   it('prefixes an exact locale-aware route for a non-default locale', () => {
     expect(localizedHref('/antojos', 'en')).toBe('/en/antojos');
     expect(localizedHref('/marketplace', 'en')).toBe('/en/marketplace');
-    expect(localizedHref('/about', 'en')).toBe('/en/about');
+    // T-152b: the home page. '/en', not '/en/' - see prefixLocale.
+    expect(localizedHref('/', 'en')).toBe('/en');
   });
 
   it('never prefixes for the default locale', () => {
     expect(localizedHref('/antojos', 'es')).toBe('/antojos');
-    expect(localizedHref('/about', 'es')).toBe('/about');
+    expect(localizedHref('/', 'es')).toBe('/');
   });
 
-  // The trap this task fixes: /about owns its whole subtree (matchSubpaths:
-  // true, same as isIntlRoute's own '/about(.*)'), so a link to a page under
-  // it must be prefixed too, or a soft nav from /en/about/team would land on
-  // the bare (Spanish) URL while the root layout - frozen since Next does
-  // not re-run it on a client-side navigation - keeps rendering English.
-  it('prefixes a subpath under a matchSubpaths:true route', () => {
-    expect(localizedHref('/about/team', 'en')).toBe('/en/about/team');
+  // T-152b: '/' replaced /about, the only matchSubpaths:true entry. The
+  // root is exact-path only - if it owned its subtree, every URL in the app
+  // would count as locale-aware and get prefixed into a 404. (/about/team
+  // used to be the subpath case here; there is no subtree entry left to
+  // test it against.)
+  it('treats the root as an exact path, not a prefix of everything', () => {
+    expect(localizedHref('/antojos/game', 'en')).toBe('/antojos/game');
+    expect(localizedHref('/about', 'en')).toBe('/about');
+  });
+
+  it('prefixes the root without a trailing slash (T-152b)', () => {
+    expect(prefixLocale('en', '/')).toBe('/en');
+    expect(prefixLocale('en', '/antojos')).toBe('/en/antojos');
   });
 
   // /antojos and /marketplace are matchSubpaths:false on purpose: their
