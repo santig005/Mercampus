@@ -1,6 +1,6 @@
 import { connectDB } from '@/utils/connectDB';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { bogotaClock, isOpenAt, isOverrideActive } from '@/lib/store-availability';

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useSeller } from "@/context/SellerContext";
 import { useCheckSeller } from "@/context/SellerContext";
 import Loading from "@/components/general/Loading";
+import { supportWhatsAppUrl } from "@/utils/resources/support";
 import { BsWhatsapp } from 'react-icons/bs';
 
 // T-81 (seller onboarding): moved from src/app/antojos/sellers/approving/
@@ -27,9 +28,7 @@ const SellerApprovalStatus = () => {
   // the Mercampus team. encodeURIComponent, not hand-written %20s - the
   // business name used to go into the URL raw, so an "&" in it cut the
   // message short.
-  const whatsappUrl = `https://wa.me/573197139921?text=${encodeURIComponent(
-    t("whatsappMessage", { name })
-  )}`;
+  const whatsappUrl = supportWhatsAppUrl(t("whatsappMessage", { name }));
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-base-200 p-8">

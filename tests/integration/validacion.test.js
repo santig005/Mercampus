@@ -32,7 +32,7 @@ describe('validation at the edge', () => {
     productRoute = await import('@/app/api/products/[id]/route.js');
     sellerRoute = await import('@/app/api/sellers/[id]/route.js');
     ({ Product } = await import('@/utils/models/productSchema'));
-    ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller } = await import('@/utils/models/sellerSchema'));
   }, 120_000);
 
   afterAll(async () => {

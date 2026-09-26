@@ -80,7 +80,6 @@ marked done. T-85 stays, batch 2 only.
 |---|---|---|
 | **T-85** (batch 2 only, 20 files listed in the entry) · Spanish left in test descriptions | Renames `describe`/`it` strings only. No source, no behaviour. The entry names the trap: renaming a test is safe, changing a string a test *asserts on* is not. | `npm run verify`. The same tests pass, with English names. |
 | **T-127** · The add-product error dialog is unreadable in dark mode | One `<dialog>`, a color problem the screenshots already pinned down (`docs/audits/t-119/`). No data, no auth, no other screen touched. | A real screenshot in both themes (rule 3), text legible in each. |
-| **T-142** · `sellerSchema2.ts` carries a stale `2` | A rename, no behavior change, no schema shape change. | `npm run verify`, plus a grep confirming no import still says `sellerSchema2`. |
 | **T-140** · No written boundary between `utils/`+`services/` and `server/`+`lib/` | Doc-only change to `CLAUDE.md`. No code touched. | The new lines describe what is actually true today, cross-checked against this task's own findings. |
 
 ### Fine for an agent, but read the caveat in the entry first
@@ -6206,7 +6205,7 @@ for the `console.log` cleanup, small enough that a bad migration in one
 route does not block the rest.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-142 · `sellerSchema2.ts` — the `2` names a `v1` that no longer exists
+### [x] T-142 · `sellerSchema2.ts` — the `2` names a `v1` that no longer exists
 **Why:** confirmed with a repo-wide filename search: there is no
 `sellerSchema.ts`, `sellerSchema.js`, nor any git history importing one
 under that exact name in the current tree — `sellerSchema2.ts` is simply
@@ -6219,4 +6218,16 @@ rename (updates every importer automatically), `npm run verify` green,
 nothing else in the diff. Purely cosmetic — no behavior, no schema shape
 change — which is exactly why it is safe for a single small PR rather than
 something to bundle into an unrelated task.
+**Done (2026-09-25):** `git mv` to `src/utils/models/sellerSchema.ts`, and the
+import path rewritten in its 35 importers (16 in `src/`, 18 tests, 1 script)
+plus one comment in `scripts/alias-hooks.mjs` - one line per file, nothing
+else in the diff. That is past the ~15-file split threshold in `CLAUDE.md`;
+it was not split because a rename cannot be done halfway without a
+re-export shim, which would add exactly the "which file is the real one?"
+question this task removes.
+- **No data impact (rule 8):** the model is still registered as
+  `mongoose.model('Seller', ...)`, so the collection name, indexes and every
+  existing document are untouched. Only the module path changed.
+- **Verified:** `npm run verify` green, and a repo-wide grep finds
+  `sellerSchema2` only in this file's historical entries.
 **Model:** `sonnet` · **Nightly:** yes

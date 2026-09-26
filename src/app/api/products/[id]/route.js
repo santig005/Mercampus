@@ -11,7 +11,7 @@ import { Product } from '@/utils/models/productSchema';
 // Not used by name, but the import registers the model with Mongoose: the
 // GET's populate({ model: 'Seller' }) needs it registered, or it blows up
 // with MissingSchemaError (same pattern as api/products/route.js).
-import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
+import { Seller } from '@/utils/models/sellerSchema'; // eslint-disable-line no-unused-vars
 
 const notFound = () =>
   NextResponse.json({ message: 'Product not found' }, { status: 404 });

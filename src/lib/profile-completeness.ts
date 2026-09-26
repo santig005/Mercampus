@@ -1,4 +1,4 @@
-import { DEFAULT_SELLER_LOGO } from '@/utils/models/sellerSchema2';
+import { DEFAULT_SELLER_LOGO } from '@/utils/models/sellerSchema';
 
 // T-72. Which parts of a seller's profile are still empty. Pure and derived:
 // no new field on Seller, no migration - every input already exists.

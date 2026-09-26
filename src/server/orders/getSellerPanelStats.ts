@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { buildSellerPanelStats, type SellerPanelStats } from '@/lib/seller-panel-stats';
 import { connectDB } from '@/utils/connectDB';
 import { Order } from '@/utils/models/orderSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 import { User } from '@/utils/models/userSchema';
 
 export type SellerPanelAccess =

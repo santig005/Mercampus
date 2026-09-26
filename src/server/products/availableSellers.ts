@@ -2,7 +2,7 @@ import type { Types } from 'mongoose';
 
 import { bogotaClock } from '@/lib/store-availability';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 
 /**
  * T-123: of these sellers, the ones whose switched-on products count as

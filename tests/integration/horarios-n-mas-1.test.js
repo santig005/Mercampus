@@ -5,7 +5,7 @@ import { seedDatabase } from '../../scripts/seed.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 
 let productsRoute;
 let sellersRoute;

@@ -2,7 +2,7 @@ import { publicSellerFilter } from '@/lib/public-visibility';
 import type { SitemapProduct, SitemapSeller } from '@/lib/sitemap';
 import { connectDB } from '@/utils/connectDB';
 import { Product } from '@/utils/models/productSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 
 // T-74. Exactly the sellers the public listing shows, and their products.
 // Reads Mongo directly - no fetch to our own API, per CLAUDE.md.

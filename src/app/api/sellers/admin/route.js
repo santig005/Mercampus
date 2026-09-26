@@ -5,7 +5,7 @@ import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
 import { getClerkUserId } from '@/utils/lib/auth';
 import { isClerkAdmin } from '@/utils/lib/isClerkAdmin';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 
 // T-133: exactly what /admin/sellers renders and nothing more - SellerCard's
 // businessName/slogan/description/logo/availability, plus the page's own
