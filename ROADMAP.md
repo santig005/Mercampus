@@ -6991,7 +6991,7 @@ as `SUPPORT_WHATSAPP_NUMBER = '573054213899'`, with a
 **Model:** `sonnet` · **Nightly:** yes (once the human says which number is
 the right one)
 
-### [ ] T-162 · The site-wide share image and four icons are 404 in production
+### [x] T-162 · The site-wide share image and four icons are 404 in production
 **Why:** found during T-152c (rule 9), measured 2026-09-26.
 `src/app/layout.jsx` declares `/favicon-16x16.png`, `/favicon-32x32.png`,
 `/android-chrome-192x192.png`, `/android-chrome-512x512.png` and
@@ -7010,6 +7010,26 @@ expects 200 - not a grep of the metadata. Check the preview with a real
 share-debugger (WhatsApp/LinkedIn) after promotion.
 **Related:** T-69 (per-page Open Graph), T-152c (chose `/images/logo.png`
 for the `Organization` logo for this reason).
+**Done (2026-09-26):** the declarations moved to `SITE_ICONS` and
+`SITE_OG_IMAGE` in `src/lib/metadata.ts` and now name only files that ship:
+`/favicon.ico` (a 512x512 PNG, now declared as one), `/icon512_rounded.png`
+for the tab, and `/icon512_maskable.png` - the full-bleed orange square - for
+the iOS home screen and as the Open Graph image, where transparent corners
+would render black or white. The five missing paths are gone rather than
+generated: every size a browser needs is served from the 512 files, and
+nothing new is added to `public/`.
+- **Verified:** `npm run verify` green; `tests/unit/site-icons.test.js`
+  checks every declared path and every `manifest.json` icon exists in
+  `public/`; `tests/e2e/site-icons.spec.js` reads the icons and
+  `og:image` from the **rendered** `<head>` of `/` and `/antojos` and
+  requests each one, expecting 200.
+- **Still a square logo, not a 1200x630 card.** WhatsApp shows it as a
+  thumbnail, which is fine; LinkedIn and X prefer a wide card and will show
+  a small square. A designed card (Next's `opengraph-image` file convention
+  can render one from JSX with no new dependency) is the next step if the
+  share preview matters for the CV link - a design decision, left open.
+- **Not checked with a real share debugger** (WhatsApp/LinkedIn) - they need
+  the promoted URL. Do it after the next promotion.
 **Model:** `sonnet` · **Nightly:** yes
 
 ---
