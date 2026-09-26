@@ -6779,12 +6779,29 @@ traffic.
   - **Rule 9, not fixed:** the `xs` screen (`375px`) in `tailwind.config.js`
     was only used by this button; a grep over `src/` finds no other `xs:`
     class. Removing it is a one-line cleanup.
-- **[ ] T-152c · `Organization` JSON-LD on `/`.** The last part of the
+- **[x] T-152c · `Organization` JSON-LD on `/`.** The last part of the
   original "Done when", split off to keep T-152b to the route move: T-151
   asks for the emitted JSON to be asserted as a snapshot in a unit test, the
   way `src/lib/metadata.ts`'s builders are. Name, URL (`SITE_URL`), logo, and
   the Instagram profile the landing already links
   (`https://www.instagram.com/mercampus/`) as `sameAs`.
+  **Done (2026-09-26):** `src/lib/structured-data.ts` builds it
+  (`buildOrganizationJsonLd`) and serializes it with `<` escaped
+  (`serializeJsonLd`, so a future value from the database cannot close the
+  `<script>` - T-151's `Product` markup will need that). The landing's layout
+  emits it once, so it is on `/` and `/en` and nowhere else. Logo is
+  `/images/logo.png` (500x500, the topbar's), **not**
+  `/android-chrome-512x512.png` - see T-162.
+  - **Verified:** `npm run verify` green;
+    `tests/unit/structured-data.test.js` pins the whole emitted object and
+    the escaping; e2e in `home.spec.js` checks the rendered page has exactly
+    one `application/ld+json` that parses as the `Organization`, that its
+    logo path is served (200), and that `/antojos` has none.
+  - **Not validated with Google's Rich Results Test** - it needs a public
+    URL, and this runs before promotion. Do it on the live site after the
+    next promotion; the unit test is what keeps the shape from drifting.
+  - T-151's remaining parts (`Product`, seller, `BreadcrumbList`) stay in
+    T-151; this only takes its `Organization` line.
 - **Found on the way (rule 9), not fixed:** `/marketplace` has the same
   shape - a `'use client'` page, so no metadata of its own, and its greeting
   is an `<h2>` with no `<h1>`. Same fix as T-152a; one small PR.
@@ -6973,6 +6990,27 @@ as `SUPPORT_WHATSAPP_NUMBER = '573054213899'`, with a
   existed in the uncommitted Phase 7 block (landed in #378).
 **Model:** `sonnet` · **Nightly:** yes (once the human says which number is
 the right one)
+
+### [ ] T-162 · The site-wide share image and four icons are 404 in production
+**Why:** found during T-152c (rule 9), measured 2026-09-26.
+`src/app/layout.jsx` declares `/favicon-16x16.png`, `/favicon-32x32.png`,
+`/android-chrome-192x192.png`, `/android-chrome-512x512.png` and
+`/apple-touch-icon.png`, and **none of them exist in `public/`** (git history
+shows they were never added). Only `/favicon.ico` and `/manifest.json` do.
+`https://mercampus.vercel.app/android-chrome-512x512.png` answers **404**.
+That file is also the root `openGraph.images`, so **every shared link that is
+not a product or seller page - the home page included - previews with a
+broken image.** Under the portfolio premise that is the link on a CV.
+**Done when:** every icon path the root layout declares is served (either add
+the files, generated from `public/images/logo.png`, or point the metadata at
+the ones that exist - `manifest.json` already uses `icon512_rounded.png` and
+`icon512_maskable.png`), the Open Graph image is a real 1200x630-ish card or
+at least an existing square logo, and a test requests each declared icon and
+expects 200 - not a grep of the metadata. Check the preview with a real
+share-debugger (WhatsApp/LinkedIn) after promotion.
+**Related:** T-69 (per-page Open Graph), T-152c (chose `/images/logo.png`
+for the `Organization` logo for this reason).
+**Model:** `sonnet` · **Nightly:** yes
 
 ---
 
