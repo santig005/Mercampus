@@ -7,9 +7,12 @@ import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 import Loading from '../general/Loading';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 
 const Schedule = () => {
   const router = useRouter();
+  const locale = useLocale();
   const [schedules, setSchedules] = useState([
     { id: null, day: '', startTime: '', endTime: '' },
   ]);
@@ -140,7 +143,11 @@ const Schedule = () => {
         });
         if (response.ok) {
           logger.debug('Schedules printed successfully');
-          router.push('/antojos');
+          // T-81: this screen has no [locale] segment of its own, but on an
+          // English page a bare push('/antojos') would land on the Spanish
+          // URL while the root layout - frozen across client-side
+          // navigation - keeps rendering English (see src/i18n/routing.ts).
+          router.push(localizedHref('/antojos', locale));
         } else {
           const errorData = await response.json();
           logger.error('Error al guardar horarios:', errorData.message);

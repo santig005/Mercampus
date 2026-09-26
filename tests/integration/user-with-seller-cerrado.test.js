@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
  * verdad.
  */
 describe('GET /api/users/user-with-seller/[email]', () => {
-  it('ya no existe', async () => {
+  it('no longer exists', async () => {
     await expect(
       import('@/app/api/users/user-with-seller/[email]/route')
     ).rejects.toThrow();

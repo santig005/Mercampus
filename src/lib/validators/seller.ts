@@ -30,13 +30,38 @@ const sellerFields = {
 
 export const createSellerSchema = z.object(sellerFields);
 
-// `paused` (T-71) is an update-only field: a seller that doesn't exist yet has
-// nothing to hide from the listings, and leaving it out of the create schema
-// keeps the sign-up payload as narrow as it was. The ownership check for
-// writing it is the one PUT /api/sellers/[id] already runs (verifySellerId),
-// the same one every other field here goes through.
+// T-83: how far into the future a seller may set `availabilityOverrideUntil`.
+// Not a human-specified number - the ROADMAP entry only requires "bounded" -
+// chosen as a business-day-length ceiling so a forgotten override can't drift
+// into "permanently marked available", the exact failure mode the task warns
+// about. Exported so the UI's preset duration buttons can't offer more than
+// the API will accept.
+export const MAX_AVAILABILITY_OVERRIDE_HOURS = 6;
+
+// `null` clears the override; a string must be a real ISO instant no further
+// ahead than the cap above. Deliberately NOT required to be in the future:
+// `handleSubmit` in EditSellerForm resends the whole seller object, including
+// whatever `availabilityOverrideUntil` it already had, so an expired one
+// would otherwise turn every unrelated profile edit into a 400 the moment the
+// window passed. A past value is inert anyway - isOverrideActive() already
+// reads it as "no override" - so only the upper bound needs enforcing here:
+// that is the one that can leave a seller permanently marked available.
+const availabilityOverrideUntil = z
+  .union([z.string().datetime(), z.null()])
+  .refine(value => {
+    if (value === null) return true;
+    const maxMs = MAX_AVAILABILITY_OVERRIDE_HOURS * 60 * 60 * 1000;
+    return new Date(value).getTime() - Date.now() <= maxMs;
+  }, `La apertura extraordinaria no puede ser de más de ${MAX_AVAILABILITY_OVERRIDE_HOURS} horas`);
+
+// `paused` (T-71) and `availabilityOverrideUntil` (T-83) are update-only
+// fields: a seller that doesn't exist yet has nothing to hide from the
+// listings or to open early. Leaving them out of the create schema keeps the
+// sign-up payload as narrow as it was. The ownership check for writing them
+// is the one PUT /api/sellers/[id] already runs (verifySellerId), the same
+// one every other field here goes through.
 export const updateSellerSchema = z
-  .object({ ...sellerFields, paused: z.boolean() })
+  .object({ ...sellerFields, paused: z.boolean(), availabilityOverrideUntil })
   .partial();
 
 // The `[id]` segment of a seller route, validated before it reaches Mongoose -

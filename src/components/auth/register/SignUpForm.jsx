@@ -13,8 +13,21 @@ import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
 import Link from 'next/link';
 import { IoIosWarning } from 'react-icons/io';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
+import { APP_HOME } from '@/lib/app-home';
 
+// T-81 (auth zone): heading, subtitle, field labels, the password-strength
+// checklist, the password-mismatch message and the cross-link to
+// /auth/login moved into messages/{es,en}.json under 'SignUpForm'. The
+// verification modal (OTP entry) and the Clerk error dictionary
+// (passwordErrorMessages) are untouched on purpose - see the note at the top
+// of SignInForm.jsx for why (duplicated across three files, and untestable
+// without a real Clerk submission); recorded as a rule 9 follow-up in
+// ROADMAP.md T-81, not fixed here.
 export default function SignUpForm() {
+  const t = useTranslations('SignUpForm');
+  const locale = useLocale();
   const { isLoaded, signUp, setActive } = useSignUp();
   const [userName, setUserName] = useState('');
   const [emailAddress, setEmailAddress] = useState('');
@@ -160,7 +173,7 @@ export default function SignUpForm() {
       if (completeSignUp.status === 'complete') {
         setVerification(true);
         await setActive({ session: completeSignUp.createdSessionId });
-        router.push('/');
+        router.push(localizedHref(APP_HOME, locale));
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
@@ -319,21 +332,21 @@ export default function SignUpForm() {
           }
         >
           <Link
-            href='/'
-            aria-label='Volver al inicio'
+            href={localizedHref(APP_HOME, locale)}
+            aria-label={t('backAria')}
             className='btn btn-circle absolute top-4 left-4'
           >
             <TbChevronLeft className='icon' />
           </Link>
-          <h2 className='text-2xl font-semibold text-white'>Regístrate</h2>
-          <p className='text-white'>Por favor regístrate para comenzar</p>
+          <h2 className='text-2xl font-semibold text-white'>{t('heading')}</h2>
+          <p className='text-white'>{t('subtitle')}</p>
         </div>
         <div className='h-full relative bg-[#393939]'>
           <div className='bg-base-100 text-base-content rounded-t-3xl h-max w-full absolute px-6 pt-6 overflow-hidden overflow-y-auto pb-16'>
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
-                  title='Nombre completo'
+                  title={t('fullNameLabel')}
                   type='text'
                   placeholder='John Doe'
                   value={userName}
@@ -341,7 +354,7 @@ export default function SignUpForm() {
                   required
                 />
                 <InputFields
-                  title='Correo electrónico'
+                  title={t('emailLabel')}
                   type='email'
                   placeholder='johndoe@gmail.com'
                   value={emailAddress}
@@ -350,7 +363,7 @@ export default function SignUpForm() {
                 />
                 <div className='flex flex-col gap-2' ref={parent}>
                   <InputFields
-                    title='Contraseña'
+                    title={t('passwordLabel')}
                     type='password'
                     placeholder='********'
                     value={password}
@@ -377,7 +390,7 @@ export default function SignUpForm() {
                         ) : (
                           <FcHighPriority />
                         )}{' '}
-                        Al menos 8 caracteres
+                        {t('passwordReqLength')}
                       </li>
                       <li
                         className={`flex items-center gap-1 ${
@@ -391,7 +404,7 @@ export default function SignUpForm() {
                         ) : (
                           <FcHighPriority />
                         )}{' '}
-                        Al menos un número
+                        {t('passwordReqNumber')}
                       </li>
                       <li
                         className={`flex items-center gap-1 ${
@@ -405,7 +418,7 @@ export default function SignUpForm() {
                         ) : (
                           <FcHighPriority />
                         )}{' '}
-                        Al menos una mayúscula
+                        {t('passwordReqUppercase')}
                       </li>
                       {/* <li
                         className={`flex items-center gap-1 ${
@@ -428,7 +441,7 @@ export default function SignUpForm() {
 
                 <div className='flex flex-col gap-2' ref={parent}>
                   <InputFields
-                    title='Repetir contraseña'
+                    title={t('confirmPasswordLabel')}
                     type='password'
                     placeholder='********'
                     value={confirmPassword}
@@ -441,7 +454,7 @@ export default function SignUpForm() {
                     }`}
                   />
                   {!isPasswordMatch.match && confirmPassword.length > 0 && (
-                    <p className='text-red-400'>Las contraseñas no coinciden</p>
+                    <p className='text-red-400'>{t('passwordMismatch')}</p>
                   )}
                 </div>
 
@@ -460,7 +473,7 @@ export default function SignUpForm() {
                   {loading ? (
                     <span className='loading loading-infinity loading-lg'></span>
                   ) : (
-                    'Registrarse'
+                    t('submit')
                   )}
                 </button>
               </div>
@@ -470,9 +483,14 @@ export default function SignUpForm() {
               <ProvidersButton />
             </div> */}
             <div className='mt-4 flex justify-center'>
-              <Link href='/auth/login' className='text-center text-primary'>
-                <span className='text-black dark:text-base-content'>¿Ya tienes una cuenta?</span>{' '}
-                Inicia sesión
+              <Link
+                href={localizedHref('/auth/login', locale)}
+                className='text-center text-primary'
+              >
+                <span className='text-black dark:text-base-content'>
+                  {t('haveAccountQuestion')}
+                </span>{' '}
+                {t('haveAccountCta')}
               </Link>
             </div>
           </div>

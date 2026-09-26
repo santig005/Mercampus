@@ -2,6 +2,8 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
+import { localizedHref } from "@/i18n/routing";
 
 const SellerContext = createContext(null);
 
@@ -81,40 +83,46 @@ export const useSeller = () => {
  */
 export const useCheckSeller = (sellerAllowed,routeIfNot) => {
   const router = useRouter();
+  const locale = useLocale();
   const { seller, loading: sellerLoading, dbUser } = useSeller();
   const [checked, setChecked] = useState(false);
   useEffect(() => {
+      // T-81: every redirect goes through localizedHref, so a seller bounced
+      // from /en/... lands on the English twin when the destination has one.
+      // Callers keep passing bare paths; a destination with no [locale] file
+      // yet is left bare by localizedHref instead of prefixed into a 404.
+      const go = path => router.push(localizedHref(path, locale));
       if (!dbUser) {
-        router.push("/auth/login");
+        go("/auth/login");
         return;
       }
       if (!sellerLoading) {
         if(sellerAllowed!=="userNotSeller"){
           if (seller) {
             if("sellerNotApproved" === sellerAllowed) {
-              if (seller.approved) router.push(routeIfNot);
+              if (seller.approved) go(routeIfNot);
               else setChecked(true);
             }
             if ("sellerApproved" === sellerAllowed) {
-              if (!seller.approved) router.push(routeIfNot);
+              if (!seller.approved) go(routeIfNot);
               else setChecked(true);
             }
           } else {
-            router.push("/antojos/sellers/register");
+            go("/antojos/sellers/register");
           }
         }
         else{
           if (seller!="None") {
             if (seller.approved) {
-              router.push("/antojos/sellers/profile/edit");
+              go("/antojos/sellers/profile/edit");
             }
             else{
-              router.push("/antojos/sellers/approving");
+              go("/antojos/sellers/approving");
             }
           }
           else setChecked(true);
         }
       }
-  }, [dbUser, seller, sellerLoading, router, sellerAllowed, routeIfNot]);
+  }, [dbUser, seller, sellerLoading, router, locale, sellerAllowed, routeIfNot]);
   return {checkedSeller:checked};
 };

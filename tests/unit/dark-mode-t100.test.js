@@ -11,7 +11,8 @@ import { describe, expect, it } from 'vitest';
 
 describe('T-100 · F47 - /antojos/sellers/approving responds to the theme', () => {
   const source = readFileSync(
-    'src/app/antojos/sellers/approving/page.jsx',
+    // T-81: moved under [locale] (seller onboarding zone).
+    'src/app/[locale]/antojos/sellers/approving/page.jsx',
     'utf8'
   );
 

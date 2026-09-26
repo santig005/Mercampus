@@ -67,8 +67,8 @@ beforeEach(async () => {
   await User.deleteMany({});
 });
 
-describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
-  it('crea el usuario, con su clerkId', async () => {
+describe('POST /api/webhooks · creating users from Clerk', () => {
+  it('creates the user, with its clerkId', async () => {
     const response = await webhookRoute.POST(
       eventoDeClerk(usuarioCreado('user_2abc', 'ana@example.test'))
     );
@@ -82,7 +82,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     expect(user.role).toBe('buyer'); // el rol lo pone el schema, no Clerk
   });
 
-  it('un segundo evento del mismo usuario actualiza en vez de duplicar', async () => {
+  it('a second event for the same user updates instead of duplicating', async () => {
     await webhookRoute.POST(
       eventoDeClerk(usuarioCreado('user_2abc', 'ana@example.test'))
     );
@@ -101,7 +101,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     expect((await User.findOne({ clerkId: 'user_2abc' })).name).toBe('Anita');
   });
 
-  it('si el usuario cambia de email en Clerk, sigue siendo el mismo documento', async () => {
+  it('if the user changes email in Clerk, it stays the same document', async () => {
     // This is the reason for joining by clerkId and not by email: email changes.
     await webhookRoute.POST(
       eventoDeClerk(usuarioCreado('user_2abc', 'ana@example.test'))
@@ -121,7 +121,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     expect(despues.email).toBe('ana.nueva@example.test');
   });
 
-  it('dos usuarios distintos de Clerk son dos documentos, aunque compartan email', async () => {
+  it('two different Clerk users are two documents, even if they share an email', async () => {
     // Email is not unique in this database (the unique is still commented out,
     // T-11), so joining by email could merge two accounts. By clerkId it can't.
     await webhookRoute.POST(
@@ -134,7 +134,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     expect(await User.countDocuments()).toBe(2);
   });
 
-  it('rellena el nombre cuando Clerk no lo manda, que es lo normal al registrarse por email', async () => {
+  it('fills in the name when Clerk does not send one, which is normal when signing up by email', async () => {
     const response = await webhookRoute.POST(
       eventoDeClerk(
         usuarioCreado('user_2sinnombre', 'sinnombre@example.test', {
@@ -151,7 +151,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     );
   });
 
-  it('borra el usuario en user.deleted', async () => {
+  it('deletes the user on user.deleted', async () => {
     await webhookRoute.POST(
       eventoDeClerk(usuarioCreado('user_2abc', 'ana@example.test'))
     );
@@ -164,7 +164,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     expect(await User.countDocuments()).toBe(0);
   });
 
-  it('400 y no toca la base si la firma no es válida', async () => {
+  it('400 and does not touch the database if the signature is not valid', async () => {
     const response = await webhookRoute.POST(
       eventoDeClerk(usuarioCreado('user_2abc', 'ana@example.test'), {
         firmaValida: false,
@@ -175,7 +175,7 @@ describe('POST /api/webhooks · alta de usuarios desde Clerk', () => {
     expect(await User.countDocuments()).toBe(0);
   });
 
-  it('400 si el evento no trae email, en vez de responder 200 sin crear nada', async () => {
+  it('400 if the event carries no email, instead of answering 200 while creating nothing', async () => {
     // El try/catch de createOrUpdateUser se tragaba cualquier fallo y el
     // webhook answered 200: Clerk considered the event delivered and never
     // retried it.

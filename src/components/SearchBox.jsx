@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -21,12 +22,15 @@ function useDebounce(value, delay) {
 // antojos copy, so /marketplace asked for "tu antojo mas deseado" too. The
 // `section` prop is the same one CategoryGrid and ProductGrid already take,
 // so the three components on these pages are configured the same way.
-const PLACEHOLDERS = {
-  antojos: 'Busca tu antojo más deseado',
-  marketplace: 'Busca en el marketplace',
+// T-81: the copy itself moved into messages/{es,en}.json (namespace
+// SearchBox) - this only picks which key goes with which section.
+const PLACEHOLDER_KEYS = {
+  antojos: 'placeholderAntojos',
+  marketplace: 'placeholderMarketplace',
 };
 
 export default function SearchBox({ section = 'antojos' }) {
+  const t = useTranslations('SearchBox');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -44,6 +48,7 @@ export default function SearchBox({ section = 'antojos' }) {
   const availability = searchParams.get('availability') || '';
 
   const debouncedSearchValue = useDebounce(search, 500);
+  const placeholder = t(PLACEHOLDER_KEYS[section] ?? PLACEHOLDER_KEYS.antojos);
 
   // The other half of F3. This effect rebuilds the query string from the
   // component's own state, and on mount that state has not been typed by
@@ -86,11 +91,11 @@ export default function SearchBox({ section = 'antojos' }) {
           you type. Same string, so the label and the hint cannot drift. */}
       <input
         type='text'
-        aria-label={PLACEHOLDERS[section] ?? PLACEHOLDERS.antojos}
+        aria-label={placeholder}
         className='grow'
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder={PLACEHOLDERS[section] ?? PLACEHOLDERS.antojos}
+        placeholder={placeholder}
       />
       <svg
         xmlns='http://www.w3.org/2000/svg'

@@ -5,8 +5,7 @@
   },
   "AboutLayout": {
     "logoAlt": "Logo de Mercampus",
-    "exploreLong": "Explorar Productos",
-    "exploreShort": "Explorar"
+    "exploreLong": "Explorar Productos"
   },
   "About": {
     "hero": {
@@ -84,5 +83,164 @@
       "instagram": "Síguenos en Instagram"
     },
     "footer": "© 2025 Mercampus. Todos los derechos reservados."
+  },
+  "Antojos": {
+    "greetingHi": "Hola",
+    "greetingTailWithName": "calma tus antojos",
+    "greetingTailNoName": "Calma tus antojos",
+    "allHeading": "Todos",
+    "metaTitle": "Antojos",
+    "metaDescription": "Comida hecha por estudiantes de tu universidad. Busca por categoría y escríbele al vendedor por WhatsApp."
+  },
+  "Marketplace": {
+    "greetingHi": "Hola",
+    "greetingTailWithName": "explora el marketplace",
+    "greetingTailNoName": "Explora el marketplace",
+    "allHeading": "Todos"
+  },
+  "SearchBox": {
+    "placeholderAntojos": "Busca tu antojo más deseado",
+    "placeholderMarketplace": "Busca en el marketplace"
+  },
+  "ProductGrid": {
+    "filterAvailabilityLabel": "Filtrar por disponibilidad",
+    "sortLabel": "Ordenar productos",
+    "sortOptions": {
+      "default": "Recomendado",
+      "newest": "Más nuevo",
+      "priceAsc": "Precio: menor a mayor",
+      "priceDesc": "Precio: mayor a menor"
+    },
+    "availabilityOptions": {
+      "available": "Disponibles ahora",
+      "unavailable": "No disponibles"
+    },
+    "emptyAvailable": "No hay productos disponibles en este momento",
+    "emptyDefault": "No se encontraron productos"
+  },
+  "ProductPage": {
+    "back": "Volver",
+    "scheduleHeading": "Horario",
+    "sellerLogoAlt": "Imagen del publicador del producto",
+    "contactWhatsapp": "Contactar por WhatsApp",
+    "contactWhatsappAria": "Contactar a {seller} por WhatsApp",
+    "defaultSeller": "el vendedor",
+    "defaultSellerGreeting": "estimado vendedor",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus. Estoy interesado en el producto {product}. Podrías decirme dónde te encuentras?",
+    "recommend": "Recomendar a un amigo"
+  },
+  "ShareButton": {
+    "title": "Compartir producto",
+    "whatsapp": "Compartir por WhatsApp",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "close": "Cerrar",
+    "productMessage": "¡Mira este producto en Mercampus! \n{name} de {business}\n{url}",
+    "sellerMessage": "¡Mira este vendedor en Mercampus! \n{business}\n{url}"
+  },
+  "SellerList": {
+    "headingAntojosLead": "¡Conoce a los",
+    "headingAntojosHighlight": "maestros",
+    "headingAntojosTail": "del sabor! 🎉",
+    "headingMarketplaceLead": "¡Conoce a los",
+    "headingMarketplaceHighlight": "expertos",
+    "headingMarketplaceTail": "del marketplace! 🛍️",
+    "antojosTab": "🍕 Antojos",
+    "marketplaceTab": "🛍️ Marketplace"
+  },
+  "AvailabilityBadge": {
+    "available": "Disponible",
+    "off": "No disponible",
+    "noSchedule": "Consultar horario",
+    "closed": "Cerrado ahora · abre {day} {hour}:{minute}",
+    "days": {
+      "mon": "lun",
+      "tue": "mar",
+      "wed": "mié",
+      "thu": "jue",
+      "fri": "vie",
+      "sat": "sáb",
+      "sun": "dom"
+    }
+  },
+  "TableSchema": {
+    "dayHeader": "Día",
+    "startTimeHeader": "Hora de Inicio",
+    "endTimeHeader": "Hora Final",
+    "empty": "No hay horarios disponibles",
+    "days": {
+      "mon": "Lunes",
+      "tue": "Martes",
+      "wed": "Miércoles",
+      "thu": "Jueves",
+      "fri": "Viernes",
+      "sat": "Sábado",
+      "sun": "Domingo"
+    }
+  },
+  "SignInForm": {
+    "backAria": "Volver al inicio",
+    "heading": "Inicia Sesión",
+    "subtitle": "Por favor ingresa a tu cuenta para continuar",
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "submit": "Iniciar Sesión",
+    "forgotPasswordQuestion": "¿Has olvidado tu contraseña?",
+    "forgotPasswordCta": "Recupérala",
+    "noAccountQuestion": "¿No tienes una cuenta?",
+    "noAccountCta": "Crea una"
+  },
+  "SignUpForm": {
+    "backAria": "Volver al inicio",
+    "heading": "Regístrate",
+    "subtitle": "Por favor regístrate para comenzar",
+    "fullNameLabel": "Nombre completo",
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "confirmPasswordLabel": "Repetir contraseña",
+    "passwordReqLength": "Al menos 8 caracteres",
+    "passwordReqNumber": "Al menos un número",
+    "passwordReqUppercase": "Al menos una mayúscula",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "submit": "Registrarse",
+    "haveAccountQuestion": "¿Ya tienes una cuenta?",
+    "haveAccountCta": "Inicia sesión"
+  },
+  "SellerRegister": {
+    "heading": "Registra tu Negocio",
+    "subtitle": "Por favor completa la información de tu negocio",
+    "businessNameLabel": "Nombre del Negocio",
+    "businessNamePlaceholder": "Nombre del negocio",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Describe tu negocio",
+    "sloganLabel": "Slogan",
+    "sloganPlaceholder": "Slogan del negocio",
+    "universityLabel": "Universidad",
+    "instagramLabel": "Usuario de Instagram",
+    "instagramPlaceholder": "usuario",
+    "phoneLabel": "Teléfono",
+    "phonePlaceholder": "Número de teléfono",
+    "logoTitle": "Logo del Negocio o Foto del vendedor",
+    "submit": "Registrar Negocio"
+  },
+  "SellerApproving": {
+    "greeting": "Hola {name}",
+    "heading": "Tu estado de vendedor está en proceso de aprobación",
+    "body": "Por favor, espera mientras revisamos la información de tu negocio. Entra más tarde.",
+    "contactHint": "Para más agilidad, o si tienes alguna pregunta, puedes contactarnos directamente.",
+    "whatsappCta": "Contactar/Pedir aprobación por WhatsApp",
+    "whatsappMessage": "Holaa, soy el vendedor {name}, me registré en Mercampus, podrías revisar mi solicitud para aprobarme?"
+  },
+  "ImageGrid": {
+    "tooLarge": "Esta imagen es muy pesada y no se pudo reducir lo suficiente para subirla. Prueba con otra foto o recórtala antes de subirla.",
+    "uploadFailed": "Hubo un problema al subir la imagen. Inténtalo de nuevo.",
+    "deleteFailed": "Hubo un problema al eliminar la imagen.",
+    "imageAlt": "Imagen del producto {index}",
+    "uploading": "Subiendo...",
+    "add": "+ Agregar"
+  },
+  "UniGraphicSelector": {
+    "infoAria": "Información",
+    "disclaimer": "Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con finalidad de filtro de búsqueda."
   }
 }

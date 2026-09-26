@@ -5,8 +5,7 @@
   },
   "AboutLayout": {
     "logoAlt": "Mercampus logo",
-    "exploreLong": "Explore Products",
-    "exploreShort": "Explore"
+    "exploreLong": "Explore Products"
   },
   "About": {
     "hero": {
@@ -84,5 +83,164 @@
       "instagram": "Follow us on Instagram"
     },
     "footer": "© 2025 Mercampus. All rights reserved."
+  },
+  "Antojos": {
+    "greetingHi": "Hi",
+    "greetingTailWithName": "soothe your cravings",
+    "greetingTailNoName": "Soothe your cravings",
+    "allHeading": "All",
+    "metaTitle": "Cravings",
+    "metaDescription": "Food made by students at your university. Browse by category and message the seller on WhatsApp."
+  },
+  "Marketplace": {
+    "greetingHi": "Hi",
+    "greetingTailWithName": "explore the marketplace",
+    "greetingTailNoName": "Explore the marketplace",
+    "allHeading": "All"
+  },
+  "SearchBox": {
+    "placeholderAntojos": "Search for your craving",
+    "placeholderMarketplace": "Search the marketplace"
+  },
+  "ProductGrid": {
+    "filterAvailabilityLabel": "Filter by availability",
+    "sortLabel": "Sort products",
+    "sortOptions": {
+      "default": "Recommended",
+      "newest": "Newest",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low"
+    },
+    "availabilityOptions": {
+      "available": "Available now",
+      "unavailable": "Unavailable"
+    },
+    "emptyAvailable": "No products available right now",
+    "emptyDefault": "No products found"
+  },
+  "ProductPage": {
+    "back": "Back",
+    "scheduleHeading": "Schedule",
+    "sellerLogoAlt": "Image of the product's seller",
+    "contactWhatsapp": "Contact via WhatsApp",
+    "contactWhatsappAria": "Contact {seller} via WhatsApp",
+    "defaultSeller": "the seller",
+    "defaultSellerGreeting": "dear seller",
+    "whatsappMessage": "Hi {seller}, I saw you on Mercampus. I'm interested in the product {product}. Could you tell me where you're located?",
+    "recommend": "Recommend to a friend"
+  },
+  "ShareButton": {
+    "title": "Share product",
+    "whatsapp": "Share via WhatsApp",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "close": "Close",
+    "productMessage": "Check out this product on Mercampus! \n{name} from {business}\n{url}",
+    "sellerMessage": "Check out this seller on Mercampus! \n{business}\n{url}"
+  },
+  "SellerList": {
+    "headingAntojosLead": "Meet the",
+    "headingAntojosHighlight": "masters",
+    "headingAntojosTail": "of flavor! 🎉",
+    "headingMarketplaceLead": "Meet the",
+    "headingMarketplaceHighlight": "experts",
+    "headingMarketplaceTail": "of the marketplace! 🛍️",
+    "antojosTab": "🍕 Antojos",
+    "marketplaceTab": "🛍️ Marketplace"
+  },
+  "AvailabilityBadge": {
+    "available": "Available",
+    "off": "Unavailable",
+    "noSchedule": "Check schedule",
+    "closed": "Closed now · opens {day} {hour}:{minute}",
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
+  },
+  "TableSchema": {
+    "dayHeader": "Day",
+    "startTimeHeader": "Start Time",
+    "endTimeHeader": "End Time",
+    "empty": "No schedules available",
+    "days": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    }
+  },
+  "SignInForm": {
+    "backAria": "Back to home",
+    "heading": "Sign In",
+    "subtitle": "Please sign in to your account to continue",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "submit": "Sign In",
+    "forgotPasswordQuestion": "Forgot your password?",
+    "forgotPasswordCta": "Reset it",
+    "noAccountQuestion": "Don't have an account?",
+    "noAccountCta": "Create one"
+  },
+  "SignUpForm": {
+    "backAria": "Back to home",
+    "heading": "Sign Up",
+    "subtitle": "Please sign up to get started",
+    "fullNameLabel": "Full name",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm password",
+    "passwordReqLength": "At least 8 characters",
+    "passwordReqNumber": "At least one number",
+    "passwordReqUppercase": "At least one uppercase letter",
+    "passwordMismatch": "Passwords don't match",
+    "submit": "Sign Up",
+    "haveAccountQuestion": "Already have an account?",
+    "haveAccountCta": "Sign in"
+  },
+  "SellerRegister": {
+    "heading": "Register your business",
+    "subtitle": "Please fill in your business details",
+    "businessNameLabel": "Business name",
+    "businessNamePlaceholder": "Business name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe your business",
+    "sloganLabel": "Slogan",
+    "sloganPlaceholder": "Business slogan",
+    "universityLabel": "University",
+    "instagramLabel": "Instagram username",
+    "instagramPlaceholder": "username",
+    "phoneLabel": "Phone",
+    "phonePlaceholder": "Phone number",
+    "logoTitle": "Business logo or seller photo",
+    "submit": "Register business"
+  },
+  "SellerApproving": {
+    "greeting": "Hi {name}",
+    "heading": "Your seller account is pending approval",
+    "body": "Please wait while we review your business details. Check back later.",
+    "contactHint": "For a faster review, or if you have any questions, you can contact us directly.",
+    "whatsappCta": "Contact us / Request approval on WhatsApp",
+    "whatsappMessage": "Hi, I am the seller {name}, I signed up on Mercampus. Could you review my application to approve me?"
+  },
+  "ImageGrid": {
+    "tooLarge": "This image is too large and could not be shrunk enough to upload. Try another photo, or crop it before uploading.",
+    "uploadFailed": "There was a problem uploading the image. Please try again.",
+    "deleteFailed": "There was a problem deleting the image.",
+    "imageAlt": "Product image {index}",
+    "uploading": "Uploading...",
+    "add": "+ Add"
+  },
+  "UniGraphicSelector": {
+    "infoAria": "Information",
+    "disclaimer": "Mercampus is not affiliated with any of these universities; their names appear only to help filter searches."
   }
 }

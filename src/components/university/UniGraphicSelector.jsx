@@ -1,10 +1,12 @@
 'use client';
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { universities } from '@/utils/resources/universities';
 import { IoLocationSharp, IoInformationCircle } from 'react-icons/io5';
 import { FaChevronDown } from 'react-icons/fa';
 
 const UniGraphicSelector = ({ value, onUniversityChange }) => {
+  const t = useTranslations('UniGraphicSelector');
   const [showTooltip, setShowTooltip] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -59,7 +61,7 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
           type='button'
           onClick={toggleTooltip}
           className='absolute right-1 top-1/2 transform -translate-y-1/2 p-1'
-          aria-label='Información'
+          aria-label={t('infoAria')}
         >
           <IoInformationCircle
             className='h-5 w-5 text-yellow-500'
@@ -71,7 +73,7 @@ const UniGraphicSelector = ({ value, onUniversityChange }) => {
         {showTooltip && (
 
           <div className='absolute top-full right-2 mt-2 w-64 p-2 bg-base-100 text-base-content border border-base-300 rounded-lg shadow-lg text-sm'>
-            Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con finalidad de filtro de búsqueda.          
+            {t('disclaimer')}
           </div>
         )}
       </div>

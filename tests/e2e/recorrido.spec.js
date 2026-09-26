@@ -8,18 +8,27 @@ const shot = (page, name) =>
 // Seed ids. Only the approved seller and its products show up publicly.
 const PRODUCT_ID = process.env.E2E_PRODUCT_ID;
 const SELLER_ID = process.env.E2E_SELLER_ID;
+// T-132: 'Termo Mercampus', the seeded marketplace product.
+const MARKETPLACE_PRODUCT_ID = process.env.E2E_MARKETPLACE_PRODUCT_ID;
 
-test.describe('recorrido publico', () => {
-  test('home redirige al listado de antojos', async ({ page }) => {
+test.describe('public walkthrough', () => {
+  // T-152b: `/` used to redirect to the listing; it is now the landing page,
+  // and the walkthrough reaches the listing the way a visitor would.
+  test('home is the landing, and it leads to the antojos listing', async ({ page }) => {
     await page.goto('/');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Mercampus' })).toBeVisible();
+    await shot(page, '01-home');
+
+    // exact: the topbar's "Explorar Productos" and the hero's "Explorar
+    // productos" differ only in case (see i18n.spec.js).
+    await page.getByRole('link', { name: 'Explorar productos', exact: true }).click();
 
     await expect(page).toHaveURL(/\/antojos$/);
     await expect(page.getByText('calma tus antojos')).toBeVisible();
-
-    await shot(page, '01-home');
   });
 
-  test('el listado muestra solo los productos publicables', async ({ page }) => {
+  test('the listing shows only publishable products', async ({ page }) => {
     await page.goto('/antojos');
 
     // If the grid fails, the app paints an error in its place and these names
@@ -41,7 +50,7 @@ test.describe('recorrido publico', () => {
     await shot(page, '02-listado-antojos');
   });
 
-  test('el detalle de producto carga el producto sembrado', async ({ page }) => {
+  test('the product detail page loads the seeded product', async ({ page }) => {
     await page.goto(`/antojos/${PRODUCT_ID}`);
 
     await expect(page.getByText('Arepa de queso').first()).toBeVisible();
@@ -61,8 +70,55 @@ test.describe('recorrido publico', () => {
     await shot(page, '03-detalle-producto');
   });
 
-  test('el perfil del vendedor carga su negocio', async ({ page }) => {
+  // T-132: ShareButton.jsx hardcoded /antojos for every product regardless of
+  // its own `section`. The link itself never 404'd (neither detail page
+  // filters by section), but ProductPage's back button reads its `section`
+  // prop from the route it was opened under, so a marketplace product shared
+  // this way sent the recipient back to the wrong listing. window.open is
+  // intercepted instead of reading the clipboard, to avoid granting
+  // clipboard permissions just for this assertion; the WhatsApp share text
+  // carries the same URL copyLink() would put on the clipboard.
+  test('sharing a marketplace product links to /marketplace, not /antojos', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      window.__shareOpens = [];
+      window.open = url => {
+        window.__shareOpens.push(url);
+        return null;
+      };
+    });
+
+    await page.goto(`/marketplace/${MARKETPLACE_PRODUCT_ID}`);
+    await expect(page.getByText('Termo Mercampus').first()).toBeVisible();
+
+    await page.getByRole('button', { name: /Recomendar a un amigo/ }).click();
+    await page
+      .getByRole('button', { name: /Compartir por WhatsApp/ })
+      .click();
+
+    const opened = await page.evaluate(() => window.__shareOpens);
+    expect(opened).toHaveLength(1);
+
+    const decoded = decodeURIComponent(opened[0]);
+    expect(decoded).toContain(`/marketplace/${MARKETPLACE_PRODUCT_ID}?source=share`);
+    expect(decoded).not.toContain(`/antojos/${MARKETPLACE_PRODUCT_ID}`);
+  });
+
+  test("the seller's profile loads their business", async ({ page }) => {
+    // T-110: SellerPage.jsx is a client component that fetches its own copy of
+    // the seller (its own `/api/sellers/:id` call, separate from the server
+    // read generateMetadata already did) in a useEffect after mount - nothing
+    // but a full-screen spinner renders until that resolves. The assertions
+    // below already retry via toBeVisible(), which covers this most of the
+    // time, but T-80 saw this spec fail once and pass 16/16 on an immediate
+    // re-run: a real, if rare, data-load race. Waiting on the response itself
+    // is the real condition, not an incidental proxy for it.
+    const sellerResponse = page.waitForResponse(
+      response => new URL(response.url()).pathname === `/api/sellers/${SELLER_ID}`
+    );
     await page.goto(`/antojos/sellers/${SELLER_ID}`);
+    await sellerResponse;
 
     await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
     // Its own products, not the other seller's.
@@ -80,10 +136,19 @@ test.describe('recorrido publico', () => {
     await shot(page, '04-perfil-vendedor');
   });
 
-  test('el listado de vendedores muestra las tarjetas de negocio', async ({ page }) => {
+  test('the seller listing shows the business cards', async ({ page }) => {
     // The only public screen that renders SellerCard (via SellerGrid). The
     // product detail and the seller profile do not use it.
+    //
+    // T-110: same data-load race as the seller profile test above - SellerGrid
+    // is a client component that fetches GET /api/sellers in a useEffect after
+    // mount, and renders an empty-state until that resolves. Wait on the
+    // response itself rather than only on toBeVisible()'s implicit retry.
+    const sellersResponse = page.waitForResponse(
+      response => new URL(response.url()).pathname === '/api/sellers'
+    );
     await page.goto('/antojos/sellers/list');
+    await sellersResponse;
 
     await expect(page.getByText('Arepas El Parche').first()).toBeVisible();
     await expect(page.getByText('De la plancha a tu clase').first()).toBeVisible();

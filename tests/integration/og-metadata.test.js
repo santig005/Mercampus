@@ -7,7 +7,7 @@ let getProductForMetadata;
 let getSellerForMetadata;
 let ids;
 
-describe('T-69 · datos para el Open Graph de producto/vendedor', () => {
+describe('T-69 · data for product/seller Open Graph', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     ({ getProductForMetadata } = await import(
@@ -26,7 +26,7 @@ describe('T-69 · datos para el Open Graph de producto/vendedor', () => {
     ({ ids } = await seedDatabase());
   });
 
-  it('trae nombre, descripcion, precio e imagen del producto sembrado', async () => {
+  it('brings name, description, price and image of the seeded product', async () => {
     const product = await getProductForMetadata(ids.approvedProduct);
 
     expect(product).toEqual({
@@ -37,19 +37,19 @@ describe('T-69 · datos para el Open Graph de producto/vendedor', () => {
     });
   });
 
-  it('un id de producto con formato invalido devuelve null, no una excepcion', async () => {
+  it('a malformed product id returns null, not an exception', async () => {
     await expect(
       getProductForMetadata('esto-no-es-un-id-valido')
     ).resolves.toBeNull();
   });
 
-  it('un id de producto bien formado pero inexistente devuelve null', async () => {
+  it('a well-formed but nonexistent product id returns null', async () => {
     await expect(
       getProductForMetadata('000000000000000000000000')
     ).resolves.toBeNull();
   });
 
-  it('trae nombre de negocio y logo del vendedor sembrado', async () => {
+  it('brings business name and logo of the seeded seller', async () => {
     const seller = await getSellerForMetadata(ids.approvedSeller);
 
     expect(seller).toMatchObject({
@@ -58,13 +58,13 @@ describe('T-69 · datos para el Open Graph de producto/vendedor', () => {
     });
   });
 
-  it('un id de vendedor con formato invalido devuelve null, no una excepcion', async () => {
+  it('a malformed seller id returns null, not an exception', async () => {
     await expect(
       getSellerForMetadata('esto-no-es-un-id-valido')
     ).resolves.toBeNull();
   });
 
-  it('un id de vendedor bien formado pero inexistente devuelve null', async () => {
+  it('a well-formed but nonexistent seller id returns null', async () => {
     await expect(
       getSellerForMetadata('000000000000000000000000')
     ).resolves.toBeNull();

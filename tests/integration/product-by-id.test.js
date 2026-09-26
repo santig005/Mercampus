@@ -39,7 +39,7 @@ describe('product by id (T-97)', () => {
     route = await import('@/app/api/products/[id]/route.js');
     ({ getProductForEdit } = await import('@/server/products/getProductForEdit'));
     ({ Product } = await import('@/utils/models/productSchema'));
-    ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller } = await import('@/utils/models/sellerSchema'));
   }, 120_000);
 
   afterAll(async () => {

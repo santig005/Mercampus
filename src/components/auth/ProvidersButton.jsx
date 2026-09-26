@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useSignIn, useSignUp } from '@clerk/nextjs';
 import { FcGoogle } from 'react-icons/fc';
 import MicrosoftLogo from '@/../public/images/microsoftLogo.svg';
+import { APP_HOME } from '@/lib/app-home';
 
 export default function ProvidersButton() {
   const { signIn } = useSignIn();
@@ -16,7 +17,7 @@ export default function ProvidersButton() {
     return signIn.authenticateWithRedirect({
       strategy,
       redirectUrl: `/auth/callback`,
-      redirectUrlComplete: `/`,
+      redirectUrlComplete: APP_HOME,
     });
   };
 

@@ -11,7 +11,7 @@ let ids;
 const get = query =>
   productsRoute.GET(new Request(`http://localhost/api/products?${query}`));
 
-describe('GET /api/products · paginación (T-23)', () => {
+describe('GET /api/products · pagination (T-23)', () => {
   beforeAll(async () => {
     process.env.MONGO_URI = await startTestDb();
     productsRoute = await import('@/app/api/products/route.js');
@@ -41,14 +41,14 @@ describe('GET /api/products · paginación (T-23)', () => {
     }
   });
 
-  it('respeta el limit y avisa que hay mas con nextCursor', async () => {
+  it('respects the limit and signals more with nextCursor', async () => {
     const body = await (await get('section=antojos&product=Paginado&limit=2')).json();
 
     expect(body.products).toHaveLength(2);
     expect(body.nextCursor).toEqual(expect.any(String));
   });
 
-  it('la ultima pagina trae el resto y nextCursor en null', async () => {
+  it('the last page brings the rest and nextCursor is null', async () => {
     const primera = await (
       await get('section=antojos&product=Paginado&limit=3')
     ).json();
@@ -61,7 +61,7 @@ describe('GET /api/products · paginación (T-23)', () => {
     expect(segunda.nextCursor).toBeNull();
   });
 
-  it('el cursor avanza sin repetir ni saltarse productos', async () => {
+  it('the cursor advances without repeating or skipping products', async () => {
     const vistos = new Set();
     let cursor = '';
 
@@ -83,7 +83,7 @@ describe('GET /api/products · paginación (T-23)', () => {
     expect(vistos.size).toBe(5);
   });
 
-  it('un vendedor pendiente de aprobacion nunca aparece, en ninguna pagina', async () => {
+  it('a seller pending approval never appears, on any page', async () => {
     const vistos = [];
     let cursor = '';
 
@@ -99,7 +99,7 @@ describe('GET /api/products · paginación (T-23)', () => {
     expect(vistos).not.toContain('Galletas de avena');
   });
 
-  it('un sellerId que no es elegible devuelve una pagina vacia, no un 500', async () => {
+  it('a sellerId that is not eligible returns an empty page, not a 500', async () => {
     const response = await get(`sellerId=${ids.pendingSeller}`);
     const body = await response.json();
 
@@ -107,12 +107,12 @@ describe('GET /api/products · paginación (T-23)', () => {
     expect(body).toEqual({ products: [], nextCursor: null });
   });
 
-  it('un cursor invalido responde 400 en vez de reventar contra Mongo', async () => {
+  it('an invalid cursor responds 400 instead of blowing up against Mongo', async () => {
     const response = await get('cursor=esto-no-es-un-cursor-valido');
     expect(response.status).toBe(400);
   });
 
-  it('la consulta paginada se resuelve por indice, no por collection scan', async () => {
+  it('the paginated query is resolved by an index, not a collection scan', async () => {
     await Product.syncIndexes();
 
     const plan = await Product.find({ section: 'antojos' })
@@ -170,7 +170,7 @@ describe('GET /api/products · sort (T-70)', () => {
     return nombres;
   };
 
-  it('price_asc ordena de menor a mayor precio a traves de todas las paginas', async () => {
+  it('price_asc sorts from lowest to highest price across all pages', async () => {
     const nombres = await collectAllPages('price_asc');
     expect(nombres).toEqual([
       'Ordenado 1',
@@ -181,7 +181,7 @@ describe('GET /api/products · sort (T-70)', () => {
     ]);
   });
 
-  it('price_desc ordena de mayor a menor precio a traves de todas las paginas', async () => {
+  it('price_desc sorts from highest to lowest price across all pages', async () => {
     const nombres = await collectAllPages('price_desc');
     expect(nombres).toEqual([
       'Ordenado 2',
@@ -192,7 +192,7 @@ describe('GET /api/products · sort (T-70)', () => {
     ]);
   });
 
-  it('newest ordena por mas reciente primero', async () => {
+  it('newest sorts by most recent first', async () => {
     const nombres = await collectAllPages('newest');
     // They were created in order 1..5, so the newest is the last created.
     expect(nombres).toEqual([
@@ -204,7 +204,7 @@ describe('GET /api/products · sort (T-70)', () => {
     ]);
   });
 
-  it('un cursor de un sort no sirve para paginar otro sort', async () => {
+  it('a cursor from one sort does not work to paginate another sort', async () => {
     const primera = await (
       await get('section=antojos&product=Ordenado&sort=price_asc&limit=2')
     ).json();
@@ -216,7 +216,7 @@ describe('GET /api/products · sort (T-70)', () => {
     expect(response.status).toBe(400);
   });
 
-  it('sin sort, el orden por default no cambia (availability desc, createdAt desc)', async () => {
+  it('with no sort, the default order stays the same (availability desc, createdAt desc)', async () => {
     const nombres = await collectAllPages('default');
     // The default doesn't depend on price: all 5 are availability:true, so
     // el desempate es createdAt desc - el ultimo creado aparece primero.
@@ -229,7 +229,7 @@ describe('GET /api/products · sort (T-70)', () => {
     ]);
   });
 
-  it('cada sort nuevo se resuelve por indice, no por collection scan', async () => {
+  it('each new sort is resolved by an index, not a collection scan', async () => {
     await Product.syncIndexes();
 
     const planNewest = await Product.find({ section: 'antojos' })

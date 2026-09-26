@@ -21,7 +21,7 @@ import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // Not used by name, but the import registers the model with Mongoose and the
 // GET's populate({ model: 'Seller' }) needs it registered. Delete it and the
 // listing blows up with MissingSchemaError.
-import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
+import { Seller } from '@/utils/models/sellerSchema'; // eslint-disable-line no-unused-vars
 import { logger } from '@/lib/logger';
 
 export async function GET(req) {
@@ -211,7 +211,16 @@ const getPopulatedProducts = async (approvedProducts, now) => {
       schedules: withDayNames(schedules),
       // T-122: computed from the numeric days, before withDayNames swaps them.
       // T-123: with the request's own clock, so the badge matches the block.
-      availabilityStatus: productAvailability(product.availability, schedules, now),
+      // T-83: `product.sellerId` is the populated seller (no `.select()`
+      // restricting the query above), so a seller without this field simply
+      // hands back `undefined` here - treated as "no override", same as an
+      // old document would be.
+      availabilityStatus: productAvailability(
+        product.availability,
+        schedules,
+        now,
+        product.sellerId.availabilityOverrideUntil
+      ),
     };
   });
 };
