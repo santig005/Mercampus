@@ -6714,7 +6714,20 @@ traffic.
   dark-mode audited under T-75), and `/about` redirects to `/`. The
   landing's copy stays as it is, figures included ("#1", "+100
   estudiantes", "100% seguro") - asked and answered, do not reopen it in
-  this task. Still to do: remove the 308 in `next.config.mjs`, move the
+  this task.
+  **Prerequisite, done first (2026-09-26):** nine call sites used `'/'` to
+  mean "the catalogue" - after sign-in, sign-up, Google/Microsoft OAuth,
+  password reset and sign-out (Clerk's default `afterSignOutUrl`), after
+  adding a product or saving the seller profile, the login/register back
+  buttons, and the middleware turning a non-admin away from `/admin`. They
+  only reached `/antojos` through the 308. They now use
+  `APP_HOME` (`src/lib/app-home.ts`), and `ClerkProvider` sets
+  `afterSignOutUrl`, so turning `/` into the landing moves nobody. Found
+  when T-152b's CI e2e failed on sign-out landing on a page with no sidebar.
+  `tests/unit/app-home.test.js` fails on any new navigation to the bare root.
+  The two auth forms use `localizedHref(APP_HOME, locale)`, so an English
+  sign-in now lands on `/en/antojos` instead of dropping to Spanish.
+  Still to do: remove the 308 in `next.config.mjs`, move the
   route (and its `/en` twin, `src/i18n/routing.ts`, the middleware's
   `isIntlRoute`), update the sitemap and every link to `/about`, and the
   `Organization` markup from T-151.

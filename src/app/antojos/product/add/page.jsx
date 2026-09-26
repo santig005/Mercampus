@@ -12,6 +12,7 @@ import { useCheckSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
 import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
+import { APP_HOME } from '@/lib/app-home';
 
 const AddProduct = () => {
   const router = useRouter();
@@ -98,7 +99,7 @@ const AddProduct = () => {
       });
 
       if (response.ok) {
-        router.push('/'); // Redirect to seller profile
+        router.push(APP_HOME);
       } else {
         const errorData = await response.json();
         logger.error('Error:', errorData.message);

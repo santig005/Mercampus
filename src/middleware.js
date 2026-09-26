@@ -7,6 +7,7 @@ import {
   PROTECTED_ROUTE_PATTERNS,
 } from './lib/route-guards';
 import { decideAdminAccess } from './utils/lib/adminAccess';
+import { APP_HOME } from './lib/app-home';
 import { isClerkAdmin } from './utils/lib/isClerkAdmin';
 
 // T-81 (middleware gate): both lists are now generated in
@@ -175,7 +176,7 @@ export default clerkMiddleware(async (auth, req) => {
       return redirectToSignIn();
     }
     if (decision.action === 'redirect-home') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL(APP_HOME, req.url));
     }
     if (decision.action === 'json') {
       const error = decision.status === 401 ? 'No autenticado.' : 'No autorizado.';

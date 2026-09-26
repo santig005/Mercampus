@@ -12,6 +12,7 @@ import React from 'react';
 import '../../public/css/main.css';
 import AnimationProvider from '@/components/AnimationProvider';
 import { SITE_URL, titleMetadata } from '@/lib/metadata';
+import { APP_HOME } from '@/lib/app-home';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -72,6 +73,9 @@ export default async function RootLayout({ children }) {
   return (
     <ClerkProvider
       localization={clerkLocalization}
+      // T-152b: Clerk's default is '/', which is about to become the landing
+      // page. Signing out keeps landing on the catalogue, as it always has.
+      afterSignOutUrl={APP_HOME}
       appearance={{
         // baseTheme: dark,
         variables: { colorPrimary: '#FF7622' },
