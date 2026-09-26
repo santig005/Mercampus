@@ -76,10 +76,12 @@ entries); T-111's items 1-3 stopped applying when T-112b deleted
 `src/services/api.js`/`apiToken.js` outright, so that row is gone rather than
 marked done. T-85 stays, batch 2 only.
 
+**Refreshed 2026-09-25** - T-85 (batch 2, #351) and T-127 (#352) had both
+shipped and were still listed here, which got T-127 proposed again as if it
+were open. T-142 left in #375. Rows go when their task ships.
+
 | Task | Why it is safe | How you know it worked |
 |---|---|---|
-| **T-85** (batch 2 only, 20 files listed in the entry) · Spanish left in test descriptions | Renames `describe`/`it` strings only. No source, no behaviour. The entry names the trap: renaming a test is safe, changing a string a test *asserts on* is not. | `npm run verify`. The same tests pass, with English names. |
-| **T-127** · The add-product error dialog is unreadable in dark mode | One `<dialog>`, a color problem the screenshots already pinned down (`docs/audits/t-119/`). No data, no auth, no other screen touched. | A real screenshot in both themes (rule 3), text legible in each. |
 | **T-140** · No written boundary between `utils/`+`services/` and `server/`+`lib/` | Doc-only change to `CLAUDE.md`. No code touched. | The new lines describe what is actually true today, cross-checked against this task's own findings. |
 
 ### Fine for an agent, but read the caveat in the entry first
