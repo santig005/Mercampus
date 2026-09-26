@@ -2,7 +2,7 @@
 'use client';
 import Carousel from '@/components/Carousel';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import {
   TbChevronLeft,
   TbHeart,
@@ -15,7 +15,26 @@ import SellerModal from '@/components/seller/index/SellerModal';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
 
-function ProductModal({ product, theKey }) {
+// T-167: `open` and `onClose` make the dialog controlled - the modal stack
+// (components/modals/ModalStack.jsx) opens it from the URL and closes it by
+// going back in history. Without them it behaves as before, opened by id from
+// ProductModalHandler, for the callers the stack has not reached yet.
+function ProductModal({ product, theKey, open, onClose }) {
+  const dialogRef = useRef(null);
+  const controlled = typeof onClose === 'function';
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!controlled || !dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [controlled, open]);
+
+  const closeModal = () => {
+    if (controlled) onClose();
+    else document.getElementById(`product_modal_${theKey}`).close();
+  };
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState(0);
@@ -52,8 +71,16 @@ function ProductModal({ product, theKey }) {
   return (
     <div>
       <dialog
+        ref={dialogRef}
         id={`product_modal_${theKey}`}
         className='modal modal-top h-dvh backdrop-blur-md'
+        // Escape: controlled, the URL has to change too, so the stack closes
+        // it (history.back) instead of the browser closing only the dialog.
+        onCancel={event => {
+          if (!controlled) return;
+          event.preventDefault();
+          onClose();
+        }}
       >
         <ShareButton data={product} type='product' />
         {product ? (
@@ -68,11 +95,7 @@ function ProductModal({ product, theKey }) {
                     <button
                       className='btn btn-circle'
                       aria-label='Cerrar'
-                      onClick={() => {
-                        document
-                          .getElementById(`product_modal_${theKey}`)
-                          .close();
-                      }}
+                      onClick={closeModal}
                     >
                       <TbChevronLeft className='icon' />
                     </button>
@@ -168,11 +191,9 @@ function ProductModal({ product, theKey }) {
           <div className='relative'>
             <div className='absolute w-full z-10'>
               <div className='modal-action m-0 justify-between p-2'>
-                <form method='dialog'>
-                  <button className='btn btn-circle' aria-label='Cerrar'>
-                    <TbChevronLeft className='icon' />
-                  </button>
-                </form>
+                <button className='btn btn-circle' aria-label='Cerrar' onClick={closeModal}>
+                  <TbChevronLeft className='icon' />
+                </button>
                 {/* T-93: named, not wired. This heart has no onClick and never
                     had one - favourites are T-68, blocked on a product
                     decision. A screen reader could already reach it and heard
