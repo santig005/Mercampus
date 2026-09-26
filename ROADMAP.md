@@ -102,11 +102,11 @@ marked done. T-85 stays, batch 2 only.
 
 **Refreshed 2026-09-25** - T-85 (batch 2, #351) and T-127 (#352) had both
 shipped and were still listed here, which got T-127 proposed again as if it
-were open. T-142 left in #375. Rows go when their task ships.
+were open. T-142 left in #375 and T-159 in #376. Rows go when their task
+ships.
 
 | Task | Why it is safe | How you know it worked |
 |---|---|---|
-| **T-159** · The support WhatsApp number is hardcoded 3 times as 2 different numbers | Three call sites, one constant. No data, no auth. Needs the human only to confirm *which* number is current. | A grep showing no literal `wa.me` number left in a page component. |
 | **T-151** · No structured data (JSON-LD) anywhere | Additive markup; nothing existing changes shape. T-69's Open Graph work is the precedent. | Google's Rich Results Test, plus a snapshot test of the emitted JSON — not a grep for the string. |
 | **T-140** · No written boundary between `utils/`+`services/` and `server/`+`lib/` | Doc-only change to `CLAUDE.md`. No code touched. | The new lines describe what is actually true today, cross-checked against this task's own findings. |
 
@@ -6847,7 +6847,7 @@ by the pipeline instead of by attention.
 **Model:** `opus` — getting the flakiness/tolerance trade-off wrong wastes the
 whole mechanism · **Nightly:** no
 
-### [ ] T-159 · The support WhatsApp number is hardcoded three times, as two different numbers
+### [x] T-159 · The support WhatsApp number is hardcoded three times, as two different numbers
 **Why:** found by grep while reviewing the WhatsApp surfaces for T-144.
 - [`src/app/antojos/pqrs/page.jsx`](src/app/antojos/pqrs/page.jsx) uses
   `3054213899`
@@ -6864,6 +6864,20 @@ approval is taking so long.
 prefer the constant, it is not a secret and not environment-specific), all
 three call sites use it, the correct number is confirmed by the human, and a
 test asserts no literal `wa.me` phone number is left in a page component.
+**Done (2026-09-25, #376):** the human confirmed **`3054213899`** (the one
+`/antojos/pqrs` had) as current. It lives in `src/utils/resources/support.js`
+as `SUPPORT_WHATSAPP_NUMBER = '573054213899'`, with a
+`supportWhatsAppUrl(text)` helper that all three pages now call.
+- **Behaviour change:** `/antojos/game` and the seller `approving` screen
+  now reach 3054213899 instead of 3197139921.
+- Links moved from `wa.me/+57...` to `wa.me/57...`, the form wa.me documents.
+- **Verified:** `npm run verify` green. `tests/unit/support-whatsapp.test.js`
+  scans `src/app` and `src/components` for a literal number in a `wa.me`
+  link; its pattern matched all three files as they were before the change.
+  Sellers' own links (`wa.me/+57${seller.phoneNumber}`) are interpolated and
+  do not match. No visual change - only the `href` - so no screenshot.
+- This entry was marked in a follow-up PR: when #376 merged, the entry only
+  existed in the uncommitted Phase 7 block (landed in #378).
 **Model:** `sonnet` · **Nightly:** yes (once the human says which number is
 the right one)
 
