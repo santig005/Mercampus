@@ -7,10 +7,9 @@ import { SITE_NAME, SITE_URL } from '@/lib/metadata';
 // The profile the landing's final call to action already links to.
 export const INSTAGRAM_URL = 'https://www.instagram.com/mercampus/';
 
-// /images/logo.png (500x500) is the logo the landing's topbar renders. Not
-// /android-chrome-512x512.png: the root layout's openGraph image points
-// there, but that file does not exist in public/ (404 in production,
-// measured 2026-09-26 - see ROADMAP.md).
+// /images/logo.png (500x500) is the logo the landing's topbar renders. It was
+// chosen over /android-chrome-512x512.png, which the root layout declared but
+// never existed (T-162 removed that declaration).
 export const ORGANIZATION_LOGO_PATH = '/images/logo.png';
 
 // Emitted once, on the home page: who is behind the site. This is what lets
