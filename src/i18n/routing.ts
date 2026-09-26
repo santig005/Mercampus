@@ -18,8 +18,8 @@ type StaticLocalizedRoute = {
   kind: 'static';
   // Default-locale path, no locale prefix, e.g. '/antojos'.
   path: string;
-  // true: the zone owns its whole subtree (only /about today - there is no
-  // sub-route under it yet, but nothing stops one from being added later).
+  // true: the zone owns its whole subtree (no entry uses it since T-152b
+  // moved /about to / - kept for the next zone that owns a subtree).
   // false: EXACT PATH ONLY. Required for /antojos and /marketplace, whose
   // sub-routes (/antojos/sellers/register, /antojos/product/add, ...) are
   // gated by Clerk's isProtectedRoute in src/middleware.js.
@@ -73,6 +73,16 @@ export function buildDynamicPattern(base: string, localePrefix = ''): RegExp {
   return new RegExp(`^${localePrefix}${base}/${OBJECT_ID_PATTERN}$`);
 }
 
+// T-152b: puts a default-locale path under a locale prefix. Plain
+// concatenation is right for every route except the root: '/en' + '/' is
+// '/en/', which is not the URL next-intl serves the English home at
+// ('as-needed' prefixing gives '/en'), and a middleware pattern built from it
+// would never match. One helper, used by both localizedHref and the
+// middleware, so the two cannot disagree about it.
+export function prefixLocale(locale: string, path: string): string {
+  return path === '/' ? `/${locale}` : `/${locale}${path}`;
+}
+
 // T-81 (locale-aware-nav): single source of truth for which routes have a
 // locale-prefixed twin (e.g. /antojos and /en/antojos). Two consumers:
 // - src/middleware.js derives isIntlRoute's matcher patterns from this list
@@ -85,7 +95,10 @@ export function buildDynamicPattern(base: string, localePrefix = ''): RegExp {
 //   full page load resolved (see src/app/layout.jsx and
 //   src/components/general/LocaleSwitcher.jsx for the full story).
 export const LOCALIZED_ROUTES: LocalizedRoute[] = [
-  { kind: 'static', path: '/about', matchSubpaths: true },
+  // T-152b: the home page. It used to be /about (matchSubpaths: true), which
+  // now redirects here (next.config.mjs). EXACT PATH ONLY - matchSubpaths on
+  // the root would make every URL in the app locale-aware.
+  { kind: 'static', path: '/', matchSubpaths: false },
   { kind: 'static', path: '/antojos', matchSubpaths: false },
   { kind: 'static', path: '/marketplace', matchSubpaths: false },
   // T-81 (product detail): /antojos/<id> and /marketplace/<id>. See
@@ -132,8 +145,8 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
 
 // Prefixes `path` with `locale` when it falls under a LOCALIZED_ROUTES
 // entry: for a `static` entry, an exact match always counts, and for a
-// matchSubpaths:true entry (only /about today) so does any path nested
-// under it (e.g. '/about/team'), mirroring isIntlRoute's own `(.*)`
+// matchSubpaths:true entry (none today, see above) so does any path nested
+// under it (e.g. '/zone/sub'), mirroring isIntlRoute's own `(.*)`
 // wildcard for that same entry. A matchSubpaths:false entry (/antojos,
 // /marketplace) only ever matches exactly - nav links to an unmigrated
 // destination like /antojos/sellers/list must stay bare, because that
@@ -155,7 +168,7 @@ export function localizedHref(path: string, locale: string): string {
     return buildDynamicPattern(route.base).test(path);
   });
   if (!isLocalized || locale === routing.defaultLocale) return path;
-  return `/${locale}${path}`;
+  return prefixLocale(locale, path);
 }
 
 // The inverse of localizedHref's prefixing: turns whatever the browser is

@@ -5,6 +5,27 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import LocaleSwitcher from '@/components/general/LocaleSwitcher';
 import StickyTopbar from '@/components/general/StickyTopbar';
 import { localizedHref } from '@/i18n/routing';
+import { SITE_NAME } from '@/lib/metadata';
+
+// T-152b: this was src/app/[locale]/about/. The (landing) route group adds
+// no URL segment, so the same layout and page now serve `/` and `/en`, and
+// /about is a permanent redirect here (next.config.mjs). The copy is
+// unchanged - the human decided on 2026-09-26 that the landing moves as it
+// is.
+//
+// Metadata: the root layout's default is just "Mercampus" with a generic
+// description, which is what the home page would otherwise inherit. The
+// title is absolute because the template would turn it into
+// "Mercampus · Mercampus"-style noise; the words come from the hero, so the
+// title says what the page says.
+export async function generateMetadata({ params }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'About' });
+  return {
+    title: { absolute: `${SITE_NAME} · ${t('hero.subtitle')}` },
+    description: t('hero.description'),
+  };
+}
 
 export default async function layout({ children, params }) {
   const { locale } = await params;

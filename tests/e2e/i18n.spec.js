@@ -3,14 +3,19 @@ import { expect, test } from '@playwright/test';
 // T-46 v1: /about is the only screen migrated to next-intl so far. This
 // walks it in both locales to prove the scaffolding (routing, middleware,
 // Clerk localization, locale switcher) actually works end to end.
+//
+// T-152b: that landing now lives at `/` and `/en`; /about and /en/about are
+// permanent redirects to them. The URLs below changed, the checks did not.
+const HOME_ES = /^http:\/\/[^/]+\/$/;
+const HOME_EN = /\/en$/;
 const shot = (page, name) =>
   page.screenshot({ path: `test-results/${name}.png`, fullPage: true });
 
-test.describe('i18n on /about', () => {
+test.describe('i18n on the home page (was /about)', () => {
   test('Spanish (default, no prefix)', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
-    await expect(page).toHaveURL(/\/about$/);
+    await expect(page).toHaveURL(HOME_ES);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
     await expect(page.getByText('Conecta, compra y vende dentro de tu universidad')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Únete ahora' })).toBeVisible();
@@ -18,10 +23,10 @@ test.describe('i18n on /about', () => {
     await shot(page, '06-about-es');
   });
 
-  test('English via /en/about', async ({ page }) => {
-    await page.goto('/en/about');
+  test('English via /en', async ({ page }) => {
+    await page.goto('/en');
 
-    await expect(page).toHaveURL(/\/en\/about$/);
+    await expect(page).toHaveURL(HOME_EN);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByText('Connect, buy, and sell within your university')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Join now' })).toBeVisible();
@@ -29,15 +34,15 @@ test.describe('i18n on /about', () => {
     await shot(page, '07-about-en');
   });
 
-  test('the language switcher navigates between /about and /en/about', async ({ page }) => {
-    await page.goto('/about');
+  test('the language switcher navigates between / and /en', async ({ page }) => {
+    await page.goto('/');
 
     await page.getByRole('link', { name: 'English' }).click();
-    await expect(page).toHaveURL(/\/en\/about$/);
+    await expect(page).toHaveURL(HOME_EN);
     await expect(page.getByText('Connect, buy, and sell within your university')).toBeVisible();
 
     await page.getByRole('link', { name: 'Español' }).click();
-    await expect(page).toHaveURL(/\/about$/);
+    await expect(page).toHaveURL(HOME_ES);
     await expect(page.getByText('Conecta, compra y vende dentro de tu universidad')).toBeVisible();
   });
 
@@ -579,7 +584,7 @@ test.describe('internal navigation keeps URL, <html lang>, and copy in sync (T-8
   test('About-zone "explore products" link from English about stays in English', async ({
     page,
   }) => {
-    await page.goto('/en/about');
+    await page.goto('/en');
 
     // exact + the topbar's exact casing ("Explore Products"): the hero
     // section below has its own CTA with the same words but a lowercase
@@ -596,7 +601,7 @@ test.describe('internal navigation keeps URL, <html lang>, and copy in sync (T-8
   test('About-zone "explore products" link from Spanish about stays in Spanish', async ({
     page,
   }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     // See the English case above: `exact: true` picks the topbar link over
     // the hero's "Explorar productos" (lowercase p).

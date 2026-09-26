@@ -29,9 +29,10 @@ const scrollToTop = async page => {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 };
 
-test.describe('/about sticky topbar (T-87)', () => {
+// T-152b: the landing moved from /about to /; same page, same topbar.
+test.describe('home page sticky topbar (T-87, was /about)', () => {
   test('transparent over the hero, opaque once the page scrolls', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
 
     // At the top it must stay see-through: the negative margin puts it over
     // the hero on purpose, and a solid bar there would be a worse design, not
@@ -51,7 +52,7 @@ test.describe('/about sticky topbar (T-87)', () => {
   });
 
   test('scrolling back to the top puts the hero back behind it', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
     await scrollDown(page);
     await expect(topbar(page)).toHaveAttribute('data-scrolled', 'true');
 
@@ -77,7 +78,7 @@ test.describe('/about sticky topbar (T-87)', () => {
   // because it is written with tokens.
   test('the surface follows the theme into dark mode', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('theme', 'dark'));
-    await page.goto('/about');
+    await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
     await scrollDown(page);

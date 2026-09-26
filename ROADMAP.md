@@ -6709,15 +6709,51 @@ traffic.
   mobile in `docs/audits/t-152/`. No Open Graph change: a child `openGraph`
   replaces the root layout's whole object (image, site name), so shared
   links keep the site-wide card.
-- **[ ] T-152b · a real page at `/`.** **Decided by the human: `/` becomes
+- **[x] T-152b · a real page at `/`.** **Decided by the human: `/` becomes
   the existing `/about` landing** (already written, translated, and
   dark-mode audited under T-75), and `/about` redirects to `/`. The
   landing's copy stays as it is, figures included ("#1", "+100
   estudiantes", "100% seguro") - asked and answered, do not reopen it in
-  this task. Still to do: remove the 308 in `next.config.mjs`, move the
-  route (and its `/en` twin, `src/i18n/routing.ts`, the middleware's
-  `isIntlRoute`), update the sitemap and every link to `/about`, and the
-  `Organization` markup from T-151.
+  this task.
+  **Done (2026-09-26):** `src/app/[locale]/about/` moved to the route group
+  `src/app/[locale]/(landing)/`, so the same layout and page serve `/` and
+  `/en`. `next.config.mjs` drops the `/` -> `/antojos` 308 and adds
+  `/about` -> `/` and `/en/about` -> `/en` (308). `LOCALIZED_ROUTES` lists
+  `/` (exact path) instead of `/about`; a new `prefixLocale()` joins locale
+  and path so the root becomes `/en` rather than `/en/`, used by both
+  `localizedHref` and the middleware. The landing's layout sets its own
+  title ("Mercampus · Conecta, compra y vende dentro de tu universidad") and
+  description, both from the hero's existing copy. Sitemap lists `/` (with
+  its `/en` alternate) and drops `/about`; the sidebar's "Sobre Mercampus"
+  points at `/`. `src/app/page.jsx` (a `<p>Home</p>` placeholder from the
+  project's first commit, unreachable behind the 308 and imported by
+  nothing) is deleted.
+  - **Verified:** `npm run verify` green; e2e `home.spec.js` (new: `/` and
+    `/en` answer 200 with one `<h1>`, their own title and description;
+    `/about` and `/en/about` answer 308 to them) plus the updated `i18n`,
+    `about-topbar`, `auth-gate`, `listing-copy` and `sidebar-nav` specs;
+    screenshots in both themes at desktop and mobile in
+    `docs/audits/t-152/home__*.png`.
+  - **Browsers cache permanent redirects.** Anyone who already followed the
+    old `/` -> `/antojos` 308 may keep being sent to `/antojos` from their
+    own cache until it expires or they clear it. Nothing server-side can
+    undo that; fresh visitors and crawlers get the new page.
+  - A signed-in non-admin sent away from `/admin` is redirected to `/`
+    (`decideAdminAccess`'s `redirect-home`), which is now the landing rather
+    than the catalogue. Harmless, noted so it is not a surprise.
+  - **Found in the screenshots (rule 9), not fixed:** at 390px the topbar's
+    "Mercampus" wordmark runs into the locale switcher's "Español"
+    (`docs/audits/t-152/home__mobile__*.png`, both themes). Pre-existing -
+    the layout is byte-for-byte the old `/about` one plus `generateMetadata`
+    - but it is now on the first screen anyone sees. Likely the switcher
+    (added in T-81) squeezed a row sized for the logo and one button. A
+    small layout fix with its own before/after screenshots.
+- **[ ] T-152c · `Organization` JSON-LD on `/`.** The last part of the
+  original "Done when", split off to keep T-152b to the route move: T-151
+  asks for the emitted JSON to be asserted as a snapshot in a unit test, the
+  way `src/lib/metadata.ts`'s builders are. Name, URL (`SITE_URL`), logo, and
+  the Instagram profile the landing already links
+  (`https://www.instagram.com/mercampus/`) as `sameAs`.
 - **Found on the way (rule 9), not fixed:** `/marketplace` has the same
   shape - a `'use client'` page, so no metadata of its own, and its greeting
   is an `<h2>` with no `<h1>`. Same fix as T-152a; one small PR.

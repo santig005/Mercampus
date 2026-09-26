@@ -44,13 +44,15 @@ describe('buildSitemap (T-74)', () => {
     expect(found).toContain(`${SITE_URL}/antojos`);
     expect(found).toContain(`${SITE_URL}/marketplace`);
     expect(found).toContain(`${SITE_URL}/antojos/sellers/list`);
-    expect(found).toContain(`${SITE_URL}/about`);
+    expect(found).toContain(`${SITE_URL}/`);
   });
 
-  // `/` redirige permanente a /antojos (next.config.mjs): anunciar la raiz
-  // sends the crawler to a 308 instead of to the page.
-  it('does not advertise the root, which is a permanent redirect', () => {
-    expect(urls(buildSitemap({ sellers: [], products: [] }))).not.toContain(`${SITE_URL}/`);
+  // T-152b: the reverse of what this used to check. `/` was a 308 to
+  // /antojos and had to stay out; now it is the home page, and /about is the
+  // redirect (next.config.mjs), so that is the one a crawler must not be
+  // sent to.
+  it('does not advertise /about, which is now a permanent redirect to /', () => {
+    expect(urls(buildSitemap({ sellers: [], products: [] }))).not.toContain(`${SITE_URL}/about`);
   });
 
   it('one entry per seller and one per product, in its section', () => {
@@ -85,14 +87,14 @@ describe('buildSitemap (T-74)', () => {
     expect(entries.find(e => e.url.endsWith('sin-fecha')).lastModified).toEqual(now);
   });
 
-  it('/about declares its two languages (T-46)', () => {
-    const about = buildSitemap({ sellers: [], products: [] }).find(
-      entry => entry.url === `${SITE_URL}/about`
+  it('the home page declares its two languages (T-46, moved from /about in T-152b)', () => {
+    const home = buildSitemap({ sellers: [], products: [] }).find(
+      entry => entry.url === `${SITE_URL}/`
     );
 
-    expect(about.alternates.languages).toEqual({
-      es: `${SITE_URL}/about`,
-      en: `${SITE_URL}/en/about`,
+    expect(home.alternates.languages).toEqual({
+      es: `${SITE_URL}/`,
+      en: `${SITE_URL}/en`,
     });
   });
 

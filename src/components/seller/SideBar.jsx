@@ -210,7 +210,7 @@ const SideBar = ({ userId }) => {
           <li>
             <SidebarBtn
               text='Sobre Mercampus'
-              goto='/about'
+              goto='/'
               iconActive={<MdInfo className='size-5' />}
               iconInactive={<MdOutlineInfo className='size-5' />}
             />

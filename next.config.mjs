@@ -14,12 +14,13 @@ const nextConfig = {
     ],
   },
   async redirects() {
+    // T-152b: `/` used to be a 308 to /antojos, so the site had no home
+    // page. The landing that lived at /about is now served at `/` (and
+    // `/en`), and /about points there so its old links and search results
+    // keep working. Permanent, like the redirect it replaces.
     return [
-      {
-        source: '/',
-        destination: '/antojos',
-        permanent: true,
-      },
+      { source: '/about', destination: '/', permanent: true },
+      { source: '/en/about', destination: '/en', permanent: true },
     ];
   },
   async rewrites() {

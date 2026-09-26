@@ -82,7 +82,8 @@ test.describe('the gate covers locale-prefixed URLs too (T-81)', () => {
   // nonsense URL serving genuine, indexable content. Public, so this half is
   // not an auth fix; it is the same layer, checked where it was already
   // reachable.
-  for (const route of ['/antojos', '/marketplace', '/antojos/sellers/list', '/about']) {
+  // '' is the home page (T-152b; it was '/about'), so this checks /xx itself.
+  for (const route of ['/antojos', '/marketplace', '/antojos/sellers/list', '']) {
     test(`/xx${route} does not resolve either`, async ({ page }) => {
       await page.goto(`/xx${route}`);
 

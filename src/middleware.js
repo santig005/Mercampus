@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALIZED_ROUTES, buildDynamicPattern, routing } from './i18n/routing';
+import { LOCALIZED_ROUTES, buildDynamicPattern, prefixLocale, routing } from './i18n/routing';
 import {
   ADMIN_ROUTE_PATTERNS,
   PROTECTED_ROUTE_PATTERNS,
@@ -47,7 +47,9 @@ const isProtectedRoute = createRouteMatcher(PROTECTED_ROUTE_PATTERNS);
 // silently. See ROADMAP.md T-81 for the decision.
 const isAdminRoute = createRouteMatcher(ADMIN_ROUTE_PATTERNS);
 
-// T-46 v1 covered only /about. T-81 adds the listing zone's index pages:
+// T-46 v1 covered only /about (served at `/` since T-152b - see
+// prefixLocale in src/i18n/routing.ts for why the root needs its own join).
+// T-81 adds the listing zone's index pages:
 // /antojos and /marketplace (bare paths only, no sub-routes).
 //
 // ~~isIntlRoute is checked before isProtectedRoute/isAdminRoute below and
@@ -113,7 +115,7 @@ const isIntlRoute = createRouteMatcher(
       return [
         `${route.path}${suffix}`,
         ...nonDefaultLocales.map(
-          (locale) => `/${locale}${route.path}${suffix}`
+          (locale) => `${prefixLocale(locale, route.path)}${suffix}`
         ),
       ];
     }
