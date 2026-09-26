@@ -5,16 +5,17 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 // Same Clerk stub as autorizacion.test.js: since T-12c the identity comes from
 // the clerkId in the token, so mocking auth() is enough.
-const session = vi.hoisted(() => ({ userId: null }));
+const session = vi.hoisted(() => ({ userId: null, publicMetadata: {} }));
 
 // T-104: clerkClient is stubbed because verifySellerId now asks Clerk for
 // admin-ness whenever the session is not the seller's owner - which is
 // exactly the path "a seller cannot pause another seller's store" takes.
-// No publicMetadata here: none of these sessions is an admin.
+// publicMetadata stays empty (no admin) except in the one test that reads
+// GET /api/sellers/admin, which checks the role itself since T-133.
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: session.userId }),
   clerkClient: () => ({
-    users: { getUser: async () => ({ publicMetadata: {} }) },
+    users: { getUser: async () => ({ publicMetadata: session.publicMetadata }) },
   }),
 }));
 
@@ -64,6 +65,7 @@ describe('T-71 · seller pause mode', () => {
   beforeEach(async () => {
     ({ ids } = await seedDatabase());
     session.userId = null;
+    session.publicMetadata = {};
   });
 
   it('a new seller is born unpaused', async () => {
@@ -102,6 +104,9 @@ describe('T-71 · seller pause mode', () => {
   // moved. T-106 is only defensible if the admin surface still sees them.
   it('the unapproved seller is still there for the admin, at /api/sellers/admin', async () => {
     const adminRoute = await import('@/app/api/sellers/admin/route.js');
+    // T-133: the handler checks identity and role itself now.
+    signInAs(OWNER);
+    session.publicMetadata = { role: 'admin' };
     const { sellers } = await (await adminRoute.GET()).json();
 
     expect(sellers.map(seller => seller.businessName)).toContain('Postres Laura');
