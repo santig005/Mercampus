@@ -5911,7 +5911,7 @@ attention with anything else open at the same time.
 **Model:** `opusplan` (needs judgment to not lose nuance in the security
 notes) · **Nightly:** no
 
-### [ ] T-133 · `GET /api/sellers/admin` has no authorization of its own
+### [x] T-133 · `GET /api/sellers/admin` has no authorization of its own
 **Why:** found while planning T-81's middleware gate, measured not assumed.
 [`src/app/api/sellers/admin/route.js`](src/app/api/sellers/admin/route.js)
 has no `auth()` and no `isClerkAdmin()`. Its own comment says so plainly —
@@ -5940,6 +5940,34 @@ still needed rather than deleting it on the assumption that it is not.
 **Related:** T-12 (which centralised the check into the middleware and is
 why the handler looks like this), T-104 (`isClerkAdmin` as the single
 definition), T-81 (where this was found).
+**Done (2026-09-23):** the handler now calls `getClerkUserId()` (401 with no
+session) and `isClerkAdmin()` (403 for anyone else) before it touches Mongo,
+the same pattern as `PATCH /api/sellers/admin/[id]`. The middleware still
+gates the path, now as defence in depth.
+- **The response was trimmed as well (human decision).** It now returns only
+  what `/admin/sellers` renders: `SellerCard`'s `businessName`, `slogan`,
+  `description`, `logo` and `availability`, plus the page's own `approved`,
+  `university` and `createdAt` (and `_id`). `phoneNumber`, `userId`,
+  `instagramUser` and the rest are gone. **Correction to this entry:** it said
+  the panel renders schedules. It does not - checked against the page and
+  `SellerCard`. So the one `Schedule.find` per seller (54 queries, with the
+  `daysES` mapping) is gone too: one query instead of 55. If the panel ever
+  needs another field, add it to `ADMIN_LIST_FIELDS`.
+- **`force-dynamic` stays.** `auth()` reads headers, which already makes the
+  route dynamic, but that is a side effect. Keeping the line explicit means
+  moving the check again cannot silently turn the route static.
+- **Errors** go through `errorResponse` with `bodyKey: 'message'`, because
+  the page shows `data.message` when the call fails.
+- **Verified:** `tests/integration/sellers-admin-list.test.js` covers 401,
+  403, and an admin getting both sellers (pending included, newest first)
+  with only the allowed keys. Run against the old handler, 3 of its 4 tests
+  fail, so they measure the change. `seller-pause.test.js`, which read this
+  endpoint with no session, now signs in as an admin.
+- **Not verified in a browser:** rendering `/admin/sellers` needs a Clerk
+  account with the admin role, and minting one is T-95's
+  human-in-the-loop territory. The page reads nothing outside the trimmed
+  field list (checked by grep over the page and `SellerCard`), but a manual
+  look at the panel after the next promotion is the real check.
 **Model:** `opus` (authorization) · **Nightly:** no
 
 ### [ ] T-134 · The seller register form hides its errors and corrupts its own state
