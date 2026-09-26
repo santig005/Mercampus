@@ -3,6 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TbBrandWhatsapp } from 'react-icons/tb';
 import Image from 'next/image';
 
+import { supportWhatsAppUrl } from '@/utils/resources/support';
+
 export default function SquirrelGame() {
   const [position, setPosition] = useState(1); // 0: izquierda, 1: centro, 2: derecha
   const [score, setScore] = useState(0);
@@ -270,7 +272,7 @@ export default function SquirrelGame() {
 
         <div className="mt-8 text-center">
           <a
-            href={`https://wa.me/+57${encodeURIComponent(3197139921)}?text=${encodeURIComponent(`¡Hola Mercampus! Tengo ${score} puntos en el juego de la ardilla 🐿️`)}`}
+            href={supportWhatsAppUrl(`¡Hola Mercampus! Tengo ${score} puntos en el juego de la ardilla 🐿️`)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
