@@ -6715,6 +6715,18 @@ traffic.
   landing's copy stays as it is, figures included ("#1", "+100
   estudiantes", "100% seguro") - asked and answered, do not reopen it in
   this task.
+  **Prerequisite, done first (2026-09-26):** nine call sites used `'/'` to
+  mean "the catalogue" - after sign-in, sign-up, Google/Microsoft OAuth,
+  password reset and sign-out (Clerk's default `afterSignOutUrl`), after
+  adding a product or saving the seller profile, the login/register back
+  buttons, and the middleware turning a non-admin away from `/admin`. They
+  only reached `/antojos` through the 308. They now use
+  `APP_HOME` (`src/lib/app-home.ts`), and `ClerkProvider` sets
+  `afterSignOutUrl`, so turning `/` into the landing moves nobody. Found
+  when T-152b's CI e2e failed on sign-out landing on a page with no sidebar.
+  `tests/unit/app-home.test.js` fails on any new navigation to the bare root.
+  The two auth forms use `localizedHref(APP_HOME, locale)`, so an English
+  sign-in now lands on `/en/antojos` instead of dropping to Spanish.
   **Done (2026-09-26):** `src/app/[locale]/about/` moved to the route group
   `src/app/[locale]/(landing)/`, so the same layout and page serve `/` and
   `/en`. `next.config.mjs` drops the `/` -> `/antojos` 308 and adds
@@ -6731,16 +6743,15 @@ traffic.
   - **Verified:** `npm run verify` green; e2e `home.spec.js` (new: `/` and
     `/en` answer 200 with one `<h1>`, their own title and description;
     `/about` and `/en/about` answer 308 to them) plus the updated `i18n`,
-    `about-topbar`, `auth-gate`, `listing-copy` and `sidebar-nav` specs;
+    `about-topbar`, `auth-gate`, `listing-copy`, `sidebar-nav`, `recorrido`
+    (now walks `/` -> "Explorar productos" -> `/antojos`) and
+    `session-context` (sign-out still lands on the catalogue) specs;
     screenshots in both themes at desktop and mobile in
     `docs/audits/t-152/home__*.png`.
   - **Browsers cache permanent redirects.** Anyone who already followed the
     old `/` -> `/antojos` 308 may keep being sent to `/antojos` from their
     own cache until it expires or they clear it. Nothing server-side can
     undo that; fresh visitors and crawlers get the new page.
-  - A signed-in non-admin sent away from `/admin` is redirected to `/`
-    (`decideAdminAccess`'s `redirect-home`), which is now the landing rather
-    than the catalogue. Harmless, noted so it is not a surprise.
   - **Found in the screenshots (rule 9), not fixed:** at 390px the topbar's
     "Mercampus" wordmark runs into the locale switcher's "Español"
     (`docs/audits/t-152/home__mobile__*.png`, both themes). Pre-existing -

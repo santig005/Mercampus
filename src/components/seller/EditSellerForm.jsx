@@ -13,6 +13,7 @@ import { useCheckSeller } from '@/context/SellerContext';
 import UniGraphicSelector from '@/components/university/UniGraphicSelector';
 import ProfileChecklist from '@/components/seller/ProfileChecklist';
 import { MAX_AVAILABILITY_OVERRIDE_HOURS } from '@/lib/validators/seller';
+import { APP_HOME } from '@/lib/app-home';
 
 // T-83: preset durations for "open right now" - short enough that a seller
 // who forgets to cancel it isn't stuck marked open for long, and all within
@@ -65,7 +66,7 @@ export default function EditSellerForm({ checklist }) {
     try {
       await updateSeller(seller._id, seller);
       setDataSeller(seller);
-      router.push('/');
+      router.push(APP_HOME);
     } catch (error) {
       setError('Error al actualizar el perfil del vendedor.');
       logger.error(error);

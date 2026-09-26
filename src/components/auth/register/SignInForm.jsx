@@ -13,6 +13,7 @@ import ForgotPassword from '@/components/auth/ForgotPassword';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { localizedHref } from '@/i18n/routing';
+import { APP_HOME } from '@/lib/app-home';
 
 // T-81 (auth zone): the heading, subtitle, field labels and the cross-link
 // to /auth/register below moved into messages/{es,en}.json under
@@ -82,7 +83,7 @@ export default function SignInForm() {
       // and redirect the user
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.push('/');
+        router.push(localizedHref(APP_HOME, locale));
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
@@ -167,7 +168,7 @@ export default function SignInForm() {
           className={`h-1/4 bg-[#393939] flex flex-col justify-center items-center`}
         >
           <Link
-            href='/'
+            href={localizedHref(APP_HOME, locale)}
             aria-label={t('backAria')}
             className='btn btn-circle absolute top-4 left-4'
           >

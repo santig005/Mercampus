@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { IoIosWarning } from 'react-icons/io';
 import { useLocale, useTranslations } from 'next-intl';
 import { localizedHref } from '@/i18n/routing';
+import { APP_HOME } from '@/lib/app-home';
 
 // T-81 (auth zone): heading, subtitle, field labels, the password-strength
 // checklist, the password-mismatch message and the cross-link to
@@ -172,7 +173,7 @@ export default function SignUpForm() {
       if (completeSignUp.status === 'complete') {
         setVerification(true);
         await setActive({ session: completeSignUp.createdSessionId });
-        router.push('/');
+        router.push(localizedHref(APP_HOME, locale));
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
@@ -331,7 +332,7 @@ export default function SignUpForm() {
           }
         >
           <Link
-            href='/'
+            href={localizedHref(APP_HOME, locale)}
             aria-label={t('backAria')}
             className='btn btn-circle absolute top-4 left-4'
           >
