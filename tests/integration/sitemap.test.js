@@ -21,7 +21,7 @@ describe('T-74 · sitemap against the database', () => {
       '@/server/sitemap/getPublicSitemapData'
     ));
     ({ buildSitemap } = await import('@/lib/sitemap'));
-    ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller } = await import('@/utils/models/sellerSchema'));
     ({ Product } = await import('@/utils/models/productSchema'));
   }, 120_000);
 

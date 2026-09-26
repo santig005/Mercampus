@@ -21,7 +21,7 @@ import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // Not used by name, but the import registers the model with Mongoose and the
 // GET's populate({ model: 'Seller' }) needs it registered. Delete it and the
 // listing blows up with MissingSchemaError.
-import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
+import { Seller } from '@/utils/models/sellerSchema'; // eslint-disable-line no-unused-vars
 import { logger } from '@/lib/logger';
 
 export async function GET(req) {

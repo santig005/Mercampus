@@ -10,7 +10,7 @@ import { User } from '@/utils/models/userSchema';
 // Not used by name, but the import registers the model with Mongoose:
 // getSellerContextData's populate('sellerId') needs it registered, or it
 // blows up with MissingSchemaError (same pattern as api/products/route.js).
-import { Seller } from '@/utils/models/sellerSchema2'; // eslint-disable-line no-unused-vars
+import { Seller } from '@/utils/models/sellerSchema'; // eslint-disable-line no-unused-vars
 
 /**
  * The user's Clerk id (`user_...`).

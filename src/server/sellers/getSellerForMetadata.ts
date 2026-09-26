@@ -1,7 +1,7 @@
 import { cache } from 'react';
 
 import { connectDB } from '@/utils/connectDB';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 
 const OBJECT_ID_RE = /^[a-f\d]{24}$/i;
 

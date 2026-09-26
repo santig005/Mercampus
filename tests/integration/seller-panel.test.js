@@ -34,7 +34,7 @@ describe('getSellerPanelStats (T-44)', () => {
     process.env.MONGO_URI = await startTestDb();
     ({ getSellerPanelStats } = await import('@/server/orders/getSellerPanelStats'));
     ({ Order } = await import('@/utils/models/orderSchema'));
-    ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller } = await import('@/utils/models/sellerSchema'));
   }, 120_000);
 
   afterAll(async () => {

@@ -12,7 +12,7 @@ import mongoose from 'mongoose';
 
 import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 import { User } from '@/utils/models/userSchema';
 
 // day: 1 = Monday ... 7 = Sunday, same as daysOfWeekES.

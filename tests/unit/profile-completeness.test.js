@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildProfileChecklist, hasCustomLogo } from '@/lib/profile-completeness';
-import { DEFAULT_SELLER_LOGO } from '@/utils/models/sellerSchema2';
+import { DEFAULT_SELLER_LOGO } from '@/utils/models/sellerSchema';
 
 const complete = {
   logo: 'https://ik.imagekit.io/seed/mi-logo.png',

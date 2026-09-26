@@ -6,7 +6,7 @@ import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
 import { getClerkUserId } from '@/utils/lib/auth';
 import { isClerkAdmin } from '@/utils/lib/isClerkAdmin';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 
 /**
  * Approving or un-approving a seller: the gate between "registered" and
