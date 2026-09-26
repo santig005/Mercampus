@@ -12,13 +12,20 @@ const SELLER_ID = process.env.E2E_SELLER_ID;
 const MARKETPLACE_PRODUCT_ID = process.env.E2E_MARKETPLACE_PRODUCT_ID;
 
 test.describe('public walkthrough', () => {
-  test('home redirects to the antojos listing', async ({ page }) => {
+  // T-152b: `/` used to redirect to the listing; it is now the landing page,
+  // and the walkthrough reaches the listing the way a visitor would.
+  test('home is the landing, and it leads to the antojos listing', async ({ page }) => {
     await page.goto('/');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Mercampus' })).toBeVisible();
+    await shot(page, '01-home');
+
+    // exact: the topbar's "Explorar Productos" and the hero's "Explorar
+    // productos" differ only in case (see i18n.spec.js).
+    await page.getByRole('link', { name: 'Explorar productos', exact: true }).click();
 
     await expect(page).toHaveURL(/\/antojos$/);
     await expect(page.getByText('calma tus antojos')).toBeVisible();
-
-    await shot(page, '01-home');
   });
 
   test('the listing shows only publishable products', async ({ page }) => {
