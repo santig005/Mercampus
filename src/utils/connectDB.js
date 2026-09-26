@@ -30,7 +30,7 @@ import '@/utils/models/orderSchema';
 import '@/utils/models/pqrsSchema';
 import '@/utils/models/productSchema';
 import '@/utils/models/scheduleSchema';
-import '@/utils/models/sellerSchema2';
+import '@/utils/models/sellerSchema';
 import '@/utils/models/userSchema';
 
 const MONGODB_URI = process.env.MONGO_URI;

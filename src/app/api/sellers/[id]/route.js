@@ -7,7 +7,7 @@ import {
 } from "@/utils/lib/auth";
 import { updateSellerSchema } from "@/lib/validators/seller";
 import { invalidPayload } from "@/lib/api-response";
-import { Seller } from "@/utils/models/sellerSchema2";
+import { Seller } from "@/utils/models/sellerSchema";
 import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';

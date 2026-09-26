@@ -4,7 +4,7 @@ import { buildProfileChecklist, type ProfileChecklist } from '@/lib/profile-comp
 import { connectDB } from '@/utils/connectDB';
 import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 import { User } from '@/utils/models/userSchema';
 
 // T-72. Reads Mongo directly from a Server Component - no fetch to our own

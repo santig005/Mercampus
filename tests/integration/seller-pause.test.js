@@ -54,7 +54,7 @@ describe('T-71 · seller pause mode', () => {
     productsRoute = await import('@/app/api/products/route.js');
     sellersRoute = await import('@/app/api/sellers/route.js');
     sellerRoute = await import('@/app/api/sellers/[id]/route.js');
-    ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller } = await import('@/utils/models/sellerSchema'));
   }, 120_000);
 
   afterAll(async () => {

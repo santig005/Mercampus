@@ -57,7 +57,7 @@ describe('T-105 · seller approval', () => {
     process.env.MONGO_URI = await startTestDb();
     approvalRoute = await import('@/app/api/sellers/admin/[id]/route.js');
     sellerRoute = await import('@/app/api/sellers/[id]/route.js');
-    ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller } = await import('@/utils/models/sellerSchema'));
   }, 120_000);
 
   afterAll(async () => {

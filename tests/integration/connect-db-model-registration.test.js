@@ -54,7 +54,7 @@ describe('connectDB registers every model (hotfix for the Seller populate crash)
     const { connectDB } = await import('@/utils/connectDB');
     await connectDB();
     const { Product } = await import('@/utils/models/productSchema');
-    const { Seller } = await import('@/utils/models/sellerSchema2');
+    const { Seller } = await import('@/utils/models/sellerSchema');
     const { User } = await import('@/utils/models/userSchema');
 
     const owner = await User.create({

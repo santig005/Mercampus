@@ -86,7 +86,7 @@ describe('authorization on mutations', () => {
     schedulesRoute = await import('@/app/api/schedules/route.js');
     productsRoute = await import('@/app/api/products/route.js');
     ({ Product } = await import('@/utils/models/productSchema'));
-    ({ Seller } = await import('@/utils/models/sellerSchema2'));
+    ({ Seller } = await import('@/utils/models/sellerSchema'));
     ({ Schedule } = await import('@/utils/models/scheduleSchema'));
     ({ User } = await import('@/utils/models/userSchema'));
   }, 120_000);

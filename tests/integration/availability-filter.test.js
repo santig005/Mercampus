@@ -5,7 +5,7 @@ import { startTestDb, stopTestDb } from '../setup.js';
 
 import { Product } from '@/utils/models/productSchema';
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 import { User } from '@/utils/models/userSchema';
 
 // T-123: the listing filtered by the T-122 badge's rule, in the Mongo query,

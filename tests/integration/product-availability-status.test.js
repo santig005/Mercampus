@@ -4,7 +4,7 @@ import { seedDatabase } from '../../scripts/seed.mjs';
 import { startTestDb, stopTestDb } from '../setup.js';
 
 import { Schedule } from '@/utils/models/scheduleSchema';
-import { Seller } from '@/utils/models/sellerSchema2';
+import { Seller } from '@/utils/models/sellerSchema';
 
 // T-122: both product routes carry `availabilityStatus`, so the card, the
 // modal (fed by the listing) and the product page (fed by the detail route)
