@@ -43,7 +43,13 @@ import {
   FaPersonWalkingLuggage,
 } from 'react-icons/fa6';
 
-const SideBar = ({ userId }) => {
+// T-172: `topClassName` lets a caller that stacks something above the
+// h-16 navbar row (see the two [locale] layouts) push this list down to
+// clear it. Defaults to the plain navbar's own height - every unmigrated
+// layout (src/app/antojos/layout.jsx, src/app/marketplace/layout.jsx) still
+// renders the navbar flush at the top, so they get the original spacing
+// unchanged.
+const SideBar = ({ userId, topClassName = 'pt-16' }) => {
   const { seller } = useSeller();
   const { user } = useUser();
 
@@ -67,7 +73,7 @@ const SideBar = ({ userId }) => {
       {/* T-73: dark:bg-base-200 - ver la nota sobre bg-primary en Layout.jsx,
           es el mismo caso (bg-primary rinde un blanco fijo por el override
           de main.css, no el naranja de marca). */}
-      <ul className='menu text-base-content min-h-full w-72 p-4 pt-16 bg-primary dark:bg-base-200 flex flex-col justify-between'>
+      <ul className={`menu text-base-content min-h-full w-72 p-4 ${topClassName} bg-primary dark:bg-base-200 flex flex-col justify-between`}>
         <div className='mt-4 flex flex-col gap-2'>
           <li>
             <SidebarBtn

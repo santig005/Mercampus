@@ -7284,6 +7284,35 @@ no build reaches out to Google; the rendered font is unchanged (a screenshot
 comparison of one page in both themes); `npm run verify` green offline.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-172 · Sidebar hamburger button overlaps "Antojitos"
+**Why:** reported by the human with a screenshot: opening the sidebar on
+`/antojos` showed the hamburger button sitting on top of the "Antojitos"
+pill instead of above it with a gap.
+**Measured root cause:** `src/app/[locale]/antojos/layout.jsx` and `.../
+marketplace/layout.jsx` (T-81) stack a `LocaleSwitcher` row (measured: 32px
+tall) above `Layout`'s own `h-16` navbar row, so the hamburger button no
+longer sits flush at the viewport's top the way it does on every unmigrated
+page. `SideBar`'s own top padding (`pt-16`, sized for exactly one `h-16` row)
+knew nothing about the extra row. Measured live before the fix: hamburger
+bottom at `y=88`, first sidebar item top at `y=80` - an 8px overlap.
+**Done 2026-09-26.** `SideBar` takes an optional `topClassName` prop
+(default `'pt-16'`, so `src/app/antojos/layout.jsx` and
+`src/app/marketplace/layout.jsx` - the unmigrated pages, no extra row above
+the navbar - are untouched). The two `[locale]` layouts that stack the
+`LocaleSwitcher` row pass `topClassName='pt-24'` (`pt-16` + the row's own
+measured height), clearing the button with a 24px gap.
+**Verified with rendered geometry, not a class name (rule 3, T-100's exact
+failure mode):** `tests/e2e/sidebar-hamburger-gap.spec.js` reads real
+`getBoundingClientRect()` values for the hamburger button and the first
+sidebar item, on `/antojos` and `/marketplace`, in both themes, and asserts
+a real gap (`>= 8px`, comfortably between the fix's 24px and the bug's
+-8px). A control case (`/antojos/game`, unmigrated, no `LocaleSwitcher` row)
+proves the default `pt-16` path is unchanged. Screenshots and a full writeup
+in `docs/audits/t-172/README.md`.
+**Verified:** `npm run verify` (lint + typecheck + test + build) - see PR.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
 ---
 
 ## Phase 8 — The two stories this repo can tell

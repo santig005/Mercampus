@@ -42,7 +42,13 @@ export default async function layout({ children, params }) {
           <ModalStackProvider>{children}</ModalStackProvider>
         </Layout>
       </div>
-      <SideBar userId={userId} />
+      {/* T-172: the switcher row above measures 32px tall (getBoundingClientRect,
+          both themes) on top of Layout's own h-16 navbar, so the hamburger
+          button no longer sits flush at the viewport top the way SideBar's
+          default pt-16 assumes - it overlapped "Antojitos" by about 8px.
+          pt-24 (pt-16 + that row's height) clears it with room to spare. The
+          marketplace layout below has the identical row and the same fix. */}
+      <SideBar userId={userId} topClassName='pt-24' />
     </div>
   );
 }
