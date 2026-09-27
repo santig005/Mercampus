@@ -242,5 +242,60 @@
   "UniGraphicSelector": {
     "infoAria": "Information",
     "disclaimer": "Mercampus is not affiliated with any of these universities; their names appear only to help filter searches."
+  },
+  "ProductCard": {
+    "imageAlt": "Image of {name}"
+  },
+  "AddProductPage": {
+    "modalAttention": "Attention!",
+    "heading": "Add your product here",
+    "subtitle": "Please fill in the product's information",
+    "nameLabel": "Name",
+    "namePlaceholder": "Product name",
+    "sectionLabel": "Section",
+    "sectionAntojos": "Antojos (Food products)",
+    "sectionMarketplace": "Marketplace (Non-food products)",
+    "categoryLabel": "Category",
+    "priceLabel": "Price",
+    "pricePlaceholder": "Product price",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Product description",
+    "imagesTitle": "Product Images",
+    "submit": "Upload Product",
+    "networkError": "Network error. Please try again."
+  },
+  "EditProductsPage": {
+    "heading": "Edit your Products",
+    "addButton": "Add Product",
+    "instructions": "Edit your products' availability, or click on one to edit more details",
+    "myAvailability": "My availability",
+    "availabilityColumnLabel": "Availability",
+    "availabilityToggleLabel": "Availability of {name}: {status}",
+    "available": "available",
+    "unavailable": "not available",
+    "yourBusinessFallback": "your business",
+    "antojosSectionHeading": "Antojos ({count} products)",
+    "marketplaceSectionHeading": "Marketplace ({count} products)",
+    "loadingProducts": "Loading products..."
+  },
+  "EditProductForm": {
+    "heading": "Edit your product",
+    "subtitle": "Please fill in the product's information",
+    "nameLabel": "Name",
+    "namePlaceholder": "Product name",
+    "sectionLabel": "Section",
+    "sectionAntojos": "Antojos (Food products)",
+    "sectionMarketplace": "Marketplace (Non-food products)",
+    "priceLabel": "Price",
+    "pricePlaceholder": "Price",
+    "availabilityLabel": "Availability",
+    "categoryLabel": "Category",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Description",
+    "imagesTitle": "Product Images",
+    "deleteButton": "Delete Product",
+    "saveButton": "Save Changes",
+    "updateError": "There was a problem updating the product.",
+    "deleteError": "There was a problem deleting the product."
   }
 }

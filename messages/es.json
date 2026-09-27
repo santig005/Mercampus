@@ -242,5 +242,60 @@
   "UniGraphicSelector": {
     "infoAria": "Información",
     "disclaimer": "Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con finalidad de filtro de búsqueda."
+  },
+  "ProductCard": {
+    "imageAlt": "Imagen de {name}"
+  },
+  "AddProductPage": {
+    "modalAttention": "¡Atención!",
+    "heading": "Agrega aquí tu producto",
+    "subtitle": "Por favor completa la información del producto",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Nombre del producto",
+    "sectionLabel": "Sección",
+    "sectionAntojos": "Antojos (Productos alimenticios)",
+    "sectionMarketplace": "Marketplace (Productos no alimenticios)",
+    "categoryLabel": "Categoría",
+    "priceLabel": "Precio",
+    "pricePlaceholder": "Precio del producto",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción del producto",
+    "imagesTitle": "Imágenes del Producto",
+    "submit": "Subir Producto",
+    "networkError": "Error de red. Inténtalo de nuevo."
+  },
+  "EditProductsPage": {
+    "heading": "Editar tus Productos",
+    "addButton": "Añadir Producto",
+    "instructions": "Edita la disponibilidad de tus productos, o da click en uno en específico para editar más detalles",
+    "myAvailability": "Mi disponibilidad",
+    "availabilityColumnLabel": "Disponibilidad",
+    "availabilityToggleLabel": "Disponibilidad de {name}: {status}",
+    "available": "disponible",
+    "unavailable": "no disponible",
+    "yourBusinessFallback": "tu negocio",
+    "antojosSectionHeading": "Antojos ({count} productos)",
+    "marketplaceSectionHeading": "Marketplace ({count} productos)",
+    "loadingProducts": "Cargando productos..."
+  },
+  "EditProductForm": {
+    "heading": "Edita tu producto",
+    "subtitle": "Por favor completa la información del producto",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Nombre del producto",
+    "sectionLabel": "Sección",
+    "sectionAntojos": "Antojos (Productos alimenticios)",
+    "sectionMarketplace": "Marketplace (Productos no alimenticios)",
+    "priceLabel": "Precio",
+    "pricePlaceholder": "Precio",
+    "availabilityLabel": "Disponibilidad",
+    "categoryLabel": "Categoría",
+    "descriptionLabel": "Descripcion",
+    "descriptionPlaceholder": "Descripción",
+    "imagesTitle": "Imágenes del Producto",
+    "deleteButton": "Eliminar Producto",
+    "saveButton": "Guardar Cambios",
+    "updateError": "Error al actualizar el producto.",
+    "deleteError": "Error al eliminar el producto."
   }
 }

@@ -1,8 +1,9 @@
 'use client';
 import { logger } from '@/lib/logger';
-import { uploadImages } from '@/services/uploadImages';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 import { getCategoriesBySection } from '@/utils/resources/categories';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
@@ -14,8 +15,22 @@ import Select from 'react-select';
 import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
 import { APP_HOME } from '@/lib/app-home';
 
+// T-81 (seller products): moved from src/app/antojos/product/add/ (deleted).
+// Still a Client Component - it is a form with state - so it takes no
+// `params`; src/app/[locale]/layout.jsx already calls setRequestLocale for
+// the whole subtree. Gated by isProtectedRoute at both /antojos/product/add
+// and its /en twin (src/lib/route-guards.ts).
+//
+// The section labels ("Antojos"/"Marketplace") are translated here - they are
+// this form's own interface copy, not what a seller writes. The category
+// options underneath (getCategoriesBySection: "Dulces", "Snacks", ...) are
+// left as they are, same call the already-migrated listing zone's
+// CategoryGrid makes without translating them - app-wide taxonomy, not this
+// task's job to relitigate (see ROADMAP.md T-81).
 const AddProduct = () => {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('AddProductPage');
   const { checkedSeller } = useCheckSeller(
     'sellerApproved',
     '/antojos/sellers/approving'
@@ -99,7 +114,7 @@ const AddProduct = () => {
       });
 
       if (response.ok) {
-        router.push(APP_HOME);
+        router.push(localizedHref(APP_HOME, locale));
       } else {
         const errorData = await response.json();
         logger.error('Error:', errorData.message);
@@ -108,7 +123,7 @@ const AddProduct = () => {
       }
     } catch (error) {
       logger.error('Network Error:', error);
-      setErrorCode('Network Error. Please try again.');
+      setErrorCode(t('networkError'));
     }
     setLoading(false);
   };
@@ -145,7 +160,7 @@ const AddProduct = () => {
               </div>
               <div className='w-full'>
                 <h3 className='font-bold text-lg flex justify-between'>
-                  ¡Atención!
+                  {t('modalAttention')}
                   <form method='dialog'>
                     {/* if there is a button in form, it will close the modal */}
                     <button className='font-normal' onClick={closeErrorModal}>
@@ -177,10 +192,10 @@ const AddProduct = () => {
             <TbChevronLeft className='icon' />
           </Link> */}
           <h2 className='text-2xl font-semibold text-white'>
-            Agrega aquí tu producto
+            {t('heading')}
           </h2>
           <p className='text-white'>
-            Por favor completa la información del producto
+            {t('subtitle')}
           </p>
         </div>
         <div className='h-3/4 bg-[#393939]'>
@@ -188,26 +203,29 @@ const AddProduct = () => {
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-7'>
                 <InputFields
-                  title='Nombre'
+                  title={t('nameLabel')}
                   type='text'
-                  placeholder='Nombre del producto'
+                  placeholder={t('namePlaceholder')}
                   value={formData.name}
                   onChange={handleChange}
                   name='name'
                   required
                 />
-                
+
                 <div>
                   <label className='block text-sm font-medium text-gray-700 dark:text-base-content mb-2'>
-                    Sección
+                    {t('sectionLabel')}
                   </label>
                   <Select
                     name='section'
                     options={[
-                      { value: 'antojos', label: 'Antojos (Productos alimenticios)' },
-                      { value: 'marketplace', label: 'Marketplace (Productos no alimenticios)' }
+                      { value: 'antojos', label: t('sectionAntojos') },
+                      { value: 'marketplace', label: t('sectionMarketplace') }
                     ]}
-                    value={{ value: formData.section, label: formData.section === 'antojos' ? 'Antojos (Productos alimenticios)' : 'Marketplace (Productos no alimenticios)' }}
+                    value={{
+                      value: formData.section,
+                      label: formData.section === 'antojos' ? t('sectionAntojos') : t('sectionMarketplace')
+                    }}
                     onChange={(selectedOption) => {
                       setFormData({
                         ...formData,
@@ -223,7 +241,7 @@ const AddProduct = () => {
                 </div>
 
                 <div>
-                  <label>Categoría</label>
+                  <label>{t('categoryLabel')}</label>
                   <Select
                     isMulti
                     name='category'
@@ -238,18 +256,18 @@ const AddProduct = () => {
                   />
                 </div>
                 <InputFields
-                  title='Precio'
+                  title={t('priceLabel')}
                   type='text'
                   name='price'
-                  placeholder='Precio del producto'
+                  placeholder={t('pricePlaceholder')}
                   value={formData.price}
                   onChange={handleChange}
                   required
                 />
                 <InputFields
-                  title='Descripción'
+                  title={t('descriptionLabel')}
                   type='textarea'
-                  placeholder='Descripción del producto'
+                  placeholder={t('descriptionPlaceholder')}
                   value={formData.description}
                   onChange={handleChange}
                   name='description'
@@ -259,7 +277,7 @@ const AddProduct = () => {
                     initialImages={formData.images}
                     onUpdateImages={handleImagesUpdate}
                     nameFolder='products'
-                    title='Imágenes del Producto'
+                    title={t('imagesTitle')}
                     maxImages={5}
                   />
                 </div>
@@ -271,7 +289,7 @@ const AddProduct = () => {
                   {loading ? (
                     <span className='loading loading-infinity loading-lg'></span>
                   ) : (
-                    'Subir Producto'
+                    t('submit')
                   )}
                 </button>
               </div>

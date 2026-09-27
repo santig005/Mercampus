@@ -66,7 +66,7 @@ describe('T-100 · F46 - react-select reads the live theme', () => {
   });
 
   for (const [file, importedFrom] of [
-    ['src/app/antojos/product/add/page.jsx', '@/utils/hooks/useReactSelectTheme'],
+    ['src/app/[locale]/antojos/product/add/page.jsx', '@/utils/hooks/useReactSelectTheme'],
     ['src/components/products/edit/EditProductForm.jsx', '@/utils/hooks/useReactSelectTheme'],
   ]) {
     it(`${file} wires every <Select> through the hook, not left plain white`, () => {

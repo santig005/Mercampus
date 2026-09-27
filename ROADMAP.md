@@ -2574,7 +2574,7 @@ same pattern applied to a different migration):
 | seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
 | auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
 | seller's own forms — onboarding | `/antojos/sellers/register`, `/antojos/sellers/approving` | **done** (see "Seller onboarding zone notes") |
-| seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | pending |
+| seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | **done** |
 | seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | pending |
 | admin | `/admin/*` | **skipped on purpose** (decision 2026-09-19, reasoning below) — gate hardened anyway |
 **Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
@@ -3031,6 +3031,77 @@ and the product list, which are not forms - harmless. Cost, accepted: a
 seller who reads English and lands on a form in Spanish (an old bare link)
 has to switch on another page and come back. **B is filed as T-135**; when it
 lands, the switcher can come back to these routes.
+**Seller products zone notes (this PR, 2026-09-26).** The second forms batch:
+adding a product and the seller's own product list/edit screens
+(`/antojos/product/add`, `/antojos/sellers/products/edit(/[id])`).
+- **`LOCALIZED_ROUTES` gained two `static` exact entries plus one `dynamic`
+  entry**, same shape as the seller profile zone: the list
+  (`/antojos/sellers/products/edit`) is exact-only, and its own id sub-route
+  gets a `dynamic` entry (`base: '/antojos/sellers/products/edit'`) since a
+  product id is a Mongo ObjectId too - proven not to collide with the seller
+  profile zone's own `dynamic` entry (base `/antojos/sellers`) in
+  `tests/unit/routing.test.js`. Both new static entries are already in
+  `PROTECTED_PATHS` (`src/lib/route-guards.ts`) from before this zone
+  existed, so only the `[locale]`-page guardrail (existing) proves the
+  migration, not the gate.
+- **`EditProductForm.jsx` translated in place, not moved** - it is a shared
+  component (rendered only from the id sub-route's server page), same
+  treatment `AvailabilityBadge`/`TableSchema` got in the seller profile zone.
+  Its own `Sección`/`Categoría` Select markup duplicates the add-product
+  page's almost verbatim (rule 9, not fixed here - the same duplication the
+  seller profile zone flagged for `SellerPage`/`SellerModal`; worth
+  deduplicating together, in its own follow-up).
+- **`ProductCard.jsx`'s `imageAlt` translated too**, found while doing this
+  (rule 9) - it renders on this zone's own list, but also on the
+  already-migrated listing (`ProductGrid`) and seller-profile
+  (`SellerProductsBySection`) zones, where `'Imagen de ' + name` was still
+  hardcoded Spanish and reachable in English. In scope here since this zone's
+  own list renders it; the other two zones get the fix for free.
+- **Category/section taxonomy left untranslated, on purpose, same precedent
+  the listing zone already set.** `getCategoriesBySection`'s values
+  ("Dulces", "Snacks", marketplace's own list) are app-wide taxonomy, not
+  this form's copy - `CategoryGrid.jsx` (already used on the migrated
+  `/marketplace` listing) renders the exact same values without translating
+  them. Relitigating that is a product decision, not an i18n one (same
+  reasoning this task's entry gives for what a seller types themselves). The
+  two-option "Sección" select (Antojos/Marketplace) is this form's own
+  interface copy, not taxonomy, and is translated.
+- **Existing e2e strings pinned some exact Spanish text - kept verbatim.**
+  `tests/e2e/signed-in/writes.spec.js` and `product-edit.spec.js` assert
+  `getByLabel('Descripcion')` (no accent) and `getByRole('button', { name:
+  'Guardar Cambios' })`/`'Eliminar Producto'` - those strings moved into
+  `messages/es.json` unchanged rather than "fixed", since changing them would
+  break passing tests over a typo this task did not set out to touch.
+  `EditProductForm.jsx`'s heading typo ("Edita tu prodcuto") and
+  `EditProductsPage`'s two missing accents had no test pinning them, so those
+  were corrected in the same move.
+- **Rule 9, found and fixed (not deferred) - a real dead file.** Rewriting
+  `AddProduct` dropped its unused `import { uploadImages } from
+  '@/services/uploadImages'` (the import was never called - `ImageGrid`
+  handles its own upload). That was the only reference anywhere in `src/` to
+  `src/services/uploadImages.js` (confirmed by a repo-wide search before
+  deleting, per rule 5) - `ImageGrid`'s own upload path
+  (compression, per-file ImageKit `fileId` tracking) superseded it long ago.
+  `npm run verify`'s `knip` step flags an unused file as a hard failure (not
+  a warning, unlike unused exports/deps), so this had to be resolved in this
+  PR rather than filed as a follow-up; deleting the confirmed-dead file was
+  the correct fix rather than papering over it.
+- **No new locale-switcher logic needed.** Both new routes were already in
+  `PROTECTED_PATHS`, so `LocaleSwitcher`'s existing `isProtectedPath()` check
+  (seller onboarding zone, PR #373) already hides it here - covered by the
+  existing `isProtectedPath` unit tests, no new assertions needed.
+- **Verified live (dev + `npm run test:e2e`, this PR):** `/antojos/product/add`,
+  `/antojos/sellers/products/edit` and `.../edit/<id>` all render in Spanish
+  (bare) and English (`/en/...`), with `<html lang>` matching, in
+  `tests/e2e/signed-in/seller-products-i18n.spec.js` (8 tests, including a
+  malformed-id case and that internal navigation - the add button, the
+  product card's own link - keeps the locale via `localizedHref`, the exact
+  bug PR #363 fixed for `SidebarBtn`). Every pre-existing spec touching these
+  routes (`product-add-errors`, `product-edit`, `product-list-keyboard`,
+  `writes`) still passes unmodified, proving the bare-path Spanish behaviour
+  is byte-for-byte the same as before. The broader `i18n.spec.js`,
+  `auth-gate.spec.js` and `seller-onboarding-i18n.spec.js` suites were also
+  re-run and stayed green.
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
