@@ -401,5 +401,18 @@
   },
   "Navbar": {
     "signInAria": "Sign in"
+  },
+  "ProductModal": {
+    "close": "Close",
+    "favoriteAria": "Save to favorites",
+    "errorMessage": "Something went wrong, please try again",
+    "scheduleHeading": "Schedule",
+    "sellerLogoAlt": "Image of the product's seller",
+    "contactWhatsapp": "Contact via WhatsApp",
+    "contactWhatsappAria": "Contact {seller} via WhatsApp",
+    "defaultSeller": "the seller",
+    "defaultSellerGreeting": "dear seller",
+    "whatsappMessage": "Hi {seller}, I saw you on Mercampus. I'm interested in the product {product}. Could you tell me where you're located?",
+    "recommend": "Recommend to a friend"
   }
 }
