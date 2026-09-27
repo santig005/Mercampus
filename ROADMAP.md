@@ -3066,6 +3066,9 @@ adding a product and the seller's own product list/edit screens
   reasoning this task's entry gives for what a seller types themselves). The
   two-option "Sección" select (Antojos/Marketplace) is this form's own
   interface copy, not taxonomy, and is translated.
+  **Superseded 2026-09-27 by T-176:** the human chose "fixed value,
+  translated label". Stored values stay Spanish and only the displayed
+  label follows the locale.
 - **Existing e2e strings pinned some exact Spanish text - kept verbatim.**
   `tests/e2e/signed-in/writes.spec.js` and `product-edit.spec.js` assert
   `getByLabel('Descripcion')` (no accent) and `getByRole('button', { name:
@@ -7628,6 +7631,77 @@ spec plus `i18n`, `modal-stack`, `seller-products-modal` and `recorrido`:
 - The ROADMAP's earlier suggestion to *deduplicate* `SellerPage`/`SellerModal`
   (one component instead of two near-copies) is still open. This task only
   translated them.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-176 · Category labels stay Spanish on English pages
+**Why:** after T-173–T-175, the category chips on `/en/antojos` and
+`/en/marketplace`, the category tags on every product card, the seller's
+category picker, and `SellerProductsBySection`'s "🍕 Antojos (N productos)"
+headings were the last Spanish text on the listing and seller screens. T-81
+had left the taxonomy untranslated on purpose and called it a product
+decision.
+**The decision (the human, 2026-09-27): fixed value, translated label.** A
+category string does two jobs. It is the stored value (saved on every
+product, validated by Zod and the Mongoose schema, sent as `?category=`,
+filtered on by `GET /api/products`, and remembered in `localStorage` by
+`CategoryGrid`), and it is the text a person reads. The value stays Spanish
+and untouched. Only the label is translated. The URL keeps `?category=Dulces`
+in English too, by explicit choice, so links shared between the two sites
+keep working.
+**Done 2026-09-27.**
+- `src/lib/category-labels.ts` maps each stored value to an ASCII message key
+  (`'Comida rápida'` → `fastFood`). `src/utils/hooks/useCategoryLabel.js`
+  turns a value into the label for the current locale. **A value with no key
+  renders as stored.** A product saved under a category that has since been
+  renamed or dropped shows what it shows today, never a missing-message
+  placeholder. So this needs no data migration and makes no assumption about
+  what production holds (the dev DB, read-only: 6 values, all in the current
+  lists).
+- New `Categories` namespace. In `es.json`, every label equals its stored
+  value, so nothing a Spanish visitor sees changes.
+- Applied in `CategoryGrid` (chips, both sections), `ProductCard` (tags), and
+  the add-product and `EditProductForm` pickers (react-select `label`
+  translated, `value` untouched).
+- `SellerProductsBySection`: new namespace for its section headings and empty
+  state. The headings now use ICU plurals, so Spanish reads "1 producto"
+  instead of "1 productos".
+**Verified with real renders (rule 3):**
+- New `tests/unit/category-labels.test.js` checks every value in all four
+  category lists: it has a key, the key exists in both locales, and the
+  Spanish label equals the value. A category added later without a key
+  fails CI.
+- New `tests/e2e/categories-i18n.spec.js`:
+  - chips in both locales on both listings, plus a product-card tag;
+  - clicking "Cookies" on `/en/antojos` still puts `?category=Galletas` in
+    the URL and marks the chip active;
+  - `/en/antojos?category=Galletas` (a link shared from the Spanish site)
+    activates "Cookies";
+  - the seller page's translated section heading.
+- New `tests/e2e/signed-in/categories-form-i18n.spec.js`:
+  - the add-product options in both locales;
+  - the edit form showing the product's stored `'Comida rápida'` as "Fast
+    food" in English. That proves the picker matches on the value, not the
+    label.
+- Screenshots are in `docs/audits/t-176/`. Those specs plus
+  `seller-modal-i18n`, `modal-stack`, `sidebar-i18n`, `seller-products-i18n`,
+  `i18n` and `recorrido` all pass locally. `npm run verify` is green.
+**Rule 9, found here, not fixed:**
+- The listing's heading under the chips (`Antojos.allHeading` /
+  `Marketplace.allHeading`) always reads "Todos"/"All", even while a category
+  filter is active. That's a UX quirk, not an i18n one.
+- react-select's default placeholder "Select..." is English in both locales
+  on both forms' category pickers, visible whenever no category is picked. None
+  of the four react-selects on the add/edit forms passes a `placeholder`. The
+  two section pickers always hold a value, so theirs never shows.
+- `src/components/products/ProductCardFavorite.jsx` also renders raw
+  categories, but its only importer, `ProductGridFavorite.jsx`, has no
+  importers of its own (`AntojosListing.jsx` already says it is dead). It was
+  left untouched rather than translated. Deleting both is a candidate for
+  its own PR (rule 5: confirmed by a search, not by intuition).
+- Server-side validation messages still name the invalid category in
+  Spanish (`validacion.test.js` pins "Tecnología"). Those are API responses,
+  not UI copy.
 **Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 

@@ -12,6 +12,7 @@ import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
 import { getCategoriesBySection } from '@/utils/resources/categories';
+import { useCategoryLabel } from '@/utils/hooks/useCategoryLabel';
 import ImageGrid from '@/components/general/ImageGrid';
 import Select from 'react-select';
 import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
@@ -50,9 +51,11 @@ export default function EditProductForm({ product: initialProduct }) {
   );
   const selectStyles = useReactSelectStyles();
 
+  // The value is what gets saved and validated; only the label is translated.
+  const categoryLabel = useCategoryLabel();
   const categoryOptions = categories.map(category => ({
     value: category,
-    label: category,
+    label: categoryLabel(category),
   }));
 
   // Load the categories for the product's section

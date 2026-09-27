@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
 import { productCardClassName } from '@/lib/card-variant';
+import { useCategoryLabel } from '@/utils/hooks/useCategoryLabel';
 
 // variant='standalone' (the default): a loose card on the page background,
 // with its own shadow and the scale animation on click.
@@ -16,6 +17,7 @@ import { productCardClassName } from '@/lib/card-variant';
 // hardcoded Spanish, reachable in English on those two shipped zones.
 export default function ProductCard({ product, isClicked, variant = 'standalone' }) {
   const t = useTranslations('ProductCard');
+  const categoryLabel = useCategoryLabel();
   const { name, availability, availabilityStatus, category, price, images, owner } =
     product;
 
@@ -26,7 +28,7 @@ export default function ProductCard({ product, isClicked, variant = 'standalone'
           key={index}
           className='my-card-subtitle text-[11px] mr-1 px-1 py-[2px] rounded-md bg-[#ff950b]/15'
         >
-          {cat}
+          {categoryLabel(cat)}
         </span>
       ));
     } catch (error) {
