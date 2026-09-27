@@ -7133,7 +7133,7 @@ and the public route applies `publicSellerFilter()` - 404 or an empty list
 for a non-public seller, decided and tested. Integration tests for both.
 **Model:** `sonnet` · **Nightly:** yes
 
-### [ ] T-167 · Product and seller modals: one stack, URL-synced (option C)
+### [x] T-167 · Product and seller modals: one stack, URL-synced (option C)
 **Why:** the human asked for the modal logic to be rethought after T-165,
 comparing alternatives (2026-09-26). Today `ProductModal` renders its own
 `SellerModal`, which renders `SellerProductsBySection`, which renders its own
@@ -7201,7 +7201,7 @@ changing the pathname; four PRs). Progress:
   -> seller -> back, seller list -> seller -> back, seller page -> product
   -> back, and one seller dialog per page; 76 e2e in total, with the
   nav/i18n/404 suites.
-- [ ] T-167d - what the stack leaves behind: the "Recomendar a un amigo"
+- **[x] T-167d** - what the stack leaves behind: the "Recomendar a un amigo"
   share dialogs are still opened by id (`my_modal_1_product`,
   `my_modal_1_seller`), and a page now holds two of each (its own and the
   stack's) - e.g. on a seller page, "Recomendar" inside a stacked
@@ -7210,6 +7210,17 @@ changing the pathname; four PRs). Progress:
   shares from a stacked modal on a page that has its own. The `sellerId`
   branch removed from ProductGrid in T-167a had no caller (no prop, no
   `?sellerId=` link).
+  **Done (2026-09-27):** `ShareButton` exposes its sheet through a ref
+  (`shareRef.current.open()`) and its four parents - ProductModal,
+  ProductPage, SellerModal, SellerPage - open their own; no element id is
+  left (the sheet carries `data-share-sheet` for tests). Verified:
+  `npm run verify`; two e2e in `modal-stack.spec.js` - on a seller page,
+  "Recomendar" inside the stacked SellerModal opens that modal's own sheet
+  and not the page's (against the old components it opened nothing inside
+  the modal: count 0), and a product page opens its own. The T-167a scroll
+  test was flaky on a cold server (the listing still settling, scroll
+  anchoring moving scrollTop): it now waits for network idle and a stable
+  baseline; 20 modal e2e x3 repeats all pass.
 **Model:** `opus` · **Nightly:** no (design with the human first)
 
 ### [ ] T-168 · `/admin/sellers` has no app chrome - no way back but the browser button
