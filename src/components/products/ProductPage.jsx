@@ -9,7 +9,7 @@ import { localizedHref } from '@/i18n/routing';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   TbBrandWhatsapp,
   TbChevronLeft,
@@ -54,9 +54,9 @@ const ProductPage = ({ id, section = 'antojos' }) => {
     }
   }, [product]);
 
-  const handleShowModal = () => {
-    document.getElementById('my_modal_1_product').showModal();
-  };
+  // T-167d: this component's own share sheet, not the first one in the page.
+  const shareRef = useRef(null);
+  const handleShowModal = () => shareRef.current?.open();
 
   return (
     <div>
@@ -68,7 +68,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
         </div>
       ) : (
         <dialog id='product_modal' className='modal modal-top modal-open h-dvh'>
-          <ShareButton data={product} type='product' />
+          <ShareButton ref={shareRef} data={product} type='product' />
           {product ? (
             <>
               {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre

@@ -58,9 +58,9 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
     }
   }, [product]);
 
-  const handleShowModal = () => {
-    document.getElementById('my_modal_1_product').showModal();
-  };
+  // T-167d: this component's own share sheet, not the first one in the page.
+  const shareRef = useRef(null);
+  const handleShowModal = () => shareRef.current?.open();
 
   return (
     <div>
@@ -75,7 +75,7 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
           onClose();
         }}
       >
-        <ShareButton data={product} type='product' />
+        <ShareButton ref={shareRef} data={product} type='product' />
         {product ? (
           <>
             {/* T-73: dark:bg-base-100 - bg-primary rinde un blanco fijo

@@ -53,9 +53,9 @@ export default function SellerModal({ seller, open, onClose }) {
     }
   }, [seller]);
 
-  const handleShowModal = () => {
-    document.getElementById('my_modal_1_seller').showModal();
-  };
+  // T-167d: this component's own share sheet, not the first one in the page.
+  const shareRef = useRef(null);
+  const handleShowModal = () => shareRef.current?.open();
 
   return (
     <>
@@ -69,7 +69,7 @@ export default function SellerModal({ seller, open, onClose }) {
           onClose();
         }}
       >
-        <ShareButton data={seller} type='seller' />
+        <ShareButton ref={shareRef} data={seller} type='seller' />
         {seller && (
           <>
             {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre

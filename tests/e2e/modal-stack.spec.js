@@ -52,8 +52,22 @@ test.describe('product modal stack (T-167)', () => {
     // Only one product dialog in the page - the stack's - not one per list.
     await expect(page.locator('dialog[id^="product_modal"]')).toHaveCount(1);
 
+    // Let the first page settle before measuring. On a freshly started
+    // server the listing's images and fonts land after the cards, and the
+    // browser's scroll anchoring moves scrollTop to keep the visible content
+    // in place - which read as "the scroll changed" (306, 512) on the first
+    // run only, nothing to do with the modal.
+    await page.waitForLoadState('networkidle');
     await scrollListingTo(page, 250);
     await expect.poll(() => scrollerTop(page)).toBeGreaterThan(100);
+    // Stable across two reads 300 ms apart before it counts as the baseline.
+    await expect
+      .poll(async () => {
+        const before = await scrollerTop(page);
+        await page.waitForTimeout(300);
+        return (await scrollerTop(page)) === before;
+      })
+      .toBe(true);
     const scrolled = await scrollerTop(page);
     const listing = countListingRequests(page);
 
@@ -232,5 +246,42 @@ test.describe('pages on the stack (T-167c)', () => {
     await page.goBack();
     await expect(page).toHaveURL(new RegExp(`/antojos/sellers/${SELLER_ID}$`));
     await expect(page.locator('#product_modal_stack')).not.toHaveAttribute('open', '');
+  });
+});
+
+// T-167d: "Recomendar a un amigo" used to open its sheet by element id. With
+// the stack, a page holds two sheets per type (its own and the stack modal's),
+// and getElementById returned the page's - so sharing from a stacked modal
+// opened the wrong sheet, one sitting inside a dialog that is not open.
+test.describe('share sheet belongs to its own modal (T-167d)', () => {
+  test("on a seller page, the stacked seller modal shares from its own sheet", async ({
+    page,
+  }) => {
+    await page.goto(`/antojos/sellers/${SELLER_ID}`);
+
+    // Seller page -> a product -> that product's seller, all on the stack.
+    await page.getByText('Arepa de queso').first().click();
+    await page
+      .locator('#product_modal_stack')
+      .getByRole('button', { name: /Arepas El Parche/ })
+      .click();
+    await expect(page).toHaveURL(modalInUrl('vendedor', SELLER_ID));
+
+    const stacked = page.locator('#seller_modal_stack');
+    await stacked.getByRole('button', { name: /Recomendar a un amigo/ }).click();
+
+    // The sheet that opened is the stacked modal's own, and it is the only one.
+    await expect(stacked.locator('dialog[data-share-sheet="seller"][open]')).toHaveCount(1);
+    await expect(page.locator('#seller_page dialog[data-share-sheet][open]')).toHaveCount(0);
+    await expect(stacked.getByRole('button', { name: /WhatsApp/ }).last()).toBeVisible();
+  });
+
+  test('on a product page, the page shares from its own sheet', async ({ page }) => {
+    await page.goto(`/antojos/${PRODUCT_ID}`);
+
+    await page.getByRole('button', { name: /Recomendar a un amigo/ }).first().click();
+
+    await expect(page.locator('dialog[data-share-sheet="product"][open]')).toHaveCount(1);
+    await expect(page.locator('#product_modal_stack dialog[data-share-sheet][open]')).toHaveCount(0);
   });
 });

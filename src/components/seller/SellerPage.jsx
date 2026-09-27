@@ -1,7 +1,7 @@
 'use client';
 import { logger } from '@/lib/logger';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   TbChevronLeft,
   TbBrandWhatsapp,
@@ -53,9 +53,9 @@ export default function SellerPage({ id }) {
     fetchSeller();
   }, [id]);
 
-  const handleShowModal = () => {
-    document.getElementById('my_modal_1_seller').showModal();
-  };
+  // T-167d: this component's own share sheet, not the first one in the page.
+  const shareRef = useRef(null);
+  const handleShowModal = () => shareRef.current?.open();
 
   if (!seller) {
     return (
@@ -81,7 +81,7 @@ export default function SellerPage({ id }) {
               `seller_modal`, the same as the SellerModal nested inside it -
               which was never opened (its state had no setter call) and is
               gone - and as every other SellerModal on the site. */}
-          <ShareButton data={seller} type='seller' />
+          <ShareButton ref={shareRef} data={seller} type='seller' />
           {seller ? (
             <>
               {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
