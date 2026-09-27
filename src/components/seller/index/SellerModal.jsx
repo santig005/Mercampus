@@ -15,6 +15,7 @@ import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '@/components/products/share/ShareButton';
 import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { parseIfJSON } from '@/utils/utilFn';
+import { useTranslations } from 'next-intl';
 
 // T-167: rendered once, by the modal stack (components/modals/ModalStack.jsx),
 // which opens it from the URL (?vendedor=) and closes it by going back in
@@ -23,6 +24,10 @@ import { parseIfJSON } from '@/utils/utilFn';
 // each copy opened by the same element id.
 export default function SellerModal({ seller, open, onClose }) {
   const dialogRef = useRef(null);
+  // Its own namespace, not SellerPage's, even though most of the copy
+  // matches: the two are separate files (T-81's one-namespace-per-component
+  // convention). Merging them into one component is a separate refactor.
+  const t = useTranslations('SellerModal');
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -80,7 +85,7 @@ export default function SellerModal({ seller, open, onClose }) {
                   <div className='modal-action m-0 justify-between p-2'>
                     <button
                       className='btn btn-circle'
-                      aria-label='Cerrar'
+                      aria-label={t('close')}
                       onClick={onClose}
                     >
                       <TbChevronLeft className='icon' />
@@ -114,12 +119,12 @@ export default function SellerModal({ seller, open, onClose }) {
                     </p>
                     <div className='flex flex-col gap-4 mt-4'>
                       <div className=''>
-                        <h2 className='card-title px-6 mb-2'>Horario</h2>
+                        <h2 className='card-title px-6 mb-2'>{t('scheduleHeading')}</h2>
                         <TableSchema schedules={schedules} />
                       </div>
                       <div className=''>
                         <h2 className='card-title px-6 mb-2'>
-                          ¡Conoce todos los productos de este vendedor!
+                          {t('productsHeading')}
                         </h2>
                         <div className='px-2'>
                           <SellerProductsBySection sellerId={seller._id} />
@@ -158,10 +163,12 @@ export default function SellerModal({ seller, open, onClose }) {
                           });
                         }}
                       >
-                        <TbBrandInstagram className='icon' /> Instagram
+                        <TbBrandInstagram className='icon' /> {t('instagram')}
                       </a>
                       <a
-                        href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                        href={`https://wa.me/+57${seller.phoneNumber}?text=${encodeURIComponent(
+                          t('whatsappMessage', { seller: seller.businessName ?? '' })
+                        )}`}
                         className='btn btn-primary join-item w-1/2'
                         target='_blank'
                         referrerPolicy='no-referrer'
@@ -173,14 +180,14 @@ export default function SellerModal({ seller, open, onClose }) {
                           });
                         }}
                       >
-                        <TbBrandWhatsapp className='icon' /> WhatsApp
+                        <TbBrandWhatsapp className='icon' /> {t('whatsapp')}
                       </a>
                     </div>
                     <button
                       className='btn btn-secondary w-full mt-2'
                       onClick={handleShowModal}
                     >
-                      Recomendar a un amigo <TbShare2 className='icon' />
+                      {t('recommend')} <TbShare2 className='icon' />
                     </button>
                   </div>
                 </div>

@@ -414,5 +414,22 @@
     "defaultSellerGreeting": "estimado vendedor",
     "whatsappMessage": "Hola {seller}, te vi en Mercampus. Estoy interesado en el producto {product}. Podrías decirme dónde te encuentras?",
     "recommend": "Recomendar a un amigo"
+  },
+  "SellerPage": {
+    "scheduleHeading": "Horario",
+    "productsHeading": "¡Conoce todos los productos de este vendedor!",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus ",
+    "recommend": "Recomendar a un amigo"
+  },
+  "SellerModal": {
+    "close": "Cerrar",
+    "scheduleHeading": "Horario",
+    "productsHeading": "¡Conoce todos los productos de este vendedor!",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus ",
+    "recommend": "Recomendar a un amigo"
   }
 }

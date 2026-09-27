@@ -414,5 +414,22 @@
     "defaultSellerGreeting": "dear seller",
     "whatsappMessage": "Hi {seller}, I saw you on Mercampus. I'm interested in the product {product}. Could you tell me where you're located?",
     "recommend": "Recommend to a friend"
+  },
+  "SellerPage": {
+    "scheduleHeading": "Schedule",
+    "productsHeading": "Check out all of this seller's products!",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "whatsappMessage": "Hi {seller}, I saw you on Mercampus ",
+    "recommend": "Recommend to a friend"
+  },
+  "SellerModal": {
+    "close": "Close",
+    "scheduleHeading": "Schedule",
+    "productsHeading": "Check out all of this seller's products!",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "whatsappMessage": "Hi {seller}, I saw you on Mercampus ",
+    "recommend": "Recommend to a friend"
   }
 }
