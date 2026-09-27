@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { localizedHref } from '@/i18n/routing';
 import { getCategoriesBySection } from '@/utils/resources/categories';
+import { useCategoryLabel } from '@/utils/hooks/useCategoryLabel';
 import InputFields from '@/components/auth/register/InputFields';
 import { FcHighPriority } from 'react-icons/fc';
 import { IoClose } from 'react-icons/io5';
@@ -59,9 +60,11 @@ const AddProduct = () => {
     setFieldErrors([]);
   };
 
+  // The value is what gets saved and validated; only the label is translated.
+  const categoryLabel = useCategoryLabel();
   const categoryOptions = categories.map(category => ({
     value: category,
-    label: category,
+    label: categoryLabel(category),
   }));
 
   // Load the categories for the selected section

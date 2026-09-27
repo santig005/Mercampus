@@ -4,8 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { getSellerProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
 import { useModalStack } from '@/components/modals/ModalStack';
+import { useTranslations } from 'next-intl';
 
 export default function SellerProductsBySection({ sellerId }) {
+  const t = useTranslations('SellerProductsBySection');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   // T-167b: the layout's modal stack. This used to wrap the list in its own
@@ -46,7 +48,7 @@ export default function SellerProductsBySection({ sellerId }) {
     // or SellerPage's bg-primary/dark:bg-base-100.
     return (
       <div className='text-center py-8 text-gray-500 dark:text-base-content/70'>
-        <p>Este vendedor aún no tiene productos disponibles.</p>
+        <p>{t('empty')}</p>
       </div>
     );
   }
@@ -73,11 +75,9 @@ export default function SellerProductsBySection({ sellerId }) {
       {sortedSections.map(([section, sectionProducts]) => (
         <div key={section}>
           <h3 className='text-lg font-bold mb-3 text-gray-800 dark:text-base-content px-6'>
-            {section === 'antojos' ? (
-              <>🍕 Antojos ({sectionProducts.length} productos)</>
-            ) : (
-              <>🛍️ Marketplace ({sectionProducts.length} productos)</>
-            )}
+            {t(section === 'antojos' ? 'antojosHeading' : 'marketplaceHeading', {
+              count: sectionProducts.length,
+            })}
           </h3>
           <div className='space-y-3 px-2'>
             {sectionProducts.map(product => (

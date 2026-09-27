@@ -431,5 +431,32 @@
     "whatsapp": "WhatsApp",
     "whatsappMessage": "Hola {seller}, te vi en Mercampus ",
     "recommend": "Recomendar a un amigo"
+  },
+  "Categories": {
+    "all": "Todos",
+    "sweets": "Dulces",
+    "fruits": "Frutas",
+    "fried": "Frituras",
+    "cookies": "Galletas",
+    "iceCream": "Helados",
+    "bakery": "Panadería",
+    "pastries": "Repostería",
+    "snacks": "Snacks",
+    "fastFood": "Comida rápida",
+    "other": "Otros",
+    "accessories": "Accesorios",
+    "makeup": "Maquillaje",
+    "thermoses": "Termos",
+    "clothing": "Ropa",
+    "technology": "Tecnología",
+    "books": "Libros",
+    "sports": "Deportes",
+    "home": "Hogar",
+    "beauty": "Belleza"
+  },
+  "SellerProductsBySection": {
+    "empty": "Este vendedor aún no tiene productos disponibles.",
+    "antojosHeading": "🍕 Antojos ({count, plural, one {# producto} other {# productos}})",
+    "marketplaceHeading": "🛍️ Marketplace ({count, plural, one {# producto} other {# productos}})"
   }
 }

@@ -431,5 +431,32 @@
     "whatsapp": "WhatsApp",
     "whatsappMessage": "Hi {seller}, I saw you on Mercampus ",
     "recommend": "Recommend to a friend"
+  },
+  "Categories": {
+    "all": "All",
+    "sweets": "Sweets",
+    "fruits": "Fruit",
+    "fried": "Fried food",
+    "cookies": "Cookies",
+    "iceCream": "Ice cream",
+    "bakery": "Bakery",
+    "pastries": "Pastries",
+    "snacks": "Snacks",
+    "fastFood": "Fast food",
+    "other": "Other",
+    "accessories": "Accessories",
+    "makeup": "Makeup",
+    "thermoses": "Thermoses",
+    "clothing": "Clothing",
+    "technology": "Technology",
+    "books": "Books",
+    "sports": "Sports",
+    "home": "Home",
+    "beauty": "Beauty"
+  },
+  "SellerProductsBySection": {
+    "empty": "This seller has no products available yet.",
+    "antojosHeading": "🍕 Cravings ({count, plural, one {# product} other {# products}})",
+    "marketplaceHeading": "🛍️ Marketplace ({count, plural, one {# product} other {# products}})"
   }
 }
