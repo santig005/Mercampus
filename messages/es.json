@@ -297,5 +297,80 @@
     "saveButton": "Guardar Cambios",
     "updateError": "Error al actualizar el producto.",
     "deleteError": "Error al eliminar el producto."
+  },
+  "ProfileChecklist": {
+    "completeHeading": "¡Tu perfil está completo!",
+    "incompleteHeading": "Completa tu perfil",
+    "progress": "{completed} de {total}",
+    "progressAria": "Perfil completado al {percent} por ciento",
+    "allDone": "No te falta nada por llenar.",
+    "items": {
+      "logo": {
+        "label": "Sube el logo de tu negocio",
+        "hint": "Una foto propia hace que te reconozcan en el listado."
+      },
+      "description": {
+        "label": "Escribe una descripción",
+        "hint": "Cuenta en una línea qué vendes y qué te diferencia."
+      },
+      "schedule": {
+        "label": "Agrega tu horario",
+        "hint": "Sin horario nunca apareces como disponible."
+      },
+      "product": {
+        "label": "Publica tu primer producto",
+        "hint": "Tu perfil se ve vacío hasta que tengas al menos uno."
+      }
+    }
+  },
+  "EditSellerForm": {
+    "heading": "Edita tu perfil",
+    "subtitle": "Por favor completa la información del perfil",
+    "availabilityHeading": "Mi disponibilidad",
+    "visibilityHeading": "Visibilidad de mi tienda",
+    "visibilityPaused": "En pausa",
+    "visibilityVisible": "Visible",
+    "visibilityHint": "Si la pausas dejas de aparecer en los listados mientras no puedas vender. Conservas tu aprobación y tus productos: cuando la reactives vuelves a aparecer como estabas.",
+    "extraordinaryHeading": "Apertura extraordinaria",
+    "extraordinaryHint": "Si abres fuera de tu horario habitual, actívala para que tu tienda se muestre abierta por un tiempo limitado.",
+    "openUntil": "Abierta hasta las {time}",
+    "cancel": "Cancelar",
+    "openForHours": "Abrir {hours}h",
+    "nameLabel": "Nombre del Negocio",
+    "namePlaceholder": "Nombre del Negocio",
+    "universityLabel": "Universidad",
+    "sloganLabel": "Eslogan",
+    "sloganPlaceholder": "Eslogan del negocio",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción del negocio",
+    "instagramLabel": "Usuario de Instagram",
+    "instagramPlaceholder": "@usuario_instagram",
+    "phoneLabel": "Número de Teléfono",
+    "phonePlaceholder": "Número de contacto",
+    "logoTitle": "Logo de tu Negocio o foto de ti",
+    "saveButton": "Guardar Cambios",
+    "updateError": "Error al actualizar el perfil del vendedor."
+  },
+  "Schedule": {
+    "heading": "Agrega horarios",
+    "subtitle": "Por favor completa la información de tu disponibilidad",
+    "yourSchedulesHeading": "Tus horarios",
+    "intro": "En la siguiente sección puedes agregar los horarios que necesites, modificar o eliminar los que ya tienes 😊",
+    "keepInMind": "Para tener en cuenta:",
+    "tip1Before": "Trata de poner solo horarios entre",
+    "tip1Between": "y",
+    "tip1After": "🧐",
+    "tip2": "La hora inicial debe ser antes que la final 🧐",
+    "errorSelectDay": "Error en el horario {index}: Selecciona un día.",
+    "errorBothTimes": "Error en el horario {index}: Ambos campos de tiempo deben estar completos.",
+    "errorStartTime": "Error en el horario {index}: La hora de inicio debe ser a partir de las 6:00 AM.",
+    "errorEndTime": "Error en el horario {index}: La hora de fin debe ser hasta las 9:00 PM.",
+    "errorEndAfterStart": "Error en el horario {index}: La hora de fin debe ser posterior a la hora de inicio.",
+    "connectionError": "Error al conectar con el servidor.",
+    "removeButton": "Eliminar",
+    "startTimeLabel": "Hora Inicial",
+    "endTimeLabel": "Hora Final",
+    "addScheduleButton": "+ Agregar horario",
+    "saveSchedulesButton": "Guardar horarios"
   }
 }

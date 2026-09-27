@@ -297,5 +297,80 @@
     "saveButton": "Save Changes",
     "updateError": "There was a problem updating the product.",
     "deleteError": "There was a problem deleting the product."
+  },
+  "ProfileChecklist": {
+    "completeHeading": "Your profile is complete!",
+    "incompleteHeading": "Complete your profile",
+    "progress": "{completed} of {total}",
+    "progressAria": "Profile {percent} percent complete",
+    "allDone": "Nothing left to fill in.",
+    "items": {
+      "logo": {
+        "label": "Upload your business logo",
+        "hint": "A photo of your own helps people recognize you in the listing."
+      },
+      "description": {
+        "label": "Write a description",
+        "hint": "Tell people in one line what you sell and what sets you apart."
+      },
+      "schedule": {
+        "label": "Add your schedule",
+        "hint": "Without a schedule you never show up as available."
+      },
+      "product": {
+        "label": "Publish your first product",
+        "hint": "Your profile looks empty until you have at least one."
+      }
+    }
+  },
+  "EditSellerForm": {
+    "heading": "Edit your profile",
+    "subtitle": "Please fill in your profile's information",
+    "availabilityHeading": "My availability",
+    "visibilityHeading": "My store's visibility",
+    "visibilityPaused": "Paused",
+    "visibilityVisible": "Visible",
+    "visibilityHint": "Pausing it hides you from listings while you can't sell. You keep your approval and your products: reactivating it brings you back exactly as you were.",
+    "extraordinaryHeading": "Extraordinary opening",
+    "extraordinaryHint": "If you're open outside your usual hours, turn this on so your store shows as open for a limited time.",
+    "openUntil": "Open until {time}",
+    "cancel": "Cancel",
+    "openForHours": "Open {hours}h",
+    "nameLabel": "Business Name",
+    "namePlaceholder": "Business Name",
+    "universityLabel": "University",
+    "sloganLabel": "Slogan",
+    "sloganPlaceholder": "Your business slogan",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Your business description",
+    "instagramLabel": "Instagram Username",
+    "instagramPlaceholder": "@instagram_user",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "Contact number",
+    "logoTitle": "Your Business Logo or a Photo of You",
+    "saveButton": "Save Changes",
+    "updateError": "There was a problem updating the seller profile."
+  },
+  "Schedule": {
+    "heading": "Add schedules",
+    "subtitle": "Please fill in your availability information",
+    "yourSchedulesHeading": "Your schedules",
+    "intro": "In the section below you can add the schedules you need, or edit or remove the ones you already have 😊",
+    "keepInMind": "Keep in mind:",
+    "tip1Before": "Try to only set schedules between",
+    "tip1Between": "and",
+    "tip1After": "🧐",
+    "tip2": "The start time must be before the end time 🧐",
+    "errorSelectDay": "Error in schedule {index}: select a day.",
+    "errorBothTimes": "Error in schedule {index}: both time fields must be filled in.",
+    "errorStartTime": "Error in schedule {index}: the start time must be at or after 6:00 AM.",
+    "errorEndTime": "Error in schedule {index}: the end time must be at or before 9:00 PM.",
+    "errorEndAfterStart": "Error in schedule {index}: the end time must be after the start time.",
+    "connectionError": "There was a problem connecting to the server.",
+    "removeButton": "Remove",
+    "startTimeLabel": "Start Time",
+    "endTimeLabel": "End Time",
+    "addScheduleButton": "+ Add schedule",
+    "saveSchedulesButton": "Save schedules"
   }
 }

@@ -2537,7 +2537,7 @@ T-81.
 **Model:** `sonnet` for batches a-d, `opus` for e · **Nightly:** yes for
 a-d, no for e
 
-### [~] T-81 · Finish the i18n migration, zone by zone
+### [x] T-81 · Finish the i18n migration, zone by zone
 **Why:** T-46 shipped the scaffolding and `/about` as the proof screen,
 and closed with "afterward, one task per zone: listing, product detail,
 seller profile, forms, seller panel. Each with its own PR." Those tasks
@@ -2575,7 +2575,7 @@ same pattern applied to a different migration):
 | auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
 | seller's own forms — onboarding | `/antojos/sellers/register`, `/antojos/sellers/approving` | **done** (see "Seller onboarding zone notes") |
 | seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | **done** |
-| seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | pending |
+| seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | **done** |
 | admin | `/admin/*` | **skipped on purpose** (decision 2026-09-19, reasoning below) — gate hardened anyway |
 **Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
 matches `/antojos`, `/en/antojos`, `/marketplace`, `/en/marketplace` as
@@ -3102,6 +3102,83 @@ adding a product and the seller's own product list/edit screens
   is byte-for-byte the same as before. The broader `i18n.spec.js`,
   `auth-gate.spec.js` and `seller-onboarding-i18n.spec.js` suites were also
   re-run and stayed green.
+**Seller profile/schedule zone notes (this PR, 2026-09-27) - the third and
+last forms batch.** `/antojos/sellers/profile/edit` and
+`/antojos/sellers/schedules`, both `static` exact `LOCALIZED_ROUTES` entries,
+same shape as register/approving. Both were already in `PROTECTED_PATHS`
+before this zone existed, and `SidebarBtn`/`useCheckSeller` already call
+`localizedHref` for every `goto`/redirect regardless of target - so neither
+needed a code change to start keeping the locale once the entries landed.
+- **One pre-existing test's assertion flipped from correct to stale, caught
+  by the full e2e re-run, not by anything scoped to this zone.**
+  `seller-onboarding-i18n.spec.js` asserted that an approved seller
+  redirected from `/en/.../approving` landed on the *bare* schedules page -
+  true when written, because `/antojos/sellers/schedules` had no `[locale]`
+  file yet and `localizedHref` left it unprefixed on purpose. `useCheckSeller`
+  already routed that redirect through `localizedHref`, same as every other
+  redirect it makes, so the moment this zone gave `/schedules` a `[locale]`
+  page, the exact same call started keeping English instead of dropping it -
+  an improvement, not a regression, but the old test asserted the old
+  (worse) behaviour by name. Updated to expect `/en/antojos/sellers/schedules`.
+- **`ProfileChecklist.jsx` (T-72) had never been touched by this migration
+  and was still hardcoded Spanish - the first thing this zone's own page
+  renders.** It is a Server Component with no state of its own, imported
+  directly by `EditSellerForm.jsx` (a Client Component) - same shape
+  `AvailabilityBadge`/`TableSchema` already use, so it took `'use client'` +
+  `useTranslations` rather than the server-side `getTranslations` a plain
+  Server Component would use; either works, but this matches the zone's own
+  precedent instead of inventing a second pattern.
+- **`src/lib/profile-completeness.ts`'s `label`/`hint` moved out, not just
+  translated in place.** That file is a pure function (`buildProfileChecklist`)
+  deliberately kept free of React so it can be unit tested without a
+  database - it cannot call `useTranslations`. Its four items now carry only
+  `id`/`done`/`href`; `ProfileChecklist.jsx` resolves `items.<id>.label`/
+  `.hint` from `messages/{es,en}.json` by `id`. Checked before removing them:
+  `tests/unit/profile-completeness.test.js` never asserted on `label`/`hint`
+  text, so nothing broke - a new test pins the item shape (`id`/`done`/
+  optional `href`, nothing else) so a future edit can't quietly reintroduce
+  hardcoded copy there.
+- **The checklist's own links now carry the locale too**
+  (`localizedHref(item.href, locale)`), the same nav-gap class PR #363 fixed
+  for `SidebarBtn` - both destinations (`/antojos/sellers/schedules`,
+  `/antojos/product/add`) are migrated routes. Not exercised against the
+  seeded T-84 seller in the e2e spec (its checklist is always complete, so
+  neither link renders) - the test skips itself with a stated reason rather
+  than asserting nothing; flipping the seller's real schedule/product counts
+  to force it open was judged not worth the shared-fixture risk (several
+  other specs in the same serial run depend on that seller's real counts).
+- **Rule 9, found and deliberately left, not fixed - `Schedule.jsx`'s day
+  picker stays Spanish in both locales.** `schedule.day` is stored as the
+  Spanish day *name* (`daysOfWeekES`), and this screen's own `<select>` both
+  reads and writes that shape directly - the exact seam the seller profile
+  zone's PR already flagged when `TableSchema` had to read
+  `daysES[schedule.day - 1]` server-side for "the still-unmigrated
+  `Schedule.jsx` edit screen that also reads this shape." The real fix -
+  storing/reading a locale-agnostic day (see `DAY_KEYS` in
+  `src/utils/resources/days.js`) - means changing what every consumer of
+  `Schedule.day` agrees on: this screen, the two `/api/schedules` routes,
+  `TableSchema`, `SellerModal`, `ProductModal`. Out of scope here for the
+  same reason it was out of scope there. Everything else on this screen
+  (headings, labels, buttons, the five validation error messages) is
+  translated.
+- **Two Spanish `logger.error` prefixes fixed to English in passing**
+  (`Error al guardar horarios:` → `Error saving schedules:`, `Error al
+  realizar la solicitud:` → `Error making the request:`) - internal-only,
+  not asserted by any test, and this file's entire copy was already being
+  rewritten for the move; left them as found and this would have been the
+  one Spanish-language log line in an otherwise all-English logger call
+  site.
+- **`npm run verify` green**, plus `tests/e2e/signed-in/
+  seller-profile-schedule-i18n.spec.js` (new, 7 tests: both locales for both
+  screens, the checklist's translated aria-label, a translated validation
+  error, and the link-locale check noted above). Every pre-existing spec
+  touching these two routes (`seller-screens`, `writes`, `schedule-mobile`)
+  passes unmodified - `schedule-mobile.spec.js` in particular pins the exact
+  `label:has-text("Hora Final") + input[type="time"]` structure, unchanged.
+  `i18n.spec.js`, `auth-gate.spec.js`, `seller-onboarding-i18n.spec.js` and
+  `seller-products-i18n.spec.js` re-run and stayed green.
+**Every `PROTECTED_PATHS` route now has a `[locale]` page, and admin is
+skipped on purpose (decided, not pending) - T-81 itself is done.**
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 

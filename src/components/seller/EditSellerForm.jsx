@@ -1,6 +1,8 @@
 'use client';
 import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 import { updateSeller } from '@/services/sellerService';
 import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
@@ -26,6 +28,8 @@ const OVERRIDE_PRESET_HOURS = [1, 2, 4].filter(
 // Server Component that resolves the checklist and renders this. The form
 // itself stays a Client Component - it is all state, effects and handlers.
 export default function EditSellerForm({ checklist }) {
+  const t = useTranslations('EditSellerForm');
+  const locale = useLocale();
   const [sellerAvailability, setSellerAvailability] = useState(false);
   // T-71. Sellers created before this field existed have no `paused` at all -
   // getSellerContextData reads them with .lean(), which skips Mongoose's
@@ -66,9 +70,9 @@ export default function EditSellerForm({ checklist }) {
     try {
       await updateSeller(seller._id, seller);
       setDataSeller(seller);
-      router.push(APP_HOME);
+      router.push(localizedHref(APP_HOME, locale));
     } catch (error) {
-      setError('Error al actualizar el perfil del vendedor.');
+      setError(t('updateError'));
       logger.error(error);
     }
   };
@@ -163,9 +167,9 @@ export default function EditSellerForm({ checklist }) {
         {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
           </Link> */}
-        <h2 className='text-2xl font-semibold text-white'>Edita tu perfil</h2>
+        <h2 className='text-2xl font-semibold text-white'>{t('heading')}</h2>
         <p className='text-white'>
-          Por favor completa la información del perfil
+          {t('subtitle')}
         </p>
       </div>
       <div className='h-3/4 bg-[#393939]'>
@@ -176,7 +180,7 @@ export default function EditSellerForm({ checklist }) {
 
               <div className='flex justify-between items-center gap-4 p-2 bg-base-100 rounded shadow-md'>
                 <div>
-                  <h3>Mi disponibilidad</h3>
+                  <h3>{t('availabilityHeading')}</h3>
                   <AvailabilityBadge availability={sellerAvailability} />
                 </div>
                 <ToggleSwitch
@@ -193,18 +197,16 @@ export default function EditSellerForm({ checklist }) {
                   right above it. */}
               <div className='flex justify-between items-center gap-4 p-2 bg-base-100 rounded shadow-md'>
                 <div className='pr-2'>
-                  <h3>Visibilidad de mi tienda</h3>
+                  <h3>{t('visibilityHeading')}</h3>
                   <p
                     className={`text-sm font-semibold ${
                       sellerPaused ? 'text-[#CF0303]' : 'text-[#03CF30]'
                     }`}
                   >
-                    {sellerPaused ? 'En pausa' : 'Visible'}
+                    {sellerPaused ? t('visibilityPaused') : t('visibilityVisible')}
                   </p>
                   <p className='text-xs text-gray-500 dark:text-base-content/70'>
-                    Si la pausas dejas de aparecer en los listados mientras no
-                    puedas vender. Conservas tu aprobación y tus productos:
-                    cuando la reactives vuelves a aparecer como estabas.
+                    {t('visibilityHint')}
                   </p>
                 </div>
                 <ToggleSwitch
@@ -220,19 +222,19 @@ export default function EditSellerForm({ checklist }) {
                   few preset windows - never with no expiry. */}
               <div className='flex flex-col gap-2 p-2 bg-base-100 rounded shadow-md'>
                 <div>
-                  <h3>Apertura extraordinaria</h3>
+                  <h3>{t('extraordinaryHeading')}</h3>
                   <p className='text-xs text-gray-500 dark:text-base-content/70'>
-                    Si abres fuera de tu horario habitual, actívala para que tu
-                    tienda se muestre abierta por un tiempo limitado.
+                    {t('extraordinaryHint')}
                   </p>
                 </div>
                 {overrideActive ? (
                   <div className='flex justify-between items-center gap-4'>
                     <p className='text-sm font-semibold text-[#03CF30]'>
-                      Abierta hasta las{' '}
-                      {new Date(overrideUntil).toLocaleTimeString('es-CO', {
-                        hour: '2-digit',
-                        minute: '2-digit',
+                      {t('openUntil', {
+                        time: new Date(overrideUntil).toLocaleTimeString(
+                          locale === 'en' ? 'en-US' : 'es-CO',
+                          { hour: '2-digit', minute: '2-digit' }
+                        ),
                       })}
                     </p>
                     <button
@@ -240,7 +242,7 @@ export default function EditSellerForm({ checklist }) {
                       className='btn btn-sm'
                       onClick={handleClearOverride}
                     >
-                      Cancelar
+                      {t('cancel')}
                     </button>
                   </div>
                 ) : (
@@ -252,7 +254,7 @@ export default function EditSellerForm({ checklist }) {
                         className='btn btn-sm'
                         onClick={() => handleSetOverride(hours)}
                       >
-                        Abrir {hours}h
+                        {t('openForHours', { hours })}
                       </button>
                     ))}
                   </div>
@@ -260,9 +262,9 @@ export default function EditSellerForm({ checklist }) {
               </div>
 
               <InputFields
-                title='Nombre del Negocio'
+                title={t('nameLabel')}
                 type='text'
-                placeholder='Nombre del Negocio'
+                placeholder={t('namePlaceholder')}
                 value={seller.businessName || ''}
                 onChange={e =>
                   setSeller({ ...seller, businessName: e.target.value })
@@ -271,27 +273,27 @@ export default function EditSellerForm({ checklist }) {
                 required
               />
                <div>
-                <label>Universidad</label>
-                <UniGraphicSelector 
+                <label>{t('universityLabel')}</label>
+                <UniGraphicSelector
                   value={seller.university}
                   onUniversityChange={(selected) => setSeller({ ...seller, university: selected })}
-                />    
+                />
               </div>
 
               <InputFields
-                title='Eslogan'
+                title={t('sloganLabel')}
                 type='text'
-                placeholder='Eslogan del negocio'
+                placeholder={t('sloganPlaceholder')}
                 value={seller.slogan || ''}
                 onChange={e => setSeller({ ...seller, slogan: e.target.value })}
                 name='slogan'
               />
 
               <InputFields
-                title='Descripción'
+                title={t('descriptionLabel')}
                 type='textarea'
                 name='description'
-                placeholder='Descripción del negocio'
+                placeholder={t('descriptionPlaceholder')}
                 value={seller.description || ''}
                 onChange={e =>
                   setSeller({ ...seller, description: e.target.value })
@@ -299,9 +301,9 @@ export default function EditSellerForm({ checklist }) {
               />
 
               <InputFields
-                title='Usuario de Instagram'
+                title={t('instagramLabel')}
                 type='text'
-                placeholder='@usuario_instagram'
+                placeholder={t('instagramPlaceholder')}
                 value={seller.instagramUser || ''}
                 onChange={e =>
                   setSeller({ ...seller, instagramUser: e.target.value })
@@ -310,9 +312,9 @@ export default function EditSellerForm({ checklist }) {
               />
 
               <InputFields
-                title='Número de Teléfono'
+                title={t('phoneLabel')}
                 type='tel'
-                placeholder='Número de contacto'
+                placeholder={t('phonePlaceholder')}
                 value={seller.phoneNumber || ''}
                 onChange={e =>
                   setSeller({ ...seller, phoneNumber: e.target.value })
@@ -325,13 +327,13 @@ export default function EditSellerForm({ checklist }) {
                 initialImages={seller.logo ? [seller.logo] : []}
                 onUpdateImages={handleImagesUpdate}
                 nameFolder='sellerlogos'
-                title='Logo de tu Negocio o foto de ti'
+                title={t('logoTitle')}
                 maxImages={1}
               />
 
               <div className='flex justify-end'>
                 <button type='submit' className='btn btn-primary'>
-                  Guardar Cambios
+                  {t('saveButton')}
                 </button>
               </div>
             </div>

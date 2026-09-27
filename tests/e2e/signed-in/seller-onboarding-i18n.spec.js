@@ -54,15 +54,18 @@ test.describe('i18n on the seller onboarding zone (T-81)', () => {
   });
 
   // The control: with the fixture as it is, neither page is for this user.
-  // Also the case localizedHref must leave bare - /schedules has no [locale]
-  // file yet, and prefixing it would 404.
-  test('an approved seller is sent from /en/.../approving to the bare schedules page', async ({
+  // Used to assert the redirect landed on the *bare* schedules page -
+  // /schedules had no [locale] file yet, and localizedHref left it
+  // unprefixed on purpose (prefixing would have 404'd it). T-81's profile/
+  // schedule zone migrated it, so useCheckSeller's redirect (which already
+  // went through localizedHref, same as every other redirect it makes) now
+  // correctly keeps English instead of dropping it.
+  test('an approved seller is sent from /en/.../approving to /en/.../schedules', async ({
     page,
   }) => {
     await page.goto('/en/antojos/sellers/approving');
 
-    await expect(page).toHaveURL(/\/antojos\/sellers\/schedules$/);
-    expect(new URL(page.url()).pathname).not.toMatch(/^\/en\//);
+    await expect(page).toHaveURL(/\/en\/antojos\/sellers\/schedules$/);
   });
 
   test('approving, in Spanish (default, no prefix)', async ({ page }) => {
