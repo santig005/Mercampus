@@ -372,5 +372,34 @@
     "endTimeLabel": "Hora Final",
     "addScheduleButton": "+ Agregar horario",
     "saveSchedulesButton": "Guardar horarios"
+  },
+  "SideBar": {
+    "closeSidebar": "Cerrar menú lateral",
+    "antojos": "Antojitos",
+    "marketplace": "Marketplace",
+    "sellers": "Vendedores",
+    "sellerList": "Lista de vendedores",
+    "becomeSeller": "Quiero ser vendedor",
+    "applicationPending": "Solicitud en proceso",
+    "manage": "Gestionar",
+    "salesPanel": "Panel de ventas",
+    "addProducts": "Agregar productos",
+    "editProducts": "Editar mis productos",
+    "editProfile": "Editar mi perfil",
+    "schedules": "Mis horarios",
+    "admin": "Administración",
+    "manageSellers": "Gestionar vendedores",
+    "help": "Ayuda",
+    "about": "Sobre Mercampus",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Regístrate",
+    "signOut": "Cerrar Sesión"
+  },
+  "ThemeToggle": {
+    "label": "Modo oscuro",
+    "toggleAria": "Alternar modo oscuro"
+  },
+  "Navbar": {
+    "signInAria": "Iniciar sesión"
   }
 }

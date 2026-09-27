@@ -372,5 +372,34 @@
     "endTimeLabel": "End Time",
     "addScheduleButton": "+ Add schedule",
     "saveSchedulesButton": "Save schedules"
+  },
+  "SideBar": {
+    "closeSidebar": "Close sidebar",
+    "antojos": "Cravings",
+    "marketplace": "Marketplace",
+    "sellers": "Sellers",
+    "sellerList": "Seller list",
+    "becomeSeller": "Become a seller",
+    "applicationPending": "Application in review",
+    "manage": "Manage",
+    "salesPanel": "Sales dashboard",
+    "addProducts": "Add products",
+    "editProducts": "Edit my products",
+    "editProfile": "Edit my profile",
+    "schedules": "My schedules",
+    "admin": "Administration",
+    "manageSellers": "Manage sellers",
+    "help": "Help",
+    "about": "About Mercampus",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out"
+  },
+  "ThemeToggle": {
+    "label": "Dark mode",
+    "toggleAria": "Toggle dark mode"
+  },
+  "Navbar": {
+    "signInAria": "Sign in"
   }
 }

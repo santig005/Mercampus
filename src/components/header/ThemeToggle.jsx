@@ -2,6 +2,7 @@
 
 import { TbMoon, TbSun } from 'react-icons/tb';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 // T-73: a plain string in localStorage, not JSON.stringify as the rest of
 // the app does through useLocalStorage - layout.jsx's anti-FOUC script runs
@@ -11,6 +12,7 @@ import { useEffect, useState } from 'react';
 const THEME_STORAGE_KEY = 'theme';
 
 export default function ThemeToggle() {
+  const t = useTranslations('ThemeToggle');
   // null until the first effect: we don't yet know which theme the anti-FOUC
   // script applied before React mounted.
   const [theme, setTheme] = useState(null);
@@ -36,14 +38,14 @@ export default function ThemeToggle() {
   return (
     <label className='btn-nav flex items-center gap-2 ps-2 cursor-pointer'>
       {isDark ? <TbMoon className='size-5' /> : <TbSun className='size-5' />}
-      Modo oscuro
+      {t('label')}
       <input
         type='checkbox'
         className='toggle toggle-sm ms-auto'
         checked={isDark}
         onChange={toggleTheme}
         disabled={theme === null}
-        aria-label='Alternar modo oscuro'
+        aria-label={t('toggleAria')}
       />
     </label>
   );

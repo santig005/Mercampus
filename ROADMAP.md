@@ -7472,6 +7472,54 @@ in `docs/audits/t-172/README.md`.
 **Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-173 · Sidebar, theme toggle and navbar stay Spanish on English pages
+**Why:** T-81 migrated every zone's *page* copy, but the chrome shared by all
+zones was never owned by any of them. Measured on `origin/agent/develop`
+2026-09-27: `src/components/seller/SideBar.jsx` had no `next-intl` import at
+all (20 hardcoded strings), `ThemeToggle.jsx` (rendered only by `SideBar`)
+hardcoded "Modo oscuro" and its `aria-label`, and `Navbar.jsx` hardcoded the
+account link's `aria-label='Iniciar sesión'`. Every English page opened a
+fully Spanish sidebar.
+**Done 2026-09-27.** Three namespaces, one per component (`SideBar`,
+`ThemeToggle`, `Navbar`), same one-namespace-per-component convention as
+T-81. `SideBar` renders under both the `[locale]` layouts and the unmigrated
+`src/app/antojos|marketplace/layout.jsx`; the root `NextIntlClientProvider`
+covers all four, so the unmigrated ones resolve to Spanish (same pattern as
+`ImageGrid`/`AvailabilityBadge`). `SidebarBtn`'s `goto`/`localizedHref` path
+is untouched.
+- **Spanish copy kept literal**, including the two different casings
+  "Iniciar Sesión" (sidebar) and "Iniciar sesión" (navbar icon) - six
+  existing specs pin them by name and `accessible-names.spec.js` relies on
+  that exact difference.
+- **One Spanish-side change, on purpose:** the drawer overlay's
+  `aria-label` was the English `close sidebar` in both locales; it is now
+  `Cerrar menú lateral` / `Close sidebar`. No test addressed it by name
+  (only a comment in `sidebar-hamburger-gap.spec.js`, which selects by
+  class).
+- English "Antojitos" is "Cravings", matching the existing
+  `Antojos.metaTitle`.
+**Verified with real renders (rule 3):** new `tests/e2e/sidebar-i18n.spec.js`
+(signed out, `/antojos` and `/en/antojos`, plus `/antojos/game` as the
+unmigrated control) and `tests/e2e/signed-in/sidebar-seller-i18n.spec.js`
+(the seller-only "Gestionar" section, T-84 session) read the rendered
+sidebar and screenshot it; screenshots in `docs/audits/t-173/`. Locally, those
+plus every spec that pins sidebar/navbar copy (`sidebar-nav`,
+`session-context`, `accessible-names`, `dark-mode`, `sidebar-hamburger-gap`,
+`i18n`, `seller-screens`, the signed-in `*-i18n` specs): 81 passed, 1
+pre-existing skip. `npm run verify` green.
+**Rule 9, found here, not fixed:**
+- `Navbar.jsx`'s account icon links to a bare `href='/auth/login'`, not
+  through `localizedHref`. `/auth/login` *is* in `LOCALIZED_ROUTES`
+  (`src/i18n/routing.ts`), so on an English page that icon sends the visitor
+  to the Spanish login - the same bug the "locale-aware nav" follow-up of
+  T-81 fixed in `SidebarBtn`. The sidebar's own "Sign In" link is correct.
+  One-line fix plus an e2e click-through; worth its own entry.
+- `Navbar.jsx` still carries a commented-out `<button>` (an old `TbMenu2`
+  menu icon) that `Hambtn` replaced. Dead markup, nothing imports
+  `TbMenu2`; safe to delete in whatever PR touches that file next.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
 ---
 
 ## Phase 8 — The two stories this repo can tell
