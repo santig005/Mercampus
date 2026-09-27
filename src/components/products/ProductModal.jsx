@@ -13,6 +13,7 @@ import TableSchema from '@/components/seller/index/table/TableSchema';
 import ShareButton from './share/ShareButton';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
+import { useTranslations } from 'next-intl';
 
 // T-167: rendered once, by the modal stack (components/modals/ModalStack.jsx),
 // which opens it from the URL (?producto=) and closes it by going back in
@@ -22,6 +23,11 @@ import { sendGAEvent } from '@next/third-parties/google';
 // seller is opened through the stack too (`onOpenSeller`), as its own entry.
 function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
   const dialogRef = useRef(null);
+  // Its own namespace, not ProductPage's, even where the copy matches: the
+  // two stopped being twins in T-167 (this one has the error state and the
+  // favourites placeholder), same convention T-81 used for AddProductPage /
+  // EditProductForm.
+  const t = useTranslations('ProductModal');
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -87,7 +93,7 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
                   <div className='modal-action m-0 justify-between p-2'>
                     <button
                       className='btn btn-circle'
-                      aria-label='Cerrar'
+                      aria-label={t('close')}
                       onClick={onClose}
                     >
                       <TbChevronLeft className='icon' />
@@ -122,7 +128,7 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
                         <img
                           className='img-full'
                           src={seller.logo}
-                          alt='Imagen del publicador del producto'
+                          alt={t('sellerLogoAlt')}
                         />
                       </div>
                       <p className='my-card-subtitle !text-[14px] text-nowrap'>
@@ -130,7 +136,7 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
                       </p>
                     </button>
                     <div>
-                      <h2 className='card-title px-6 dark:text-base-content'>Horario</h2>
+                      <h2 className='card-title px-6 dark:text-base-content'>{t('scheduleHeading')}</h2>
                       {schedules && <TableSchema schedules={schedules} />}
                     </div>
                   </div>
@@ -148,13 +154,14 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
                     href={`https://wa.me/+57${encodeURIComponent(
                       seller?.phoneNumber || ''
                     )}?text=${encodeURIComponent(
-                      `Hola ${
-                        seller?.businessName || 'estimado vendedor'
-                      }, te vi en Mercampus. Estoy interesado en el producto ${name}. Podrías decirme dónde te encuentras?`
+                      t('whatsappMessage', {
+                        seller: seller?.businessName || t('defaultSellerGreeting'),
+                        product: name,
+                      })
                     )}`}
-                    aria-label={`Contactar a ${
-                      seller?.businessName || 'el vendedor'
-                    } por WhatsApp`}
+                    aria-label={t('contactWhatsappAria', {
+                      seller: seller?.businessName || t('defaultSeller'),
+                    })}
                     onClick={() => {
                       sendGAEvent('event', 'click_whatsapp_product', {
                         action: 'Clicked WhatsApp Link',
@@ -164,14 +171,14 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
                       });
                     }}
                   >
-                    Contactar por WhatsApp <TbBrandWhatsapp className='icon' />
+                    {t('contactWhatsapp')} <TbBrandWhatsapp className='icon' />
                   </a>
 
                   <button
                     className='btn btn-secondary w-full mt-2'
                     onClick={handleShowModal}
                   >
-                    Recomendar a un amigo <TbShare2 className='icon' />
+                    {t('recommend')} <TbShare2 className='icon' />
                   </button>
                 </div>
               </div>
@@ -181,20 +188,20 @@ function ProductModal({ product, theKey, open, onClose, onOpenSeller }) {
           <div className='relative'>
             <div className='absolute w-full z-10'>
               <div className='modal-action m-0 justify-between p-2'>
-                <button className='btn btn-circle' aria-label='Cerrar' onClick={onClose}>
+                <button className='btn btn-circle' aria-label={t('close')} onClick={onClose}>
                   <TbChevronLeft className='icon' />
                 </button>
                 {/* T-93: named, not wired. This heart has no onClick and never
                     had one - favourites are T-68, blocked on a product
                     decision. A screen reader could already reach it and heard
                     "button"; now it hears what it is. */}
-                <button className='btn btn-circle' aria-label='Guardar en favoritos'>
+                <button className='btn btn-circle' aria-label={t('favoriteAria')}>
                   <TbHeart className='icon' />
                 </button>
               </div>
             </div>
             <h2 className='font-medium text-pretty'>
-              Algo salió mal, por favor intente de nuevo
+              {t('errorMessage')}
             </h2>
           </div>
         )}

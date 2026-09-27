@@ -401,5 +401,18 @@
   },
   "Navbar": {
     "signInAria": "Iniciar sesión"
+  },
+  "ProductModal": {
+    "close": "Cerrar",
+    "favoriteAria": "Guardar en favoritos",
+    "errorMessage": "Algo salió mal, por favor intente de nuevo",
+    "scheduleHeading": "Horario",
+    "sellerLogoAlt": "Imagen del publicador del producto",
+    "contactWhatsapp": "Contactar por WhatsApp",
+    "contactWhatsappAria": "Contactar a {seller} por WhatsApp",
+    "defaultSeller": "el vendedor",
+    "defaultSellerGreeting": "estimado vendedor",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus. Estoy interesado en el producto {product}. Podrías decirme dónde te encuentras?",
+    "recommend": "Recomendar a un amigo"
   }
 }

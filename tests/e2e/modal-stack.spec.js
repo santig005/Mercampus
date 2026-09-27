@@ -128,7 +128,12 @@ test.describe('product modal stack (T-167)', () => {
 
     await page.getByText('Arepa de queso').first().click();
     await expect(page).toHaveURL(new RegExp(`/en/antojos\\?producto=${PRODUCT_ID}$`));
-    await expect(whatsapp(page)).toBeVisible();
+    // English since T-174. Before it this matched the Spanish label on an
+    // English page, which was the bug. product-modal-i18n.spec.js covers the
+    // rest of the modal's copy.
+    await expect(
+      openDialog(page).getByRole('link', { name: /^Contact .+ via WhatsApp$/ })
+    ).toBeVisible();
 
     await page.goBack();
     await expect(page).toHaveURL(/\/en\/antojos$/);

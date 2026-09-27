@@ -7520,6 +7520,51 @@ pre-existing skip. `npm run verify` green.
 **Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-174 · The product modal stays Spanish on English pages
+**Why:** `src/components/products/ProductModal.jsx` is what opens when a
+buyer clicks a product on the listing (`?producto=`, T-167's modal stack).
+T-167 postdates T-81's product detail zone, which translated only
+`ProductPage.jsx` (the direct `/antojos/<id>` URL). So an English visitor got
+a Spanish dialog: the "Horario" heading, the logo `alt`, the WhatsApp button,
+its `aria-label` and its prefilled message, "Recomendar a un amigo", both
+close buttons' `aria-label`, the favourites placeholder's `aria-label` and
+the error state. `tests/e2e/modal-stack.spec.js › works under /en` matched
+the *Spanish* WhatsApp label on `/en/antojos`, so it was pinning the bug.
+**Done 2026-09-27.** New `ProductModal` namespace. It's separate from
+`ProductPage` even where the values match, because the two stopped being
+twins in T-167 (the modal has the error state and the favourites
+placeholder). That follows T-81's `AddProductPage`/`EditProductForm`
+convention. Shared keys keep `ProductPage`'s exact values in both locales,
+and three are new (`close`, `favoriteAria`, `errorMessage`). The favourites
+button is still unwired (T-68). Only its label is translated.
+- Spanish copy kept literal: `modal-stack`, `recorrido` and
+  `seller-products-modal` pin it by name on the default locale.
+- `modal-stack.spec.js › works under /en` now asserts the English label
+  (`Contact … via WhatsApp`).
+**Verified with real renders (rule 3):** new
+`tests/e2e/product-modal-i18n.spec.js` opens the modal from `/antojos` and
+`/en/antojos` the way a buyer does. It reads the heading, close button, logo
+`alt`, WhatsApp label, visible text and the prefilled `?text=` of its
+`href`, and "Recommend". It also loads a cold `?producto=` for a missing
+product to check the error state. Screenshots are in `docs/audits/t-174/`.
+Locally, that spec plus `modal-stack`, `recorrido`, `seller-products-modal`
+and `dead-end-404` all pass (the last one's `test.fail()` for T-91 is the
+expected failure). `npm run verify` is green.
+**Rule 9, found here, not fixed:**
+- **The error state has no layout.** The `product ? … : …` branch for a
+  failed load renders its `<h2>` without the `modal-box` wrapper the success
+  branch uses. The message sits bare at the viewport's top-left edge, partly
+  under the close and favourites buttons. See
+  `docs/audits/t-174/product-modal-error-i18n-*.png`. That's a visual fix and
+  needs its own before/after screenshots.
+- **`src/components/Carousel.jsx:67`** hardcodes
+  `` alt={`Carousel image ${index + 1}`} `` in English, on every page and in
+  both locales. It's shared by the four product/seller modals and pages.
+  Translating it, or better, giving it the product's name, is its own small
+  task.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
 ---
 
 ## Phase 8 — The two stories this repo can tell
