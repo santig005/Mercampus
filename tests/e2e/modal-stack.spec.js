@@ -181,3 +181,56 @@ test.describe('seller modal in the stack (T-167b)', () => {
     await expect(page).toHaveURL(/\/antojos$/);
   });
 });
+
+// T-167c: the product page, the seller page and the seller list open their
+// modals through the same stack. Each used to mount its own SellerModal (the
+// seller page's never even opened), opened by a shared element id.
+test.describe('pages on the stack (T-167c)', () => {
+  test('product page: its seller opens as ?vendedor= and back returns to the page', async ({
+    page,
+  }) => {
+    await page.goto(`/antojos/${PRODUCT_ID}`);
+    await expect(page.locator('dialog[id^="seller_modal"]')).toHaveCount(1);
+
+    await page.getByRole('button', { name: /Arepas El Parche/ }).first().click();
+    await expect(page).toHaveURL(modalInUrl('vendedor', SELLER_ID));
+    await expect(
+      openDialog(page).getByText('¡Conoce todos los productos de este vendedor!')
+    ).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`/antojos/${PRODUCT_ID}$`));
+    await expect(page.locator('#seller_modal_stack')).not.toHaveAttribute('open', '');
+  });
+
+  test('seller list: a seller opens as ?vendedor= and back closes it', async ({ page }) => {
+    await page.goto('/antojos/sellers/list');
+
+    await page.getByText('Arepas El Parche').first().click();
+    await expect(page).toHaveURL(modalInUrl('vendedor', SELLER_ID));
+    await expect(
+      openDialog(page).getByText('¡Conoce todos los productos de este vendedor!')
+    ).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/antojos\/sellers\/list$/);
+    await expect(page.locator('#seller_modal_stack')).not.toHaveAttribute('open', '');
+  });
+
+  test('seller page: a product opens as ?producto= and back returns to the page', async ({
+    page,
+  }) => {
+    await page.goto(`/antojos/sellers/${SELLER_ID}`);
+    // The page's own always-open dialog no longer shares an id with a modal.
+    await expect(page.locator('#seller_page')).toHaveCount(1);
+    await expect(page.locator('dialog[id^="seller_modal"]')).toHaveCount(1);
+
+    await page.getByText('Arepa de queso').first().click();
+    await expect(page).toHaveURL(modalInUrl('producto', PRODUCT_ID));
+    await expect(page.locator('#product_modal_stack')).toHaveAttribute('open', '');
+
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`/antojos/sellers/${SELLER_ID}$`));
+    await expect(page.locator('#product_modal_stack')).not.toHaveAttribute('open', '');
+  });
+});

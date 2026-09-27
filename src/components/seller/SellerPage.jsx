@@ -13,7 +13,6 @@ import { useLocale } from 'next-intl';
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
-import SellerModal from '@/components/seller/index/SellerModal';
 import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '../products/share/ShareButton';
@@ -25,7 +24,6 @@ export default function SellerPage({ id }) {
   const [schedules, setSchedules] = useState([]);
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [sellerModalId, setSellerModalId] = useState(null);
 
   const router = useRouter();
   const locale = useLocale();
@@ -78,7 +76,11 @@ export default function SellerPage({ id }) {
           </div>
         </div>
       ) : (
-        <dialog id='seller_modal' className='modal modal-top modal-open h-dvh'>
+        <dialog id='seller_page' className='modal modal-top modal-open h-dvh'>
+          {/* T-167c: this page is laid out as an always-open dialog. Its id was
+              `seller_modal`, the same as the SellerModal nested inside it -
+              which was never opened (its state had no setter call) and is
+              gone - and as every other SellerModal on the site. */}
           <ShareButton data={seller} type='seller' />
           {seller ? (
             <>
@@ -102,7 +104,6 @@ export default function SellerPage({ id }) {
                       </button>
                     </div>
                   </div>
-                  <SellerModal seller={sellerModalId} set={setSellerModalId} />
                   {seller && seller.logo && (
                     <Carousel
                       key={seller._id}

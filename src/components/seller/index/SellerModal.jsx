@@ -16,32 +16,20 @@ import ShareButton from '@/components/products/share/ShareButton';
 import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { parseIfJSON } from '@/utils/utilFn';
 
-// T-167b: `open` and `onClose` make it controlled - the modal stack
-// (components/modals/ModalStack.jsx) opens it from the URL (?vendedor=) and
-// closes it by going back in history. Without them it works as before, opened
-// by id - SellerModalHandler (the seller list) and the product and seller
-// pages still do that until T-167c moves them onto the stack.
-export default function SellerModal({ seller, set, open, onClose }) {
+// T-167: rendered once, by the modal stack (components/modals/ModalStack.jsx),
+// which opens it from the URL (?vendedor=) and closes it by going back in
+// history. It used to be rendered by a SellerModalHandler in the seller list,
+// nested inside every ProductModal and inside the product and seller pages,
+// each copy opened by the same element id.
+export default function SellerModal({ seller, open, onClose }) {
   const dialogRef = useRef(null);
-  const controlled = typeof onClose === 'function';
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!controlled || !dialog) return;
+    if (!dialog) return;
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
-  }, [controlled, open]);
-
-  const closeModal = () => {
-    if (controlled) {
-      onClose();
-      return;
-    }
-    document.getElementById(`seller_modal`).close();
-    setTimeout(() => {
-      set(null);
-    }, 150);
-  };
+  }, [open]);
 
   const [schedules, setSchedules] = useState([]); // State holding the schedules
   const [images, setImages] = useState([]); // State holding the images
@@ -73,12 +61,10 @@ export default function SellerModal({ seller, set, open, onClose }) {
     <>
       <dialog
         ref={dialogRef}
-        // The stack's own copy gets its own id, so it never collides with a
-        // not-yet-migrated SellerModal on the same page.
-        id={controlled ? 'seller_modal_stack' : 'seller_modal'}
+        id='seller_modal_stack'
         className='modal modal-top h-dvh backdrop-blur-md'
+        // Escape: the URL has to change too, so the stack closes it.
         onCancel={event => {
-          if (!controlled) return;
           event.preventDefault();
           onClose();
         }}
@@ -95,7 +81,7 @@ export default function SellerModal({ seller, set, open, onClose }) {
                     <button
                       className='btn btn-circle'
                       aria-label='Cerrar'
-                      onClick={closeModal}
+                      onClick={onClose}
                     >
                       <TbChevronLeft className='icon' />
                     </button>

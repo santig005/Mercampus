@@ -7189,10 +7189,27 @@ changing the pathname; four PRs). Progress:
   at every step, the T-165 WhatsApp number intact), and a cold
   `?vendedor=`; 30 more modal/listing e2e pass, including T-165's
   seller-page path.
-- [ ] T-167c - product page, seller page and seller list on the same host.
-- [ ] T-167d - delete `ProductModalHandler`, `SellerModalHandler` and the
-  nested modals; the `sellerId` branch removed from ProductGrid in T-167a
-  had no caller (no prop, no `?sellerId=` link).
+- **[x] T-167c - product page, seller page and seller list on the same
+  host.** `ProductPage`'s seller button and `SellerGrid` open the seller
+  through the stack (`?vendedor=`); `SellerPage`'s product list already
+  did since T-167b. Their own copies of `SellerModal` are gone - the
+  seller page's was never opened (no setter call) - and so is
+  `SellerModalHandler` (no caller left). `SellerModal` is stack-only now.
+  The seller page's always-open wrapper dialog shared the id
+  `seller_modal` with every SellerModal; it is `seller_page` now.
+  Verified: `npm run verify`; `modal-stack.spec.js` covers product page
+  -> seller -> back, seller list -> seller -> back, seller page -> product
+  -> back, and one seller dialog per page; 76 e2e in total, with the
+  nav/i18n/404 suites.
+- [ ] T-167d - what the stack leaves behind: the "Recomendar a un amigo"
+  share dialogs are still opened by id (`my_modal_1_product`,
+  `my_modal_1_seller`), and a page now holds two of each (its own and the
+  stack's) - e.g. on a seller page, "Recomendar" inside a stacked
+  SellerModal for *another* seller finds the page's dialog first and shares
+  the wrong seller. Make ShareButton ref-controlled, with a test that
+  shares from a stacked modal on a page that has its own. The `sellerId`
+  branch removed from ProductGrid in T-167a had no caller (no prop, no
+  `?sellerId=` link).
 **Model:** `opus` · **Nightly:** no (design with the human first)
 
 ### [ ] T-168 · `/admin/sellers` has no app chrome - no way back but the browser button
