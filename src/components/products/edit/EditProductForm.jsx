@@ -1,6 +1,8 @@
 'use client';
 import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 import { deleteProduct, updateProduct } from '@/services/productService';
 import InputFields from '@/components/auth/register/InputFields';
 import { useRouter } from 'next/navigation';
@@ -29,6 +31,8 @@ import { useReactSelectStyles } from '@/utils/hooks/useReactSelectTheme';
 // a 500.
 export default function EditProductForm({ product: initialProduct }) {
   const id = initialProduct._id;
+  const locale = useLocale();
+  const t = useTranslations('EditProductForm');
   const [product, setProduct] = useState(initialProduct);
   const [error, setError] = useState(null);
   // T-119: fetchFromApi (browserApi.js) now attaches the failed response's
@@ -66,9 +70,9 @@ export default function EditProductForm({ product: initialProduct }) {
     e.preventDefault();
     try {
       await updateProduct(id, product);
-      router.push('/antojos/sellers/products/edit');
+      router.push(localizedHref('/antojos/sellers/products/edit', locale));
     } catch (error) {
-      setError('Error al actualizar el producto.');
+      setError(t('updateError'));
       setFieldErrors(Array.isArray(error?.body?.fields) ? error.body.fields : []);
       logger.error(error);
     }
@@ -87,9 +91,9 @@ export default function EditProductForm({ product: initialProduct }) {
   const handleDeleteProduct = async () => {
     try {
       await deleteProduct(id);
-      router.push('/antojos/sellers/products/edit');
+      router.push(localizedHref('/antojos/sellers/products/edit', locale));
     } catch (error) {
-      setError('Error al eliminar el producto.');
+      setError(t('deleteError'));
       // Deleting has no body to validate, so no `fields` to show - but clear
       // any left over from a failed edit, or they would be shown next to an
       // unrelated delete error.
@@ -109,9 +113,9 @@ export default function EditProductForm({ product: initialProduct }) {
         {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
           </Link> */}
-        <h2 className='text-2xl font-semibold text-white'>Edita tu prodcuto</h2>
+        <h2 className='text-2xl font-semibold text-white'>{t('heading')}</h2>
         <p className='text-white'>
-          Por favor completa la información del producto
+          {t('subtitle')}
         </p>
       </div>
       <div className='h-3/4 bg-[#393939]'>
@@ -140,9 +144,9 @@ export default function EditProductForm({ product: initialProduct }) {
           <form onSubmit={handleSubmit}>
             <div className='flex flex-col gap-7'>
               <InputFields
-                title='Nombre'
+                title={t('nameLabel')}
                 type='text'
-                placeholder='Nombre del producto'
+                placeholder={t('namePlaceholder')}
                 value={product.name}
                 onChange={e => setProduct({ ...product, name: e.target.value })}
                 name='name'
@@ -151,19 +155,19 @@ export default function EditProductForm({ product: initialProduct }) {
 
               <div>
                 <label className='block text-sm font-medium text-gray-700 dark:text-base-content mb-2'>
-                  Sección
+                  {t('sectionLabel')}
                 </label>
                 <Select
                   name='section'
                   options={[
-                    { value: 'antojos', label: 'Antojos (Productos alimenticios)' },
-                    { value: 'marketplace', label: 'Marketplace (Productos no alimenticios)' }
+                    { value: 'antojos', label: t('sectionAntojos') },
+                    { value: 'marketplace', label: t('sectionMarketplace') }
                   ]}
-                  value={{ 
-                    value: product.section || 'antojos', 
-                    label: (product.section || 'antojos') === 'antojos' 
-                      ? 'Antojos (Productos alimenticios)' 
-                      : 'Marketplace (Productos no alimenticios)' 
+                  value={{
+                    value: product.section || 'antojos',
+                    label: (product.section || 'antojos') === 'antojos'
+                      ? t('sectionAntojos')
+                      : t('sectionMarketplace')
                   }}
                   onChange={(selectedOption) => {
                     setProduct({
@@ -180,9 +184,9 @@ export default function EditProductForm({ product: initialProduct }) {
               </div>
 
               <InputFields
-                title='Precio'
+                title={t('priceLabel')}
                 type='text'
-                placeholder='Precio'
+                placeholder={t('pricePlaceholder')}
                 value={product.price}
                 onChange={e =>
                   setProduct({ ...product, price: e.target.value })
@@ -193,7 +197,7 @@ export default function EditProductForm({ product: initialProduct }) {
 
               <>
                 <label className='block text-lg font-semibold mb-2'>
-                  Disponibilidad
+                  {t('availabilityLabel')}
                 </label>
                 <div className='flex items-center justify-between'>
                   <AvailabilityBadge availability={product.availability} />
@@ -213,7 +217,7 @@ export default function EditProductForm({ product: initialProduct }) {
 
               <>
                 <label className='block text-lg font-semibold mb-2'>
-                  Categoría
+                  {t('categoryLabel')}
                 </label>
                 <Select
                   isMulti
@@ -229,10 +233,15 @@ export default function EditProductForm({ product: initialProduct }) {
                 />
               </>
 
+              {/* T-81: the label text keeps the original "Descripcion" (no
+                  accent) - tests/e2e/signed-in/writes.spec.js's
+                  getByLabel('Descripcion') pins that exact string, so fixing
+                  the missing accent here would break a passing test over a
+                  cosmetic typo this task did not set out to touch. */}
               <InputFields
-                title='Descripcion'
+                title={t('descriptionLabel')}
                 type='textarea'
-                placeholder='Descripción'
+                placeholder={t('descriptionPlaceholder')}
                 value={product.description}
                 onChange={e =>
                   setProduct({ ...product, description: e.target.value })
@@ -244,7 +253,7 @@ export default function EditProductForm({ product: initialProduct }) {
                 initialImages={product.images}
                 onUpdateImages={handleImagesUpdate}
                 nameFolder='products'
-                title='Imágenes del Producto'
+                title={t('imagesTitle')}
                 maxImages={5}
               />
               <div className='flex justify-end'>
@@ -253,10 +262,10 @@ export default function EditProductForm({ product: initialProduct }) {
                   className='btn btn-danger mr-4'
                   onClick={handleDeleteProduct}
                 >
-                  Eliminar Producto
+                  {t('deleteButton')}
                 </button>
                 <button type='submit' className='btn btn-primary'>
-                  Guardar Cambios
+                  {t('saveButton')}
                 </button>
               </div>
             </div>

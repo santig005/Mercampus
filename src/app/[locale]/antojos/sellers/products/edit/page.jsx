@@ -1,6 +1,8 @@
 'use client';
 import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizedHref } from '@/i18n/routing';
 import { getSellerProducts, updateProduct } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
 import Link from 'next/link';
@@ -12,9 +14,18 @@ import { updateSeller } from '@/services/sellerService';
 import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 
+// T-81 (seller products): moved from src/app/antojos/sellers/products/edit/
+// (deleted). Still a Client Component - no `params`; src/app/[locale]/layout.jsx
+// already calls setRequestLocale for the whole subtree. Gated by
+// isProtectedRoute at both /antojos/sellers/products/edit and its /en twin
+// (src/lib/route-guards.ts). Internal navigation to the add-product page and
+// to a specific product's edit screen now goes through localizedHref, same
+// pattern PR #363 fixed for SidebarBtn - both destinations are migrated too.
 export default function EditProductsPage() {
   const [products, setProducts] = useState([]);
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('EditProductsPage');
 
   const [sellerAvailability, setSellerAvailability] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,36 +100,34 @@ export default function EditProductsPage() {
   };
 
   if (!checkedSeller) return <Loading />;
-  if (isLoading || sellerLoading) return <p>Cargando productos...</p>;
+  if (isLoading || sellerLoading) return <p>{t('loadingProducts')}</p>;
 
   return (
     <div className='p-4'>
       <div className='flex justify-between mb-4'>
-        <h1 className='text-2xl font-bold mb-4'>Editar tus Productos</h1>
+        <h1 className='text-2xl font-bold mb-4'>{t('heading')}</h1>
         <button
-          onClick={() => router.push('/antojos/product/add')}
+          onClick={() => router.push(localizedHref('/antojos/product/add', locale))}
           className='btn btn-primary'
         >
-          Añadir Producto
+          {t('addButton')}
         </button>
       </div>
 
-      <h2>
-        Edita la disponibilidad de tus productos, o da click en uno en
-        especifico para editar mas detalles
-      </h2>
+      <h2>{t('instructions')}</h2>
       <div>
         <div className='flex justify-between items-center p-4 bg-base-100 text-base-content rounded-md shadow-md'>
           <div>
-            <h3 className='text-lg font-semibold'>Mi disponibilidad</h3>
+            <h3 className='text-lg font-semibold'>{t('myAvailability')}</h3>
             <AvailabilityBadge availability={sellerAvailability} />
           </div>
           <ToggleSwitch
             isOn={sellerAvailability}
             onToggle={handleSellerAvailability}
-            label={`Disponibilidad de ${seller?.businessName || 'tu negocio'}: ${
-              sellerAvailability ? 'disponible' : 'no disponible'
-            }`}
+            label={t('availabilityToggleLabel', {
+              name: seller?.businessName || t('yourBusinessFallback'),
+              status: t(sellerAvailability ? 'available' : 'unavailable'),
+            })}
           />
         </div>
 
@@ -145,9 +154,9 @@ export default function EditProductsPage() {
             <div key={section} className='mt-6'>
               <h3 className='text-xl font-bold mb-4 text-gray-800 dark:text-base-content'>
                 {section === 'antojos' ? (
-                  <>🍕 Antojos ({sectionProducts.length} productos)</>
+                  <>🍕 {t('antojosSectionHeading', { count: sectionProducts.length })}</>
                 ) : (
-                  <>🛍️ Marketplace ({sectionProducts.length} productos)</>
+                  <>🛍️ {t('marketplaceSectionHeading', { count: sectionProducts.length })}</>
                 )}
               </h3>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -157,21 +166,22 @@ export default function EditProductsPage() {
                     className='bg-base-100 text-base-content drop-shadow-md p-2 rounded-md cursor-pointer flex flex-col gap-2'
                   >
                     <Link
-                      href={`/antojos/sellers/products/edit/${product._id}`}
+                      href={localizedHref(`/antojos/sellers/products/edit/${product._id}`, locale)}
                       className='block'
                     >
                       <ProductCard product={product} variant='embedded' />
                     </Link>
                     <div className='flex justify-between'>
-                      <p>Disponibilidad</p>
+                      <p>{t('availabilityColumnLabel')}</p>
                       <ToggleSwitch
                         isOn={product.availability}
                         onToggle={() =>
                           handleAvailabilityToggle(product._id, product.availability)
                         }
-                        label={`Disponibilidad de ${product.name}: ${
-                          product.availability ? 'disponible' : 'no disponible'
-                        }`}
+                        label={t('availabilityToggleLabel', {
+                          name: product.name,
+                          status: t(product.availability ? 'available' : 'unavailable'),
+                        })}
                       />
                     </div>
                   </div>

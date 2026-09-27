@@ -16,8 +16,21 @@ import { getProductForEdit } from '@/server/products/getProductForEdit';
 //
 // Same shape as T-90's fix for F1/F2: resolve on the server, before anything
 // is sent, and 404 instead of rendering a screen around nothing.
+//
+// T-81 (seller products): moved from
+// src/app/antojos/sellers/products/edit/[id]/ (deleted). Server Component, so
+// no client-side navigation concern; the `id` still arrives as `params.id`
+// alongside the new `locale` segment - unused here, since this page has no
+// copy of its own (EditProductForm carries it) and
+// src/app/[locale]/layout.jsx already calls setRequestLocale for the whole
+// subtree. Only a Mongo-ObjectId-shaped id reaches this file at all: a
+// malformed one (not 24 hex) never matches the `dynamic` LOCALIZED_ROUTES
+// entry for this base, so isIntlRoute never rewrites it here and it falls
+// through to the app's own 404 instead - same trade-off the product detail
+// zone made for /antojos/<id>, see ROADMAP.md T-81.
 export default async function EditProductPage({ params }) {
-  const access = await getProductForEdit(params.id);
+  const { id } = await params;
+  const access = await getProductForEdit(id);
 
   if (access.status !== 'ok') {
     // Missing and not-yours render the same 404 on purpose. Next 14 gives a
@@ -29,7 +42,7 @@ export default async function EditProductPage({ params }) {
     // had none of. The authorization that matters is still a real 403: PUT
     // and DELETE /api/products/[id] check ownership themselves, and nothing
     // this page renders can bypass them.
-    logger.warn('edit product denied', { id: params.id, reason: access.status });
+    logger.warn('edit product denied', { id, reason: access.status });
     notFound();
   }
 
