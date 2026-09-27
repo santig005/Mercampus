@@ -39,7 +39,10 @@ export default async function layout({ children, params }) {
           <ModalStackProvider>{children}</ModalStackProvider>
         </Layout>
       </div>
-      <SideBar userId={userId} />
+      {/* T-172: see the identical row and fix in the antojos layout - the
+          switcher row above adds 32px on top of Layout's own h-16 navbar,
+          which pt-24 (pt-16 + that row's height) accounts for. */}
+      <SideBar userId={userId} topClassName='pt-24' />
     </div>
   );
 }
