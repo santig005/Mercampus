@@ -4,8 +4,9 @@ import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, u
 import { useSearchParams } from 'next/navigation';
 
 import ProductModal from '@/components/products/ProductModal';
+import SellerModal from '@/components/seller/index/SellerModal';
 import { logger } from '@/lib/logger';
-import { PRODUCT_PARAM, searchWithModal, searchWithoutModal } from '@/lib/modal-url';
+import { PRODUCT_PARAM, SELLER_PARAM, searchWithModal, searchWithoutModal } from '@/lib/modal-url';
 
 // T-167 (option C, decided by the human on 2026-09-26): one product modal for
 // the whole layout, driven by the URL, instead of a ProductModalHandler - and
@@ -40,16 +41,28 @@ export function useModalStack() {
 const currentUrlWith = search =>
   `${window.location.pathname}${search}${window.location.hash}`;
 
+const pushModal = target =>
+  window.history.pushState(
+    { [OWN_ENTRY]: true },
+    '',
+    currentUrlWith(searchWithModal(window.location.search, target))
+  );
+
 export function ModalStackProvider({ children }) {
   const products = useRef(new Map());
+  // T-167b: a seller is cached with its schedules, the shape SellerModal
+  // reads - from a product (its populated sellerId + schedules) or from
+  // GET /api/sellers/[id] on a cold load.
+  const sellers = useRef(new Map());
 
   const openProduct = useCallback(product => {
     products.current.set(product._id, product);
-    window.history.pushState(
-      { [OWN_ENTRY]: true },
-      '',
-      currentUrlWith(searchWithModal(window.location.search, { type: 'product', id: product._id }))
-    );
+    pushModal({ type: 'product', id: product._id });
+  }, []);
+
+  const openSeller = useCallback(seller => {
+    sellers.current.set(seller._id, seller);
+    pushModal({ type: 'seller', id: seller._id });
   }, []);
 
   const close = useCallback(() => {
@@ -68,7 +81,7 @@ export function ModalStackProvider({ children }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ openProduct, close }), [openProduct, close]);
+  const value = useMemo(() => ({ openProduct, openSeller, close }), [openProduct, openSeller, close]);
 
   return (
     <ModalStackContext.Provider value={value}>
@@ -76,43 +89,71 @@ export function ModalStackProvider({ children }) {
       {/* useSearchParams needs a Suspense boundary; only the host waits on it,
           never the page. */}
       <Suspense fallback={null}>
-        <ModalHost products={products} close={close} />
+        <ModalHost
+          products={products}
+          sellers={sellers}
+          openSeller={openSeller}
+          close={close}
+        />
       </Suspense>
     </ModalStackContext.Provider>
   );
 }
 
-function ModalHost({ products, close }) {
-  const searchParams = useSearchParams();
-  const productId = searchParams.get(PRODUCT_PARAM);
-  // Products fetched on a cold load, by id: the product, or null if the
-  // request failed (the modal then shows its own error state).
+// On a cold load (a pasted or reloaded ?producto= / ?vendedor=) the item is
+// not in memory yet: fetch it once, and remember a failure as null so the
+// modal shows its error state instead of waiting forever.
+function useCachedOrFetched(id, cache, fetchOne) {
   const [fetched, setFetched] = useState({});
-
-  const cached = productId ? products.current.get(productId) : undefined;
-  const wasFetched = productId ? productId in fetched : false;
+  const cached = id ? cache.current.get(id) : undefined;
+  const wasFetched = id ? id in fetched : false;
 
   useEffect(() => {
-    if (!productId || cached || wasFetched) return;
+    if (!id || cached || wasFetched) return;
     let cancelled = false;
-    fetch(`/api/products/${encodeURIComponent(productId)}`)
-      .then(response => (response.ok ? response.json() : null))
+    fetchOne(id)
       .catch(error => {
-        logger.error('ModalStack: loading a product for a cold ?producto= failed', error);
+        logger.error('ModalStack: loading a modal for a cold URL failed', error);
         return null;
       })
-      .then(product => {
-        if (!cancelled) setFetched(previous => ({ ...previous, [productId]: product }));
+      .then(item => {
+        if (!cancelled) setFetched(previous => ({ ...previous, [id]: item }));
       });
     return () => {
       cancelled = true;
     };
-  }, [productId, cached, wasFetched]);
+  }, [id, cached, wasFetched, fetchOne]);
 
-  const product = cached ?? (wasFetched ? fetched[productId] : null);
-  // Open once there is something to show: the product, or the error state of
-  // a cold load that failed. Never while a cold load is still in flight.
-  const open = Boolean(productId) && (Boolean(cached) || wasFetched);
+  return {
+    item: cached ?? (wasFetched ? fetched[id] : null),
+    // Open once there is something to show - never while a cold load is
+    // still in flight.
+    ready: Boolean(id) && (Boolean(cached) || wasFetched),
+  };
+}
 
-  return <ProductModal theKey='stack' product={product} open={open} onClose={close} />;
+const fetchJson = url => fetch(url).then(response => (response.ok ? response.json() : null));
+const fetchProduct = id => fetchJson(`/api/products/${encodeURIComponent(id)}`);
+const fetchSeller = id =>
+  fetchJson(`/api/sellers/${encodeURIComponent(id)}`).then(body => body?.seller ?? null);
+
+function ModalHost({ products, sellers, openSeller, close }) {
+  const searchParams = useSearchParams();
+  const product = useCachedOrFetched(searchParams.get(PRODUCT_PARAM), products, fetchProduct);
+  const seller = useCachedOrFetched(searchParams.get(SELLER_PARAM), sellers, fetchSeller);
+
+  // modal-url.ts keeps at most one of the two parameters in the URL, so at
+  // most one of these is open.
+  return (
+    <>
+      <ProductModal
+        theKey='stack'
+        product={product.item}
+        open={product.ready}
+        onClose={close}
+        onOpenSeller={openSeller}
+      />
+      <SellerModal seller={seller.item} open={seller.ready} onClose={close} />
+    </>
+  );
 }

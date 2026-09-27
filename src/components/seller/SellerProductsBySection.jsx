@@ -3,11 +3,15 @@ import { logger } from '@/lib/logger';
 import React, { useEffect, useState } from 'react';
 import { getSellerProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
-import ProductModalHandler from '@/components/products/ProductModalHandler';
+import { useModalStack } from '@/components/modals/ModalStack';
 
 export default function SellerProductsBySection({ sellerId }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  // T-167b: the layout's modal stack. This used to wrap the list in its own
+  // ProductModalHandler - a whole ProductModal, with its own nested
+  // SellerModal, inside every seller modal - and refetch at every level.
+  const { openProduct } = useModalStack();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -65,33 +69,29 @@ export default function SellerProductsBySection({ sellerId }) {
   });
 
   return (
-    <ProductModalHandler>
-      {showModal => (
-        <div className='space-y-6'>
-          {sortedSections.map(([section, sectionProducts]) => (
-            <div key={section}>
-              <h3 className='text-lg font-bold mb-3 text-gray-800 dark:text-base-content px-6'>
-                {section === 'antojos' ? (
-                  <>🍕 Antojos ({sectionProducts.length} productos)</>
-                ) : (
-                  <>🛍️ Marketplace ({sectionProducts.length} productos)</>
-                )}
-              </h3>
-              <div className='space-y-3 px-2'>
-                {sectionProducts.map(product => (
-                  <div
-                    key={product._id}
-                    className='w-full'
-                    onClick={() => showModal(product, 'secondary')}
-                  >
-                    <ProductCard product={product} />
-                  </div>
-                ))}
+    <div className='space-y-6'>
+      {sortedSections.map(([section, sectionProducts]) => (
+        <div key={section}>
+          <h3 className='text-lg font-bold mb-3 text-gray-800 dark:text-base-content px-6'>
+            {section === 'antojos' ? (
+              <>🍕 Antojos ({sectionProducts.length} productos)</>
+            ) : (
+              <>🛍️ Marketplace ({sectionProducts.length} productos)</>
+            )}
+          </h3>
+          <div className='space-y-3 px-2'>
+            {sectionProducts.map(product => (
+              <div
+                key={product._id}
+                className='w-full'
+                onClick={() => openProduct(product)}
+              >
+                <ProductCard product={product} />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      )}
-    </ProductModalHandler>
+      ))}
+    </div>
   );
 }

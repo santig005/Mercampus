@@ -9,14 +9,40 @@ import {
 } from 'react-icons/tb';
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '@/components/products/share/ShareButton';
 import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { parseIfJSON } from '@/utils/utilFn';
 
-export default function SellerModal({ seller, set }) {
+// T-167b: `open` and `onClose` make it controlled - the modal stack
+// (components/modals/ModalStack.jsx) opens it from the URL (?vendedor=) and
+// closes it by going back in history. Without them it works as before, opened
+// by id - SellerModalHandler (the seller list) and the product and seller
+// pages still do that until T-167c moves them onto the stack.
+export default function SellerModal({ seller, set, open, onClose }) {
+  const dialogRef = useRef(null);
+  const controlled = typeof onClose === 'function';
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!controlled || !dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [controlled, open]);
+
+  const closeModal = () => {
+    if (controlled) {
+      onClose();
+      return;
+    }
+    document.getElementById(`seller_modal`).close();
+    setTimeout(() => {
+      set(null);
+    }, 150);
+  };
+
   const [schedules, setSchedules] = useState([]); // State holding the schedules
   const [images, setImages] = useState([]); // State holding the images
   useEffect(() => {
@@ -46,8 +72,16 @@ export default function SellerModal({ seller, set }) {
   return (
     <>
       <dialog
-        id={`seller_modal`}
+        ref={dialogRef}
+        // The stack's own copy gets its own id, so it never collides with a
+        // not-yet-migrated SellerModal on the same page.
+        id={controlled ? 'seller_modal_stack' : 'seller_modal'}
         className='modal modal-top h-dvh backdrop-blur-md'
+        onCancel={event => {
+          if (!controlled) return;
+          event.preventDefault();
+          onClose();
+        }}
       >
         <ShareButton data={seller} type='seller' />
         {seller && (
@@ -60,12 +94,8 @@ export default function SellerModal({ seller, set }) {
                   <div className='modal-action m-0 justify-between p-2'>
                     <button
                       className='btn btn-circle'
-                      onClick={() => {
-                        document.getElementById(`seller_modal`).close();
-                        setTimeout(() => {
-                          set(null);
-                        }, 150);
-                      }}
+                      aria-label='Cerrar'
+                      onClick={closeModal}
                     >
                       <TbChevronLeft className='icon' />
                     </button>
