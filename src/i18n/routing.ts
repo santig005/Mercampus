@@ -151,6 +151,12 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { kind: 'static', path: '/antojos/product/add', matchSubpaths: false },
   { kind: 'static', path: '/antojos/sellers/products/edit', matchSubpaths: false },
   { kind: 'dynamic', base: '/antojos/sellers/products/edit' },
+  // T-81 (seller profile/schedule): the third and last forms batch - editing
+  // the seller's own profile and managing schedules. Both are exact `static`
+  // entries, same shape as register/approving above (already in
+  // PROTECTED_PATHS, so the gate is untouched by adding these).
+  { kind: 'static', path: '/antojos/sellers/profile/edit', matchSubpaths: false },
+  { kind: 'static', path: '/antojos/sellers/schedules', matchSubpaths: false },
 ];
 
 // Prefixes `path` with `locale` when it falls under a LOCALIZED_ROUTES

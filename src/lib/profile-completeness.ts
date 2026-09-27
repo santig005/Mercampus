@@ -13,10 +13,12 @@ export type ProfileChecklistInput = {
   productCount: number;
 };
 
+// T-81 (seller profile/schedule zone): `label`/`hint` used to live here as
+// hardcoded Spanish - moved to messages/{es,en}.json's `ProfileChecklist`
+// namespace, keyed by `id`, since a pure function can't call `useTranslations`.
+// This file stays pure data.
 export type ChecklistItem = {
   id: 'logo' | 'description' | 'schedule' | 'product';
-  label: string;
-  hint: string;
   done: boolean;
   href?: string;
 };
@@ -48,27 +50,19 @@ export function buildProfileChecklist({
   const items: ChecklistItem[] = [
     {
       id: 'logo',
-      label: 'Sube el logo de tu negocio',
-      hint: 'Una foto propia hace que te reconozcan en el listado.',
       done: hasCustomLogo(logo),
     },
     {
       id: 'description',
-      label: 'Escribe una descripción',
-      hint: 'Cuenta en una línea qué vendes y qué te diferencia.',
       done: isFilled(description),
     },
     {
       id: 'schedule',
-      label: 'Agrega tu horario',
-      hint: 'Sin horario nunca apareces como disponible.',
       done: scheduleCount > 0,
       href: '/antojos/sellers/schedules',
     },
     {
       id: 'product',
-      label: 'Publica tu primer producto',
-      hint: 'Tu perfil se ve vacío hasta que tengas al menos uno.',
       done: productCount > 0,
       href: '/antojos/product/add',
     },

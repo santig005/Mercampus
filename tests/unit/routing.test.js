@@ -48,14 +48,13 @@ describe('localizedHref (T-81)', () => {
 
   // /antojos and /marketplace are matchSubpaths:false on purpose: their
   // sub-routes (other than the ones migrated below) have no [locale] file,
-  // so prefixing them would 404. /antojos/sellers/schedules is the example
-  // here now that the seller products zone (product/add,
-  // sellers/products/edit) has its own describe block below - it stays
-  // unmigrated until the profile/schedule zone.
+  // so prefixing them would 404. Every one of PROTECTED_PATHS is migrated as
+  // of the seller profile/schedule zone, so /admin/sellers is the example
+  // here now - deliberately excluded from LOCALIZED_ROUTES (see ROADMAP.md
+  // T-81, "Admin: skipped on purpose"), so it stays a stable, genuinely
+  // unmigrated example rather than one due to migrate next.
   it('does not prefix a subpath under a matchSubpaths:false route', () => {
-    expect(localizedHref('/antojos/sellers/schedules', 'en')).toBe(
-      '/antojos/sellers/schedules'
-    );
+    expect(localizedHref('/admin/sellers', 'en')).toBe('/admin/sellers');
   });
 
   // T-81 (auth zone): /auth/login used to be the example "unrelated path"
@@ -291,6 +290,49 @@ describe('localizedHref for the seller products zone (T-81)', () => {
   });
 });
 
+// T-81 (seller profile/schedule): the third and last forms batch - both
+// exact `static` entries, same shape as register/approving. Both were
+// already in PROTECTED_PATHS before this zone existed, so only the
+// [locale]-page guardrail below proves the migration.
+describe('localizedHref for the seller profile/schedule zone (T-81)', () => {
+  it('prefixes the profile edit page for a non-default locale', () => {
+    expect(localizedHref('/antojos/sellers/profile/edit', 'en')).toBe(
+      '/en/antojos/sellers/profile/edit'
+    );
+  });
+
+  it('never prefixes the profile edit page for the default locale', () => {
+    expect(localizedHref('/antojos/sellers/profile/edit', 'es')).toBe(
+      '/antojos/sellers/profile/edit'
+    );
+  });
+
+  it('prefixes the schedules page for a non-default locale', () => {
+    expect(localizedHref('/antojos/sellers/schedules', 'en')).toBe(
+      '/en/antojos/sellers/schedules'
+    );
+  });
+
+  it('never prefixes the schedules page for the default locale', () => {
+    expect(localizedHref('/antojos/sellers/schedules', 'es')).toBe(
+      '/antojos/sellers/schedules'
+    );
+  });
+
+  // Every one of PROTECTED_PATHS now has a [locale] page - the same
+  // guardrail shape as the previous two forms zones, checked generically
+  // over the whole list in the seller profile zone's describe block above.
+  it.each(['/antojos/sellers/profile/edit', '/antojos/sellers/schedules'])(
+    'the seller profile/schedule route %s is migrated',
+    (path) => {
+      expect(localizedHref(path, 'en')).toBe(`/en${path}`);
+      expect(
+        existsSync(resolve(process.cwd(), `src/app/[locale]${path}/page.jsx`))
+      ).toBe(true);
+    }
+  );
+});
+
 // T-81 (auth zone): /auth/login and /auth/register, static exact entries -
 // same treatment as /antojos and /marketplace in the listing zone.
 //
@@ -369,6 +411,8 @@ describe('stripLocalePrefix (T-81)', () => {
     '/antojos/product/add',
     '/antojos/sellers/products/edit',
     `/antojos/sellers/products/edit/${ID}`,
+    '/antojos/sellers/profile/edit',
+    '/antojos/sellers/schedules',
   ])('round-trips %s to its own twin, not to the listing', (path) => {
     expect(localizedHref(stripLocalePrefix(path), 'en')).toBe(`/en${path}`);
     expect(localizedHref(stripLocalePrefix(`/en${path}`), 'es')).toBe(path);

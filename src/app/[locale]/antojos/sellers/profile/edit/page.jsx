@@ -6,6 +6,11 @@ import { getProfileChecklist } from '@/server/sellers/getProfileChecklist';
 // the form, which stays a Client Component because it is all state and
 // handlers. `getProfileChecklist` returns null for anyone without a seller
 // profile - the form's own useCheckSeller decides where to send them.
+//
+// T-81 (seller profile/schedule zone): moved from
+// src/app/antojos/sellers/profile/edit/ (deleted). No `params` needed - this
+// stays a Client Component tree, so no setRequestLocale call either;
+// src/app/[locale]/layout.jsx already covers the whole subtree.
 export default async function EditSellerProfilePage() {
   const checklist = await getProfileChecklist();
 

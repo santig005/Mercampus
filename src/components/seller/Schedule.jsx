@@ -7,12 +7,25 @@ import { useSeller } from '@/context/SellerContext';
 import { useCheckSeller } from '@/context/SellerContext';
 import Loading from '../general/Loading';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { localizedHref } from '@/i18n/routing';
 
+// T-81 (seller profile/schedule zone): `schedule.day` is stored (and this
+// screen's own <select> reads/writes) the Spanish day *name* from
+// `daysOfWeekES` - the same shape the seller profile zone's PR flagged as a
+// real, deliberately unfixed seam (TableSchema receiving `daysES[day - 1]`
+// from the server). Translating that properly means the day picker itself
+// storing/reading a locale-agnostic value (see DAY_KEYS in
+// src/utils/resources/days.js) and every consumer of Schedule.day - this
+// screen, the two API routes, TableSchema, SellerModal, ProductModal -
+// agreeing on the new shape. Out of scope here for the same reason it was
+// out of scope there: it changes a response/storage shape read by more than
+// this screen. The day names in the picker below stay Spanish in both
+// locales; everything else on this screen is translated.
 const Schedule = () => {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('Schedule');
   const [schedules, setSchedules] = useState([
     { id: null, day: '', startTime: '', endTime: '' },
   ]);
@@ -75,34 +88,22 @@ const Schedule = () => {
       const endMinutes = parseInt(schedule.endTime.split(':')[1]);
 
       if (!schedule.day) {
-        setErrorBanner(`Error en el horario ${i + 1}: Selecciona un día.`);
+        setErrorBanner(t('errorSelectDay', { index: i + 1 }));
         return false;
       }
 
       if (!schedule.startTime || !schedule.endTime) {
-        setErrorBanner(
-          `Error en el horario ${
-            i + 1
-          }: Ambos campos de tiempo deben estar completos.`
-        );
+        setErrorBanner(t('errorBothTimes', { index: i + 1 }));
         return false;
       }
 
       if (startHour < 6) {
-        setErrorBanner(
-          `Error en el horario ${
-            i + 1
-          }: La hora de inicio debe ser a partir de las 6:00 AM.`
-        );
+        setErrorBanner(t('errorStartTime', { index: i + 1 }));
         return false;
       }
 
       if (endHour > 21 || (endHour === 21 && endMinutes > 0)) {
-        setErrorBanner(
-          `Error en el horario ${
-            i + 1
-          }: La hora de fin debe ser hasta las 9:00 PM.`
-        );
+        setErrorBanner(t('errorEndTime', { index: i + 1 }));
         return false;
       }
 
@@ -110,11 +111,7 @@ const Schedule = () => {
         endHour < startHour ||
         (endHour === startHour && endMinutes <= startMinutes)
       ) {
-        setErrorBanner(
-          `Error en el horario ${
-            i + 1
-          }: La hora de fin debe ser posterior a la hora de inicio.`
-        );
+        setErrorBanner(t('errorEndAfterStart', { index: i + 1 }));
         return false;
       }
     }
@@ -150,12 +147,12 @@ const Schedule = () => {
           router.push(localizedHref('/antojos', locale));
         } else {
           const errorData = await response.json();
-          logger.error('Error al guardar horarios:', errorData.message);
+          logger.error('Error saving schedules:', errorData.message);
           setErrorBanner(errorData.message);
         }
       } catch (error) {
-        logger.error('Error al realizar la solicitud:', error);
-        setErrorBanner('Error al conectar con el servidor.');
+        logger.error('Error making the request:', error);
+        setErrorBanner(t('connectionError'));
       }
     }
   };
@@ -169,34 +166,31 @@ const Schedule = () => {
         {/* <Link href='/' className='btn btn-circle absolute top-4 left-4'>
             <TbChevronLeft className='icon' />
           </Link> */}
-        <h2 className='text-2xl font-semibold text-white'>Agrega horarios</h2>
+        <h2 className='text-2xl font-semibold text-white'>{t('heading')}</h2>
         <p className='text-white text-center'>
-          Por favor completa la información de tu disponibilidad
+          {t('subtitle')}
         </p>
       </div>
 
       <div className='h-3/4 bg-[#393939]'>
         <div className='bg-base-100 text-base-content rounded-t-3xl min-h-dvh h-max w-full absolute px-6 pt-6 pb-16'>
           <div className='p-6'>
-            <h1 className='text-xl font-bold mb-4'>Tus horarios</h1>
-            <h2>
-              En la siguiente sección puedes agregar los horarios que necesites,
-              modificar o eliminar los que ya tienes 😊
-            </h2>
-            <p className='mt-4 font-semibold'>Para tener en cuenta:</p>
+            <h1 className='text-xl font-bold mb-4'>{t('yourSchedulesHeading')}</h1>
+            <h2>{t('intro')}</h2>
+            <p className='mt-4 font-semibold'>{t('keepInMind')}</p>
             <ul className='list-decimal mb-4'>
               <li>
-                Trata de poner solo horarios entre{' '}
+                {t('tip1Before')}{' '}
                 <span className='text-white bg-gray-800 rounded-md p-1 text-nowrap'>
                   6:00 am
                 </span>{' '}
-                y{' '}
+                {t('tip1Between')}{' '}
                 <span className='text-white bg-gray-800 rounded-md p-1 text-nowrap'>
                   9:00 pm
                 </span>{' '}
-                🧐
+                {t('tip1After')}
               </li>
-              <li>La hora inicial debe ser antes que la final 🧐</li>
+              <li>{t('tip2')}</li>
             </ul>
             {errorBanner && (
               <div className='alert alert-error mb-4'>{errorBanner}</div>
@@ -225,13 +219,13 @@ const Schedule = () => {
                     className='btn btn-error btn-sm ml-2'
                     onClick={() => handleRemoveSchedule(index)}
                   >
-                    Eliminar
+                    {t('removeButton')}
                   </button>
                 </div>
                 <div className='flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto'>
                   <div className='flex items-center gap-2'>
                     <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
-                      Hora Inicial
+                      {t('startTimeLabel')}
                     </label>
                     <input
                       type='time'
@@ -244,7 +238,7 @@ const Schedule = () => {
                   </div>
                   <div className='flex items-center gap-2'>
                     <label className='text-sm font-medium text-gray-600 dark:text-base-content/70'>
-                      Hora Final
+                      {t('endTimeLabel')}
                     </label>
                     <input
                       type='time'
@@ -261,13 +255,13 @@ const Schedule = () => {
             <div className='flex gap-4'>
               <button className='btn btn-primary' onClick={handleAddSchedule}>
                 {' '}
-                + Agregar horario
+                {t('addScheduleButton')}
               </button>
               <button
                 className='btn btn-secondary'
                 onClick={handlePrintSchedules}
               >
-                Guardar horarios
+                {t('saveSchedulesButton')}
               </button>
             </div>
           </div>
