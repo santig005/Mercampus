@@ -7565,6 +7565,72 @@ expected failure). `npm run verify` is green.
 **Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [x] T-175 · The seller page and seller modal stay Spanish on English pages
+**Why:** T-81's seller profile zone translated only the shared children of
+`src/components/seller/SellerPage.jsx` (`AvailabilityBadge`, `TableSchema`)
+and left its own copy for later. It recorded that gap in its notes, together
+with the near-twin `src/components/seller/index/SellerModal.jsx` (the
+`?vendedor=` dialog of T-167's stack). Both hardcoded "Horario",
+"¡Conoce todos los productos de este vendedor!", the Instagram/WhatsApp
+buttons, "Recomendar a un amigo", and a Spanish prefilled WhatsApp message.
+`SellerModal` also hardcoded its close button's `aria-label='Cerrar'`.
+`tests/e2e/i18n.spec.js` asserted the Spanish CTA on `/en` pages twice and
+documented it as a known gap.
+**Done 2026-09-27.** Two namespaces, `SellerPage` and `SellerModal`, one per
+file (T-81's convention). They share six keys with identical values, and
+`SellerModal` adds `close`. The two files are translated together because
+they are twins, the same way the "perfil y horario" zone of T-81 shipped two
+screens in one PR. "Instagram" and "WhatsApp" are the same in both locales
+but live in the messages anyway, so neither file has hardcoded copy left.
+- **The WhatsApp prefill is now URL-encoded.** Both files built
+  `?text=Hola ${businessName},%20te%20vi%20en%20Mercampus%20` by hand, with
+  the business name unencoded. They now pass the translated message through
+  `encodeURIComponent`, the same way `ProductModal`/`ProductPage` already do.
+  The decoded text is identical, trailing space included, for every name
+  without URL-special characters. A name containing `&` or `#` no longer
+  truncates the message.
+- Spanish copy kept literal: `modal-stack` and `seller-products-modal` pin
+  the products heading by text on the default locale.
+- `i18n.spec.js`'s two English seller-profile tests now expect
+  "Recommend to a friend", and the header comment that documented the gap
+  is rewritten.
+**Verified with real renders (rule 3):** new
+`tests/e2e/seller-modal-i18n.spec.js` loads `SellerPage` at
+`/antojos/sellers/<id>` and `/en/...`, and `SellerModal` from a cold
+`?vendedor=` in both locales. It reads the headings, the Instagram/WhatsApp
+links, the decoded `?text=` of the WhatsApp `href`, the share CTA and the
+modal's close button. Screenshots are in `docs/audits/t-175/`. Locally, that
+spec plus `i18n`, `modal-stack`, `seller-products-modal` and `recorrido`:
+81 passed, 1 pre-existing skip. `npm run verify` is green.
+**Rule 9, found here, not fixed:**
+- **`SellerProductsBySection.jsx`**, rendered only inside these two screens,
+  is still Spanish: "🍕 Antojos (N productos)", "🛍️
+  Marketplace (N productos)" and "Este vendedor aún no tiene productos
+  disponibles." You can see it in `docs/audits/t-175/*-en.png`. Together
+  with `SellerGrid.jsx`'s empty state ("No hay vendedores disponibles…",
+  already flagged in T-81's notes and still open), that is the last
+  public-facing Spanish copy on the seller screens. It's a good next entry.
+- **`SellerPage`'s back button has no accessible name.** It's icon-only, with
+  no `aria-label`. `ProductPage`'s equivalent has `aria-label={t('back')}`,
+  and T-93 named the other icon-only controls but missed this one.
+  Accessibility fix, one line plus a key.
+- **Dead code in `SellerPage`:** the `loading` state never renders anything.
+  `setSeller` and `setLoading(false)` are batched in the same tick, and the
+  early `if (!seller)` return already shows the spinner, so the
+  `seller ? … : <div className=''></div>` branch inside is unreachable too.
+  On an API error it returns before `setLoading(false)` and spins forever,
+  but a missing seller is already a server-side 404 (T-90), so that only
+  bites on a real API failure.
+- **`SellerModal`:** its `fetchSchedules` doesn't fetch anything. It wraps a
+  `setSchedules(seller.schedules)` in a try/catch that can't throw. There are
+  also two commented-out blocks (a "Contacto" section and a `•`
+  separator) that nothing references.
+- The ROADMAP's earlier suggestion to *deduplicate* `SellerPage`/`SellerModal`
+  (one component instead of two near-copies) is still open. This task only
+  translated them.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
 ---
 
 ## Phase 8 — The two stories this repo can tell

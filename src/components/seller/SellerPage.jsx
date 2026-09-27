@@ -9,7 +9,7 @@ import {
   TbShare2,
 } from 'react-icons/tb';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
@@ -27,6 +27,7 @@ export default function SellerPage({ id }) {
 
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('SellerPage');
 
   useEffect(() => {
     if (!id) return;
@@ -135,11 +136,11 @@ export default function SellerPage({ id }) {
                         {parseIfJSON(seller.description)}
                       </p>
                       <div className=''>
-                        <h2 className='card-title px-6'>Horario</h2>
+                        <h2 className='card-title px-6'>{t('scheduleHeading')}</h2>
                         {schedules && <TableSchema schedules={schedules} />}
                       </div>
                       <h2 className='card-title px-6 mb-2'>
-                        ¡Conoce todos los productos de este vendedor!
+                        {t('productsHeading')}
                       </h2>
                       <div className='px-2'>
                         <SellerProductsBySection sellerId={seller._id} />
@@ -167,10 +168,12 @@ export default function SellerPage({ id }) {
                             });
                           }}
                         >
-                          <TbBrandInstagram className='icon' /> Instagram
+                          <TbBrandInstagram className='icon' /> {t('instagram')}
                         </a>
                         <a
-                          href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                          href={`https://wa.me/+57${seller.phoneNumber}?text=${encodeURIComponent(
+                            t('whatsappMessage', { seller: seller.businessName ?? '' })
+                          )}`}
                           className='btn btn-primary join-item w-1/2'
                           target='_blank'
                           referrerPolicy='no-referrer'
@@ -182,14 +185,14 @@ export default function SellerPage({ id }) {
                             });
                           }}
                         >
-                          <TbBrandWhatsapp className='icon' /> WhatsApp
+                          <TbBrandWhatsapp className='icon' /> {t('whatsapp')}
                         </a>
                       </div>
                       <button
                         className='btn btn-secondary w-full mt-2'
                         onClick={handleShowModal}
                       >
-                        Recomendar a un amigo <TbShare2 className='icon' />
+                        {t('recommend')} <TbShare2 className='icon' />
                       </button>
                     </div>
                   </div>

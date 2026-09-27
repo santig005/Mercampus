@@ -315,15 +315,10 @@ test.describe('i18n on the product detail zone (/antojos/[id], /marketplace/[id]
 // seeded as "Arepas El Parche" with a Mon/Wed/Fri schedule and
 // availability: true (Seller schema default) - see scripts/seed.mjs.
 //
-// SellerPage.jsx's own interface copy (the "Recomendar a un amigo" CTA,
-// Instagram/WhatsApp buttons, the "Horario" heading) is NOT translated in
-// this PR - only AvailabilityBadge and TableSchema, the two shared
-// components the product detail zone's own PR flagged (rule 9) as leaking
-// Spanish. That is why the share button below is still found by its Spanish
-// accessible name even on the /en page - a known, deliberately scoped gap,
-// recorded in ROADMAP.md T-81 for a later pass (SellerPage.jsx is this
-// zone's own screen, not a shared component, but translating it fully would
-// have pushed this PR well past the file-count ceiling the last zone set).
+// This zone's PR translated only AvailabilityBadge and TableSchema;
+// SellerPage.jsx's own copy (the "Recomendar a un amigo" CTA, the "Horario"
+// heading, the products heading) followed in T-175, together with its twin
+// SellerModal.jsx. seller-modal-i18n.spec.js walks both in both locales.
 const SELLER_ID = process.env.E2E_SELLER_ID;
 
 test.describe('i18n on the seller profile zone (/antojos/sellers/[id], /antojos/sellers/list)', () => {
@@ -391,11 +386,10 @@ test.describe('i18n on the seller profile zone (/antojos/sellers/[id], /antojos/
     await expect(page.getByRole('cell', { name: 'Wednesday' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Friday' })).toBeVisible();
     // The seller's own business name (data, in Spanish as typed) is
-    // unaffected, and SellerPage.jsx's own remaining chrome - out of scope
-    // here (see the note above) - stays Spanish too.
+    // unaffected. SellerPage.jsx's own copy is English too since T-175.
     await expect(page.getByText('Arepas El Parche')).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Recomendar a un amigo' })
+      page.getByRole('button', { name: 'Recommend to a friend' })
     ).toBeVisible();
 
     await shot(page, '19-seller-profile-en');
@@ -418,12 +412,9 @@ test.describe('i18n on the seller profile zone (/antojos/sellers/[id], /antojos/
 
     await page.goto(`/en/antojos/sellers/${SELLER_ID}`);
 
-    // The "Recomendar a un amigo" CTA is SellerPage's own chrome, not yet
-    // translated (see the note above), so it is still found by its Spanish
-    // text even here. ShareButton.jsx itself was already translated in the
-    // product detail zone's PR, so its own "Share via WhatsApp" label does
-    // read English on this page.
-    await page.getByRole('button', { name: 'Recomendar a un amigo' }).click();
+    // SellerPage's CTA reads English since T-175. ShareButton.jsx was
+    // translated earlier, in the product detail zone's PR.
+    await page.getByRole('button', { name: 'Recommend to a friend' }).click();
     await page.getByRole('button', { name: /Share via WhatsApp/ }).click();
 
     const opened = await page.evaluate(() => window.__shareOpens);
