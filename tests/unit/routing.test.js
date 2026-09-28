@@ -48,11 +48,13 @@ describe('localizedHref (T-81)', () => {
 
   // /antojos and /marketplace are matchSubpaths:false on purpose: their
   // sub-routes (other than the ones migrated below) have no [locale] file,
-  // so prefixing them would 404.
+  // so prefixing them would 404. Every one of PROTECTED_PATHS is migrated as
+  // of the seller profile/schedule zone, so /admin/sellers is the example
+  // here now - deliberately excluded from LOCALIZED_ROUTES (see ROADMAP.md
+  // T-81, "Admin: skipped on purpose"), so it stays a stable, genuinely
+  // unmigrated example rather than one due to migrate next.
   it('does not prefix a subpath under a matchSubpaths:false route', () => {
-    expect(localizedHref('/antojos/product/add', 'en')).toBe(
-      '/antojos/product/add'
-    );
+    expect(localizedHref('/admin/sellers', 'en')).toBe('/admin/sellers');
   });
 
   // T-81 (auth zone): /auth/login used to be the example "unrelated path"
@@ -211,6 +213,126 @@ describe('localizedHref for the seller profile zone (T-81)', () => {
   });
 });
 
+// T-81 (seller products): /antojos/product/add and
+// /antojos/sellers/products/edit (static, exact) plus
+// /antojos/sellers/products/edit/<id> (dynamic, same Mongo-ObjectId rule as
+// every other id-shaped entry above). Both are already in PROTECTED_PATHS
+// (src/lib/route-guards.ts), from before this zone existed, so the
+// [locale]-page guardrail below is what proves the migration, not the gate.
+describe('localizedHref for the seller products zone (T-81)', () => {
+  const PRODUCT_ID = '652f1234567890abcdef1234'; // 24 hex chars, shaped like a Mongoose _id
+
+  it('prefixes the add-product page for a non-default locale', () => {
+    expect(localizedHref('/antojos/product/add', 'en')).toBe(
+      '/en/antojos/product/add'
+    );
+  });
+
+  it('never prefixes the add-product page for the default locale', () => {
+    expect(localizedHref('/antojos/product/add', 'es')).toBe(
+      '/antojos/product/add'
+    );
+  });
+
+  it('prefixes the product-edit list for a non-default locale', () => {
+    expect(localizedHref('/antojos/sellers/products/edit', 'en')).toBe(
+      '/en/antojos/sellers/products/edit'
+    );
+  });
+
+  it('never prefixes the product-edit list for the default locale', () => {
+    expect(localizedHref('/antojos/sellers/products/edit', 'es')).toBe(
+      '/antojos/sellers/products/edit'
+    );
+  });
+
+  it('prefixes a product-edit path for a non-default locale', () => {
+    expect(
+      localizedHref(`/antojos/sellers/products/edit/${PRODUCT_ID}`, 'en')
+    ).toBe(`/en/antojos/sellers/products/edit/${PRODUCT_ID}`);
+  });
+
+  it('never prefixes a product-edit path for the default locale', () => {
+    expect(
+      localizedHref(`/antojos/sellers/products/edit/${PRODUCT_ID}`, 'es')
+    ).toBe(`/antojos/sellers/products/edit/${PRODUCT_ID}`);
+  });
+
+  it('does not prefix a malformed or non-ObjectId product id', () => {
+    expect(
+      localizedHref('/antojos/sellers/products/edit/not-an-object-id', 'en')
+    ).toBe('/antojos/sellers/products/edit/not-an-object-id');
+  });
+
+  // Same guardrail shape as the seller profile zone above: a protected route
+  // is prefixed if and only if its page lives under src/app/[locale]/. Both
+  // routes below flip together in this PR - the entry alone 404s the English
+  // link, the file alone strands the page in Spanish.
+  it.each(['/antojos/product/add', '/antojos/sellers/products/edit'])(
+    'the seller products route %s is migrated',
+    (path) => {
+      expect(localizedHref(path, 'en')).toBe(`/en${path}`);
+      expect(
+        existsSync(resolve(process.cwd(), `src/app/[locale]${path}/page.jsx`))
+      ).toBe(true);
+    }
+  );
+
+  // The extra "sellers/products/edit" segments before the id mean this must
+  // not collide with the seller profile zone's own dynamic entry (base
+  // '/antojos/sellers') the way a plain wildcard would.
+  it('does not match the seller profile dynamic pattern for a product-edit path', () => {
+    expect(
+      buildDynamicPattern('/antojos/sellers').test(
+        `/antojos/sellers/products/edit/${PRODUCT_ID}`
+      )
+    ).toBe(false);
+  });
+});
+
+// T-81 (seller profile/schedule): the third and last forms batch - both
+// exact `static` entries, same shape as register/approving. Both were
+// already in PROTECTED_PATHS before this zone existed, so only the
+// [locale]-page guardrail below proves the migration.
+describe('localizedHref for the seller profile/schedule zone (T-81)', () => {
+  it('prefixes the profile edit page for a non-default locale', () => {
+    expect(localizedHref('/antojos/sellers/profile/edit', 'en')).toBe(
+      '/en/antojos/sellers/profile/edit'
+    );
+  });
+
+  it('never prefixes the profile edit page for the default locale', () => {
+    expect(localizedHref('/antojos/sellers/profile/edit', 'es')).toBe(
+      '/antojos/sellers/profile/edit'
+    );
+  });
+
+  it('prefixes the schedules page for a non-default locale', () => {
+    expect(localizedHref('/antojos/sellers/schedules', 'en')).toBe(
+      '/en/antojos/sellers/schedules'
+    );
+  });
+
+  it('never prefixes the schedules page for the default locale', () => {
+    expect(localizedHref('/antojos/sellers/schedules', 'es')).toBe(
+      '/antojos/sellers/schedules'
+    );
+  });
+
+  // Every one of PROTECTED_PATHS now has a [locale] page - the same
+  // guardrail shape as the previous two forms zones, checked generically
+  // over the whole list in the seller profile zone's describe block above.
+  it.each(['/antojos/sellers/profile/edit', '/antojos/sellers/schedules'])(
+    'the seller profile/schedule route %s is migrated',
+    (path) => {
+      expect(localizedHref(path, 'en')).toBe(`/en${path}`);
+      expect(
+        existsSync(resolve(process.cwd(), `src/app/[locale]${path}/page.jsx`))
+      ).toBe(true);
+    }
+  );
+});
+
 // T-81 (auth zone): /auth/login and /auth/register, static exact entries -
 // same treatment as /antojos and /marketplace in the listing zone.
 //
@@ -286,6 +408,11 @@ describe('stripLocalePrefix (T-81)', () => {
     `/antojos/sellers/${ID}`,
     '/antojos/sellers/register',
     '/antojos/sellers/approving',
+    '/antojos/product/add',
+    '/antojos/sellers/products/edit',
+    `/antojos/sellers/products/edit/${ID}`,
+    '/antojos/sellers/profile/edit',
+    '/antojos/sellers/schedules',
   ])('round-trips %s to its own twin, not to the listing', (path) => {
     expect(localizedHref(stripLocalePrefix(path), 'en')).toBe(`/en${path}`);
     expect(localizedHref(stripLocalePrefix(`/en${path}`), 'es')).toBe(path);

@@ -141,6 +141,22 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // schedules) stay bare until their own PRs.
   { kind: 'static', path: '/antojos/sellers/register', matchSubpaths: false },
   { kind: 'static', path: '/antojos/sellers/approving', matchSubpaths: false },
+  // T-81 (seller products): the second forms batch - adding a product and the
+  // seller's own product list/edit screens. Same shape as the seller profile
+  // zone above: a `static` exact entry for the list
+  // (/antojos/sellers/products/edit) plus a `dynamic` entry for the id
+  // sub-route, since a product id is a Mongo ObjectId too. `matchSubpaths`
+  // stays false on the list on purpose - the dynamic entry is what covers
+  // /products/edit/<id>, not a wildcard on the list path.
+  { kind: 'static', path: '/antojos/product/add', matchSubpaths: false },
+  { kind: 'static', path: '/antojos/sellers/products/edit', matchSubpaths: false },
+  { kind: 'dynamic', base: '/antojos/sellers/products/edit' },
+  // T-81 (seller profile/schedule): the third and last forms batch - editing
+  // the seller's own profile and managing schedules. Both are exact `static`
+  // entries, same shape as register/approving above (already in
+  // PROTECTED_PATHS, so the gate is untouched by adding these).
+  { kind: 'static', path: '/antojos/sellers/profile/edit', matchSubpaths: false },
+  { kind: 'static', path: '/antojos/sellers/schedules', matchSubpaths: false },
 ];
 
 // Prefixes `path` with `locale` when it falls under a LOCALIZED_ROUTES

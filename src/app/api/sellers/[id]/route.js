@@ -5,10 +5,9 @@ import {
   verifySellerEmail,
   verifySellerId,
 } from "@/utils/lib/auth";
-import { updateSellerSchema } from "@/lib/validators/seller";
-import { invalidPayload } from "@/lib/api-response";
+import { sellerIdSchema, updateSellerSchema } from "@/lib/validators/seller";
+import { errorResponse, invalidPayload } from "@/lib/api-response";
 import { Seller } from "@/utils/models/sellerSchema";
-import { User } from "@/utils/models/userSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
 import { logger } from '@/lib/logger';
@@ -16,24 +15,30 @@ import { logger } from '@/lib/logger';
 // T-112b: extractAuthHeader() used to sit here - never called, and it logged
 // the request's Authorization header (a Bearer token) at debug level. Deleted.
 
+// T-170: public, unauthenticated. This used to accept an email in place of
+// the id (`params.id.includes('@')`), look the user up by it and return
+// their shop - so anyone could ask "does this email have a store on
+// Mercampus?" and get the store back, which also made "User not found" vs
+// "Seller not found" an oracle for whether an email is registered at all.
+// Its only client, getSellerByEmail(), was deleted in T-112b with no
+// reference anywhere; SellerPage, the one caller left, passes an id. The id
+// is now validated like every other param (400, not a 500 carrying the
+// CastError), and a 500 no longer echoes error.message.
+//
+// Visibility is unchanged on purpose: this still returns a pending seller,
+// because the admin reviews pending sellers on their public page
+// (/admin/sellers links there) - see ROADMAP.md T-170.
 export async function GET(req, { params }) {
+    const parsedId = sellerIdSchema.safeParse(params.id);
+    if (!parsedId.success) {
+      return invalidPayload(parsedId.error);
+    }
+
     try {
         await connectDB();
-    
-        let seller;
-    
-        if (params.id.includes('@')) {
-          const user = await User.findOne({ email: params.id });
-    
-          if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
-          }
-    
-          seller = await Seller.findOne({ userId: user._id });
-        } else {
-          seller = await Seller.findById(params.id);
-        }
-    
+
+        const seller = await Seller.findById(parsedId.data);
+
         if (!seller) {
           return NextResponse.json({ error: "Seller not found" }, { status: 404 });
         }
@@ -57,8 +62,7 @@ export async function GET(req, { params }) {
     
         return NextResponse.json({ seller: populatedSeller }, { status: 200 });
       } catch (error) {
-        logger.error(error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return errorResponse(error, '[GET /api/sellers/[id]]');
       }
 }
 export async function PUT(req, { params }) {

@@ -5,6 +5,7 @@ import { categoriesList } from '@/utils/categoriesList';
 import { marketplaceCategoriesList } from '@/utils/marketplaceCategoriesList';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocalStorage } from '@/utils/hooks/useLocalStorage';
+import { useCategoryLabel } from '@/utils/hooks/useCategoryLabel';
 
 export default function CategoryGrid({ section = 'antojos' }) {
   const [activeCategory, setActiveCategory] = useLocalStorage(
@@ -13,6 +14,10 @@ export default function CategoryGrid({ section = 'antojos' }) {
   );
   const router = useRouter();
   const searchParams = useSearchParams();
+  // `category.name` stays the stored Spanish value everywhere below - the
+  // URL (?category=Dulces), localStorage and the API filter all key off it.
+  // Only the chip's visible text follows the locale.
+  const categoryLabel = useCategoryLabel();
 
   // The category list for this section
   const currentCategoriesList = section === 'marketplace' ? marketplaceCategoriesList : categoriesList;
@@ -64,7 +69,7 @@ export default function CategoryGrid({ section = 'antojos' }) {
               />
             </div>
           )}
-          <p className='pointer-events-none select-none'>{category.name}</p>
+          <p className='pointer-events-none select-none'>{categoryLabel(category.name)}</p>
         </button>
       ))}
     </div>

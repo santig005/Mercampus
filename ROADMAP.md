@@ -2537,7 +2537,7 @@ T-81.
 **Model:** `sonnet` for batches a-d, `opus` for e · **Nightly:** yes for
 a-d, no for e
 
-### [~] T-81 · Finish the i18n migration, zone by zone
+### [x] T-81 · Finish the i18n migration, zone by zone
 **Why:** T-46 shipped the scaffolding and `/about` as the proof screen,
 and closed with "afterward, one task per zone: listing, product detail,
 seller profile, forms, seller panel. Each with its own PR." Those tasks
@@ -2574,8 +2574,8 @@ same pattern applied to a different migration):
 | seller profile | `/antojos/sellers/[id]`, `/antojos/sellers/list` | **done** |
 | auth | `/auth/login`, `/auth/register` (`/auth/callback` deliberately excluded, see below) | **done** |
 | seller's own forms — onboarding | `/antojos/sellers/register`, `/antojos/sellers/approving` | **done** (see "Seller onboarding zone notes") |
-| seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | pending |
-| seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | pending |
+| seller's own forms — products | `/antojos/product/add`, `/antojos/sellers/products/edit(/[id])` | **done** |
+| seller's own forms — profile and schedule | `/antojos/sellers/profile/edit`, `/antojos/sellers/schedules` | **done** |
 | admin | `/admin/*` | **skipped on purpose** (decision 2026-09-19, reasoning below) — gate hardened anyway |
 **Listing zone notes (this PR):** `isIntlRoute` in `src/middleware.js` now
 matches `/antojos`, `/en/antojos`, `/marketplace`, `/en/marketplace` as
@@ -3031,6 +3031,157 @@ and the product list, which are not forms - harmless. Cost, accepted: a
 seller who reads English and lands on a form in Spanish (an old bare link)
 has to switch on another page and come back. **B is filed as T-135**; when it
 lands, the switcher can come back to these routes.
+**Seller products zone notes (this PR, 2026-09-26).** The second forms batch:
+adding a product and the seller's own product list/edit screens
+(`/antojos/product/add`, `/antojos/sellers/products/edit(/[id])`).
+- **`LOCALIZED_ROUTES` gained two `static` exact entries plus one `dynamic`
+  entry**, same shape as the seller profile zone: the list
+  (`/antojos/sellers/products/edit`) is exact-only, and its own id sub-route
+  gets a `dynamic` entry (`base: '/antojos/sellers/products/edit'`) since a
+  product id is a Mongo ObjectId too - proven not to collide with the seller
+  profile zone's own `dynamic` entry (base `/antojos/sellers`) in
+  `tests/unit/routing.test.js`. Both new static entries are already in
+  `PROTECTED_PATHS` (`src/lib/route-guards.ts`) from before this zone
+  existed, so only the `[locale]`-page guardrail (existing) proves the
+  migration, not the gate.
+- **`EditProductForm.jsx` translated in place, not moved** - it is a shared
+  component (rendered only from the id sub-route's server page), same
+  treatment `AvailabilityBadge`/`TableSchema` got in the seller profile zone.
+  Its own `Sección`/`Categoría` Select markup duplicates the add-product
+  page's almost verbatim (rule 9, not fixed here - the same duplication the
+  seller profile zone flagged for `SellerPage`/`SellerModal`; worth
+  deduplicating together, in its own follow-up).
+- **`ProductCard.jsx`'s `imageAlt` translated too**, found while doing this
+  (rule 9) - it renders on this zone's own list, but also on the
+  already-migrated listing (`ProductGrid`) and seller-profile
+  (`SellerProductsBySection`) zones, where `'Imagen de ' + name` was still
+  hardcoded Spanish and reachable in English. In scope here since this zone's
+  own list renders it; the other two zones get the fix for free.
+- **Category/section taxonomy left untranslated, on purpose, same precedent
+  the listing zone already set.** `getCategoriesBySection`'s values
+  ("Dulces", "Snacks", marketplace's own list) are app-wide taxonomy, not
+  this form's copy - `CategoryGrid.jsx` (already used on the migrated
+  `/marketplace` listing) renders the exact same values without translating
+  them. Relitigating that is a product decision, not an i18n one (same
+  reasoning this task's entry gives for what a seller types themselves). The
+  two-option "Sección" select (Antojos/Marketplace) is this form's own
+  interface copy, not taxonomy, and is translated.
+  **Superseded 2026-09-27 by T-176:** the human chose "fixed value,
+  translated label". Stored values stay Spanish and only the displayed
+  label follows the locale.
+- **Existing e2e strings pinned some exact Spanish text - kept verbatim.**
+  `tests/e2e/signed-in/writes.spec.js` and `product-edit.spec.js` assert
+  `getByLabel('Descripcion')` (no accent) and `getByRole('button', { name:
+  'Guardar Cambios' })`/`'Eliminar Producto'` - those strings moved into
+  `messages/es.json` unchanged rather than "fixed", since changing them would
+  break passing tests over a typo this task did not set out to touch.
+  `EditProductForm.jsx`'s heading typo ("Edita tu prodcuto") and
+  `EditProductsPage`'s two missing accents had no test pinning them, so those
+  were corrected in the same move.
+- **Rule 9, found and fixed (not deferred) - a real dead file.** Rewriting
+  `AddProduct` dropped its unused `import { uploadImages } from
+  '@/services/uploadImages'` (the import was never called - `ImageGrid`
+  handles its own upload). That was the only reference anywhere in `src/` to
+  `src/services/uploadImages.js` (confirmed by a repo-wide search before
+  deleting, per rule 5) - `ImageGrid`'s own upload path
+  (compression, per-file ImageKit `fileId` tracking) superseded it long ago.
+  `npm run verify`'s `knip` step flags an unused file as a hard failure (not
+  a warning, unlike unused exports/deps), so this had to be resolved in this
+  PR rather than filed as a follow-up; deleting the confirmed-dead file was
+  the correct fix rather than papering over it.
+- **No new locale-switcher logic needed.** Both new routes were already in
+  `PROTECTED_PATHS`, so `LocaleSwitcher`'s existing `isProtectedPath()` check
+  (seller onboarding zone, PR #373) already hides it here - covered by the
+  existing `isProtectedPath` unit tests, no new assertions needed.
+- **Verified live (dev + `npm run test:e2e`, this PR):** `/antojos/product/add`,
+  `/antojos/sellers/products/edit` and `.../edit/<id>` all render in Spanish
+  (bare) and English (`/en/...`), with `<html lang>` matching, in
+  `tests/e2e/signed-in/seller-products-i18n.spec.js` (8 tests, including a
+  malformed-id case and that internal navigation - the add button, the
+  product card's own link - keeps the locale via `localizedHref`, the exact
+  bug PR #363 fixed for `SidebarBtn`). Every pre-existing spec touching these
+  routes (`product-add-errors`, `product-edit`, `product-list-keyboard`,
+  `writes`) still passes unmodified, proving the bare-path Spanish behaviour
+  is byte-for-byte the same as before. The broader `i18n.spec.js`,
+  `auth-gate.spec.js` and `seller-onboarding-i18n.spec.js` suites were also
+  re-run and stayed green.
+**Seller profile/schedule zone notes (this PR, 2026-09-27) - the third and
+last forms batch.** `/antojos/sellers/profile/edit` and
+`/antojos/sellers/schedules`, both `static` exact `LOCALIZED_ROUTES` entries,
+same shape as register/approving. Both were already in `PROTECTED_PATHS`
+before this zone existed, and `SidebarBtn`/`useCheckSeller` already call
+`localizedHref` for every `goto`/redirect regardless of target - so neither
+needed a code change to start keeping the locale once the entries landed.
+- **One pre-existing test's assertion flipped from correct to stale, caught
+  by the full e2e re-run, not by anything scoped to this zone.**
+  `seller-onboarding-i18n.spec.js` asserted that an approved seller
+  redirected from `/en/.../approving` landed on the *bare* schedules page -
+  true when written, because `/antojos/sellers/schedules` had no `[locale]`
+  file yet and `localizedHref` left it unprefixed on purpose. `useCheckSeller`
+  already routed that redirect through `localizedHref`, same as every other
+  redirect it makes, so the moment this zone gave `/schedules` a `[locale]`
+  page, the exact same call started keeping English instead of dropping it -
+  an improvement, not a regression, but the old test asserted the old
+  (worse) behaviour by name. Updated to expect `/en/antojos/sellers/schedules`.
+- **`ProfileChecklist.jsx` (T-72) had never been touched by this migration
+  and was still hardcoded Spanish - the first thing this zone's own page
+  renders.** It is a Server Component with no state of its own, imported
+  directly by `EditSellerForm.jsx` (a Client Component) - same shape
+  `AvailabilityBadge`/`TableSchema` already use, so it took `'use client'` +
+  `useTranslations` rather than the server-side `getTranslations` a plain
+  Server Component would use; either works, but this matches the zone's own
+  precedent instead of inventing a second pattern.
+- **`src/lib/profile-completeness.ts`'s `label`/`hint` moved out, not just
+  translated in place.** That file is a pure function (`buildProfileChecklist`)
+  deliberately kept free of React so it can be unit tested without a
+  database - it cannot call `useTranslations`. Its four items now carry only
+  `id`/`done`/`href`; `ProfileChecklist.jsx` resolves `items.<id>.label`/
+  `.hint` from `messages/{es,en}.json` by `id`. Checked before removing them:
+  `tests/unit/profile-completeness.test.js` never asserted on `label`/`hint`
+  text, so nothing broke - a new test pins the item shape (`id`/`done`/
+  optional `href`, nothing else) so a future edit can't quietly reintroduce
+  hardcoded copy there.
+- **The checklist's own links now carry the locale too**
+  (`localizedHref(item.href, locale)`), the same nav-gap class PR #363 fixed
+  for `SidebarBtn` - both destinations (`/antojos/sellers/schedules`,
+  `/antojos/product/add`) are migrated routes. Not exercised against the
+  seeded T-84 seller in the e2e spec (its checklist is always complete, so
+  neither link renders) - the test skips itself with a stated reason rather
+  than asserting nothing; flipping the seller's real schedule/product counts
+  to force it open was judged not worth the shared-fixture risk (several
+  other specs in the same serial run depend on that seller's real counts).
+- **Rule 9, found and deliberately left, not fixed - `Schedule.jsx`'s day
+  picker stays Spanish in both locales.** `schedule.day` is stored as the
+  Spanish day *name* (`daysOfWeekES`), and this screen's own `<select>` both
+  reads and writes that shape directly - the exact seam the seller profile
+  zone's PR already flagged when `TableSchema` had to read
+  `daysES[schedule.day - 1]` server-side for "the still-unmigrated
+  `Schedule.jsx` edit screen that also reads this shape." The real fix -
+  storing/reading a locale-agnostic day (see `DAY_KEYS` in
+  `src/utils/resources/days.js`) - means changing what every consumer of
+  `Schedule.day` agrees on: this screen, the two `/api/schedules` routes,
+  `TableSchema`, `SellerModal`, `ProductModal`. Out of scope here for the
+  same reason it was out of scope there. Everything else on this screen
+  (headings, labels, buttons, the five validation error messages) is
+  translated.
+- **Two Spanish `logger.error` prefixes fixed to English in passing**
+  (`Error al guardar horarios:` → `Error saving schedules:`, `Error al
+  realizar la solicitud:` → `Error making the request:`) - internal-only,
+  not asserted by any test, and this file's entire copy was already being
+  rewritten for the move; left them as found and this would have been the
+  one Spanish-language log line in an otherwise all-English logger call
+  site.
+- **`npm run verify` green**, plus `tests/e2e/signed-in/
+  seller-profile-schedule-i18n.spec.js` (new, 7 tests: both locales for both
+  screens, the checklist's translated aria-label, a translated validation
+  error, and the link-locale check noted above). Every pre-existing spec
+  touching these two routes (`seller-screens`, `writes`, `schedule-mobile`)
+  passes unmodified - `schedule-mobile.spec.js` in particular pins the exact
+  `label:has-text("Hora Final") + input[type="time"]` structure, unchanged.
+  `i18n.spec.js`, `auth-gate.spec.js`, `seller-onboarding-i18n.spec.js` and
+  `seller-products-i18n.spec.js` re-run and stayed green.
+**Every `PROTECTED_PATHS` route now has a `[locale]` page, and admin is
+skipped on purpose (decided, not pending) - T-81 itself is done.**
 **Model:** `sonnet` per zone, `opusplan` if the middleware matcher needs
 rethinking · **Nightly:** yes
 
@@ -6802,6 +6953,22 @@ traffic.
     next promotion; the unit test is what keeps the shape from drifting.
   - T-151's remaining parts (`Product`, seller, `BreadcrumbList`) stay in
     T-151; this only takes its `Organization` line.
+  - **Correction, same day, after promotion: the first version did not work
+    for crawlers.** The landing's layout renders under the root layout's
+    `<ClerkLoaded>`, which the server does not render (see T-163), so the
+    live HTML carried **zero** `application/ld+json` elements - the markup
+    existed only as a string inside React's payload and became an element
+    once Clerk loaded in a browser. The human ran both tools on the live
+    site: validator.schema.org (no JavaScript) errored, and Google's Rich
+    Results Test detected nothing. The e2e passed because it ran in a
+    browser that waited for Clerk - it measured what a user sees, not what
+    a crawler sees. **Fixed** by emitting the markup in the root layout's
+    `<head>`, which is server-rendered (the anti-flash theme script already
+    lives there), so it is now on every page - Google accepts
+    `Organization` site-wide. The e2e now reads the raw response with no
+    browser and expects exactly one real element on `/`, `/en` and
+    `/antojos`, plus no duplicate after hydration. **Re-run both validators
+    after this is promoted.**
 - **Found on the way (rule 9), not fixed:** `/marketplace` has the same
   shape - a `'use client'` page, so no metadata of its own, and its greeting
   is an `<h2>` with no `<h1>`. Same fix as T-152a; one small PR.
@@ -7030,6 +7197,512 @@ nothing new is added to `public/`.
   share preview matters for the CV link - a design decision, left open.
 - **Not checked with a real share debugger** (WhatsApp/LinkedIn) - they need
   the promoted URL. Do it after the next promotion.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-163 · No page's content is server-rendered: the root layout wraps everything in `<ClerkLoaded>`
+**Why:** found on 2026-09-26 while checking the live site after promotion
+(see the T-152c correction). `src/app/layout.jsx` renders
+`<ClerkLoading>…</ClerkLoading><ClerkLoaded>{children}</ClerkLoaded>`.
+`ClerkLoaded` renders nothing on the server, so **every page's HTML is the
+loading shell** - measured on production: `/` has 0 `<h1>` in the raw
+response, and the hero text exists only inside React's payload. Content
+appears only after Clerk's script loads in the browser.
+**Consequences:** anything that reads HTML without running JavaScript (the
+schema.org validator, most link-preview bots, some crawlers) sees an empty
+page; Google renders JavaScript but its Rich Results Test did not detect
+markup that was under this wrapper; T-152a/b's `<h1>` work is invisible to
+them; and first contentful paint on every page waits on a third-party
+script. `<head>` metadata (title, description, Open Graph) is unaffected -
+that is why share previews still work.
+**Done when:** page content renders on the server again, with components
+that genuinely need Clerk's client state guarding themselves (`useUser`'s
+`isLoaded`, `<SignedIn>`/`<SignedOut>`) instead of the whole tree waiting.
+Verified with a raw-HTML e2e (no browser) that finds the `<h1>` on `/` and
+`/antojos`, plus screenshots showing no flash of wrong auth state.
+**Careful:** find out *why* the wrapper was added before removing it
+(`git log -S ClerkLoaded -- src/app/layout.jsx`) - likely to hide a flash of
+signed-out UI, or because something under it throws before Clerk is ready.
+Every client component that reads Clerk or `SellerContext` needs checking.
+**Model:** `opus` · **Nightly:** no (architecture; needs the human)
+
+### [ ] T-164 · Single-segment unknown URLs answer 200 since `/` moved under `[locale]`
+**Why:** measured on production 2026-09-26 after T-152b: `/foo`, `/xx` and
+`/android-chrome-512x512.png` answer **200** with the not-found page, where
+they used to answer 404; two segments (`/foo/bar`) still 404. Since T-152b
+the home page is `src/app/[locale]/(landing)/page.jsx`, so any single
+segment now matches `[locale]`; the `[locale]` layout calls `notFound()`
+for an unsupported locale, but by then the status is already committed -
+the same soft-404 mechanism as T-91. Regression introduced by T-152b; it
+did not exist when `[locale]` had no root page.
+**Done when:** a single segment that is not a supported locale answers a
+real 404 - most directly, the middleware rejects it before rendering - with
+an e2e asserting the status (not just the rendered text) for `/foo`, and
+`/` and `/en` still 200.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-165 · A product opened from a seller's product list loses its seller
+**Why:** reported by the human on the live site, 2026-09-26: /antojos ->
+product -> its seller -> one of that seller's products opened a product modal
+with no seller name, logo or schedule. Same from a seller page
+(`/antojos/sellers/<id>` -> product). Cause, read in the code:
+`SellerProductsBySection` (used by `SellerModal` and `SellerPage`) reads
+`GET /api/products/seller/[id]`, which was a bare `Product.find()` -
+`sellerId` a plain id, no `schedules`, no `availabilityStatus` - while
+`ProductModal` expects the listing's shape. Worse than cosmetic: the modal's
+WhatsApp button, the product's only conversion, became
+`wa.me/+57?text=...` with no number, and the availability badge said
+"Disponible" for a seller that was closed.
+**Done (2026-09-26):** the route returns the same shape as the listing and
+the product detail: `sellerId` populated, the seller's `schedules` with day
+names, and `availabilityStatus` (T-122/T-83's definition). The id and the
+`section` query are validated with Zod (400, not a 500 carrying a
+CastError). The id is lowercased before keying the schedules map.
+- **Verified:** `npm run verify` green;
+  `tests/integration/seller-products.test.js` (8: populated seller with
+  phone, schedules with day names, `availabilityStatus`, uppercase id,
+  section filter, 400s, pending seller unchanged);
+  `tests/e2e/seller-products-modal.spec.js` walks both reported paths and
+  checks the seller name and a WhatsApp href **with a number** - run
+  against the old route, both fail. Before/after in `docs/audits/t-165/`.
+- **Deliberately unchanged:** visibility. The route still returns the
+  products of any seller id, approved or not, because the seller's own edit
+  screen (`/antojos/sellers/products/edit`) reads it too - see T-166.
+- **Not fixed here:** the modals themselves (nesting, duplicate dialog ids,
+  a refetch at every level) - that is T-167.
+**Model:** `sonnet` · **Nightly:** no
+
+### [ ] T-166 · `GET /api/products/seller/[id]` serves the products of sellers the public should not see
+**Why:** found in T-165 (rule 9). The route answers for any seller id with
+no visibility filter, so an unapproved or paused seller's products are
+readable by anyone who has the id - every other public read goes through
+`publicSellerFilter()` (T-74, T-97). It could not be filtered in T-165
+because the seller's own edit screen reads the same route and must keep
+seeing its products while pending or paused.
+**Done when:** the edit screen reads its products through an
+owner-authenticated path (server-side, like T-97's `getProductForEdit`),
+and the public route applies `publicSellerFilter()` - 404 or an empty list
+for a non-public seller, decided and tested. Integration tests for both.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-167 · Product and seller modals: one stack, URL-synced (option C)
+**Why:** the human asked for the modal logic to be rethought after T-165,
+comparing alternatives (2026-09-26). Today `ProductModal` renders its own
+`SellerModal`, which renders `SellerProductsBySection`, which renders its own
+`ProductModalHandler` and `ProductModal`, and so on: every level mounts new
+`<dialog>`s and refetches the seller's products, several dialogs share an id
+(`seller_modal`, `product_modal_secondary`) so `getElementById` opens
+whichever comes first, and `ProductModalHandler.showModal` looks the dialog
+up with the *previous* `selectedKey`. The browser's back button does not
+close a modal, and an open modal has no URL to share.
+**Decided by the human:** option **C** - a single product modal and a
+single seller modal at the root, driven by one context (open / replace /
+back), with the URL kept in sync through `window.history.pushState`
+(`?producto=<id>` / `?vendedor=<id>`), which Next 14.2's app router
+integrates natively (verified in `node_modules/next`, no flag). Chosen over
+intercepting routes (option D) because D fetches every modal from the
+server - 100 ms to 1 s per open - while C opens instantly from data already
+in memory and still gets back-button and shareable links.
+**Before code:** a short design (state shape, what `pushState` vs
+`replaceState` does on each transition, what a cold load of
+`/antojos?producto=<id>` does, how the individual pages fit) for the human
+to approve.
+**Design approved by the human on 2026-09-26** (`?producto=` rather than
+changing the pathname; four PRs). Progress:
+- **[x] T-167a - the stack, for the product modal opened from the
+  listing.** `src/components/modals/ModalStack.jsx` (provider + one host in
+  the `[locale]/antojos` and `[locale]/marketplace` layouts),
+  `src/lib/modal-url.ts` (the only place that knows the parameter names),
+  `ProductModal` controllable through `open`/`onClose` (its old
+  id-driven mode kept for the callers not migrated yet), and `ProductGrid`
+  opening through the stack instead of its own `ProductModalHandler`.
+  Opening pushes `?producto=<id>` (other parameters kept); back, the
+  close button and Escape all close it; a cold load fetches
+  `GET /api/products/[id]` and closing it replaces the URL instead of
+  leaving the site. Two traps found on the way and pinned in comments: the
+  parameter cannot be `product` (ProductGrid's search text), and
+  `replaceState` must be handed `null` - Next's patched version skips
+  syncing `useSearchParams` when given a state that already carries its
+  internals. Verified: `npm run verify`, `tests/unit/modal-url.test.js`,
+  `tests/e2e/modal-stack.spec.js` (back closes it with no listing request
+  and the drawer's scroll unchanged; close button; Escape; cold load; filters
+  kept; `/en`), plus 37 more listing/modal e2e.
+- **[x] T-167b - the seller modal and the product <-> seller chain.** The
+  stack gains `openSeller` and a host for `?vendedor=<id>` (cold load:
+  `GET /api/sellers/[id]`). `ProductModal` is stack-only now: its nested
+  `SellerModal` is gone and its seller button opens the seller through the
+  stack with the schedules the product already carries. `SellerModal` is
+  controllable (stack copy has its own id, `seller_modal_stack`; its old
+  id-driven mode stays for SellerGrid and the two pages until T-167c) and
+  its back button is now named ("Cerrar"). `SellerProductsBySection` opens
+  products through the stack, which left `ProductModalHandler` with no
+  caller - deleted. Verified: `npm run verify`; `modal-stack.spec.js` now
+  walks product -> seller -> product and back x3 in reverse (one open dialog
+  at every step, the T-165 WhatsApp number intact), and a cold
+  `?vendedor=`; 30 more modal/listing e2e pass, including T-165's
+  seller-page path.
+- **[x] T-167c - product page, seller page and seller list on the same
+  host.** `ProductPage`'s seller button and `SellerGrid` open the seller
+  through the stack (`?vendedor=`); `SellerPage`'s product list already
+  did since T-167b. Their own copies of `SellerModal` are gone - the
+  seller page's was never opened (no setter call) - and so is
+  `SellerModalHandler` (no caller left). `SellerModal` is stack-only now.
+  The seller page's always-open wrapper dialog shared the id
+  `seller_modal` with every SellerModal; it is `seller_page` now.
+  Verified: `npm run verify`; `modal-stack.spec.js` covers product page
+  -> seller -> back, seller list -> seller -> back, seller page -> product
+  -> back, and one seller dialog per page; 76 e2e in total, with the
+  nav/i18n/404 suites.
+- **[x] T-167d** - what the stack leaves behind: the "Recomendar a un amigo"
+  share dialogs are still opened by id (`my_modal_1_product`,
+  `my_modal_1_seller`), and a page now holds two of each (its own and the
+  stack's) - e.g. on a seller page, "Recomendar" inside a stacked
+  SellerModal for *another* seller finds the page's dialog first and shares
+  the wrong seller. Make ShareButton ref-controlled, with a test that
+  shares from a stacked modal on a page that has its own. The `sellerId`
+  branch removed from ProductGrid in T-167a had no caller (no prop, no
+  `?sellerId=` link).
+  **Done (2026-09-27):** `ShareButton` exposes its sheet through a ref
+  (`shareRef.current.open()`) and its four parents - ProductModal,
+  ProductPage, SellerModal, SellerPage - open their own; no element id is
+  left (the sheet carries `data-share-sheet` for tests). Verified:
+  `npm run verify`; two e2e in `modal-stack.spec.js` - on a seller page,
+  "Recomendar" inside the stacked SellerModal opens that modal's own sheet
+  and not the page's (against the old components it opened nothing inside
+  the modal: count 0), and a product page opens its own. The T-167a scroll
+  test was flaky on a cold server (the listing still settling, scroll
+  anchoring moving scrollTop): it now waits for network idle and a stable
+  baseline; 20 modal e2e x3 repeats all pass.
+**Model:** `opus` · **Nightly:** no (design with the human first)
+
+### [ ] T-168 · `/admin/sellers` has no app chrome - no way back but the browser button
+**Why:** requested by the human (2026-09-26). `src/app/admin/` has no
+layout, so the panel renders bare: no navbar, no sidebar.
+**Done when:** `/admin/*` renders inside the same `Layout` + `SideBar` as
+the rest of the app, the sidebar's admin item marks it as current, and
+screenshots in both themes show it.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-169 · A signed-in user with no `User` document is sent to the login page
+**Why:** reported by the human (2026-09-26): signed in as admin, "Quiero ser
+vendedor" landed on `/auth/login`. `useCheckSeller` does
+`if (!dbUser) go('/auth/login')`, and `getSellerContextData` returns no user
+when there is a Clerk session but no `User` with that `clerkId` - a lost
+webhook (T-12b) or an account from the other Clerk instance (T-64). The
+sidebar meanwhile shows both "Cerrar sesión" and "Quiero ser vendedor": the
+app believes the person is signed in and not signed in at once, and sends
+them to a login they cannot complete.
+**For the human's own account:** probably the T-64 case (their seller
+belongs to their `clerkId` on the other instance); `npm run reclaim:account`
+re-links it. Confirming needs a read of the production database, which this
+session was not permitted - the human runs it.
+**Done when:** a signed-in session with no `User` gets one created or
+repaired (an upsert by `clerkId` - never a join by email, which T-12c
+removed on purpose) or, at minimum, a clear message instead of the login
+redirect; decided with the human because it touches identity (rule 8).
+**Model:** `opus` · **Nightly:** no (identity)
+
+### [x] T-170 · `GET /api/sellers/[id]` answered for an email: anyone could look up whose email has a store
+**Why:** found on 2026-09-26 while mapping the modals for T-167 (rule 9).
+The route is public and unauthenticated, and if `params.id` contained an
+`@` it looked the user up **by email** and returned their shop. Anyone
+could ask "does this email have a store on Mercampus?" and get the store
+back; and "User not found" vs "Seller not found" told them whether the email
+was registered at all, shop or not. Its only client,
+`getSellerByEmail()`, was deleted in T-112b ("no reference anywhere"); the
+branch had outlived it since commit `828fc51`. A malformed id also answered
+500 with Mongoose's CastError in the body.
+**Done (2026-09-26):** the email branch is gone; the id is validated with
+`sellerIdSchema` (400 for anything else, email included, so registered and
+unknown emails are indistinguishable); errors go through `errorResponse`
+instead of echoing `error.message`.
+- **Verified:** `npm run verify` green;
+  `tests/integration/seller-by-id-get.test.js` (6) - an owner's email no
+  longer returns the shop, an owner's, a buyer's and an unknown email get an
+  identical answer, the malformed id is a 400 with no CastError. Against
+  the old route, those three fail. `recorrido` and the T-165 modal e2e
+  still load the seller page.
+- **Deliberately unchanged:** visibility. The route still returns pending
+  sellers, because the admin reviews them on their public page
+  (`/admin/sellers` links to `/antojos/sellers/<id>`, and
+  `getSellerForMetadata` does not filter either). Filtering public reads
+  while keeping the admin's review working belongs with T-166.
+- **Rule 9, not fixed:** `PUT /api/sellers/[id]` keeps an email branch too
+  (`verifySellerEmail`). It is owner-checked, so not a leak, but its only
+  client (`updateSeller`) always passes an id - probably dead; confirm and
+  remove with the next change to that route.
+**Model:** `opus` (privacy) · **Nightly:** no
+
+### [ ] T-171 · Builds fail when Google Fonts does not answer: self-host Montserrat
+**Why:** `src/app/layout.jsx` loads Montserrat with `next/font/google`, which
+downloads it from Google **at build time**. Twice on 2026-09-26 a build failed
+inside `next/font` with `TypeError: Cannot read properties of null (reading
+'1')` in `@next/font/dist/google/loader.js` - once in a local `npm run
+verify` (T-170) and once in CI's `lighthouse` job on #391 - and both passed
+on a plain re-run. A network blip at build time is enough to fail a deploy or
+a required check.
+**Done when:** the font is self-hosted with `next/font/local` (the four
+weights the layout asks for, committed under `src/fonts/` or `public/`), so
+no build reaches out to Google; the rendered font is unchanged (a screenshot
+comparison of one page in both themes); `npm run verify` green offline.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-172 · Sidebar hamburger button overlaps "Antojitos"
+**Why:** reported by the human with a screenshot: opening the sidebar on
+`/antojos` showed the hamburger button sitting on top of the "Antojitos"
+pill instead of above it with a gap.
+**Measured root cause:** `src/app/[locale]/antojos/layout.jsx` and `.../
+marketplace/layout.jsx` (T-81) stack a `LocaleSwitcher` row (measured: 32px
+tall) above `Layout`'s own `h-16` navbar row, so the hamburger button no
+longer sits flush at the viewport's top the way it does on every unmigrated
+page. `SideBar`'s own top padding (`pt-16`, sized for exactly one `h-16` row)
+knew nothing about the extra row. Measured live before the fix: hamburger
+bottom at `y=88`, first sidebar item top at `y=80` - an 8px overlap.
+**Done 2026-09-26.** `SideBar` takes an optional `topClassName` prop
+(default `'pt-16'`, so `src/app/antojos/layout.jsx` and
+`src/app/marketplace/layout.jsx` - the unmigrated pages, no extra row above
+the navbar - are untouched). The two `[locale]` layouts that stack the
+`LocaleSwitcher` row pass `topClassName='pt-24'` (`pt-16` + the row's own
+measured height), clearing the button with a 24px gap.
+**Verified with rendered geometry, not a class name (rule 3, T-100's exact
+failure mode):** `tests/e2e/sidebar-hamburger-gap.spec.js` reads real
+`getBoundingClientRect()` values for the hamburger button and the first
+sidebar item, on `/antojos` and `/marketplace`, in both themes, and asserts
+a real gap (`>= 8px`, comfortably between the fix's 24px and the bug's
+-8px). A control case (`/antojos/game`, unmigrated, no `LocaleSwitcher` row)
+proves the default `pt-16` path is unchanged. Screenshots and a full writeup
+in `docs/audits/t-172/README.md`.
+**Verified:** `npm run verify` (lint + typecheck + test + build) - see PR.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-173 · Sidebar, theme toggle and navbar stay Spanish on English pages
+**Why:** T-81 migrated every zone's *page* copy, but the chrome shared by all
+zones was never owned by any of them. Measured on `origin/agent/develop`
+2026-09-27: `src/components/seller/SideBar.jsx` had no `next-intl` import at
+all (20 hardcoded strings), `ThemeToggle.jsx` (rendered only by `SideBar`)
+hardcoded "Modo oscuro" and its `aria-label`, and `Navbar.jsx` hardcoded the
+account link's `aria-label='Iniciar sesión'`. Every English page opened a
+fully Spanish sidebar.
+**Done 2026-09-27.** Three namespaces, one per component (`SideBar`,
+`ThemeToggle`, `Navbar`), same one-namespace-per-component convention as
+T-81. `SideBar` renders under both the `[locale]` layouts and the unmigrated
+`src/app/antojos|marketplace/layout.jsx`; the root `NextIntlClientProvider`
+covers all four, so the unmigrated ones resolve to Spanish (same pattern as
+`ImageGrid`/`AvailabilityBadge`). `SidebarBtn`'s `goto`/`localizedHref` path
+is untouched.
+- **Spanish copy kept literal**, including the two different casings
+  "Iniciar Sesión" (sidebar) and "Iniciar sesión" (navbar icon) - six
+  existing specs pin them by name and `accessible-names.spec.js` relies on
+  that exact difference.
+- **One Spanish-side change, on purpose:** the drawer overlay's
+  `aria-label` was the English `close sidebar` in both locales; it is now
+  `Cerrar menú lateral` / `Close sidebar`. No test addressed it by name
+  (only a comment in `sidebar-hamburger-gap.spec.js`, which selects by
+  class).
+- English "Antojitos" is "Cravings", matching the existing
+  `Antojos.metaTitle`.
+**Verified with real renders (rule 3):** new `tests/e2e/sidebar-i18n.spec.js`
+(signed out, `/antojos` and `/en/antojos`, plus `/antojos/game` as the
+unmigrated control) and `tests/e2e/signed-in/sidebar-seller-i18n.spec.js`
+(the seller-only "Gestionar" section, T-84 session) read the rendered
+sidebar and screenshot it; screenshots in `docs/audits/t-173/`. Locally, those
+plus every spec that pins sidebar/navbar copy (`sidebar-nav`,
+`session-context`, `accessible-names`, `dark-mode`, `sidebar-hamburger-gap`,
+`i18n`, `seller-screens`, the signed-in `*-i18n` specs): 81 passed, 1
+pre-existing skip. `npm run verify` green.
+**Rule 9, found here, not fixed:**
+- `Navbar.jsx`'s account icon links to a bare `href='/auth/login'`, not
+  through `localizedHref`. `/auth/login` *is* in `LOCALIZED_ROUTES`
+  (`src/i18n/routing.ts`), so on an English page that icon sends the visitor
+  to the Spanish login - the same bug the "locale-aware nav" follow-up of
+  T-81 fixed in `SidebarBtn`. The sidebar's own "Sign In" link is correct.
+  One-line fix plus an e2e click-through; worth its own entry.
+- `Navbar.jsx` still carries a commented-out `<button>` (an old `TbMenu2`
+  menu icon) that `Hambtn` replaced. Dead markup, nothing imports
+  `TbMenu2`; safe to delete in whatever PR touches that file next.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-174 · The product modal stays Spanish on English pages
+**Why:** `src/components/products/ProductModal.jsx` is what opens when a
+buyer clicks a product on the listing (`?producto=`, T-167's modal stack).
+T-167 postdates T-81's product detail zone, which translated only
+`ProductPage.jsx` (the direct `/antojos/<id>` URL). So an English visitor got
+a Spanish dialog: the "Horario" heading, the logo `alt`, the WhatsApp button,
+its `aria-label` and its prefilled message, "Recomendar a un amigo", both
+close buttons' `aria-label`, the favourites placeholder's `aria-label` and
+the error state. `tests/e2e/modal-stack.spec.js › works under /en` matched
+the *Spanish* WhatsApp label on `/en/antojos`, so it was pinning the bug.
+**Done 2026-09-27.** New `ProductModal` namespace. It's separate from
+`ProductPage` even where the values match, because the two stopped being
+twins in T-167 (the modal has the error state and the favourites
+placeholder). That follows T-81's `AddProductPage`/`EditProductForm`
+convention. Shared keys keep `ProductPage`'s exact values in both locales,
+and three are new (`close`, `favoriteAria`, `errorMessage`). The favourites
+button is still unwired (T-68). Only its label is translated.
+- Spanish copy kept literal: `modal-stack`, `recorrido` and
+  `seller-products-modal` pin it by name on the default locale.
+- `modal-stack.spec.js › works under /en` now asserts the English label
+  (`Contact … via WhatsApp`).
+**Verified with real renders (rule 3):** new
+`tests/e2e/product-modal-i18n.spec.js` opens the modal from `/antojos` and
+`/en/antojos` the way a buyer does. It reads the heading, close button, logo
+`alt`, WhatsApp label, visible text and the prefilled `?text=` of its
+`href`, and "Recommend". It also loads a cold `?producto=` for a missing
+product to check the error state. Screenshots are in `docs/audits/t-174/`.
+Locally, that spec plus `modal-stack`, `recorrido`, `seller-products-modal`
+and `dead-end-404` all pass (the last one's `test.fail()` for T-91 is the
+expected failure). `npm run verify` is green.
+**Rule 9, found here, not fixed:**
+- **The error state has no layout.** The `product ? … : …` branch for a
+  failed load renders its `<h2>` without the `modal-box` wrapper the success
+  branch uses. The message sits bare at the viewport's top-left edge, partly
+  under the close and favourites buttons. See
+  `docs/audits/t-174/product-modal-error-i18n-*.png`. That's a visual fix and
+  needs its own before/after screenshots.
+- **`src/components/Carousel.jsx:67`** hardcodes
+  `` alt={`Carousel image ${index + 1}`} `` in English, on every page and in
+  both locales. It's shared by the four product/seller modals and pages.
+  Translating it, or better, giving it the product's name, is its own small
+  task.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-175 · The seller page and seller modal stay Spanish on English pages
+**Why:** T-81's seller profile zone translated only the shared children of
+`src/components/seller/SellerPage.jsx` (`AvailabilityBadge`, `TableSchema`)
+and left its own copy for later. It recorded that gap in its notes, together
+with the near-twin `src/components/seller/index/SellerModal.jsx` (the
+`?vendedor=` dialog of T-167's stack). Both hardcoded "Horario",
+"¡Conoce todos los productos de este vendedor!", the Instagram/WhatsApp
+buttons, "Recomendar a un amigo", and a Spanish prefilled WhatsApp message.
+`SellerModal` also hardcoded its close button's `aria-label='Cerrar'`.
+`tests/e2e/i18n.spec.js` asserted the Spanish CTA on `/en` pages twice and
+documented it as a known gap.
+**Done 2026-09-27.** Two namespaces, `SellerPage` and `SellerModal`, one per
+file (T-81's convention). They share six keys with identical values, and
+`SellerModal` adds `close`. The two files are translated together because
+they are twins, the same way the "perfil y horario" zone of T-81 shipped two
+screens in one PR. "Instagram" and "WhatsApp" are the same in both locales
+but live in the messages anyway, so neither file has hardcoded copy left.
+- **The WhatsApp prefill is now URL-encoded.** Both files built
+  `?text=Hola ${businessName},%20te%20vi%20en%20Mercampus%20` by hand, with
+  the business name unencoded. They now pass the translated message through
+  `encodeURIComponent`, the same way `ProductModal`/`ProductPage` already do.
+  The decoded text is identical, trailing space included, for every name
+  without URL-special characters. A name containing `&` or `#` no longer
+  truncates the message.
+- Spanish copy kept literal: `modal-stack` and `seller-products-modal` pin
+  the products heading by text on the default locale.
+- `i18n.spec.js`'s two English seller-profile tests now expect
+  "Recommend to a friend", and the header comment that documented the gap
+  is rewritten.
+**Verified with real renders (rule 3):** new
+`tests/e2e/seller-modal-i18n.spec.js` loads `SellerPage` at
+`/antojos/sellers/<id>` and `/en/...`, and `SellerModal` from a cold
+`?vendedor=` in both locales. It reads the headings, the Instagram/WhatsApp
+links, the decoded `?text=` of the WhatsApp `href`, the share CTA and the
+modal's close button. Screenshots are in `docs/audits/t-175/`. Locally, that
+spec plus `i18n`, `modal-stack`, `seller-products-modal` and `recorrido`:
+81 passed, 1 pre-existing skip. `npm run verify` is green.
+**Rule 9, found here, not fixed:**
+- **`SellerProductsBySection.jsx`**, rendered only inside these two screens,
+  is still Spanish: "🍕 Antojos (N productos)", "🛍️
+  Marketplace (N productos)" and "Este vendedor aún no tiene productos
+  disponibles." You can see it in `docs/audits/t-175/*-en.png`. Together
+  with `SellerGrid.jsx`'s empty state ("No hay vendedores disponibles…",
+  already flagged in T-81's notes and still open), that is the last
+  public-facing Spanish copy on the seller screens. It's a good next entry.
+- **`SellerPage`'s back button has no accessible name.** It's icon-only, with
+  no `aria-label`. `ProductPage`'s equivalent has `aria-label={t('back')}`,
+  and T-93 named the other icon-only controls but missed this one.
+  Accessibility fix, one line plus a key.
+- **Dead code in `SellerPage`:** the `loading` state never renders anything.
+  `setSeller` and `setLoading(false)` are batched in the same tick, and the
+  early `if (!seller)` return already shows the spinner, so the
+  `seller ? … : <div className=''></div>` branch inside is unreachable too.
+  On an API error it returns before `setLoading(false)` and spins forever,
+  but a missing seller is already a server-side 404 (T-90), so that only
+  bites on a real API failure.
+- **`SellerModal`:** its `fetchSchedules` doesn't fetch anything. It wraps a
+  `setSchedules(seller.schedules)` in a try/catch that can't throw. There are
+  also two commented-out blocks (a "Contacto" section and a `•`
+  separator) that nothing references.
+- The ROADMAP's earlier suggestion to *deduplicate* `SellerPage`/`SellerModal`
+  (one component instead of two near-copies) is still open. This task only
+  translated them.
+**Outside the repo:** nothing.
+**Model:** `sonnet` · **Nightly:** yes
+
+### [x] T-176 · Category labels stay Spanish on English pages
+**Why:** after T-173–T-175, the category chips on `/en/antojos` and
+`/en/marketplace`, the category tags on every product card, the seller's
+category picker, and `SellerProductsBySection`'s "🍕 Antojos (N productos)"
+headings were the last Spanish text on the listing and seller screens. T-81
+had left the taxonomy untranslated on purpose and called it a product
+decision.
+**The decision (the human, 2026-09-27): fixed value, translated label.** A
+category string does two jobs. It is the stored value (saved on every
+product, validated by Zod and the Mongoose schema, sent as `?category=`,
+filtered on by `GET /api/products`, and remembered in `localStorage` by
+`CategoryGrid`), and it is the text a person reads. The value stays Spanish
+and untouched. Only the label is translated. The URL keeps `?category=Dulces`
+in English too, by explicit choice, so links shared between the two sites
+keep working.
+**Done 2026-09-27.**
+- `src/lib/category-labels.ts` maps each stored value to an ASCII message key
+  (`'Comida rápida'` → `fastFood`). `src/utils/hooks/useCategoryLabel.js`
+  turns a value into the label for the current locale. **A value with no key
+  renders as stored.** A product saved under a category that has since been
+  renamed or dropped shows what it shows today, never a missing-message
+  placeholder. So this needs no data migration and makes no assumption about
+  what production holds (the dev DB, read-only: 6 values, all in the current
+  lists).
+- New `Categories` namespace. In `es.json`, every label equals its stored
+  value, so nothing a Spanish visitor sees changes.
+- Applied in `CategoryGrid` (chips, both sections), `ProductCard` (tags), and
+  the add-product and `EditProductForm` pickers (react-select `label`
+  translated, `value` untouched).
+- `SellerProductsBySection`: new namespace for its section headings and empty
+  state. The headings now use ICU plurals, so Spanish reads "1 producto"
+  instead of "1 productos".
+**Verified with real renders (rule 3):**
+- New `tests/unit/category-labels.test.js` checks every value in all four
+  category lists: it has a key, the key exists in both locales, and the
+  Spanish label equals the value. A category added later without a key
+  fails CI.
+- New `tests/e2e/categories-i18n.spec.js`:
+  - chips in both locales on both listings, plus a product-card tag;
+  - clicking "Cookies" on `/en/antojos` still puts `?category=Galletas` in
+    the URL and marks the chip active;
+  - `/en/antojos?category=Galletas` (a link shared from the Spanish site)
+    activates "Cookies";
+  - the seller page's translated section heading.
+- New `tests/e2e/signed-in/categories-form-i18n.spec.js`:
+  - the add-product options in both locales;
+  - the edit form showing the product's stored `'Comida rápida'` as "Fast
+    food" in English. That proves the picker matches on the value, not the
+    label.
+- Screenshots are in `docs/audits/t-176/`. Those specs plus
+  `seller-modal-i18n`, `modal-stack`, `sidebar-i18n`, `seller-products-i18n`,
+  `i18n` and `recorrido` all pass locally. `npm run verify` is green.
+**Rule 9, found here, not fixed:**
+- The listing's heading under the chips (`Antojos.allHeading` /
+  `Marketplace.allHeading`) always reads "Todos"/"All", even while a category
+  filter is active. That's a UX quirk, not an i18n one.
+- react-select's default placeholder "Select..." is English in both locales
+  on both forms' category pickers, visible whenever no category is picked. None
+  of the four react-selects on the add/edit forms passes a `placeholder`. The
+  two section pickers always hold a value, so theirs never shows.
+- `src/components/products/ProductCardFavorite.jsx` also renders raw
+  categories, but its only importer, `ProductGridFavorite.jsx`, has no
+  importers of its own (`AntojosListing.jsx` already says it is dead). It was
+  left untouched rather than translated. Deleting both is a candidate for
+  its own PR (rule 5: confirmed by a search, not by intuition).
+- Server-side validation messages still name the invalid category in
+  Spanish (`validacion.test.js` pins "Tecnología"). Those are API responses,
+  not UI copy.
+**Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 
 ---

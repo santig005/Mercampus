@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 
 import { getProducts } from '@/services/productService';
 import ProductCard from '@/components/products/ProductCard';
-import ProductModalHandler from '@/components/products/ProductModalHandler';
+import { useModalStack } from '@/components/modals/ModalStack';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
@@ -96,6 +96,7 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
   const [parent] = useAutoAnimate();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { openProduct } = useModalStack();
   const { university } = useUniversity();
   const { ref: sentinelRef, inView } = useInView();
 
@@ -242,91 +243,80 @@ export default function ProductGrid({ sellerIdParam = '', section = 'antojos' })
   }, [inView, hasMore, loading, loadingMore, cursor, product, category, sellerId, university, section, sort, availability]);
 
   return (
-    <ProductModalHandler>
-      {showModal => (
-        <div className=''>
-          <div className='flex flex-wrap items-center justify-between gap-2 px-2 pb-2'>
+    <div className=''>
+      <div className='flex flex-wrap items-center justify-between gap-2 px-2 pb-2'>
+        <div
+          className='flex gap-2'
+          role='group'
+          aria-label={t('filterAvailabilityLabel')}
+        >
+          {AVAILABILITY_OPTIONS.map(option => {
+            const selected = isAvailabilitySelected(option.value);
+            return (
+              <button
+                key={option.value}
+                type='button'
+                aria-pressed={selected}
+                className={`btn btn-sm rounded-full ${
+                  selected ? option.activeClass : 'bg-base-100 text-base-content'
+                }`}
+                onClick={() => toggleAvailability(option.value)}
+              >
+                {t(option.labelKey)}
+              </button>
+            );
+          })}
+        </div>
+        <select
+          className='select select-bordered select-sm'
+          aria-label={t('sortLabel')}
+          value={sort}
+          onChange={e => setSort(e.target.value)}
+        >
+          {SORT_OPTIONS.map(option => (
+            <option key={option.value} value={option.value}>
+              {t(option.labelKey)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className='flex flex-col gap-2' ref={setListRef}>
+        {loading ? (
+          <div className='flex justify-center'>
+            <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
+          </div>
+        ) : products?.length > 0 ? (
+          products?.map(product => (
             <div
-              className='flex gap-2'
-              role='group'
-              aria-label={t('filterAvailabilityLabel')}
+              className=''
+              key={product._id}
+              // T-167: the layout's modal stack, which puts ?producto=<id>
+              // in the URL so the browser's back button closes it. This
+              // used to branch on `sellerId` to reuse a 'secondary'
+              // dialog; no caller passes one (the prop or ?sellerId=),
+              // and a seller's own list is SellerProductsBySection.
+              onClick={() => openProduct(product)}
             >
-              {AVAILABILITY_OPTIONS.map(option => {
-                const selected = isAvailabilitySelected(option.value);
-                return (
-                  <button
-                    key={option.value}
-                    type='button'
-                    aria-pressed={selected}
-                    className={`btn btn-sm rounded-full ${
-                      selected ? option.activeClass : 'bg-base-100 text-base-content'
-                    }`}
-                    onClick={() => toggleAvailability(option.value)}
-                  >
-                    {t(option.labelKey)}
-                  </button>
-                );
-              })}
+              <ProductCard product={product} />
             </div>
-            <select
-              className='select select-bordered select-sm'
-              aria-label={t('sortLabel')}
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-            >
-              {SORT_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {t(option.labelKey)}
-                </option>
-              ))}
-            </select>
+          ))
+        ) : (
+          <div className='w-full flex justify-center my-4'>
+            <p>
+              {availability === 'available'
+                ? t('emptyAvailable')
+                : t('emptyDefault')}
+            </p>
           </div>
-          <div className='flex flex-col gap-2' ref={setListRef}>
-            {loading ? (
-              <div className='flex justify-center'>
-                <span className='loading loading-infinity loading-lg bg-primary-orange'></span>
-              </div>
-            ) : products?.length > 0 ? (
-              products?.map(product => (
-                <div
-                  className=''
-                  key={product._id}
-                  onClick={() => {
-                    if (sellerId) {
-                      // document.getElementById('product_modal_main').close();
-                      document
-                        .getElementById('product_modal_secondary')
-                        .close();
-                      showModal(product, 'secondary');
-                      // document.getElementById('seller_modal').close();
-                    } else {
-                      showModal(product, 'main');
-                    }
-                    //router.push(`/antojos/${product._id}`);
-                  }}
-                >
-                  <ProductCard product={product} />
-                </div>
-              ))
-            ) : (
-              <div className='w-full flex justify-center my-4'>
-                <p>
-                  {availability === 'available'
-                    ? t('emptyAvailable')
-                    : t('emptyDefault')}
-                </p>
-              </div>
-            )}
-          </div>
-          {!loading && hasMore && (
-            <div ref={setSentinelRef} className='flex justify-center py-4'>
-              {loadingMore && (
-                <span className='loading loading-spinner loading-md'></span>
-              )}
-            </div>
+        )}
+      </div>
+      {!loading && hasMore && (
+        <div ref={setSentinelRef} className='flex justify-center py-4'>
+          {loadingMore && (
+            <span className='loading loading-spinner loading-md'></span>
           )}
         </div>
       )}
-    </ProductModalHandler>
+    </div>
   );
 }

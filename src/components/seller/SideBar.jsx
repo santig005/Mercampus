@@ -4,6 +4,7 @@ import { SignOutButton, useUser } from '@clerk/nextjs';
 import SidebarBtn from '@/components/header/SidebarBtn';
 import ThemeToggle from '@/components/header/ThemeToggle';
 import { useSeller } from '@/context/SellerContext';
+import { useTranslations } from 'next-intl';
 
 import {
   MdFastfood,
@@ -43,9 +44,19 @@ import {
   FaPersonWalkingLuggage,
 } from 'react-icons/fa6';
 
-const SideBar = ({ userId }) => {
+// T-172: `topClassName` lets a caller that stacks something above the
+// h-16 navbar row (see the two [locale] layouts) push this list down to
+// clear it. Defaults to the plain navbar's own height - every unmigrated
+// layout (src/app/antojos/layout.jsx, src/app/marketplace/layout.jsx) still
+// renders the navbar flush at the top, so they get the original spacing
+// unchanged.
+const SideBar = ({ userId, topClassName = 'pt-16' }) => {
   const { seller } = useSeller();
   const { user } = useUser();
+  // Rendered by both the [locale] layouts and the unmigrated
+  // src/app/antojos|marketplace layouts; the root NextIntlClientProvider
+  // covers all four, so the unmigrated ones resolve to the default (Spanish).
+  const t = useTranslations('SideBar');
 
   // T-104: read from Clerk's publicMetadata, not from Mongo's `role` - T-12
   // retired that field as the source of truth for admin. Clerk exposes
@@ -61,17 +72,17 @@ const SideBar = ({ userId }) => {
     <div className='drawer-side'>
       <label
         htmlFor='my-dibujador'
-        aria-label='close sidebar'
+        aria-label={t('closeSidebar')}
         className='drawer-overlay'
       ></label>
       {/* T-73: dark:bg-base-200 - ver la nota sobre bg-primary en Layout.jsx,
           es el mismo caso (bg-primary rinde un blanco fijo por el override
           de main.css, no el naranja de marca). */}
-      <ul className='menu text-base-content min-h-full w-72 p-4 pt-16 bg-primary dark:bg-base-200 flex flex-col justify-between'>
+      <ul className={`menu text-base-content min-h-full w-72 p-4 ${topClassName} bg-primary dark:bg-base-200 flex flex-col justify-between`}>
         <div className='mt-4 flex flex-col gap-2'>
           <li>
             <SidebarBtn
-              text='Antojitos'
+              text={t('antojos')}
               goto='/antojos'
               iconActive={<MdFastfood className='size-5' />}
               iconInactive={<MdOutlineFastfood className='size-5' />}
@@ -79,7 +90,7 @@ const SideBar = ({ userId }) => {
           </li>
           <li>
             <SidebarBtn
-              text='Marketplace'
+              text={t('marketplace')}
               goto='/marketplace'
               iconActive={<MdShoppingBag className='size-5' />}
               iconInactive={<MdOutlineShoppingBag className='size-5' />}
@@ -89,12 +100,12 @@ const SideBar = ({ userId }) => {
             <details open>
               <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
                 <MdEmojiPeople className='size-5' />
-                Vendedores
+                {t('sellers')}
               </summary>
               <ul className='flex flex-col gap-2'>
                 <li>
                   <SidebarBtn
-                    text='Lista de vendedores'
+                    text={t('sellerList')}
                     goto='/antojos/sellers/list'
                     iconActive={<BsPeopleFill className='size-5' />}
                     iconInactive={<BsPeople className='size-5' />}
@@ -105,7 +116,7 @@ const SideBar = ({ userId }) => {
                     {(seller === "None" || seller === false) && (
                       <li>
                         <SidebarBtn
-                          text='Quiero ser vendedor'
+                          text={t('becomeSeller')}
                           goto='/antojos/sellers/register'
                           iconActive={<BsPersonFillAdd className='size-5' />}
                           iconInactive={<BsPersonAdd className='size-5' />}
@@ -115,7 +126,7 @@ const SideBar = ({ userId }) => {
                     {seller !== "None" && seller && !seller?.approved && (
                       <li>
                         <SidebarBtn
-                          text='Solicitud en proceso'
+                          text={t('applicationPending')}
                           goto='/antojos/sellers/approving'
                           iconActive={<BsPersonFillAdd className='size-5' />}
                           iconInactive={<BsPersonAdd className='size-5' />}
@@ -132,12 +143,12 @@ const SideBar = ({ userId }) => {
               <details open>
                 <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
                   <BsBuildingFillGear className='size-5' />
-                  Gestionar
+                  {t('manage')}
                 </summary>
                 <ul className='flex flex-col gap-2'>
                   <li>
                     <SidebarBtn
-                      text='Panel de ventas'
+                      text={t('salesPanel')}
                       goto='/antojos/sellers/panel'
                       iconActive={<BsBarChartFill className='size-5' />}
                       iconInactive={<BsBarChart className='size-5' />}
@@ -145,7 +156,7 @@ const SideBar = ({ userId }) => {
                   </li>
                   <li>
                     <SidebarBtn
-                      text='Agregar productos'
+                      text={t('addProducts')}
                       goto='/antojos/product/add'
                       iconActive={<BsBagPlusFill className='size-5' />}
                       iconInactive={<BsBagPlus className='size-5' />}
@@ -153,7 +164,7 @@ const SideBar = ({ userId }) => {
                   </li>
                   <li>
                     <SidebarBtn
-                      text='Editar mis productos'
+                      text={t('editProducts')}
                       goto='/antojos/sellers/products/edit'
                       iconActive={<BsBagCheckFill className='size-5' />}
                       iconInactive={<BsBagCheck className='size-5' />}
@@ -161,7 +172,7 @@ const SideBar = ({ userId }) => {
                   </li>
                   <li>
                     <SidebarBtn
-                      text='Editar mi perfil'
+                      text={t('editProfile')}
                       goto='/antojos/sellers/profile/edit'
                       iconActive={<BsPersonFillGear className='size-5' />}
                       iconInactive={<BsPersonGear className='size-5' />}
@@ -169,7 +180,7 @@ const SideBar = ({ userId }) => {
                   </li>
                   <li>
                     <SidebarBtn
-                      text='Mis horarios'
+                      text={t('schedules')}
                       goto='/antojos/sellers/schedules'
                       iconActive={<BsCalendarCheckFill className='size-5' />}
                       iconInactive={<BsCalendarCheck className='size-5' />}
@@ -184,12 +195,12 @@ const SideBar = ({ userId }) => {
               <details open>
                 <summary className='hover:cursor-pointer p-2 pe-4 mb-2'>
                   <MdAdminPanelSettings className='size-5' />
-                  Administración
+                  {t('admin')}
                 </summary>
                 <ul className='flex flex-col gap-2'>
                   <li>
                     <SidebarBtn
-                      text='Gestionar vendedores'
+                      text={t('manageSellers')}
                       goto='/admin/sellers'
                       iconActive={<MdAdminPanelSettings className='size-5' />}
                       iconInactive={<MdOutlineAdminPanelSettings className='size-5' />}
@@ -201,7 +212,7 @@ const SideBar = ({ userId }) => {
           )}
           <li>
             <SidebarBtn
-              text='Ayuda'
+              text={t('help')}
               goto='/antojos/pqrs'
               iconActive={<MdLiveHelp className='size-5' />}
               iconInactive={<MdOutlineLiveHelp className='size-5' />}
@@ -209,7 +220,7 @@ const SideBar = ({ userId }) => {
           </li>
           <li>
             <SidebarBtn
-              text='Sobre Mercampus'
+              text={t('about')}
               goto='/'
               iconActive={<MdInfo className='size-5' />}
               iconInactive={<MdOutlineInfo className='size-5' />}
@@ -223,14 +234,14 @@ const SideBar = ({ userId }) => {
           {!userId ? (
             <li className='flex flex-col gap-2'>
               <SidebarBtn
-                text='Iniciar Sesión'
+                text={t('signIn')}
                 goto='/auth/login'
                 iconInactive={
                   <FaPersonWalkingDashedLineArrowRight className='size-5' />
                 }
               />
               <SidebarBtn
-                text='Regístrate'
+                text={t('signUp')}
                 goto='/auth/register'
                 iconInactive={<FaPersonWalkingLuggage className='size-5' />}
               />
@@ -240,7 +251,7 @@ const SideBar = ({ userId }) => {
               <SignOutButton className='btn'>
                 <p>
                   <FaPersonWalkingArrowLoopLeft className='size-5' />
-                  Cerrar Sesión
+                  {t('signOut')}
                 </p>
               </SignOutButton>
             </li>

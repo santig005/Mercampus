@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import SideBar from '@/components/seller/SideBar';
 import { setRequestLocale } from 'next-intl/server';
 import LocaleSwitcher from '@/components/general/LocaleSwitcher';
+import { ModalStackProvider } from '@/components/modals/ModalStack';
 
 // T-81: duplicated from src/app/antojos/layout.jsx on purpose, not shared.
 // That tree still owns the antojos sub-routes that have not migrated yet
@@ -36,10 +37,18 @@ export default async function layout({ children, params }) {
           <LocaleSwitcher />
         </div>
         <Layout>
-          {children}
+          {/* T-167: one product modal for every list in this layout, kept
+              in the URL (?producto=) so the back button closes it. */}
+          <ModalStackProvider>{children}</ModalStackProvider>
         </Layout>
       </div>
-      <SideBar userId={userId} />
+      {/* T-172: the switcher row above measures 32px tall (getBoundingClientRect,
+          both themes) on top of Layout's own h-16 navbar, so the hamburger
+          button no longer sits flush at the viewport top the way SideBar's
+          default pt-16 assumes - it overlapped "Antojitos" by about 8px.
+          pt-24 (pt-16 + that row's height) clears it with room to spare. The
+          marketplace layout below has the identical row and the same fix. */}
+      <SideBar userId={userId} topClassName='pt-24' />
     </div>
   );
 }
