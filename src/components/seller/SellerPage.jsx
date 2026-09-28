@@ -1,7 +1,7 @@
 'use client';
 import { logger } from '@/lib/logger';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   TbChevronLeft,
   TbBrandWhatsapp,
@@ -9,11 +9,10 @@ import {
   TbShare2,
 } from 'react-icons/tb';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
-import SellerModal from '@/components/seller/index/SellerModal';
 import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '../products/share/ShareButton';
@@ -25,10 +24,10 @@ export default function SellerPage({ id }) {
   const [schedules, setSchedules] = useState([]);
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [sellerModalId, setSellerModalId] = useState(null);
 
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('SellerPage');
 
   useEffect(() => {
     if (!id) return;
@@ -55,9 +54,9 @@ export default function SellerPage({ id }) {
     fetchSeller();
   }, [id]);
 
-  const handleShowModal = () => {
-    document.getElementById('my_modal_1_seller').showModal();
-  };
+  // T-167d: this component's own share sheet, not the first one in the page.
+  const shareRef = useRef(null);
+  const handleShowModal = () => shareRef.current?.open();
 
   if (!seller) {
     return (
@@ -78,8 +77,12 @@ export default function SellerPage({ id }) {
           </div>
         </div>
       ) : (
-        <dialog id='seller_modal' className='modal modal-top modal-open h-dvh'>
-          <ShareButton data={seller} type='seller' />
+        <dialog id='seller_page' className='modal modal-top modal-open h-dvh'>
+          {/* T-167c: this page is laid out as an always-open dialog. Its id was
+              `seller_modal`, the same as the SellerModal nested inside it -
+              which was never opened (its state had no setter call) and is
+              gone - and as every other SellerModal on the site. */}
+          <ShareButton ref={shareRef} data={seller} type='seller' />
           {seller ? (
             <>
               {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
@@ -102,7 +105,6 @@ export default function SellerPage({ id }) {
                       </button>
                     </div>
                   </div>
-                  <SellerModal seller={sellerModalId} set={setSellerModalId} />
                   {seller && seller.logo && (
                     <Carousel
                       key={seller._id}
@@ -134,11 +136,11 @@ export default function SellerPage({ id }) {
                         {parseIfJSON(seller.description)}
                       </p>
                       <div className=''>
-                        <h2 className='card-title px-6'>Horario</h2>
+                        <h2 className='card-title px-6'>{t('scheduleHeading')}</h2>
                         {schedules && <TableSchema schedules={schedules} />}
                       </div>
                       <h2 className='card-title px-6 mb-2'>
-                        ¡Conoce todos los productos de este vendedor!
+                        {t('productsHeading')}
                       </h2>
                       <div className='px-2'>
                         <SellerProductsBySection sellerId={seller._id} />
@@ -166,10 +168,12 @@ export default function SellerPage({ id }) {
                             });
                           }}
                         >
-                          <TbBrandInstagram className='icon' /> Instagram
+                          <TbBrandInstagram className='icon' /> {t('instagram')}
                         </a>
                         <a
-                          href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                          href={`https://wa.me/+57${seller.phoneNumber}?text=${encodeURIComponent(
+                            t('whatsappMessage', { seller: seller.businessName ?? '' })
+                          )}`}
                           className='btn btn-primary join-item w-1/2'
                           target='_blank'
                           referrerPolicy='no-referrer'
@@ -181,14 +185,14 @@ export default function SellerPage({ id }) {
                             });
                           }}
                         >
-                          <TbBrandWhatsapp className='icon' /> WhatsApp
+                          <TbBrandWhatsapp className='icon' /> {t('whatsapp')}
                         </a>
                       </div>
                       <button
                         className='btn btn-secondary w-full mt-2'
                         onClick={handleShowModal}
                       >
-                        Recomendar a un amigo <TbShare2 className='icon' />
+                        {t('recommend')} <TbShare2 className='icon' />
                       </button>
                     </div>
                   </div>

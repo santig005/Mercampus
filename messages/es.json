@@ -242,5 +242,221 @@
   "UniGraphicSelector": {
     "infoAria": "Información",
     "disclaimer": "Mercampus no está asociado con ninguna de las universidades; sus nombres solo aparecen con finalidad de filtro de búsqueda."
+  },
+  "ProductCard": {
+    "imageAlt": "Imagen de {name}"
+  },
+  "AddProductPage": {
+    "modalAttention": "¡Atención!",
+    "heading": "Agrega aquí tu producto",
+    "subtitle": "Por favor completa la información del producto",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Nombre del producto",
+    "sectionLabel": "Sección",
+    "sectionAntojos": "Antojos (Productos alimenticios)",
+    "sectionMarketplace": "Marketplace (Productos no alimenticios)",
+    "categoryLabel": "Categoría",
+    "priceLabel": "Precio",
+    "pricePlaceholder": "Precio del producto",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción del producto",
+    "imagesTitle": "Imágenes del Producto",
+    "submit": "Subir Producto",
+    "networkError": "Error de red. Inténtalo de nuevo."
+  },
+  "EditProductsPage": {
+    "heading": "Editar tus Productos",
+    "addButton": "Añadir Producto",
+    "instructions": "Edita la disponibilidad de tus productos, o da click en uno en específico para editar más detalles",
+    "myAvailability": "Mi disponibilidad",
+    "availabilityColumnLabel": "Disponibilidad",
+    "availabilityToggleLabel": "Disponibilidad de {name}: {status}",
+    "available": "disponible",
+    "unavailable": "no disponible",
+    "yourBusinessFallback": "tu negocio",
+    "antojosSectionHeading": "Antojos ({count} productos)",
+    "marketplaceSectionHeading": "Marketplace ({count} productos)",
+    "loadingProducts": "Cargando productos..."
+  },
+  "EditProductForm": {
+    "heading": "Edita tu producto",
+    "subtitle": "Por favor completa la información del producto",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Nombre del producto",
+    "sectionLabel": "Sección",
+    "sectionAntojos": "Antojos (Productos alimenticios)",
+    "sectionMarketplace": "Marketplace (Productos no alimenticios)",
+    "priceLabel": "Precio",
+    "pricePlaceholder": "Precio",
+    "availabilityLabel": "Disponibilidad",
+    "categoryLabel": "Categoría",
+    "descriptionLabel": "Descripcion",
+    "descriptionPlaceholder": "Descripción",
+    "imagesTitle": "Imágenes del Producto",
+    "deleteButton": "Eliminar Producto",
+    "saveButton": "Guardar Cambios",
+    "updateError": "Error al actualizar el producto.",
+    "deleteError": "Error al eliminar el producto."
+  },
+  "ProfileChecklist": {
+    "completeHeading": "¡Tu perfil está completo!",
+    "incompleteHeading": "Completa tu perfil",
+    "progress": "{completed} de {total}",
+    "progressAria": "Perfil completado al {percent} por ciento",
+    "allDone": "No te falta nada por llenar.",
+    "items": {
+      "logo": {
+        "label": "Sube el logo de tu negocio",
+        "hint": "Una foto propia hace que te reconozcan en el listado."
+      },
+      "description": {
+        "label": "Escribe una descripción",
+        "hint": "Cuenta en una línea qué vendes y qué te diferencia."
+      },
+      "schedule": {
+        "label": "Agrega tu horario",
+        "hint": "Sin horario nunca apareces como disponible."
+      },
+      "product": {
+        "label": "Publica tu primer producto",
+        "hint": "Tu perfil se ve vacío hasta que tengas al menos uno."
+      }
+    }
+  },
+  "EditSellerForm": {
+    "heading": "Edita tu perfil",
+    "subtitle": "Por favor completa la información del perfil",
+    "availabilityHeading": "Mi disponibilidad",
+    "visibilityHeading": "Visibilidad de mi tienda",
+    "visibilityPaused": "En pausa",
+    "visibilityVisible": "Visible",
+    "visibilityHint": "Si la pausas dejas de aparecer en los listados mientras no puedas vender. Conservas tu aprobación y tus productos: cuando la reactives vuelves a aparecer como estabas.",
+    "extraordinaryHeading": "Apertura extraordinaria",
+    "extraordinaryHint": "Si abres fuera de tu horario habitual, actívala para que tu tienda se muestre abierta por un tiempo limitado.",
+    "openUntil": "Abierta hasta las {time}",
+    "cancel": "Cancelar",
+    "openForHours": "Abrir {hours}h",
+    "nameLabel": "Nombre del Negocio",
+    "namePlaceholder": "Nombre del Negocio",
+    "universityLabel": "Universidad",
+    "sloganLabel": "Eslogan",
+    "sloganPlaceholder": "Eslogan del negocio",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción del negocio",
+    "instagramLabel": "Usuario de Instagram",
+    "instagramPlaceholder": "@usuario_instagram",
+    "phoneLabel": "Número de Teléfono",
+    "phonePlaceholder": "Número de contacto",
+    "logoTitle": "Logo de tu Negocio o foto de ti",
+    "saveButton": "Guardar Cambios",
+    "updateError": "Error al actualizar el perfil del vendedor."
+  },
+  "Schedule": {
+    "heading": "Agrega horarios",
+    "subtitle": "Por favor completa la información de tu disponibilidad",
+    "yourSchedulesHeading": "Tus horarios",
+    "intro": "En la siguiente sección puedes agregar los horarios que necesites, modificar o eliminar los que ya tienes 😊",
+    "keepInMind": "Para tener en cuenta:",
+    "tip1Before": "Trata de poner solo horarios entre",
+    "tip1Between": "y",
+    "tip1After": "🧐",
+    "tip2": "La hora inicial debe ser antes que la final 🧐",
+    "errorSelectDay": "Error en el horario {index}: Selecciona un día.",
+    "errorBothTimes": "Error en el horario {index}: Ambos campos de tiempo deben estar completos.",
+    "errorStartTime": "Error en el horario {index}: La hora de inicio debe ser a partir de las 6:00 AM.",
+    "errorEndTime": "Error en el horario {index}: La hora de fin debe ser hasta las 9:00 PM.",
+    "errorEndAfterStart": "Error en el horario {index}: La hora de fin debe ser posterior a la hora de inicio.",
+    "connectionError": "Error al conectar con el servidor.",
+    "removeButton": "Eliminar",
+    "startTimeLabel": "Hora Inicial",
+    "endTimeLabel": "Hora Final",
+    "addScheduleButton": "+ Agregar horario",
+    "saveSchedulesButton": "Guardar horarios"
+  },
+  "SideBar": {
+    "closeSidebar": "Cerrar menú lateral",
+    "antojos": "Antojitos",
+    "marketplace": "Marketplace",
+    "sellers": "Vendedores",
+    "sellerList": "Lista de vendedores",
+    "becomeSeller": "Quiero ser vendedor",
+    "applicationPending": "Solicitud en proceso",
+    "manage": "Gestionar",
+    "salesPanel": "Panel de ventas",
+    "addProducts": "Agregar productos",
+    "editProducts": "Editar mis productos",
+    "editProfile": "Editar mi perfil",
+    "schedules": "Mis horarios",
+    "admin": "Administración",
+    "manageSellers": "Gestionar vendedores",
+    "help": "Ayuda",
+    "about": "Sobre Mercampus",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Regístrate",
+    "signOut": "Cerrar Sesión"
+  },
+  "ThemeToggle": {
+    "label": "Modo oscuro",
+    "toggleAria": "Alternar modo oscuro"
+  },
+  "Navbar": {
+    "signInAria": "Iniciar sesión"
+  },
+  "ProductModal": {
+    "close": "Cerrar",
+    "favoriteAria": "Guardar en favoritos",
+    "errorMessage": "Algo salió mal, por favor intente de nuevo",
+    "scheduleHeading": "Horario",
+    "sellerLogoAlt": "Imagen del publicador del producto",
+    "contactWhatsapp": "Contactar por WhatsApp",
+    "contactWhatsappAria": "Contactar a {seller} por WhatsApp",
+    "defaultSeller": "el vendedor",
+    "defaultSellerGreeting": "estimado vendedor",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus. Estoy interesado en el producto {product}. Podrías decirme dónde te encuentras?",
+    "recommend": "Recomendar a un amigo"
+  },
+  "SellerPage": {
+    "scheduleHeading": "Horario",
+    "productsHeading": "¡Conoce todos los productos de este vendedor!",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus ",
+    "recommend": "Recomendar a un amigo"
+  },
+  "SellerModal": {
+    "close": "Cerrar",
+    "scheduleHeading": "Horario",
+    "productsHeading": "¡Conoce todos los productos de este vendedor!",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "whatsappMessage": "Hola {seller}, te vi en Mercampus ",
+    "recommend": "Recomendar a un amigo"
+  },
+  "Categories": {
+    "all": "Todos",
+    "sweets": "Dulces",
+    "fruits": "Frutas",
+    "fried": "Frituras",
+    "cookies": "Galletas",
+    "iceCream": "Helados",
+    "bakery": "Panadería",
+    "pastries": "Repostería",
+    "snacks": "Snacks",
+    "fastFood": "Comida rápida",
+    "other": "Otros",
+    "accessories": "Accesorios",
+    "makeup": "Maquillaje",
+    "thermoses": "Termos",
+    "clothing": "Ropa",
+    "technology": "Tecnología",
+    "books": "Libros",
+    "sports": "Deportes",
+    "home": "Hogar",
+    "beauty": "Belleza"
+  },
+  "SellerProductsBySection": {
+    "empty": "Este vendedor aún no tiene productos disponibles.",
+    "antojosHeading": "🍕 Antojos ({count, plural, one {# producto} other {# productos}})",
+    "marketplaceHeading": "🛍️ Marketplace ({count, plural, one {# producto} other {# productos}})"
   }
 }

@@ -13,6 +13,7 @@ import '../../public/css/main.css';
 import AnimationProvider from '@/components/AnimationProvider';
 import { SITE_ICONS, SITE_OG_IMAGE, SITE_URL, titleMetadata } from '@/lib/metadata';
 import { APP_HOME } from '@/lib/app-home';
+import { buildOrganizationJsonLd, serializeJsonLd } from '@/lib/structured-data';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -81,6 +82,19 @@ export default async function RootLayout({ children }) {
               __html:
                 "(function(){try{var q=new URLSearchParams(location.search).get('theme');var t=(q==='dark'||q==='light')?q:localStorage.getItem('theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();",
             }}
+          />
+          {/* T-152c: the Organization JSON-LD lives here, in the server-
+              rendered <head>, not in the landing's layout where it first
+              went. Everything under <ClerkLoaded> below is absent from the
+              HTML the server sends - it only appears once Clerk's script has
+              loaded in a browser - so a crawler got the markup only as a
+              string inside React's payload, never as an element:
+              validator.schema.org (no JavaScript) errored and Google's Rich
+              Results Test detected nothing. In the <head> it ships on every
+              page, which Google accepts for Organization. */}
+          <script
+            type='application/ld+json'
+            dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildOrganizationJsonLd()) }}
           />
         </head>
         <body className='bg-primary'>

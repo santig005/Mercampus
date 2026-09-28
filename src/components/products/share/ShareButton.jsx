@@ -3,10 +3,20 @@ import { logger } from '@/lib/logger';
 import { buildShareUrl } from '@/lib/share-url';
 import { TbShare2, TbBrandWhatsapp, TbLink, TbLinkPlus } from 'react-icons/tb';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
-export default function ShareButton({ data, type }) {
+// T-167d: the share sheet is opened through a ref (`shareRef.current.open()`),
+// not by element id. It used to be `<dialog id="my_modal_1_{type}">`, opened
+// with getElementById by whoever rendered it - and once the modal stack put a
+// ProductModal and a SellerModal in every layout, a page could hold two sheets
+// with the same id (its own and the stack's). getElementById returns the first,
+// so "Recomendar a un amigo" inside a stacked modal could open the page's
+// sheet: the wrong item, or nothing visible at all when that sheet sits inside
+// a dialog that is not open.
+const ShareButton = forwardRef(function ShareButton({ data, type }, ref) {
+  const dialogRef = useRef(null);
+  useImperativeHandle(ref, () => ({ open: () => dialogRef.current?.showModal() }), []);
   const [copied, setCopied] = useState(false);
   const [renderPage] = useAutoAnimate({
     duration: 150,
@@ -73,7 +83,7 @@ export default function ShareButton({ data, type }) {
     <>
       {/* Botón para abrir el modal */}
 
-      <dialog id={`my_modal_1_${type}`} className={`modal px-6 `}>
+      <dialog ref={dialogRef} data-share-sheet={type} className={`modal px-6 `}>
         <div className='modal-box px-6 rounded-lg modal-width'>
           <h2 className='text-lg font-semibold mb-4'>{t('title')}</h2>
 
@@ -117,4 +127,6 @@ export default function ShareButton({ data, type }) {
       </dialog>
     </>
   );
-}
+});
+
+export default ShareButton;

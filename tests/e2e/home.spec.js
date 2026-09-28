@@ -55,31 +55,38 @@ test.describe('home page (T-152b)', () => {
   }
 });
 
-// T-152c: the Organization markup is in the rendered HTML, parses, is emitted
-// exactly once, and only on the home page. The emitted object itself is pinned
-// in tests/unit/structured-data.test.js; this checks it reaches the page.
-test.describe('Organization JSON-LD (T-152c)', () => {
-  const jsonLd = page => page.locator('script[type="application/ld+json"]');
+// T-152c: the Organization markup has to be in the HTML the server sends,
+// as a real <script> element. The first version put it in the landing's
+// layout, under the root layout's <ClerkLoaded>, which the server does not
+// render: a browser got it once Clerk loaded (and the browser-based check
+// that used to be here passed), while validator.schema.org errored and
+// Google's Rich Results Test found nothing. So this reads the raw response,
+// with no browser, the way a crawler does. The emitted object itself is
+// pinned in tests/unit/structured-data.test.js.
+const JSON_LD_ELEMENT = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
 
-  for (const path of ['/', '/en']) {
-    test(`${path} emits one Organization, with a logo that exists`, async ({ page, request }) => {
-      await page.goto(path);
+test.describe('Organization JSON-LD in the server HTML (T-152c)', () => {
+  for (const path of ['/', '/en', '/antojos']) {
+    test(`${path}: one real JSON-LD element, before any JavaScript runs`, async ({
+      request,
+      page,
+    }) => {
+      const html = await (await request.get(path)).text();
+      const elements = [...html.matchAll(JSON_LD_ELEMENT)];
 
-      await expect(jsonLd(page)).toHaveCount(1);
-      const data = JSON.parse(await jsonLd(page).textContent());
+      expect(elements).toHaveLength(1);
+      const data = JSON.parse(elements[0][1]);
       expect(data['@type']).toBe('Organization');
       expect(data.name).toBe('Mercampus');
 
-      // The logo is an absolute production URL; check the same path is served
-      // by this build, so the markup never points at a missing file (the root
-      // layout's openGraph image does - see ROADMAP.md).
+      // The logo is an absolute production URL; check this build serves the
+      // same path, so the markup never points at a missing file.
       const logo = await request.get(new URL(data.logo).pathname);
       expect(logo.status()).toBe(200);
+
+      // And hydration does not add a second copy.
+      await page.goto(path);
+      await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
     });
   }
-
-  test('the listing does not repeat it', async ({ page }) => {
-    await page.goto('/antojos');
-    await expect(jsonLd(page)).toHaveCount(0);
-  });
 });

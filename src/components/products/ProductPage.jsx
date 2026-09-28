@@ -3,13 +3,13 @@
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
-import SellerModal from '@/components/seller/index/SellerModal';
+import { useModalStack } from '@/components/modals/ModalStack';
 import ShareButton from '@/components/products/share/ShareButton';
 import { localizedHref } from '@/i18n/routing';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   TbBrandWhatsapp,
   TbChevronLeft,
@@ -21,7 +21,10 @@ const ProductPage = ({ id, section = 'antojos' }) => {
   const [product, setProduct] = useState(null);
   const [seller, setSeller] = useState({});
   const [schedules, setSchedules] = useState([]);
-  const [sellerModalId, setSellerModalId] = useState(null);
+  // T-167c: the seller opens through the layout's modal stack (?vendedor=),
+  // so the back button closes it - it used to be a nested SellerModal opened
+  // by element id, one more copy of the dialog on the page.
+  const { openSeller } = useModalStack();
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
@@ -51,9 +54,9 @@ const ProductPage = ({ id, section = 'antojos' }) => {
     }
   }, [product]);
 
-  const handleShowModal = () => {
-    document.getElementById('my_modal_1_product').showModal();
-  };
+  // T-167d: this component's own share sheet, not the first one in the page.
+  const shareRef = useRef(null);
+  const handleShowModal = () => shareRef.current?.open();
 
   return (
     <div>
@@ -65,7 +68,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
         </div>
       ) : (
         <dialog id='product_modal' className='modal modal-top modal-open h-dvh'>
-          <ShareButton data={product} type='product' />
+          <ShareButton ref={shareRef} data={product} type='product' />
           {product ? (
             <>
               {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
@@ -92,7 +95,6 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                       </button>
                     </div>
                   </div>
-                  <SellerModal seller={sellerModalId} set={setSellerModalId} />
                   {product && product.images && (
                     <Carousel
                       key={product._id}
@@ -122,14 +124,9 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                       <button
                         // href={`/seller/${seller._id}`}
                         className='btn max-w-min flex-nowrap mx-6'
-                        onClick={() => {
-                          const newSeller = {
-                            ...product.sellerId,
-                            schedules: product.schedules,
-                          };
-                          setSellerModalId(newSeller);
-                          document.getElementById('seller_modal').showModal();
-                        }}
+                        onClick={() =>
+                          openSeller({ ...product.sellerId, schedules: product.schedules })
+                        }
                       >
                         <div className='rounded-full size-10 overflow-hidden'>
                           <img

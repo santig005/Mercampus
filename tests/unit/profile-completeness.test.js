@@ -85,4 +85,19 @@ describe('buildProfileChecklist (T-72)', () => {
     expect(byId.logo.href).toBeUndefined();
     expect(byId.description.href).toBeUndefined();
   });
+
+  // T-81 (seller profile/schedule zone): label/hint used to be hardcoded
+  // Spanish strings on each item, moved to messages/{es,en}.json's
+  // ProfileChecklist namespace (a pure function can't call useTranslations).
+  // This guards the shape staying pure data, not a stray label/hint sneaking
+  // back in and going untranslated again.
+  it('items carry no copy of their own - only id, done, and an optional href', () => {
+    const { items } = buildProfileChecklist(complete);
+
+    for (const item of items) {
+      expect(Object.keys(item).sort()).toEqual(
+        item.href ? ['done', 'href', 'id'] : ['done', 'id']
+      );
+    }
+  });
 });

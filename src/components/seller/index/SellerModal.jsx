@@ -9,14 +9,33 @@ import {
 } from 'react-icons/tb';
 import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '@/components/products/share/ShareButton';
 import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { parseIfJSON } from '@/utils/utilFn';
+import { useTranslations } from 'next-intl';
 
-export default function SellerModal({ seller, set }) {
+// T-167: rendered once, by the modal stack (components/modals/ModalStack.jsx),
+// which opens it from the URL (?vendedor=) and closes it by going back in
+// history. It used to be rendered by a SellerModalHandler in the seller list,
+// nested inside every ProductModal and inside the product and seller pages,
+// each copy opened by the same element id.
+export default function SellerModal({ seller, open, onClose }) {
+  const dialogRef = useRef(null);
+  // Its own namespace, not SellerPage's, even though most of the copy
+  // matches: the two are separate files (T-81's one-namespace-per-component
+  // convention). Merging them into one component is a separate refactor.
+  const t = useTranslations('SellerModal');
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
   const [schedules, setSchedules] = useState([]); // State holding the schedules
   const [images, setImages] = useState([]); // State holding the images
   useEffect(() => {
@@ -39,17 +58,23 @@ export default function SellerModal({ seller, set }) {
     }
   }, [seller]);
 
-  const handleShowModal = () => {
-    document.getElementById('my_modal_1_seller').showModal();
-  };
+  // T-167d: this component's own share sheet, not the first one in the page.
+  const shareRef = useRef(null);
+  const handleShowModal = () => shareRef.current?.open();
 
   return (
     <>
       <dialog
-        id={`seller_modal`}
+        ref={dialogRef}
+        id='seller_modal_stack'
         className='modal modal-top h-dvh backdrop-blur-md'
+        // Escape: the URL has to change too, so the stack closes it.
+        onCancel={event => {
+          event.preventDefault();
+          onClose();
+        }}
       >
-        <ShareButton data={seller} type='seller' />
+        <ShareButton ref={shareRef} data={seller} type='seller' />
         {seller && (
           <>
             {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
@@ -60,12 +85,8 @@ export default function SellerModal({ seller, set }) {
                   <div className='modal-action m-0 justify-between p-2'>
                     <button
                       className='btn btn-circle'
-                      onClick={() => {
-                        document.getElementById(`seller_modal`).close();
-                        setTimeout(() => {
-                          set(null);
-                        }, 150);
-                      }}
+                      aria-label={t('close')}
+                      onClick={onClose}
                     >
                       <TbChevronLeft className='icon' />
                     </button>
@@ -98,12 +119,12 @@ export default function SellerModal({ seller, set }) {
                     </p>
                     <div className='flex flex-col gap-4 mt-4'>
                       <div className=''>
-                        <h2 className='card-title px-6 mb-2'>Horario</h2>
+                        <h2 className='card-title px-6 mb-2'>{t('scheduleHeading')}</h2>
                         <TableSchema schedules={schedules} />
                       </div>
                       <div className=''>
                         <h2 className='card-title px-6 mb-2'>
-                          ¡Conoce todos los productos de este vendedor!
+                          {t('productsHeading')}
                         </h2>
                         <div className='px-2'>
                           <SellerProductsBySection sellerId={seller._id} />
@@ -142,10 +163,12 @@ export default function SellerModal({ seller, set }) {
                           });
                         }}
                       >
-                        <TbBrandInstagram className='icon' /> Instagram
+                        <TbBrandInstagram className='icon' /> {t('instagram')}
                       </a>
                       <a
-                        href={`https://wa.me/+57${seller.phoneNumber}?text=Hola ${seller.businessName},%20te%20vi%20en%20Mercampus%20`}
+                        href={`https://wa.me/+57${seller.phoneNumber}?text=${encodeURIComponent(
+                          t('whatsappMessage', { seller: seller.businessName ?? '' })
+                        )}`}
                         className='btn btn-primary join-item w-1/2'
                         target='_blank'
                         referrerPolicy='no-referrer'
@@ -157,14 +180,14 @@ export default function SellerModal({ seller, set }) {
                           });
                         }}
                       >
-                        <TbBrandWhatsapp className='icon' /> WhatsApp
+                        <TbBrandWhatsapp className='icon' /> {t('whatsapp')}
                       </a>
                     </div>
                     <button
                       className='btn btn-secondary w-full mt-2'
                       onClick={handleShowModal}
                     >
-                      Recomendar a un amigo <TbShare2 className='icon' />
+                      {t('recommend')} <TbShare2 className='icon' />
                     </button>
                   </div>
                 </div>

@@ -1,15 +1,23 @@
 /* eslint-disable @next/next/no-img-element */
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import { priceFormat } from '@/utils/utilFn';
 import { productCardClassName } from '@/lib/card-variant';
+import { useCategoryLabel } from '@/utils/hooks/useCategoryLabel';
 
 // variant='standalone' (the default): a loose card on the page background,
 // with its own shadow and the scale animation on click.
 // variant='embedded': no background or shadow, for when the wrapping container
 // already provides that look (the product editing row, for instance).
 // The className logic lives in src/lib/card-variant.js: see there for why.
+// T-81 (seller products): rendered by the already-migrated listing and
+// seller-profile zones as well as this zone's own product list, so its own
+// `imageAlt` copy moved into messages/{es,en}.json too - it was still
+// hardcoded Spanish, reachable in English on those two shipped zones.
 export default function ProductCard({ product, isClicked, variant = 'standalone' }) {
+  const t = useTranslations('ProductCard');
+  const categoryLabel = useCategoryLabel();
   const { name, availability, availabilityStatus, category, price, images, owner } =
     product;
 
@@ -20,7 +28,7 @@ export default function ProductCard({ product, isClicked, variant = 'standalone'
           key={index}
           className='my-card-subtitle text-[11px] mr-1 px-1 py-[2px] rounded-md bg-[#ff950b]/15'
         >
-          {cat}
+          {categoryLabel(cat)}
         </span>
       ));
     } catch (error) {
@@ -31,7 +39,7 @@ export default function ProductCard({ product, isClicked, variant = 'standalone'
   return (
     <div className={productCardClassName({ variant, isClicked })}>
       <div className='h-24 w-32 rounded-md overflow-hidden flex-shrink-0'>
-        <img className='img-full' src={images[0]} alt={'Imagen de ' + name} />
+        <img className='img-full' src={images[0]} alt={t('imageAlt', { name })} />
       </div>
       <div className='flex flex-col justify-between'>
         <h2 className='my-card-title truncate w-60 block'>{name}</h2>
