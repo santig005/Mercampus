@@ -41,6 +41,13 @@ export const RATE_LIMITS = {
   productWrite: { limit: 60, windowMs: 10 * MINUTE },
   // Replacing a seller's whole schedule (POST /api/schedules).
   scheduleWrite: { limit: 30, windowMs: 10 * MINUTE },
+  // T-149: POST /api/reports. Two buckets, not one, because the route picks
+  // between them *before* calling enforceRateLimit - a signed-in caller who
+  // starts spamming reports is still identifiable and can be dealt with
+  // (banned, rate-limited harder later); an anonymous one is only an IP, so
+  // that bucket is the stricter of the two.
+  reportAuthenticated: { limit: 10, windowMs: 10 * MINUTE },
+  reportAnonymous: { limit: 3, windowMs: 10 * MINUTE },
 } as const;
 
 export type RateLimitScope = keyof typeof RATE_LIMITS;

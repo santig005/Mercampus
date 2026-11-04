@@ -189,9 +189,10 @@ already warns about, and getting it wrong wastes a PR:
 
 **Demoted 2026-09-23, do not treat as available work** without re-reading the
 premise note above: **T-143**, **T-145**, **T-146**, **T-147**, **T-148**,
-**T-149**, **T-151** (partially), **T-153**. They stay fully specified on
-purpose - the analysis in them is still correct, and the premise could change
-back.
+**T-151** (partially), **T-153**. They stay fully specified on purpose - the
+analysis in them is still correct, and the premise could change back.
+**T-149 was in this list and is done as of 2026-11-04** - see its entry;
+removed here rather than left stale.
 
 ---
 
@@ -6715,7 +6716,7 @@ community that is not transacting.
 **Model:** `sonnet` · **Nightly:** no (the "does this gate anything?" call is
 the human's)
 
-### [ ] T-149 · No way to report a product or a seller
+### [x] T-149 · No way to report a product or a seller
 **Why:** T-52 (listing moderation) is about the admin's side of moderation, but
 there is no input to moderate from: a buyer who finds a misleading listing, a
 wrong price or something that should not be sold has exactly one channel, the
@@ -6734,6 +6735,73 @@ Phase 5 and Phase 8): T-52 without T-149 is a classifier with no human appeal
 path, which
 is a worse demo than either alone.
 **Model:** `sonnet` · **Nightly:** yes
+**Done 2026-11-04.** Dependency: required T-154 (rate limiting), already
+`[x]` on `agent/develop`.
+- `src/utils/models/reportSchema.ts` (`Report`, collection `reports`):
+  `targetType` (`product`/`seller`), `targetId`, `reporterClerkId` (from the
+  session, null when anonymous - never from the body), `reason` (fixed
+  English enum, see `src/utils/resources/reports.ts`), optional `details`
+  (trimmed, ≤500), `status` (`'open'` only, for now), `createdAt`. Index
+  `{ status: 1, createdAt: -1 }`. New collection only, nothing existing
+  changes shape.
+- `POST /api/reports` (`src/app/api/reports/route.js`): Zod-validated
+  (`src/lib/validators/report.ts`), 404 if the target doesn't exist, 400 on
+  an invalid reason/targetType/id or details over the limit. Anonymous
+  reporting is allowed on purpose (unlike every other write in this app) -
+  identity, when there is one, comes from the session, never the body, so a
+  forged `reporterClerkId` or `status` in the request is dropped before it
+  reaches the database. Rate limited with T-154's helper: two buckets
+  (`reportAuthenticated`: 10/10min, `reportAnonymous`: 3/10min - stricter,
+  since an anonymous caller is only an IP).
+- UI: a "Reportar" button + dialog
+  (`src/components/reports/ReportDialog.jsx`, native `<dialog>` -
+  `showModal`/`close` handle the focus trap and Escape on their own) on the
+  canonical product detail page (`ProductPage.jsx`, shared by
+  `/antojos/[id]` and `/marketplace/[id]`) and the seller page
+  (`SellerPage.jsx`). **Scope note:** not added to `ProductModal.jsx` /
+  `SellerModal.jsx` (the listing's `?producto=`/`?vendedor=` overlay,
+  already a documented twin of these two pages since T-167/T-175) - kept to
+  the two canonical, directly-linkable, SEO-covered pages to keep this PR
+  small; adding it to the modal pair is a reasonable T-149b if a reviewer
+  wants it.
+- Admin: `GET /api/reports/admin` + `/admin/reports`
+  (`src/app/admin/reports/page.jsx`), same double gate as
+  `/api/sellers/admin` (T-133: middleware's `/api/(.*)/admin(.*)` matcher,
+  then `getClerkUserId()` + `isClerkAdmin()` in the handler) and the same
+  plain-Spanish, no-next-intl convention as `/admin/sellers` (middleware.js's
+  note on why `/admin` stays out of that migration). Read-only, lists only
+  `status: 'open'`, newest first - resolving/dismissing is T-52's job, not
+  this one's.
+- Tests: `tests/integration/reports.test.js` (valid report, forged
+  `reporterClerkId`/`status` ignored, anonymous allowed, 400 on a bad
+  reason/targetType/id, 404 on a well-formed id that matches nothing, 429 on
+  both rate-limit buckets, and the admin route's 401/403/200), a new
+  `reportAuthenticated` case added to `rate-limit.test.js`'s "every limited
+  handler is wired" list, and `tests/unit/report-dialog.test.jsx` (the
+  dialog's labelling, the submit button staying disabled with no reason
+  picked, the success/429/generic-error states).
+- **New dev dependencies:** `@testing-library/react` + `jsdom` - this
+  project had no component-test harness; they're the minimal pair to add
+  one (declined `@testing-library/jest-dom`, using vitest's own matchers
+  instead - one dependency fewer). `vitest.config.mjs` gained `*.test.jsx` to
+  its `include` (env set per-file via a `// @vitest-environment jsdom`
+  docblock, so `environment: 'node'` stays the default everywhere else) and
+  an `oxc.jsx.runtime: 'automatic'` override - without it, Vite's transform
+  auto-discovers `tsconfig.json`'s `"jsx": "preserve"` (meant for Next's own
+  SWC compiler) and fails to parse any `.jsx` file a test imports.
+  `tsconfig.json` itself is untouched.
+- **Sandbox note:** `npm run test` could not run the integration suite here -
+  no network access to download mongodb-memory-server's mongod binary (a
+  pre-existing sandbox limitation, reproduced on every integration test
+  file, not specific to this change). Verified instead: lint, typecheck,
+  `knip` (deadcode), the full unit suite including the new component test
+  (421 + 7 passing), and `npm run build`, all green. CI's `quality` check
+  runs the same `npm run verify` with real network access.
+- **Admin list visually unverified - needs a human with an admin account**
+  (T-95: the agent must not create one), same constraint T-155 documented.
+  The public report dialog's screenshots (product + seller, light + dark)
+  were taken by CI's `e2e` job and looked at before merging.
+- **Outside the repo:** none (the collection is created on first insert).
 
 ### [ ] T-150 · The brand's domain is dead and the site lives on a `vercel.app` subdomain — decide the domain
 > **This is the root cause of the SEO problem, and the only entry in the SEO

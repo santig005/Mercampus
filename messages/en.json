@@ -127,7 +127,8 @@
     "defaultSeller": "the seller",
     "defaultSellerGreeting": "dear seller",
     "whatsappMessage": "Hi {seller}, I saw you on Mercampus. I'm interested in the product {product}. Could you tell me where you're located?",
-    "recommend": "Recommend to a friend"
+    "recommend": "Recommend to a friend",
+    "report": "Report"
   },
   "ShareButton": {
     "title": "Share product",
@@ -389,6 +390,7 @@
     "schedules": "My schedules",
     "admin": "Administration",
     "manageSellers": "Manage sellers",
+    "manageReports": "Manage reports",
     "help": "Help",
     "about": "About Mercampus",
     "signIn": "Sign In",
@@ -421,7 +423,8 @@
     "instagram": "Instagram",
     "whatsapp": "WhatsApp",
     "whatsappMessage": "Hi {seller}, I saw you on Mercampus ",
-    "recommend": "Recommend to a friend"
+    "recommend": "Recommend to a friend",
+    "report": "Report"
   },
   "SellerModal": {
     "close": "Close",
@@ -458,5 +461,27 @@
     "empty": "This seller has no products available yet.",
     "antojosHeading": "🍕 Cravings ({count, plural, one {# product} other {# products}})",
     "marketplaceHeading": "🛍️ Marketplace ({count, plural, one {# product} other {# products}})"
+  },
+  "ReportDialog": {
+    "title": "Report",
+    "description": "Tell us what's wrong. Your report is recorded for the team to review.",
+    "reasonLabel": "Reason",
+    "reasonPlaceholder": "Select a reason",
+    "reasons": {
+      "misleading_info": "Misleading or wrong information",
+      "wrong_price": "Wrong price",
+      "unsafe_or_prohibited": "Unsafe or prohibited item",
+      "offensive_content": "Offensive content",
+      "other": "Other"
+    },
+    "detailsLabel": "Details (optional)",
+    "cancel": "Cancel",
+    "submit": "Send report",
+    "submitting": "Sending...",
+    "successTitle": "Report sent!",
+    "successBody": "Thanks for letting us know. The team will review it.",
+    "genericError": "Couldn't send the report. Please try again.",
+    "tooManyRequests": "Too many reports. Please wait a moment before trying again.",
+    "close": "Close"
   }
 }

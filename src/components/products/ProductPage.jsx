@@ -5,6 +5,7 @@ import Carousel from '@/components/Carousel';
 import TableSchema from '@/components/seller/index/table/TableSchema';
 import { useModalStack } from '@/components/modals/ModalStack';
 import ShareButton from '@/components/products/share/ShareButton';
+import ReportDialog from '@/components/reports/ReportDialog';
 import { localizedHref } from '@/i18n/routing';
 import { parseIfJSON, priceFormat } from '@/utils/utilFn';
 import { useLocale, useTranslations } from 'next-intl';
@@ -13,6 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   TbBrandWhatsapp,
   TbChevronLeft,
+  TbFlag,
   TbLoader,
   TbShare2,
 } from 'react-icons/tb';
@@ -58,6 +60,10 @@ const ProductPage = ({ id, section = 'antojos' }) => {
   const shareRef = useRef(null);
   const handleShowModal = () => shareRef.current?.open();
 
+  // T-149: this component's own report dialog.
+  const reportRef = useRef(null);
+  const handleShowReport = () => reportRef.current?.open();
+
   return (
     <div>
       {loading ? (
@@ -69,6 +75,7 @@ const ProductPage = ({ id, section = 'antojos' }) => {
       ) : (
         <dialog id='product_modal' className='modal modal-top modal-open h-dvh'>
           <ShareButton ref={shareRef} data={product} type='product' />
+          <ReportDialog ref={reportRef} targetType='product' targetId={id} />
           {product ? (
             <>
               {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
@@ -176,6 +183,12 @@ const ProductPage = ({ id, section = 'antojos' }) => {
                       onClick={handleShowModal}
                     >
                       {t('recommend')} <TbShare2 className='icon' />
+                    </button>
+                    <button
+                      className='btn btn-ghost w-full mt-2'
+                      onClick={handleShowReport}
+                    >
+                      {t('report')} <TbFlag className='icon' />
                     </button>
                   </div>
                 </div>
