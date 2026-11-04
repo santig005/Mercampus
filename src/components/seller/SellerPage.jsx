@@ -6,6 +6,7 @@ import {
   TbChevronLeft,
   TbBrandWhatsapp,
   TbBrandInstagram,
+  TbFlag,
   TbShare2,
 } from 'react-icons/tb';
 import { useRouter } from 'next/navigation';
@@ -16,6 +17,7 @@ import AvailabilityBadge from '@/components/availability/AvailabilityBadge';
 import SellerProductsBySection from '@/components/seller/SellerProductsBySection';
 import { sendGAEvent } from '@next/third-parties/google';
 import ShareButton from '../products/share/ShareButton';
+import ReportDialog from '@/components/reports/ReportDialog';
 import { parseIfJSON } from '@/utils/utilFn';
 import { localizedHref } from '@/i18n/routing';
 
@@ -58,6 +60,10 @@ export default function SellerPage({ id }) {
   const shareRef = useRef(null);
   const handleShowModal = () => shareRef.current?.open();
 
+  // T-149: this component's own report dialog.
+  const reportRef = useRef(null);
+  const handleShowReport = () => reportRef.current?.open();
+
   if (!seller) {
     return (
       <div className='fixed inset-0 flex items-center justify-center z-50'>
@@ -83,6 +89,7 @@ export default function SellerPage({ id }) {
               which was never opened (its state had no setter call) and is
               gone - and as every other SellerModal on the site. */}
           <ShareButton ref={shareRef} data={seller} type='seller' />
+          <ReportDialog ref={reportRef} targetType='seller' targetId={id} />
           {seller ? (
             <>
               {/* T-73: dark:bg-base-100 - ver la nota en Layout.jsx sobre
@@ -193,6 +200,12 @@ export default function SellerPage({ id }) {
                         onClick={handleShowModal}
                       >
                         {t('recommend')} <TbShare2 className='icon' />
+                      </button>
+                      <button
+                        className='btn btn-ghost w-full mt-2'
+                        onClick={handleShowReport}
+                      >
+                        {t('report')} <TbFlag className='icon' />
                       </button>
                     </div>
                   </div>

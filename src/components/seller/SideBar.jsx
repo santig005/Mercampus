@@ -17,7 +17,9 @@ import {
   MdInfo,
   MdOutlineInfo,
   MdAdminPanelSettings,
-  MdOutlineAdminPanelSettings
+  MdOutlineAdminPanelSettings,
+  MdReport,
+  MdOutlineReport
 } from 'react-icons/md';
 
 import {
@@ -204,6 +206,14 @@ const SideBar = ({ userId, topClassName = 'pt-16' }) => {
                       goto='/admin/sellers'
                       iconActive={<MdAdminPanelSettings className='size-5' />}
                       iconInactive={<MdOutlineAdminPanelSettings className='size-5' />}
+                    />
+                  </li>
+                  <li>
+                    <SidebarBtn
+                      text={t('manageReports')}
+                      goto='/admin/reports'
+                      iconActive={<MdReport className='size-5' />}
+                      iconInactive={<MdOutlineReport className='size-5' />}
                     />
                   </li>
                 </ul>

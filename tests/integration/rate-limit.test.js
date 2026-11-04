@@ -27,6 +27,7 @@ let sellerByIdRoute;
 let productsRoute;
 let productByIdRoute;
 let schedulesRoute;
+let reportsRoute;
 let webhookRoute;
 let RateLimit;
 let rateLimitModule;
@@ -63,6 +64,7 @@ beforeAll(async () => {
   productsRoute = await import('@/app/api/products/route.js');
   productByIdRoute = await import('@/app/api/products/[id]/route.js');
   schedulesRoute = await import('@/app/api/schedules/route.js');
+  reportsRoute = await import('@/app/api/reports/route.js');
   webhookRoute = await import('@/app/api/webhooks/route.js');
   rateLimitModule = await import('@/server/rate-limit/rateLimit');
   ({ RateLimit } = await import('@/utils/models/rateLimitSchema'));
@@ -228,6 +230,10 @@ describe('rate limiting · every limited handler is wired', () => {
       () => productByIdRoute.DELETE(request('DELETE'), { params: { id: PRODUCT_ID } }),
     ],
     ['POST /api/schedules', 'scheduleWrite', () => schedulesRoute.POST(request('POST'))],
+    // T-149: session.userId = 'user_wired' below (set before each test in
+    // this describe) is why this exhausts 'reportAuthenticated', not
+    // 'reportAnonymous' - the route picks the bucket from the same session.
+    ['POST /api/reports', 'reportAuthenticated', () => reportsRoute.POST(request('POST'))],
   ];
 
   it.each(cases)('%s answers 429 once its bucket is full', async (_name, scope, call) => {
