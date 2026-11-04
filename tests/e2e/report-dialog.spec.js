@@ -14,9 +14,16 @@ import { expect, test } from '@playwright/test';
 const PRODUCT_ID = process.env.E2E_PRODUCT_ID;
 const SELLER_ID = process.env.E2E_SELLER_ID;
 
+// ProductPage/SellerPage's own wrapping <dialog> never calls showModal() (it
+// is forced visible by daisyUI's `modal-open` CSS class instead), so
+// `dialog[open]` only ever matches this one, native-opened dialog - no need
+// to filter by text. That filter used to be here, and it broke the "shows
+// the success state" test below: once submission succeeds, the dialog's own
+// text no longer contains "Reportar" (the title becomes "¡Reporte
+// enviado!"), so a `hasText: 'Reportar'` filter stops matching it.
 const openReportDialog = async page => {
   await page.getByRole('button', { name: /Reportar/ }).click();
-  return page.locator('dialog[open]').filter({ hasText: 'Reportar' });
+  return page.locator('dialog[open]');
 };
 
 for (const theme of ['light', 'dark']) {
@@ -55,7 +62,7 @@ for (const theme of ['light', 'dark']) {
 
       await dialog.getByRole('button', { name: 'Cancelar' }).click();
 
-      await expect(page.locator('dialog[open]').filter({ hasText: 'Reportar' })).toHaveCount(0);
+      await expect(page.locator('dialog[open]')).toHaveCount(0);
     });
   });
 
