@@ -118,3 +118,63 @@ describe('context normalization', () => {
     expect(spy.mock.calls[0][1]).toEqual({ status: 403, sellerId: 'xyz' });
   });
 });
+
+// T-60: Vercel's log search parses one JSON object per line and lets you
+// filter on its fields - `[level] message` (the dev format above) isn't
+// that. Gated on NODE_ENV, not LOG_LEVEL, so this only ever changes on a
+// real production deploy.
+describe('structured logs in production', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.LOG_LEVEL;
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  it('emits a single JSON line with level, message, context and timestamp', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    process.env.NODE_ENV = 'production';
+    process.env.LOG_LEVEL = 'error';
+
+    logger.error('fallo al guardar', { sellerId: 'xyz' });
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [line] = spy.mock.calls[0];
+    const parsed = JSON.parse(line);
+    expect(parsed).toMatchObject({ level: 'error', message: 'fallo al guardar', context: { sellerId: 'xyz' } });
+    expect(new Date(parsed.timestamp).toString()).not.toBe('Invalid Date');
+  });
+
+  it('context is null, not omitted, when there is none', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    process.env.NODE_ENV = 'production';
+    process.env.LOG_LEVEL = 'debug';
+
+    logger.debug('sin contexto');
+
+    const parsed = JSON.parse(spy.mock.calls[0][0]);
+    expect(parsed.context).toBeNull();
+  });
+
+  it('does not use the readable dev format in production', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    process.env.NODE_ENV = 'production';
+    process.env.LOG_LEVEL = 'error';
+
+    logger.error('fallo al guardar');
+
+    expect(spy.mock.calls[0]).toHaveLength(1);
+    expect(spy.mock.calls[0][0]).not.toContain('[error]');
+  });
+
+  it('outside production, the readable format is unchanged', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    process.env.NODE_ENV = 'development';
+    process.env.LOG_LEVEL = 'error';
+
+    logger.error('fallo al guardar', { sellerId: 'xyz' });
+
+    expect(spy).toHaveBeenCalledWith('[error] fallo al guardar', { sellerId: 'xyz' });
+  });
+});

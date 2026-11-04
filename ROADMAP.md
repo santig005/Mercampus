@@ -147,7 +147,9 @@ already warns about, and getting it wrong wastes a PR:
 ### Needs the human before an agent can start
 
 - **T-35** · choosing the image provider (T-109 carves out the safe half).
-- **T-60** · Observability - needs a Sentry account and a DSN.
+- **T-60b** · Turning Sentry on - needs a Sentry account and a DSN. T-60
+  (the code side) is done and inert until this runs; see
+  `docs/observability.md`.
 - **T-112** · a preview calling production's API - **confirmed** 2026-09-14;
   choosing between removing the self-fetch and pointing previews at
   themselves is the human's call.
@@ -1994,10 +1996,75 @@ touch those routes.
 
 ## Phase 6 — Operations
 
-### [ ] T-60 · Observability
+### [x] T-60 · Observability
 **Done when:** Sentry for client and server errors, structured logs, and
 an alert when the deploy's error rate crosses a threshold.
+**Done (code side; the account/dashboard side is T-60b):** `@sentry/nextjs`
+(the one new dependency this PR adds), wired per Sentry's current manual
+setup for the app router - `src/instrumentation.ts` (`register()` +
+`onRequestError`), `src/instrumentation-client.ts`, and
+`src/app/global-error.jsx` (fallback for an error that escapes the root
+layout; this app had none before). `next.config.mjs` wraps the config with
+`withSentryConfig`, but only when `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/
+`SENTRY_PROJECT` are all set - partial config builds exactly like no config.
+**Off by default:** with `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` unset (every
+environment today), neither `Sentry.init()` call ever runs - no client, no
+network call, confirmed by `npm run build` with none of the five Sentry env
+vars set and no new warnings. The three new env vars are registered as
+optional in `.env.example` and in T-113's drift test
+(`tests/unit/env-publico.test.js`): `SENTRY_ORG`/`SENTRY_PROJECT`/
+`SENTRY_AUTH_TOKEN` are read only by `next.config.mjs` (outside `src/`, same
+situation as `NEXT_PUBLIC_URL`), and `NEXT_RUNTIME` (set by Next itself
+before `register()` runs) joined `NODE_ENV`/`VITEST` in the "set by the
+runtime" exclusion list.
+**Privacy (CLAUDE.md rule 6):** `sendDefaultPii: false` plus a shared
+`beforeSend` (`src/lib/sentry.ts`, `scrubSentryEvent`) that drops the
+request body, cookies, the `Authorization`/`Cookie` headers, and the user's
+email/phone before an event ever leaves the process. Unit-tested
+(`tests/unit/sentry-scrub.test.js`) independently of the Sentry SDK.
+**Logger bridge:** `src/lib/logger.ts`'s `logger.error` now also calls
+`Sentry.captureException` (when the context is an `Error`) or
+`Sentry.captureMessage` (otherwise); `logger.warn` adds a breadcrumb. Gated
+on `Sentry.getClient()` - a plain read, not a network call - so this is a
+no-op with no DSN configured. The logger's public API didn't change, and it
+stays silent under test for the same reason it always did (`LOG_LEVEL`
+unset + `NODE_ENV=test`/`VITEST` → `silent`); the bridge itself is unit
+tested with `@sentry/nextjs` mocked
+(`tests/unit/logger-sentry-bridge.test.js`), independent of that.
+**Structured logs:** in production, one JSON line per log
+(`level`/`message`/`context`/`timestamp`) for Vercel's log search; the
+existing readable `[level] message` form is unchanged in development and
+test. Covered in `tests/unit/logger.test.js`.
+**Noticed, not fixed (rule 9):** no Content-Security-Policy exists anywhere
+in this repo (`next.config.mjs`, `src/middleware.js`, no `headers()` call
+sets one) - there's nothing here for Sentry's ingest host to be blocked by,
+so nothing to adjust. Worth a line in `docs/observability.md`'s next
+revision if a CSP is ever added.
+**Outside the repo:** everything in T-60b below - the Sentry account, the
+five Vercel env vars, the alert rule. None of it is required for this PR to
+be safe to deploy: with no DSN set, the code added here is inert.
+See `docs/observability.md` for the exact steps.
 **Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-60b · Turn Sentry on: account, env vars, alert
+**Why:** T-60 built the code side so that turning Sentry on is an account
+and a dashboard, not a PR - this is that account and dashboard, and it
+needs a human (CLAUDE.md: don't create external accounts from an agent).
+**Done when**, per `docs/observability.md`:
+1. Create a Sentry project (platform Next.js).
+2. In Vercel, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` (same DSN -
+   it isn't a secret) on Production (and Preview, if preview deploys should
+   report too - see the doc for the one-line `environment` tag to add if
+   so), and `SENTRY_ORG`/`SENTRY_PROJECT`/`SENTRY_AUTH_TOKEN` (the last one
+   an Internal Integration token, marked **Sensitive**) on Production, for
+   source-map upload.
+3. Create an alert rule in the Sentry project: "an issue is first seen" (and
+   optionally a rate-based rule for a recurring one) notifying email or
+   Slack.
+4. Confirm it end-to-end with a real test event (exact command in the doc),
+   see it land in Sentry and the alert fire, then resolve the test issue.
+**Model:** `sonnet` · **Nightly:** no (needs the human: an external account
+and a dashboard, not something this repo can verify or roll back)
 
 ### [x] T-61 · Performance and accessibility budget
 **Why:** Lighthouse CI on every PR with thresholds that break the build;
