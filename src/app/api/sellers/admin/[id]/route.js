@@ -6,6 +6,8 @@ import { connectDB } from '@/utils/connectDB';
 import { AppError } from '@/utils/lib/errors';
 import { getClerkUserId } from '@/utils/lib/auth';
 import { isClerkAdmin } from '@/utils/lib/isClerkAdmin';
+import { logger } from '@/lib/logger';
+import { SellerAudit } from '@/utils/models/sellerAuditSchema';
 import { Seller } from '@/utils/models/sellerSchema';
 
 /**
@@ -51,14 +53,49 @@ export async function PATCH(req, { params }) {
     // Only `approved` is written, never the whole parsed body: this endpoint
     // exists to flip one flag, and a seller's own fields belong to the route
     // the seller owns.
-    const seller = await Seller.findByIdAndUpdate(
+    //
+    // T-155: `new: false` so the same atomic operation that writes the new
+    // state also hands back the previous one for the audit record - reading
+    // it in a separate query first could record a stale "before" if two
+    // admins act at once.
+    const before = await Seller.findByIdAndUpdate(
       parsedId.data,
       { approved: parsed.data.approved },
-      { new: true }
+      { new: false }
     ).lean();
 
-    if (!seller) {
+    if (!before) {
       return NextResponse.json({ error: 'Vendedor no encontrado.' }, { status: 404 });
+    }
+
+    // The response keeps its old shape (the updated seller). `updatedAt` is
+    // the pre-update one; no caller reads it.
+    const seller = { ...before, approved: parsed.data.approved };
+
+    // T-155: the audit record, written only after the change succeeded so the
+    // log never claims something that did not happen. The actor is the
+    // session's clerkId from above - never anything in the body (which
+    // `strict()` would reject anyway).
+    //
+    // Not a transaction: the change has already happened and is what the
+    // admin asked for, so a failed audit write must not turn it into an error
+    // response the UI would roll back. It is logged loudly instead, with ids
+    // only (no reason text, no PII).
+    try {
+      await SellerAudit.create({
+        actorClerkId: clerkId,
+        action: parsed.data.approved ? 'approve' : 'reject',
+        sellerId: before._id,
+        previousState: { approved: Boolean(before.approved) },
+        newState: { approved: parsed.data.approved },
+        reason: parsed.data.reason,
+      });
+    } catch (auditError) {
+      logger.error('[PATCH /api/sellers/admin/:id] seller state changed but audit write failed', {
+        sellerId: String(before._id),
+        approved: parsed.data.approved,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
     }
 
     return NextResponse.json({ seller }, { status: 200 });

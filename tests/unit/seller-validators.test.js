@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   MAX_AVAILABILITY_OVERRIDE_HOURS,
+  approveSellerSchema,
   updateSellerSchema,
 } from '@/lib/validators/seller';
 
@@ -56,5 +57,50 @@ describe('updateSellerSchema · availabilityOverrideUntil (T-83)', () => {
   it('the field is optional - omitting it leaves the override untouched', () => {
     const result = updateSellerSchema.safeParse({ businessName: 'Nuevo nombre' });
     expect(result.success).toBe(true);
+  });
+});
+
+// T-155. The reason goes into the seller's audit log: optional when
+// approving, required when rejecting. The integration suite
+// (seller-audit.test.js) checks the same rule end to end against Mongo.
+describe('approveSellerSchema · reason (T-155)', () => {
+  const parse = body => approveSellerSchema.safeParse(body);
+
+  it('approving needs no reason', () => {
+    expect(parse({ approved: true })).toMatchObject({
+      success: true,
+      data: { approved: true, reason: undefined },
+    });
+  });
+
+  it('a blank reason on approval is normalised to none, not stored as ""', () => {
+    expect(parse({ approved: true, reason: '   ' }).data).toEqual({
+      approved: true,
+      reason: undefined,
+    });
+  });
+
+  it('rejecting without a reason, or with a blank one, is refused on `reason`', () => {
+    for (const body of [{ approved: false }, { approved: false, reason: '' }, { approved: false, reason: ' \n ' }]) {
+      const result = parse(body);
+      expect(result.success).toBe(false);
+      expect(result.error.issues[0].path).toEqual(['reason']);
+    }
+  });
+
+  it('rejecting with a reason keeps it, trimmed', () => {
+    expect(parse({ approved: false, reason: '  Fotos falsas ' }).data).toEqual({
+      approved: false,
+      reason: 'Fotos falsas',
+    });
+  });
+
+  it('the reason is bounded at 500 characters', () => {
+    expect(parse({ approved: false, reason: 'x'.repeat(500) }).success).toBe(true);
+    expect(parse({ approved: false, reason: 'x'.repeat(501) }).success).toBe(false);
+  });
+
+  it('still strict: an actor (or anything else) in the body is refused', () => {
+    expect(parse({ approved: true, actorClerkId: 'user_forged' }).success).toBe(false);
   });
 });

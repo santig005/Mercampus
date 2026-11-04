@@ -81,6 +81,28 @@ export const sellerIdSchema = z
 // `strict()` rather than Zod's default of dropping unknown keys: this is the
 // one endpoint that can flip a seller's visibility, so a body carrying
 // anything else is a mistake worth reporting, not worth silently ignoring.
+//
+// T-155: `reason` goes into the seller's audit log. Optional when approving,
+// required when rejecting (`approved: false`) - a rejected student asking
+// "why?" is the case the log exists for. Trimmed, and bounded so the log
+// cannot be used to store arbitrary blobs. An empty/blank reason on approval
+// is normalised to "no reason" rather than stored as "".
+export const SELLER_DECISION_REASON_MAX = 500;
+
 export const approveSellerSchema = z
-  .object({ approved: z.boolean({ error: '`approved` debe ser true o false' }) })
-  .strict();
+  .object({
+    approved: z.boolean({ error: '`approved` debe ser true o false' }),
+    reason: z
+      .string({ error: 'El motivo debe ser texto' })
+      .trim()
+      .max(SELLER_DECISION_REASON_MAX, {
+        error: `El motivo no puede superar ${SELLER_DECISION_REASON_MAX} caracteres`,
+      })
+      .optional(),
+  })
+  .strict()
+  .transform(({ approved, reason }) => ({ approved, reason: reason || undefined }))
+  .refine(data => data.approved || data.reason !== undefined, {
+    error: 'Rechazar un vendedor requiere un motivo',
+    path: ['reason'],
+  });
