@@ -191,8 +191,10 @@ already warns about, and getting it wrong wastes a PR:
 premise note above: **T-143**, **T-145**, **T-146**, **T-147**, **T-148**,
 **T-151** (partially), **T-153**. They stay fully specified on purpose - the
 analysis in them is still correct, and the premise could change back.
-**T-149 was in this list and is done as of 2026-11-04** - see its entry;
-removed here rather than left stale.
+**T-149 was in this list; code for it exists as of 2026-11-04 (PR #410,
+`[~]` - not merged, see its entry for why)** - removed from this list rather
+than left stale, since it is no longer "available work" in the sense this
+index means even though it isn't `[x]` yet either.
 
 ---
 
@@ -6716,7 +6718,7 @@ community that is not transacting.
 **Model:** `sonnet` · **Nightly:** no (the "does this gate anything?" call is
 the human's)
 
-### [x] T-149 · No way to report a product or a seller
+### [~] T-149 · No way to report a product or a seller
 **Why:** T-52 (listing moderation) is about the admin's side of moderation, but
 there is no input to moderate from: a buyer who finds a misleading listing, a
 wrong price or something that should not be sold has exactly one channel, the
@@ -6735,7 +6737,9 @@ Phase 5 and Phase 8): T-52 without T-149 is a classifier with no human appeal
 path, which
 is a worse demo than either alone.
 **Model:** `sonnet` · **Nightly:** yes
-**Done 2026-11-04.** Dependency: required T-154 (rate limiting), already
+**`[~]` 2026-11-04 - code complete, not merged: the public dialog's
+screenshots exist (CI's `e2e` job produced them) but could not be looked at
+from this sandbox.** Dependency: required T-154 (rate limiting), already
 `[x]` on `agent/develop`.
 - `src/utils/models/reportSchema.ts` (`Report`, collection `reports`):
   `targetType` (`product`/`seller`), `targetId`, `reporterClerkId` (from the
@@ -6799,8 +6803,24 @@ is a worse demo than either alone.
   runs the same `npm run verify` with real network access.
 - **Admin list visually unverified - needs a human with an admin account**
   (T-95: the agent must not create one), same constraint T-155 documented.
-  The public report dialog's screenshots (product + seller, light + dark)
-  were taken by CI's `e2e` job and looked at before merging.
+- **Public dialog screenshots also unverified, for a different reason, and
+  this is why the PR is not merged.** CI's `e2e` job produced them
+  (`report-dialog-product-{light,dark}.png`,
+  `report-dialog-seller-{light,dark}.png`, uploaded as the `capturas-e2e`
+  artifact) and all 9 of `tests/e2e/report-dialog.spec.js`'s assertions
+  passed. But this agent could not download that artifact: GitHub serves
+  artifact downloads from a redirect to Azure Blob Storage
+  (`productionresultssa2.blob.core.windows.net`), and this sandbox's egress
+  proxy denies that host (403, policy denial - confirmed in
+  `/root/.ccr/__agentproxy/status`'s `recentRelayFailures`). Per CLAUDE.md
+  rule 3 (a passing test is not the same as a human - or an agent - having
+  looked at the render; see T-100), that leaves this PR's own screenshots
+  unverified too, so it stays open rather than merged. Whoever picks this
+  back up: download `capturas-e2e` from
+  https://github.com/santig005/Mercampus/actions/runs/41865620887 (or the
+  latest run on this branch) from an environment that can reach Azure Blob
+  Storage, look at the four PNGs in both themes, then merge once `quality`
+  is still green.
 - **Outside the repo:** none (the collection is created on first insert).
 
 ### [ ] T-150 · The brand's domain is dead and the site lives on a `vercel.app` subdomain — decide the domain
