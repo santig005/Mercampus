@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/nextjs';
+
 type Level = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 const WEIGHT: Record<Level, number> = {
@@ -21,7 +23,8 @@ const shouldLog = (level: Level) => WEIGHT[level] >= WEIGHT[configuredLevel()];
 
 // The context goes as a separate object, not interpolated into the message:
 // that way the message can be grouped and the context stays queryable once
-// this reaches a log aggregator (T-60).
+// this reaches a log aggregator. In production it's also what ends up under
+// `context` in the structured JSON line below, and in Sentry's `extra`.
 type Context = Record<string, unknown>;
 
 /**
@@ -46,13 +49,56 @@ function normalize(context: unknown): Context | undefined {
   return { detail: context };
 }
 
+/**
+ * T-60: error/warn also go to Sentry, but only when something upstream
+ * actually called `Sentry.init()` (src/instrumentation.ts,
+ * src/instrumentation-client.ts) - `Sentry.getClient()` is a plain read of
+ * that module-level state, not a network call, so this is a no-op with no
+ * DSN configured, which is every environment until T-60b. Takes the raw,
+ * un-normalized context so an `Error` instance survives to reach
+ * `captureException` instead of being flattened to a string first.
+ */
+function reportToSentry(level: 'warn' | 'error', message: string, context: unknown) {
+  if (!Sentry.getClient()) return;
+
+  if (level === 'warn') {
+    Sentry.addBreadcrumb({ category: 'log', level: 'warning', message, data: normalize(context) });
+    return;
+  }
+
+  if (context instanceof Error) {
+    Sentry.captureException(context, { extra: { message } });
+  } else {
+    Sentry.captureMessage(message, { level: 'error', extra: normalize(context) });
+  }
+}
+
 const emit = (level: Exclude<Level, 'silent'>, message: string, context?: unknown) => {
   if (!shouldLog(level)) return;
 
-  const line = `[${level}] ${message}`;
-  const target = level === 'error' || level === 'warn' ? console.error : console.log;
-  const normalized = normalize(context);
+  if (level === 'warn' || level === 'error') {
+    reportToSentry(level, message, context);
+  }
 
+  const normalized = normalize(context);
+  const target = level === 'error' || level === 'warn' ? console.error : console.log;
+
+  // Vercel's log search parses one JSON object per line and indexes its
+  // fields; the readable `[level] message` form below is for a human
+  // reading `next dev`'s terminal, who doesn't want to parse JSON by eye.
+  if (process.env.NODE_ENV === 'production') {
+    target(
+      JSON.stringify({
+        level,
+        message,
+        context: normalized ?? null,
+        timestamp: new Date().toISOString(),
+      })
+    );
+    return;
+  }
+
+  const line = `[${level}] ${message}`;
   if (normalized) {
     target(line, normalized);
   } else {
