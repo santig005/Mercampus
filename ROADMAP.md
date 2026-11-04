@@ -105,9 +105,11 @@ shipped and were still listed here, which got T-127 proposed again as if it
 were open. T-142 left in #375 and T-159 in #376. Rows go when their task
 ships.
 
-| Task | Why it is safe | How you know it worked |
-|---|---|---|
-| **T-151** · No structured data (JSON-LD) anywhere | Additive markup; nothing existing changes shape. T-69's Open Graph work is the precedent. | Google's Rich Results Test, plus a snapshot test of the emitted JSON — not a grep for the string. |
+**Refreshed 2026-11-04** - T-151's row removed: the `Product` + `Offer`
+markup (the part this entry's own 2026-09-23 reframe says matters) shipped.
+Its entry stays `[~]` for the optional seller/`BreadcrumbList` scope that was
+left undone on purpose - not safe-to-take-alone work, since picking it up
+means a new `T-151b`, per rule 2.
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -6867,7 +6869,69 @@ Clerk production instance follow as a bonus; if not, close this entry as
 bending around an open question that is no longer open.
 **Model:** `opusplan` · **Nightly:** no (costs money)
 
-### [ ] T-151 · No structured data anywhere — a marketplace with no `Product` markup
+### [~] T-151 · No structured data anywhere — a marketplace with no `Product` markup
+> **Done (2026-11-04): the part that matters per the reframe below.**
+> `buildProductJsonLd()` (`src/lib/structured-data.ts`) emits `Product` +
+> `Offer` (name, description, image(s), canonical `url` via
+> `src/lib/sitemap.ts`'s `productPath` - the same builder the sitemap uses,
+> no second copy of that logic - price, `priceCurrency: 'COP'`), rendered as
+> a `<script type="application/ld+json">` on both `/antojos/<id>` and
+> `/marketplace/<id>` (`src/app/[locale]/antojos/[id]/page.jsx` and
+> `.../marketplace/[id]/page.jsx`), right next to the root's `Organization`
+> script (T-152c) which every page already carries. `getProductForMetadata`
+> now also selects `section` and the full `images` array, not just the first
+> image the Open Graph tags use.
+>
+> **`offers.availability` is deliberately omitted, not forgotten.** The
+> page's own badge (`AvailabilityBadge` / `productAvailability()` in
+> `src/lib/store-availability.ts`) answers "is the seller's store open right
+> now" - a value that changes by the minute with the Bogotá clock - not "is
+> this item in stock". T-145 (the real sold-out flag) does not exist. Mapping
+> "closed now, reopens Tuesday" to schema.org's `OutOfStock` would tell
+> Google a sellable product is sold out, which is exactly the manual-action
+> risk this entry's own "Careful" note warns about. Revisit once T-145 ships
+> a real stock state.
+>
+> Seller pages and the listing's `BreadcrumbList` were **not built** - this
+> entry's own 2026-09-23 reframe (below) says the root `Organization` plus
+> one `Product` page is what matters, and both of those are now done.
+> Left `[~]` rather than `[x]` only because of that.
+>
+> **Security:** `serializeJsonLd` now escapes `<`, `>`, `&`, U+2028 and
+> U+2029 (was `<` only), so a product name or description containing
+> `</script>` cannot close the tag it's rendered into, and a quote inside the
+> name can't exploit `>`/`&`-sensitive parsing either. Covered by
+> `tests/unit/structured-data.test.js`, including a test that builds the
+> markup from a hostile product *name* end to end, not just a hand-built
+> object passed straight to the escaper.
+>
+> **Verified:** `npm run verify` - lint, deadcode, typecheck and `build` all
+> pass; `test` fails in this sandbox only because
+> `mongodb-memory-server` cannot download its `mongod` binary here (blocked
+> network, pre-existing, unrelated to this change) - every integration suite
+> that needs it fails the same way on `agent/develop` before this PR. The new
+> unit tests (`tests/unit/structured-data.test.js`) all pass: 30/30, snapshot
+> of the full emitted object plus the missing-`image` and
+> missing-`availability` cases. New e2e
+> (`tests/e2e/product-jsonld.spec.js`) reads the raw server HTML the way
+> `home.spec.js` checks `Organization`, for one antojos and one marketplace
+> seeded product, and runs in CI's `e2e` job (real Clerk keys, not available
+> here).
+>
+> **Not independently checked against Google's Rich Results Test** - that
+> needs a public URL, which does not exist from this sandbox. One line for
+> the human: once the PR's Vercel preview is up, run
+> `https://search.google.com/test/rich-results` against
+> `<preview-url>/antojos/<any product id>`.
+>
+> **Noticed, not fixed (rule 9):** `productSchema.ts` has a `stock: {
+> type: Boolean, default: true }` field, also present in
+> `src/lib/validators/product.ts`'s Zod schema as `stock: z.boolean().optional()`.
+> `grep -rn "stock" src/` (case-insensitive) finds it nowhere else - not read,
+> not written, not displayed, not filtered on. It predates this PR and is not
+> the T-145 sold-out flag T-145's own entry says does not exist yet
+> ("no product carries a quantity"). Looks like dead schema weight, not
+> touched here per rule 5 (confirm, don't guess) and rule 2 (one task per PR).
 **Why:** confirmed by grep across `src/`: zero occurrences of
 `application/ld+json`, `schema.org` or any JSON-LD. T-69 gave product and
 seller pages real Open Graph tags (which is what makes a shared WhatsApp link

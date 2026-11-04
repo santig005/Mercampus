@@ -3,6 +3,7 @@ import React from 'react'
 import { notFound } from 'next/navigation'
 import { getProductForMetadata } from '@/server/products/getProductForMetadata'
 import { buildProductMetadata } from '@/lib/metadata'
+import { buildProductJsonLd, serializeJsonLd } from '@/lib/structured-data'
 
 // T-81 (product detail zone): see the comment in
 // src/app/[locale]/antojos/[id]/page.jsx - same migration, same reasoning
@@ -21,6 +22,15 @@ export default async function page({ params }) {
   if (!product) notFound();
 
   return (
-    <> <ProductPage id={id} section="marketplace"/> </>
+    <>
+      {/* T-151: Product + Offer JSON-LD, same builder as the antojos detail
+          page - see src/lib/structured-data.ts for what it does and does
+          not emit. */}
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildProductJsonLd(id, product)) }}
+      />
+      <ProductPage id={id} section="marketplace"/>
+    </>
   )
 }
