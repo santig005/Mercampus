@@ -51,24 +51,31 @@ const post = (body, { ip = '203.0.113.7' } = {}) =>
     })
   );
 
+// One connection, one database, for both describe blocks below - stopTestDb()
+// tears the connection down, so it must run only once, after everything in
+// this file is done, not after the first describe's own tests finish.
+beforeAll(async () => {
+  process.env.MONGO_URI = await startTestDb();
+  reportsRoute = await import('@/app/api/reports/route.js');
+  adminReportsRoute = await import('@/app/api/reports/admin/route.js');
+  ({ Report } = await import('@/utils/models/reportSchema'));
+  rateLimitModule = await import('@/server/rate-limit/rateLimit');
+}, 120_000);
+
+afterAll(async () => {
+  await stopTestDb();
+});
+
+beforeEach(async () => {
+  ({ ids } = await seedDatabase());
+  signOut();
+  // seedDatabase() only touches Product/Seller/Schedule/User - reports from
+  // an earlier test would otherwise still be there for `Report.find()` and
+  // `countDocuments()` to see.
+  await Report.deleteMany({});
+});
+
 describe('T-149 · POST /api/reports', () => {
-  beforeAll(async () => {
-    process.env.MONGO_URI = await startTestDb();
-    reportsRoute = await import('@/app/api/reports/route.js');
-    adminReportsRoute = await import('@/app/api/reports/admin/route.js');
-    ({ Report } = await import('@/utils/models/reportSchema'));
-    rateLimitModule = await import('@/server/rate-limit/rateLimit');
-  }, 120_000);
-
-  afterAll(async () => {
-    await stopTestDb();
-  });
-
-  beforeEach(async () => {
-    ({ ids } = await seedDatabase());
-    signOut();
-  });
-
   it('201s and saves an anonymous report of a product, reporterClerkId null', async () => {
     const res = await post({
       targetType: 'product',
@@ -235,11 +242,6 @@ describe('T-149 · POST /api/reports', () => {
 });
 
 describe('T-149 · GET /api/reports/admin', () => {
-  beforeEach(async () => {
-    ({ ids } = await seedDatabase());
-    signOut();
-  });
-
   it('401s with no session', async () => {
     const res = await adminReportsRoute.GET();
     expect(res.status).toBe(401);
