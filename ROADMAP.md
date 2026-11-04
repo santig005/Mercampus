@@ -108,7 +108,6 @@ ships.
 | Task | Why it is safe | How you know it worked |
 |---|---|---|
 | **T-151** · No structured data (JSON-LD) anywhere | Additive markup; nothing existing changes shape. T-69's Open Graph work is the precedent. | Google's Rich Results Test, plus a snapshot test of the emitted JSON — not a grep for the string. |
-| **T-140** · No written boundary between `utils/`+`services/` and `server/`+`lib/` | Doc-only change to `CLAUDE.md`. No code touched. | The new lines describe what is actually true today, cross-checked against this task's own findings. |
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -6386,7 +6385,7 @@ pace is fine and this gets closed as "working as intended."
 **Model:** `opusplan` — needs a decision on pace and scope, not code
 **Nightly:** no
 
-### [ ] T-140 · `utils/`+`services/` and `server/`+`lib/` have no written boundary beyond the README's "old vs. new"
+### [x] T-140 · `utils/`+`services/` and `server/`+`lib/` have no written boundary beyond the README's "old vs. new"
 **Why:** confirmed by reading both sides, not assumed from the folder
 names — `src/services/browserApi.js` (client → own API over a relative URL,
 Clerk's cookie carries identity) and `src/server/*` (9 `.ts` files, direct
@@ -6412,6 +6411,19 @@ codebase is small enough to grep; that stops being true as it grows.
 surviving old folder explaining what it is for *today* (not just "legacy"),
 so the next agent does not have to reconstruct the reasoning from git
 history the way this task's investigation had to.
+**Done (2026-11-04):** `CLAUDE.md`'s "Estructura objetivo" gained one line
+each for `services/`, `utils/lib/`, `utils/models/`, and `context/`, every
+claim checked with a reference grep (not copied from this entry) — counts
+in the PR. Also fixed the existing `models/` line, which read as if the
+move from `utils/models/` had already happened; it hasn't (`src/models/`
+doesn't exist). `utils/models/` itself: confirmed 32 current importers
+across `src/app/api/`, `src/server/`, `src/lib/`, `src/utils/`, and
+`scripts/`; T-05 named T-30 as the task that would move it, but T-30's own
+"Done when" never mentions the move — so it is target, not assigned, and
+`CLAUDE.md` now says that plainly instead of implying progress. README's
+"Project structure" carried the same "pre-refactor equivalent"/"being
+phased out" framing for `services/` and `utils/lib/auth.ts`; aligned in
+the same PR.
 **Model:** `sonnet` — this is documentation, not a code change
 **Nightly:** yes
 

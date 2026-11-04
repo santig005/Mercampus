@@ -159,7 +159,14 @@ src/
   components/     UI. Sin acceso a datos.
   server/         acceso a datos y lógica de negocio. Solo servidor.
   lib/            utilidades puras, validadores Zod, logger
-  models/         schemas de Mongoose (movidos desde utils/models)
+  models/         schemas de Mongoose — objetivo; hoy viven en utils/models/
+  services/       fetch del cliente a su propia API (browserApi.js + wrappers);
+                  no es "pre-refactor", resuelve un problema que server/ no cubre
+  utils/lib/      auth.ts: identidad/propiedad — código central, no legacy,
+                  solo aparcado aquí; nuevo helper de ese tipo va aquí, no en lib/
+  utils/models/   donde viven HOY los schemas; la fila "models/" de arriba es
+                  el objetivo pero ninguna tarea abierta lo mueve (ver T-140)
+  context/        SellerContext, UniversityContext: estado de cliente en uso
 scripts/          migraciones y tareas de una sola vez
 tests/            unitarios (Vitest) y e2e (Playwright)
 ```

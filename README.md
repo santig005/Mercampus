@@ -148,16 +148,22 @@ src/
   components/     UI, no data access
   server/         data access and business logic (server-only) — target
   lib/            pure utilities, Zod validators, logger — target
-  utils/, services/  the pre-refactor equivalents of server/ and lib/,
-                  still in use in parts of the app
-  models/         Mongoose schemas — target (currently src/utils/models/)
+  services/       client → own API over a relative URL (browserApi.js +
+                  domain wrappers) — a different problem than server/, not
+                  its pre-refactor stand-in
+  utils/          utils/lib/auth.ts (identity/ownership) is core, just parked
+                  here; the rest of utils/ is the pre-refactor equivalent of lib/
+  models/         Mongoose schemas — target (currently src/utils/models/,
+                  no open task is assigned to move it; see CLAUDE.md, T-140)
 scripts/          one-off scripts and migrations
 tests/            unit/integration (Vitest) and e2e (Playwright)
 ```
 
-`server/`, `lib/`, and `models/` are where new code goes; `utils/` and
-`services/` are being phased out but still hold real, in-use code — see
-`CLAUDE.md` before assuming anything under them is dead.
+`server/` and `lib/` are where most new code goes, but `services/` is not
+being phased out — it solves a problem `server/` doesn't. `utils/` is mixed:
+`utils/lib/auth.ts` is core, the rest is pre-refactor code still in real use.
+See `CLAUDE.md`'s "Estructura objetivo" before assuming anything under
+`utils/`, `services/`, or `context/` is dead.
 
 ## License
 
