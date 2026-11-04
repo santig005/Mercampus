@@ -4,6 +4,8 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { createOrUpdateUser, deleteUser } from "@/utils/lib/createUser";
 import { logger } from '@/lib/logger';
 
+// T-154: deliberately NOT rate limited. This is Svix-signed traffic from
+// Clerk's servers; limiting it by IP would drop legitimate events in a burst.
 export async function POST(req) {
   // You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;

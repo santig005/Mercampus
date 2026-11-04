@@ -7,6 +7,7 @@ import {
 } from "@/utils/lib/auth";
 import { sellerIdSchema, updateSellerSchema } from "@/lib/validators/seller";
 import { errorResponse, invalidPayload } from "@/lib/api-response";
+import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 import { Seller } from "@/utils/models/sellerSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
@@ -66,6 +67,9 @@ export async function GET(req, { params }) {
       }
 }
 export async function PUT(req, { params }) {
+  const limited = await enforceRateLimit(req, 'sellerUpdate');
+  if (limited) return limited;
+
   try {
       await connectDB();
 

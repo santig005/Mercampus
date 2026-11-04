@@ -10,6 +10,7 @@ import { logger } from '@/lib/logger';
 import { createSellerSchema } from '@/lib/validators/seller';
 import { invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
+import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 
 export async function GET(req) {
   try {
@@ -104,6 +105,11 @@ export async function GET(req) {
 
 // POST method to handle seller registration
 export async function POST(req) {
+  const limited = await enforceRateLimit(req, 'sellerRegistration', {
+    bodyKey: 'message',
+  });
+  if (limited) return limited;
+
   try {
     await connectDB();
     const { userId: clerkId } = await auth();

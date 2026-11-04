@@ -10,6 +10,8 @@ export default defineConfig({
     // Los de integracion levantan un mongod en memoria; la primera vez ademas
     // se descarga el binario.
     testTimeout: 30_000,
+    // T-154: empties the rate-limit counters between tests (see the file).
+    setupFiles: ['./tests/reset-rate-limits.js'],
     hookTimeout: 120_000,
   },
   resolve: {

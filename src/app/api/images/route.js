@@ -9,6 +9,7 @@ import {
   imageFolder,
   uploaderTag,
 } from '@/server/images/imageFiles';
+import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 import { getImageKit } from '@/utils/imagekit';
 import { getClerkUserId } from '@/utils/lib/auth';
 import { AppError } from '@/utils/lib/errors';
@@ -28,6 +29,9 @@ const deleteImageSchema = z.object({
 });
 
 export async function POST(req) {
+  const limited = await enforceRateLimit(req, 'images');
+  if (limited) return limited;
+
   try {
     // Any session may upload, a buyer included: the seller registration form
     // uploads the logo before the seller exists, so a sellerId can't be asked.
@@ -74,6 +78,9 @@ export async function POST(req) {
 }
 
 export async function DELETE(req) {
+  const limited = await enforceRateLimit(req, 'images');
+  if (limited) return limited;
+
   try {
     const clerkId = await getClerkUserId();
 

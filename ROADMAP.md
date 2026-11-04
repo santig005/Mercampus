@@ -174,7 +174,8 @@ already warns about, and getting it wrong wastes a PR:
   entry has the rewritten arithmetic). Still costs money, so still yours.
 - **T-152** · what the homepage actually says - the copy is a product
   decision. **Promoted:** it is the first screen anyone opening the link sees.
-- **T-154** · rate limiting - needs a call on a new dependency.
+- ~~**T-154** · rate limiting~~ - done 2026-11-04: the human chose the
+  existing MongoDB as the store, so no new dependency.
 - **T-156** · account and data deletion - irreversible, external service,
   and a legal question (Ley 1581) behind it. Still applies to data already
   collected, premise or no premise.
@@ -7028,7 +7029,7 @@ follow). Coordinate with T-81, which owns the middleware matcher.
 **Model:** `opusplan` — routing design that touches the middleware
 **Nightly:** no
 
-### [ ] T-154 · No rate limiting anywhere on the public API
+### [x] T-154 · No rate limiting anywhere on the public API
 **Why:** confirmed by grep across `src/`: no rate limiting, no throttling, no
 Upstash, nothing. The exposed surface includes `POST /api/pqrs` (a public form
 that writes a document), the image routes (which cost real money and storage on
@@ -7048,6 +7049,48 @@ preguntar" applies - one dependency, justified, and not chosen by an agent
 alone.
 **Model:** `opus` — abuse surface, and the failure mode matters
 **Nightly:** no (needs a call on the dependency)
+**The decision (the human, 2026-11-04): the existing MongoDB, no new
+dependency, no new account.** An in-memory counter does not survive Vercel's
+serverless functions (the trap the old `sellers/admin` `Map` hit, T-12);
+Upstash/Redis would add a dependency plus an account to manage; Mongo is
+already a hard dependency of every route being limited.
+**Done 2026-11-04.**
+- `src/utils/models/rateLimitSchema.ts`: one document per fixed window,
+  `key = <scope>:<identity>:<windowStart>`, unique index on `key`, TTL index
+  on `expiresAt` (= window end) so Mongo deletes old windows. Incremented with
+  one atomic `findOneAndUpdate` + `$inc`/`$setOnInsert`/`upsert`; the E11000
+  race of two concurrent first upserts is retried once.
+- `src/server/rate-limit/rateLimit.ts` (`src/server/` because it queries
+  Mongo; not `src/middleware.js` because that runs on the Edge runtime, where
+  Mongoose does not work): `enforceRateLimit(req, scope)` at the top of each
+  handler. Identity: Clerk user id with a session (`getClerkUserId`), else the
+  first `x-forwarded-for` entry, else `x-real-ip`, else a shared `unknown`
+  bucket. IPs are stored sha256-hashed and never logged.
+- 429 via `tooManyRequests()` in `src/lib/api-response.ts`, with
+  `Retry-After` (seconds to window end) and the route's usual
+  `{ error }`/`{ message }` body.
+- **Fails open** if the counter throws, with a `logger.warn` that carries no
+  identity: the counter lives in the same Mongo the route needs, so when the
+  store is down the route can't work anyway; failing closed would only turn a
+  DB blip into a 429. (Exception worth knowing: `POST /api/images` doesn't
+  otherwise touch Mongo, so with Mongo down uploads go through unlimited.)
+- Limits (`RATE_LIMITS`, one place), per identity per window: `pqrs` 5 / 10
+  min · `images` (POST+DELETE /api/images, shared) 30 / 10 min ·
+  `sellerRegistration` (POST /api/sellers) 5 / hour · `sellerUpdate`
+  (PUT /api/sellers/[id]) 30 / 10 min · `productWrite` (POST /api/products,
+  PUT+DELETE /api/products/[id], shared) 60 / 10 min · `scheduleWrite`
+  (POST /api/schedules) 30 / 10 min. Every call counts, including ones later
+  rejected as 400/401/403.
+- **Not limited, on purpose:** `POST /api/webhooks` (Svix-signed Clerk
+  traffic; limiting by IP would drop legitimate events) · `PATCH
+  /api/sellers/admin/[id]` (admin-only, gated by the middleware's Clerk role
+  check) · every read-only GET (out of scope for this entry).
+- Existing data: a new collection (`ratelimits`) and its two indexes, nothing
+  else changes shape, so no migration. Indexes are built by Mongoose
+  `autoIndex` when the model compiles, like every other model here.
+- **Outside the repo:** none required. Optional check after promotion: in
+  Atlas, `mercampus_products.ratelimits` shows the `key_1` (unique) and
+  `expiresAt_1` (TTL) indexes once the first limited request has run.
 
 ### [ ] T-155 · Approving or rejecting a seller leaves no trace of who did it
 **Why:** T-105 made approval actually write, and T-114 is about the approval

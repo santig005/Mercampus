@@ -89,3 +89,27 @@ export function errorResponse(
     { status }
   );
 }
+
+/**
+ * T-154: 429 for a request over its rate limit. Same body shape as
+ * errorResponse (`{ [bodyKey]: message }`) so the frontend reads it the same
+ * way, plus `Retry-After` in seconds until the current window ends.
+ *
+ * Not logged here: a client hammering a route would turn every rejected
+ * request into a log line. The limiter is what decides, and it logs nothing
+ * that identifies the caller.
+ */
+export const tooManyRequests = (
+  retryAfterSeconds: number,
+  { bodyKey = 'error' }: { bodyKey?: 'error' | 'message' } = {}
+) =>
+  NextResponse.json(
+    {
+      [bodyKey]:
+        'Demasiadas solicitudes. Espera un momento antes de volver a intentarlo.',
+    },
+    {
+      status: 429,
+      headers: { 'Retry-After': String(Math.max(1, Math.ceil(retryAfterSeconds))) },
+    }
+  );

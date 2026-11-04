@@ -17,6 +17,7 @@ import { invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
 import { productAvailability } from '@/lib/store-availability';
 import { getAvailableSellerIds } from '@/server/products/availableSellers';
+import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // Not used by name, but the import registers the model with Mongoose and the
 // GET's populate({ model: 'Seller' }) needs it registered. Delete it and the
@@ -226,6 +227,11 @@ const getPopulatedProducts = async (approvedProducts, now) => {
 };
 
 export async function POST(req) {
+  const limited = await enforceRateLimit(req, 'productWrite', {
+    bodyKey: 'message',
+  });
+  if (limited) return limited;
+
   try {
     await connectDB();
     // This used to be `if (clerkUser) { ... }` with no `else`: a request
