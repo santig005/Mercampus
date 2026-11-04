@@ -1,4 +1,4 @@
-// SellerContext.js
+// SellerContext.jsx
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -98,7 +98,13 @@ export const useCheckSeller = (sellerAllowed,routeIfNot) => {
       }
       if (!sellerLoading) {
         if(sellerAllowed!=="userNotSeller"){
-          if (seller) {
+          // T-134: `seller` is "None" (a truthy string, not an object) when the
+          // user has no seller profile at all. Without this check it fell into
+          // the branches below, which read `.approved` off the string
+          // (undefined) and either let the user through as "not approved" for
+          // a business that does not exist, or sent them to `routeIfNot`
+          // instead of to registration.
+          if (seller && seller !== "None") {
             if("sellerNotApproved" === sellerAllowed) {
               if (seller.approved) go(routeIfNot);
               else setChecked(true);

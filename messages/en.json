@@ -209,6 +209,8 @@
   "SellerRegister": {
     "heading": "Register your business",
     "subtitle": "Please fill in your business details",
+    "modalAttention": "Attention!",
+    "networkError": "Network error. Please try again.",
     "businessNameLabel": "Business name",
     "businessNamePlaceholder": "Business name",
     "descriptionLabel": "Description",

@@ -3,10 +3,10 @@
   "entry": [
     "src/app/**/{page,layout,route,not-found,error,loading}.{js,jsx,ts,tsx}",
     "scripts/*.mjs",
-    "tests/**/*.test.js",
+    "tests/**/*.test.{js,jsx}",
     "tests/e2e/image-compression/playwright.config.js"
   ],
-  "project": ["src/**/*.{js,jsx,ts,tsx}", "scripts/**/*.mjs", "tests/**/*.js"],
+  "project": ["src/**/*.{js,jsx,ts,tsx}", "scripts/**/*.mjs", "tests/**/*.{js,jsx}"],
   "ignore": [
     "src/components/products/ProductGridFavorite.jsx",
     "src/components/products/ProductCardFavorite.jsx"
