@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { AppError } from '@/utils/lib/errors';
 import { productIdSchema, updateProductSchema } from '@/lib/validators/product';
 import { errorResponse, invalidPayload } from '@/lib/api-response';
+import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 import { publicSellerFilter } from '@/lib/public-visibility';
 import { productAvailability } from '@/lib/store-availability';
 import { verifyOwnershipAndGetSellerId } from '@/utils/lib/auth';
@@ -89,6 +90,9 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
+  const limited = await enforceRateLimit(req, 'productWrite');
+  if (limited) return limited;
+
   // T-97: F29 named the GET, but the same malformed id reached Mongoose
   // through verifyOwnershipAndGetSellerId() here and in the DELETE, and came
   // back as a 500 with the CastError in the body. One validation, three
@@ -129,6 +133,9 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
+  const limited = await enforceRateLimit(req, 'productWrite');
+  if (limited) return limited;
+
   const parsedId = productIdSchema.safeParse(params.id);
   if (!parsedId.success) {
     return invalidPayload(parsedId.error);

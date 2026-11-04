@@ -5,6 +5,7 @@ import { Schedule } from '@/utils/models/scheduleSchema';
 import { replaceSchedulesSchema } from '@/lib/validators/schedule';
 import { errorResponse, invalidPayload } from '@/lib/api-response';
 import { getClerkUserId, verifySellerId } from '@/utils/lib/auth';
+import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 
 
 export async function GET(req) {
@@ -24,6 +25,11 @@ export async function GET(req) {
 };
 
 export async function POST(req) {
+  const limited = await enforceRateLimit(req, 'scheduleWrite', {
+    bodyKey: 'message',
+  });
+  if (limited) return limited;
+
   await connectDB();
 
   try {

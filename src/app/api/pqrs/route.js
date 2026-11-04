@@ -4,8 +4,12 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createPqrsSchema } from '@/lib/validators/pqrs';
 import { invalidPayload } from '@/lib/api-response';
+import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 
 export async function POST(req) {
+  const limited = await enforceRateLimit(req, 'pqrs', { bodyKey: 'message' });
+  if (limited) return limited;
+
   await connectDB();
   try {
     const parsed = createPqrsSchema.safeParse(await req.json());

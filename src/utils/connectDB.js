@@ -29,6 +29,7 @@ import { connect } from 'mongoose';
 import '@/utils/models/orderSchema';
 import '@/utils/models/pqrsSchema';
 import '@/utils/models/productSchema';
+import '@/utils/models/rateLimitSchema';
 import '@/utils/models/scheduleSchema';
 import '@/utils/models/sellerSchema';
 import '@/utils/models/userSchema';
