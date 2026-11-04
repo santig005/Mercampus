@@ -6208,7 +6208,7 @@ gates the path, now as defence in depth.
   look at the panel after the next promotion is the real check.
 **Model:** `opus` (authorization) · **Nightly:** no
 
-### [ ] T-134 · The seller register form hides its errors and corrupts its own state
+### [~] T-134 · The seller register form hides its errors and corrupts its own state
 **Why:** found during T-81's seller onboarding zone (rule 9), measured by
 reading the code, not reproduced in a browser.
 [`src/app/[locale]/antojos/sellers/register/page.jsx`](src/app/[locale]/antojos/sellers/register/page.jsx):
@@ -6233,6 +6233,39 @@ modal and `fields` handling rather than a third copy), the submit builds its
 payload without mutating state, and `useCheckSeller` sends `"None"` to
 `/register` from both branches. Each proven by a test that fails before
 the change.
+**Done, pending the human's merge:** the shared dialog lives in
+`src/components/modals/FormErrorModal.jsx` (no data access, takes only
+props), now used by both `/antojos/product/add` and `/antojos/sellers/
+register`. The register submit builds its payload in
+`src/lib/seller-register-payload.js` instead of mutating `sellerData`
+(`buildSellerRegisterPayload`); `useCheckSeller`'s `sellerNotApproved`/
+`sellerApproved` branches now require `seller && seller !== "None"` before
+reading `.approved`, same as the file's own `userNotSeller` branch already
+did (`src/context/SellerContext.jsx` - renamed from `.js`, see below).
+Each of the three bugs has a test that fails on the pre-fix code and
+passes after (`tests/unit/seller-register-page-errors.test.jsx`,
+`tests/unit/seller-context-check-seller.test.jsx`,
+`tests/unit/seller-register-payload.test.js`), plus a direct test of the
+extracted modal (`tests/unit/form-error-modal.test.jsx`).
+**Test infra note:** this is the first component/hook test in the repo, so
+`vitest.config.mjs` grew an `oxc: { jsx: 'automatic' }` override (Vite reads
+tsconfig's `"jsx": "preserve"`, meant for Next's own compiler, and otherwise
+leaves every `.jsx` file unparsed under Vitest - confirmed by reproducing it
+against `FormErrorModal.jsx` before this change existed), a `@public` resolve
+alias (`InputFields.jsx` imports `@public/images/...`), and `jsdom` as the
+one new dependency (devDependency, justified by rule 3: a real DOM is what
+makes these tests assert on the actual render instead of a class-name
+string, T-100's exact failure mode). `src/context/SellerContext.js` is
+renamed to `.jsx` - no import needed an extension change - because it has
+real JSX in it and Vite's oxc transform otherwise skips plain `.js` files
+entirely; this is a filename-only change, not a logic change, so it does
+not touch the diff rule 1 above pins to "those two branches".
+**Pending before `[x]`:** CI's `e2e` job (real Clerk keys, this sandbox has
+none) runs the new
+`tests/e2e/signed-in/seller-register-errors.spec.js` and uploads
+`capturas-e2e`; the screenshots it captures (light/dark, the error dialog
+after a genuine 400) still need to be downloaded and looked at before this
+merges, per rule 3.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [ ] T-135 · Seller forms lose everything on any full navigation - keep a draft
