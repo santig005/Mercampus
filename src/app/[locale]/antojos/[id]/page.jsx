@@ -41,8 +41,8 @@ export default async function page({ params }) {
   return (
     <>
       {/* T-151: Product + Offer JSON-LD - see src/lib/structured-data.ts
-          for what it does and does not emit (no `availability`: see that
-          file's comment). */}
+          for what it does and does not emit (no `availability`, and why
+          it is not yet crawler-visible: see that file's comment, T-163). */}
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildProductJsonLd(id, product)) }}

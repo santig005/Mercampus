@@ -25,7 +25,7 @@ export default async function page({ params }) {
     <>
       {/* T-151: Product + Offer JSON-LD, same builder as the antojos detail
           page - see src/lib/structured-data.ts for what it does and does
-          not emit. */}
+          not emit, and why it is not yet crawler-visible (T-163). */}
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildProductJsonLd(id, product)) }}

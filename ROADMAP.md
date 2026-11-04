@@ -6870,17 +6870,35 @@ bending around an open question that is no longer open.
 **Model:** `opusplan` · **Nightly:** no (costs money)
 
 ### [~] T-151 · No structured data anywhere — a marketplace with no `Product` markup
-> **Done (2026-11-04): the part that matters per the reframe below.**
+> **Done (2026-11-04), but found blocked on the thing that actually
+> matters - read this before treating it as finished.**
 > `buildProductJsonLd()` (`src/lib/structured-data.ts`) emits `Product` +
 > `Offer` (name, description, image(s), canonical `url` via
 > `src/lib/sitemap.ts`'s `productPath` - the same builder the sitemap uses,
 > no second copy of that logic - price, `priceCurrency: 'COP'`), rendered as
 > a `<script type="application/ld+json">` on both `/antojos/<id>` and
 > `/marketplace/<id>` (`src/app/[locale]/antojos/[id]/page.jsx` and
-> `.../marketplace/[id]/page.jsx`), right next to the root's `Organization`
-> script (T-152c) which every page already carries. `getProductForMetadata`
-> now also selects `section` and the full `images` array, not just the first
-> image the Open Graph tags use.
+> `.../marketplace/[id]/page.jsx`). `getProductForMetadata` now also selects
+> `section` and the full `images` array, not just the first image the Open
+> Graph tags use. The markup is correct and unit-tested
+> (`tests/unit/structured-data.test.js`, snapshot of the full object).
+>
+> **Not actually crawler-visible yet - this PR's own e2e caught it.**
+> `src/app/layout.jsx` wraps every page body in `<ClerkLoaded>`, which
+> renders nothing server-side (see **T-163**, already open, `opus`/
+> human-required - cross-cutting, not attempted here). Unlike the
+> `Organization` script (T-152c, which lives in `<head>`, outside that
+> wrapper, for exactly this reason), the `Product` script sits inside the
+> page body and is therefore absent from the raw HTML a crawler or
+> validator reads without running JavaScript - the same symptom T-163's
+> entry documents for `<h1>`, down to "Google's Rich Results Test did not
+> detect markup that was under this wrapper". It does render correctly in
+> the hydrated DOM once Clerk's script loads in a real browser
+> (`tests/e2e/product-jsonld.spec.js`'s first test, which passes) - so the
+> code is right and will start earning its SEO/rich-link payoff the moment
+> T-163 ships, with no further change needed here. Left `[~]`, not `[x]`,
+> because until then this does not yet do what the entry's reframe (below)
+> says is the point.
 >
 > **`offers.availability` is deliberately omitted, not forgotten.** The
 > page's own badge (`AvailabilityBadge` / `productAvailability()` in
@@ -6913,16 +6931,19 @@ bending around an open question that is no longer open.
 > unit tests (`tests/unit/structured-data.test.js`) all pass: 30/30, snapshot
 > of the full emitted object plus the missing-`image` and
 > missing-`availability` cases. New e2e
-> (`tests/e2e/product-jsonld.spec.js`) reads the raw server HTML the way
-> `home.spec.js` checks `Organization`, for one antojos and one marketplace
-> seeded product, and runs in CI's `e2e` job (real Clerk keys, not available
-> here).
+> (`tests/e2e/product-jsonld.spec.js`), for one antojos and one marketplace
+> seeded product, in CI's `e2e` job (real Clerk keys, not available here):
+> one test navigates with a real browser and finds the script in the
+> hydrated DOM (passes); a second, matching the raw-HTML/no-JS check
+> `home.spec.js` uses for `Organization`, is `test.fixme()`d with the T-163
+> reason inline - it is written and ready, just blocked, so deleting that
+> one line is the entire reactivation once T-163 ships.
 >
-> **Not independently checked against Google's Rich Results Test** - that
-> needs a public URL, which does not exist from this sandbox. One line for
-> the human: once the PR's Vercel preview is up, run
-> `https://search.google.com/test/rich-results` against
-> `<preview-url>/antojos/<any product id>`.
+> **Not checked against Google's Rich Results Test, and it would not find
+> anything yet.** T-163's entry already measured this exact tool against
+> the same `<ClerkLoaded>` wrapper for `Organization` and got nothing back.
+> Pointing it at this PR's preview now would just re-confirm T-163, not
+> this task - worth doing once T-163 ships, not before.
 >
 > **Noticed, not fixed (rule 9):** `productSchema.ts` has a `stock: {
 > type: Boolean, default: true }` field, also present in

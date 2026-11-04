@@ -51,6 +51,19 @@ export function serializeJsonLd(data: unknown): string {
 // what the page is selling. `offers.availability` is deliberately omitted -
 // see the comment below, it is not a missing field, it is a field this data
 // model cannot answer correctly yet.
+//
+// Found while wiring this up (T-151): unlike buildOrganizationJsonLd(),
+// this one is rendered from the page component, not the root layout's
+// <head> - and src/app/layout.jsx wraps every page body in <ClerkLoaded>,
+// which renders nothing server-side (ROADMAP.md T-163, already open,
+// `opus`/human-required, not fixed here - it is cross-cutting and outside
+// this task's scope). So this markup is correct and unit-tested, and
+// becomes visible in the hydrated DOM once Clerk's script loads in a
+// browser (tests/e2e/product-jsonld.spec.js checks exactly that), but a
+// crawler or validator that does not run JavaScript sees none of it until
+// T-163 ships - the same bug T-163's entry documents for Organization
+// before it moved into <head>, measured there against Google's own Rich
+// Results Test.
 export function buildProductJsonLd(id: string, product: ProductPreview) {
   const path = productPath({ id, section: product.section });
   const url = `${SITE_URL}${path}`;
