@@ -40,7 +40,7 @@ describe('connectDB registers every model (hotfix for the Seller populate crash)
     const { connectDB } = await import('@/utils/connectDB');
     await connectDB();
 
-    for (const name of ['Order', 'Pqrs', 'Product', 'Schedule', 'Seller', 'User']) {
+    for (const name of ['Order', 'Pqrs', 'Product', 'Schedule', 'Seller', 'SellerAudit', 'User']) {
       expect(mongoose.models[name], `mongoose.models.${name}`).toBeDefined();
     }
   });

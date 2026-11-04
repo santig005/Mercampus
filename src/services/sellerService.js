@@ -37,11 +37,15 @@ export const updateSeller = async (id, data) => {
 // It throws on a non-2xx so callers doing an optimistic update roll back in
 // their `catch`. It keeps its own fetch rather than fetchFromApi for the error
 // message it builds from the body.
-export const approveSeller = async (id, approved) => {
+//
+// T-155: `reason` goes into the seller's audit log. The API requires it when
+// rejecting (`approved: false`) and accepts it optionally when approving; it
+// is left out of the body when not given.
+export const approveSeller = async (id, approved, reason) => {
   const response = await fetch(`/api/sellers/admin/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ approved }),
+    body: JSON.stringify(reason === undefined ? { approved } : { approved, reason }),
   });
 
   if (!response.ok) {
@@ -52,4 +56,17 @@ export const approveSeller = async (id, approved) => {
   }
 
   return response.json();
+};
+
+// T-155: one seller's audit trail (admin-only, newest first). An empty list
+// is the normal answer for any seller approved or rejected before T-155.
+export const getSellerHistory = async id => {
+  const response = await fetch(`/api/sellers/admin/${id}/history`);
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(body.error ?? body.message ?? `HTTP ${response.status} al cargar el historial`);
+  }
+
+  return body.history ?? [];
 };

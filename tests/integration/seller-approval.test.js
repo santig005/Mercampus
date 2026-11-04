@@ -87,7 +87,11 @@ describe('T-105 · seller approval', () => {
     it('un-approves an approved seller, and the document changes', async () => {
       signInAs(BUYER, { admin: true });
 
-      const response = await patchApproval(ids.approvedSeller, { approved: false });
+      // T-155: rejecting now requires a reason (it goes into the audit log).
+      const response = await patchApproval(ids.approvedSeller, {
+        approved: false,
+        reason: 'Fotos del menú no corresponden',
+      });
 
       expect(response.status).toBe(200);
       expect(await approvedOf(ids.approvedSeller)).toBe(false);

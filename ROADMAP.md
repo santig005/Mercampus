@@ -7092,7 +7092,7 @@ already a hard dependency of every route being limited.
   Atlas, `mercampus_products.ratelimits` shows the `key_1` (unique) and
   `expiresAt_1` (TTL) indexes once the first limited request has run.
 
-### [ ] T-155 · Approving or rejecting a seller leaves no trace of who did it
+### [x] T-155 · Approving or rejecting a seller leaves no trace of who did it
 **Why:** T-105 made approval actually write, and T-114 is about the approval
 surface, but neither records **who** approved or rejected a seller, **when**, or
 **why**. `PATCH /api/sellers/admin/[id]` flips a field on the `Seller`
@@ -7106,6 +7106,32 @@ records. Reasons are optional for approval and worth requiring for rejection -
 a rejected student asking "why?" is the case that motivates this.
 **Related:** T-105, T-114, T-52 (moderation will want the same log).
 **Model:** `sonnet` · **Nightly:** yes
+**Done 2026-11-04.** Records only: who may approve/reject, the admin checks,
+`publicMetadata`, `User.role` and the middleware are untouched.
+- `src/utils/models/sellerAuditSchema.ts` (`SellerAudit`, collection
+  `seller_audit_logs`): `actorClerkId`, `action` (`approve`/`reject` - the only
+  state change the PATCH supports), `sellerId`, `previousState`/`newState`
+  (`{ approved }`), optional `reason` (≤500), `createdAt`. Index
+  `{ sellerId: 1, createdAt: -1 }`. Append-only: pre-hooks throw on every
+  update/replace/delete query, `doc.deleteOne/updateOne`, `save()` of a stored
+  doc, and non-insert `bulkWrite`. Registered in `connectDB`.
+- `PATCH /api/sellers/admin/[id]`: `findByIdAndUpdate(..., { new: false })` so
+  the same atomic op yields the previous state; the record is written only
+  after it succeeds, actor = `getClerkUserId()` of the session (never the
+  body). No transaction: a failed audit write is `logger.error`'d (ids only)
+  and the change still answers 200 - see the PR for why.
+- `approveSellerSchema`: `reason` trimmed, ≤500; **required when
+  `approved: false`** (400, nothing written). Contract change - the only caller,
+  `/admin/sellers`, now opens a reason dialog before rejecting.
+- `GET /api/sellers/admin/[id]/history` (same `getClerkUserId` +
+  `isClerkAdmin` check as the other admin routes) feeds a "Historial" dialog
+  per seller on `/admin/sellers`; empty state for sellers with no records
+  (every seller from before T-155 - no migration, new collection only).
+- Tests: `tests/integration/seller-audit.test.js`.
+- **Admin UI visually unverified - needs a human with an admin account**
+  (T-95: the agent must not create one). Check the reason dialog and the
+  history dialog in both themes before promoting.
+- **Outside the repo:** none (the collection is created on first insert).
 
 ### [ ] T-156 · No way to delete an account and its data
 **Why:** the app stores personal data of real people - name, email, and

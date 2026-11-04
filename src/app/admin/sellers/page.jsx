@@ -1,11 +1,13 @@
 'use client';
 import { logger } from '@/lib/logger';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSession } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import SellerCard from '@/components/seller/index/SellerCard';
 import ToggleSwitch from '@/components/availability/ToggleSwitch';
-import { approveSeller } from '@/services/sellerService';
+import RejectSellerDialog from '@/components/admin/RejectSellerDialog';
+import SellerHistoryDialog from '@/components/admin/SellerHistoryDialog';
+import { approveSeller, getSellerHistory } from '@/services/sellerService';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 export default function AdminSellersPage() {
@@ -15,6 +17,17 @@ export default function AdminSellersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [parent] = useAutoAnimate();
+  // T-155: the seller being rejected (reason dialog open) and the one whose
+  // audit history is being shown. null = closed.
+  const [rejecting, setRejecting] = useState(null);
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const [historyFor, setHistoryFor] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  // Which history request is current, so a slow answer for a seller whose
+  // dialog was already closed (or swapped) cannot overwrite the open one.
+  const historyRequest = useRef(0);
 
   useEffect(() => {
     if (isLoaded && !session) {
@@ -68,6 +81,14 @@ export default function AdminSellersPage() {
   };
 
   const handleSellerApproval = async (isOn, sellerId) => {
+    // T-155: rejecting needs a reason (the API refuses one without it), so
+    // turning an approved seller off opens the reason dialog instead of
+    // writing straight away. Approving keeps the optimistic one-click path.
+    if (isOn) {
+      setRejecting(sellers.find(seller => seller._id === sellerId) ?? null);
+      return;
+    }
+
     try {
       // Update local state first, for immediate feedback
       setSellers(prevSellers =>
@@ -91,6 +112,42 @@ export default function AdminSellersPage() {
         )
       );
       setError('Error al actualizar el estado del vendedor');
+    }
+  };
+
+  const handleRejectConfirm = async (reason) => {
+    const sellerId = rejecting._id;
+    setRejectSubmitting(true);
+    try {
+      await approveSeller(sellerId, false, reason);
+      setSellers(prevSellers =>
+        prevSellers.map(seller =>
+          seller._id === sellerId ? { ...seller, approved: false } : seller
+        )
+      );
+    } catch (error) {
+      logger.error('Error rejecting seller:', error);
+      setError('Error al rechazar el vendedor');
+    } finally {
+      setRejectSubmitting(false);
+      setRejecting(null);
+    }
+  };
+
+  const openHistory = async (seller) => {
+    setHistoryFor(seller);
+    setHistory([]);
+    setHistoryError(null);
+    setHistoryLoading(true);
+    const request = ++historyRequest.current;
+    try {
+      const entries = await getSellerHistory(seller._id);
+      if (request === historyRequest.current) setHistory(entries);
+    } catch (error) {
+      logger.error('Error fetching seller history:', error);
+      if (request === historyRequest.current) setHistoryError('No se pudo cargar el historial');
+    } finally {
+      if (request === historyRequest.current) setHistoryLoading(false);
     }
   };
 
@@ -210,10 +267,19 @@ export default function AdminSellersPage() {
                     <span className="text-xs text-gray-500 dark:text-base-content/70">Universidad:</span>
                     <span className="text-sm font-medium text-gray-700 dark:text-base-content">{seller.university || 'No especificada'}</span>
                   </div>
-                  <ToggleSwitch
-                    isOn={seller.approved || false}
-                    onToggle={() => handleSellerApproval(seller.approved, seller._id)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-ghost"
+                      onClick={() => openHistory(seller)}
+                    >
+                      Historial
+                    </button>
+                    <ToggleSwitch
+                      isOn={seller.approved || false}
+                      onToggle={() => handleSellerApproval(seller.approved, seller._id)}
+                    />
+                  </div>
                 </div>
               </div>
             );
@@ -222,6 +288,21 @@ export default function AdminSellersPage() {
           )}
         </>
       )}
+
+      <RejectSellerDialog
+        seller={rejecting}
+        submitting={rejectSubmitting}
+        onConfirm={handleRejectConfirm}
+        onCancel={() => setRejecting(null)}
+      />
+      <SellerHistoryDialog
+        seller={historyFor}
+        history={history}
+        loading={historyLoading}
+        error={historyError}
+        currentUserId={session?.user?.id}
+        onClose={() => setHistoryFor(null)}
+      />
     </div>
   );
 }
