@@ -22,6 +22,9 @@ export async function POST(req) {
 
     return NextResponse.json({ message: 'PQRS creada correctamente.' }, { status: 201 });
   } catch (error) {
+    // T-141 audit: not on errorResponse() on purpose - this already returns
+    // a fixed, generic message and never echoes error.message, so there is
+    // no leak to close, and switching it would only reshuffle the body key.
     logger.error('Error al crear la PQRS', error);
     return NextResponse.json(
       { message: 'Error al crear la PQRS.' },

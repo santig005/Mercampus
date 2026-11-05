@@ -6,9 +6,8 @@ import { User } from '@/utils/models/userSchema';
 import { auth } from '@clerk/nextjs/server';
 import { daysES } from '@/utils/resources/days';
 import { getSchedulesBySeller, withDayNames } from '@/utils/lib/schedules';
-import { logger } from '@/lib/logger';
 import { createSellerSchema } from '@/lib/validators/seller';
-import { invalidPayload } from '@/lib/api-response';
+import { errorResponse, invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
 import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 
@@ -96,10 +95,13 @@ export async function GET(req) {
 
     return NextResponse.json({ sellers: transformedSellers }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { message: 'Error fetching sellers', error: error.message },
-      { status: 500 }
-    );
+    // T-141 (batch 2): used to answer `{ message, error: error.message }`,
+    // echoing the driver's/Mongoose's raw text in the second key. No caller
+    // reads either key off this response - SellerGrid's getSellers() only
+    // logs the thrown Error (see PR's reference search) - so bodyKey matches
+    // this file's other bodies (`message`) rather than preserving the old
+    // `error` key for its own sake.
+    return errorResponse(error, 'GET /api/sellers', { bodyKey: 'message' });
   }
 }
 
@@ -148,10 +150,11 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    logger.error('Error creating seller', error);
-    return NextResponse.json(
-      { message: 'Error creating seller', error: error.message },
-      { status: 500 }
-    );
+    // T-141 (batch 2): used to answer `{ message, error: error.message }`,
+    // echoing the driver's/Mongoose's raw text. The register-seller page
+    // reads `errorData.message` into `errorCode`, but never renders that
+    // state (see this PR's "Noticed, not fixed") - bodyKey: 'message' only
+    // to keep this file's bodies consistent, not because anything displays it.
+    return errorResponse(error, 'POST /api/sellers', { bodyKey: 'message' });
   }
 }

@@ -11,7 +11,6 @@ import { enforceRateLimit } from '@/server/rate-limit/rateLimit';
 import { Seller } from "@/utils/models/sellerSchema";
 import { Schedule } from "@/utils/models/scheduleSchema";
 import { daysES } from '@/utils/resources/days';
-import { logger } from '@/lib/logger';
 
 // T-112b: extractAuthHeader() used to sit here - never called, and it logged
 // the request's Authorization header (a Bearer token) at debug level. Deleted.
@@ -103,9 +102,9 @@ export async function PUT(req, { params }) {
 
       return NextResponse.json({ seller }, { status: 200 });
   }  catch (error) {
-    const status = error?.status || 500;
-    const message = error?.message || "Error interno del servidor";
-    logger.error("[PUT /api/sellers/:id]", message);
-    return NextResponse.json({ error: message }, { status });
+    // T-141 (batch 2): used to answer `{ error: error.message }` for every
+    // status, including a 500 - the same leak `errorResponse()` exists to
+    // close (same as this file's GET, migrated separately in T-170).
+    return errorResponse(error, '[PUT /api/sellers/:id]');
   }
 }

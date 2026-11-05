@@ -129,11 +129,6 @@ already warns about, and getting it wrong wastes a PR:
 - **T-124** · Photos over 4.5 MB. Option (a), shrinking in the browser, is
   agent-sized; verifying it needs a real large file in a browser, and option
   (b) must not be taken without checking what the upload signature binds.
-- **T-141** · Two error-response shapes coexist in `src/app/api/`. Migrating
-  a route to `errorResponse()` is mechanical and well precedented, but do it
-  in small batches (like T-80's `console.log` cleanup) — a bad migration in
-  one route should not block the rest, and each route's tests need to keep
-  asserting the same status codes after the shape changes.
 - **T-44** · Seller panel. Unblocked (T-40 is done), but it is new UI, and
   CLAUDE.md rule 3 means a real screenshot, not a test that greps for a class
   name. If you cannot render it in your session, say so in the PR instead of
@@ -6497,7 +6492,7 @@ the same PR.
 **Model:** `sonnet` — this is documentation, not a code change
 **Nightly:** yes
 
-### [~] T-141 · Two generations of error handling still coexist in `src/app/api/`
+### [x] T-141 · Two generations of error handling still coexist in `src/app/api/`
 **Why:** measured with a grep across every route's `catch` block, not from
 memory. Migrated to `errorResponse()`/`AppError` from `src/lib/api-response.ts`
 (consistent shape, never leaks a driver's raw message on a 500 — see T-97's
@@ -6528,8 +6523,19 @@ route does not block the rest.
 GET migrated to `errorResponse()`, same `bodyKey: 'message'` their neighbouring
 404s in the same files already use. `products/seller/[id]/route.js` turned out
 to already be on `errorResponse()` — this entry's own list above was stale,
-not the code; no change needed there. Batch 2 pending: `users/[id]/route.js`,
-`sellers/[id]/route.js` GET (both catches), `sellers/route.js` GET.
+not the code; no change needed there.
+**Batch 2 done (PR #414):** every `catch` under `src/app/api/` is now
+accounted for — migrated to `errorResponse()` or left with a one-line reason.
+Migrated: `users/[id]/route.js` GET, `sellers/[id]/route.js` PUT (its GET was
+already migrated by T-170, found while re-checking this entry's stale list),
+`sellers/route.js` GET and POST, `products/route.js` POST,
+`sellers/availability/route.js` GET (Vercel Cron only, no frontend caller).
+Left with a comment instead: `pqrs/route.js` POST and `webhooks/route.js`'s
+three catches — none echoes `error.message`, and `webhooks/route.js` answers
+Svix (Clerk's webhook sender) with a plain status, not a JSON `errorResponse()`
+body. Already compliant before this task, found while auditing: `images/route.js`,
+`sellers/admin/*` (all three), `schedules/*`, `products/[id]/route.js`,
+`products/seller/[id]/route.js`.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-142 · `sellerSchema2.ts` — the `2` names a `v1` that no longer exists
