@@ -6524,7 +6524,7 @@ way `sellers/admin/route.js`'s GET already explains why it skips an
 in-handler auth check). One PR per batch of routes, same pattern T-80 used
 for the `console.log` cleanup, small enough that a bad migration in one
 route does not block the rest.
-**Batch 1 done (PR #TBD):** `schedules/[id]/route.js` GET and `schedules/route.js`
+**Batch 1 done (PR #413):** `schedules/[id]/route.js` GET and `schedules/route.js`
 GET migrated to `errorResponse()`, same `bodyKey: 'message'` their neighbouring
 404s in the same files already use. `products/seller/[id]/route.js` turned out
 to already be on `errorResponse()` — this entry's own list above was stale,
