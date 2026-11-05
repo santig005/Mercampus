@@ -6524,7 +6524,7 @@ GET migrated to `errorResponse()`, same `bodyKey: 'message'` their neighbouring
 404s in the same files already use. `products/seller/[id]/route.js` turned out
 to already be on `errorResponse()` — this entry's own list above was stale,
 not the code; no change needed there.
-**Batch 2 done (PR #TBD):** every `catch` under `src/app/api/` is now
+**Batch 2 done (PR #414):** every `catch` under `src/app/api/` is now
 accounted for — migrated to `errorResponse()` or left with a one-line reason.
 Migrated: `users/[id]/route.js` GET, `sellers/[id]/route.js` PUT (its GET was
 already migrated by T-170, found while re-checking this entry's stale list),
