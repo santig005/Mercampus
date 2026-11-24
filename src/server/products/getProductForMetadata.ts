@@ -10,6 +10,11 @@ export type ProductPreview = {
   description: string;
   price: number;
   image: string | undefined;
+  // T-151: the Product JSON-LD wants every image, not just the first one the
+  // Open Graph tags use, plus `section` to build the same canonical URL
+  // src/lib/sitemap.ts already builds for the sitemap entry.
+  images: string[];
+  section: string;
 };
 
 // generateMetadata() on the detail page needs name/description/price/image
@@ -24,7 +29,7 @@ async function readProductForMetadata(
 
   await connectDB();
   const product = await Product.findById(id)
-    .select('name description price images')
+    .select('name description price images section')
     .lean();
   if (!product) return null;
 
@@ -33,6 +38,8 @@ async function readProductForMetadata(
     description: product.description,
     price: product.price,
     image: product.images?.[0],
+    images: product.images ?? [],
+    section: product.section,
   };
 }
 

@@ -105,9 +105,11 @@ shipped and were still listed here, which got T-127 proposed again as if it
 were open. T-142 left in #375 and T-159 in #376. Rows go when their task
 ships.
 
-| Task | Why it is safe | How you know it worked |
-|---|---|---|
-| **T-151** · No structured data (JSON-LD) anywhere | Additive markup; nothing existing changes shape. T-69's Open Graph work is the precedent. | Google's Rich Results Test, plus a snapshot test of the emitted JSON — not a grep for the string. |
+**Refreshed 2026-11-04** - T-151's row removed: the `Product` + `Offer`
+markup (the part this entry's own 2026-09-23 reframe says matters) shipped.
+Its entry stays `[~]` for the optional seller/`BreadcrumbList` scope that was
+left undone on purpose - not safe-to-take-alone work, since picking it up
+means a new `T-151b`, per rule 2.
 
 ### Fine for an agent, but read the caveat in the entry first
 
@@ -127,11 +129,6 @@ already warns about, and getting it wrong wastes a PR:
 - **T-124** · Photos over 4.5 MB. Option (a), shrinking in the browser, is
   agent-sized; verifying it needs a real large file in a browser, and option
   (b) must not be taken without checking what the upload signature binds.
-- **T-141** · Two error-response shapes coexist in `src/app/api/`. Migrating
-  a route to `errorResponse()` is mechanical and well precedented, but do it
-  in small batches (like T-80's `console.log` cleanup) — a bad migration in
-  one route should not block the rest, and each route's tests need to keep
-  asserting the same status codes after the shape changes.
 - **T-44** · Seller panel. Unblocked (T-40 is done), but it is new UI, and
   CLAUDE.md rule 3 means a real screenshot, not a test that greps for a class
   name. If you cannot render it in your session, say so in the PR instead of
@@ -147,7 +144,9 @@ already warns about, and getting it wrong wastes a PR:
 ### Needs the human before an agent can start
 
 - **T-35** · choosing the image provider (T-109 carves out the safe half).
-- **T-60** · Observability - needs a Sentry account and a DSN.
+- **T-60b** · Turning Sentry on - needs a Sentry account and a DSN. T-60
+  (the code side) is done and inert until this runs; see
+  `docs/observability.md`.
 - **T-112** · a preview calling production's API - **confirmed** 2026-09-14;
   choosing between removing the self-fetch and pointing previews at
   themselves is the human's call.
@@ -1997,10 +1996,75 @@ touch those routes.
 
 ## Phase 6 — Operations
 
-### [ ] T-60 · Observability
+### [x] T-60 · Observability
 **Done when:** Sentry for client and server errors, structured logs, and
 an alert when the deploy's error rate crosses a threshold.
+**Done (code side; the account/dashboard side is T-60b):** `@sentry/nextjs`
+(the one new dependency this PR adds), wired per Sentry's current manual
+setup for the app router - `src/instrumentation.ts` (`register()` +
+`onRequestError`), `src/instrumentation-client.ts`, and
+`src/app/global-error.jsx` (fallback for an error that escapes the root
+layout; this app had none before). `next.config.mjs` wraps the config with
+`withSentryConfig`, but only when `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/
+`SENTRY_PROJECT` are all set - partial config builds exactly like no config.
+**Off by default:** with `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` unset (every
+environment today), neither `Sentry.init()` call ever runs - no client, no
+network call, confirmed by `npm run build` with none of the five Sentry env
+vars set and no new warnings. The three new env vars are registered as
+optional in `.env.example` and in T-113's drift test
+(`tests/unit/env-publico.test.js`): `SENTRY_ORG`/`SENTRY_PROJECT`/
+`SENTRY_AUTH_TOKEN` are read only by `next.config.mjs` (outside `src/`, same
+situation as `NEXT_PUBLIC_URL`), and `NEXT_RUNTIME` (set by Next itself
+before `register()` runs) joined `NODE_ENV`/`VITEST` in the "set by the
+runtime" exclusion list.
+**Privacy (CLAUDE.md rule 6):** `sendDefaultPii: false` plus a shared
+`beforeSend` (`src/lib/sentry.ts`, `scrubSentryEvent`) that drops the
+request body, cookies, the `Authorization`/`Cookie` headers, and the user's
+email/phone before an event ever leaves the process. Unit-tested
+(`tests/unit/sentry-scrub.test.js`) independently of the Sentry SDK.
+**Logger bridge:** `src/lib/logger.ts`'s `logger.error` now also calls
+`Sentry.captureException` (when the context is an `Error`) or
+`Sentry.captureMessage` (otherwise); `logger.warn` adds a breadcrumb. Gated
+on `Sentry.getClient()` - a plain read, not a network call - so this is a
+no-op with no DSN configured. The logger's public API didn't change, and it
+stays silent under test for the same reason it always did (`LOG_LEVEL`
+unset + `NODE_ENV=test`/`VITEST` → `silent`); the bridge itself is unit
+tested with `@sentry/nextjs` mocked
+(`tests/unit/logger-sentry-bridge.test.js`), independent of that.
+**Structured logs:** in production, one JSON line per log
+(`level`/`message`/`context`/`timestamp`) for Vercel's log search; the
+existing readable `[level] message` form is unchanged in development and
+test. Covered in `tests/unit/logger.test.js`.
+**Noticed, not fixed (rule 9):** no Content-Security-Policy exists anywhere
+in this repo (`next.config.mjs`, `src/middleware.js`, no `headers()` call
+sets one) - there's nothing here for Sentry's ingest host to be blocked by,
+so nothing to adjust. Worth a line in `docs/observability.md`'s next
+revision if a CSP is ever added.
+**Outside the repo:** everything in T-60b below - the Sentry account, the
+five Vercel env vars, the alert rule. None of it is required for this PR to
+be safe to deploy: with no DSN set, the code added here is inert.
+See `docs/observability.md` for the exact steps.
 **Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-60b · Turn Sentry on: account, env vars, alert
+**Why:** T-60 built the code side so that turning Sentry on is an account
+and a dashboard, not a PR - this is that account and dashboard, and it
+needs a human (CLAUDE.md: don't create external accounts from an agent).
+**Done when**, per `docs/observability.md`:
+1. Create a Sentry project (platform Next.js).
+2. In Vercel, set `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` (same DSN -
+   it isn't a secret) on Production (and Preview, if preview deploys should
+   report too - see the doc for the one-line `environment` tag to add if
+   so), and `SENTRY_ORG`/`SENTRY_PROJECT`/`SENTRY_AUTH_TOKEN` (the last one
+   an Internal Integration token, marked **Sensitive**) on Production, for
+   source-map upload.
+3. Create an alert rule in the Sentry project: "an issue is first seen" (and
+   optionally a rate-based rule for a recurring one) notifying email or
+   Slack.
+4. Confirm it end-to-end with a real test event (exact command in the doc),
+   see it land in Sentry and the alert fire, then resolve the test issue.
+**Model:** `sonnet` · **Nightly:** no (needs the human: an external account
+and a dashboard, not something this repo can verify or roll back)
 
 ### [x] T-61 · Performance and accessibility budget
 **Why:** Lighthouse CI on every PR with thresholds that break the build;
@@ -6431,7 +6495,7 @@ the same PR.
 **Model:** `sonnet` — this is documentation, not a code change
 **Nightly:** yes
 
-### [ ] T-141 · Two generations of error handling still coexist in `src/app/api/`
+### [x] T-141 · Two generations of error handling still coexist in `src/app/api/`
 **Why:** measured with a grep across every route's `catch` block, not from
 memory. Migrated to `errorResponse()`/`AppError` from `src/lib/api-response.ts`
 (consistent shape, never leaks a driver's raw message on a 500 — see T-97's
@@ -6458,6 +6522,23 @@ way `sellers/admin/route.js`'s GET already explains why it skips an
 in-handler auth check). One PR per batch of routes, same pattern T-80 used
 for the `console.log` cleanup, small enough that a bad migration in one
 route does not block the rest.
+**Batch 1 done (PR #413):** `schedules/[id]/route.js` GET and `schedules/route.js`
+GET migrated to `errorResponse()`, same `bodyKey: 'message'` their neighbouring
+404s in the same files already use. `products/seller/[id]/route.js` turned out
+to already be on `errorResponse()` — this entry's own list above was stale,
+not the code; no change needed there.
+**Batch 2 done (PR #414):** every `catch` under `src/app/api/` is now
+accounted for — migrated to `errorResponse()` or left with a one-line reason.
+Migrated: `users/[id]/route.js` GET, `sellers/[id]/route.js` PUT (its GET was
+already migrated by T-170, found while re-checking this entry's stale list),
+`sellers/route.js` GET and POST, `products/route.js` POST,
+`sellers/availability/route.js` GET (Vercel Cron only, no frontend caller).
+Left with a comment instead: `pqrs/route.js` POST and `webhooks/route.js`'s
+three catches — none echoes `error.message`, and `webhooks/route.js` answers
+Svix (Clerk's webhook sender) with a plain status, not a JSON `errorResponse()`
+body. Already compliant before this task, found while auditing: `images/route.js`,
+`sellers/admin/*` (all three), `schedules/*`, `products/[id]/route.js`,
+`products/seller/[id]/route.js`.
 **Model:** `sonnet` · **Nightly:** yes
 
 ### [x] T-142 · `sellerSchema2.ts` — the `2` names a `v1` that no longer exists
@@ -6888,7 +6969,90 @@ Clerk production instance follow as a bonus; if not, close this entry as
 bending around an open question that is no longer open.
 **Model:** `opusplan` · **Nightly:** no (costs money)
 
-### [ ] T-151 · No structured data anywhere — a marketplace with no `Product` markup
+### [~] T-151 · No structured data anywhere — a marketplace with no `Product` markup
+> **Done (2026-11-04), but found blocked on the thing that actually
+> matters - read this before treating it as finished.**
+> `buildProductJsonLd()` (`src/lib/structured-data.ts`) emits `Product` +
+> `Offer` (name, description, image(s), canonical `url` via
+> `src/lib/sitemap.ts`'s `productPath` - the same builder the sitemap uses,
+> no second copy of that logic - price, `priceCurrency: 'COP'`), rendered as
+> a `<script type="application/ld+json">` on both `/antojos/<id>` and
+> `/marketplace/<id>` (`src/app/[locale]/antojos/[id]/page.jsx` and
+> `.../marketplace/[id]/page.jsx`). `getProductForMetadata` now also selects
+> `section` and the full `images` array, not just the first image the Open
+> Graph tags use. The markup is correct and unit-tested
+> (`tests/unit/structured-data.test.js`, snapshot of the full object).
+>
+> **Not actually crawler-visible yet - this PR's own e2e caught it.**
+> `src/app/layout.jsx` wraps every page body in `<ClerkLoaded>`, which
+> renders nothing server-side (see **T-163**, already open, `opus`/
+> human-required - cross-cutting, not attempted here). Unlike the
+> `Organization` script (T-152c, which lives in `<head>`, outside that
+> wrapper, for exactly this reason), the `Product` script sits inside the
+> page body and is therefore absent from the raw HTML a crawler or
+> validator reads without running JavaScript - the same symptom T-163's
+> entry documents for `<h1>`, down to "Google's Rich Results Test did not
+> detect markup that was under this wrapper". It does render correctly in
+> the hydrated DOM once Clerk's script loads in a real browser
+> (`tests/e2e/product-jsonld.spec.js`'s first test, which passes) - so the
+> code is right and will start earning its SEO/rich-link payoff the moment
+> T-163 ships, with no further change needed here. Left `[~]`, not `[x]`,
+> because until then this does not yet do what the entry's reframe (below)
+> says is the point.
+>
+> **`offers.availability` is deliberately omitted, not forgotten.** The
+> page's own badge (`AvailabilityBadge` / `productAvailability()` in
+> `src/lib/store-availability.ts`) answers "is the seller's store open right
+> now" - a value that changes by the minute with the Bogotá clock - not "is
+> this item in stock". T-145 (the real sold-out flag) does not exist. Mapping
+> "closed now, reopens Tuesday" to schema.org's `OutOfStock` would tell
+> Google a sellable product is sold out, which is exactly the manual-action
+> risk this entry's own "Careful" note warns about. Revisit once T-145 ships
+> a real stock state.
+>
+> Seller pages and the listing's `BreadcrumbList` were **not built** - this
+> entry's own 2026-09-23 reframe (below) says the root `Organization` plus
+> one `Product` page is what matters, and both of those are now done.
+> Left `[~]` rather than `[x]` only because of that.
+>
+> **Security:** `serializeJsonLd` now escapes `<`, `>`, `&`, U+2028 and
+> U+2029 (was `<` only), so a product name or description containing
+> `</script>` cannot close the tag it's rendered into, and a quote inside the
+> name can't exploit `>`/`&`-sensitive parsing either. Covered by
+> `tests/unit/structured-data.test.js`, including a test that builds the
+> markup from a hostile product *name* end to end, not just a hand-built
+> object passed straight to the escaper.
+>
+> **Verified:** `npm run verify` - lint, deadcode, typecheck and `build` all
+> pass; `test` fails in this sandbox only because
+> `mongodb-memory-server` cannot download its `mongod` binary here (blocked
+> network, pre-existing, unrelated to this change) - every integration suite
+> that needs it fails the same way on `agent/develop` before this PR. The new
+> unit tests (`tests/unit/structured-data.test.js`) all pass: 30/30, snapshot
+> of the full emitted object plus the missing-`image` and
+> missing-`availability` cases. New e2e
+> (`tests/e2e/product-jsonld.spec.js`), for one antojos and one marketplace
+> seeded product, in CI's `e2e` job (real Clerk keys, not available here):
+> one test navigates with a real browser and finds the script in the
+> hydrated DOM (passes); a second, matching the raw-HTML/no-JS check
+> `home.spec.js` uses for `Organization`, is `test.fixme()`d with the T-163
+> reason inline - it is written and ready, just blocked, so deleting that
+> one line is the entire reactivation once T-163 ships.
+>
+> **Not checked against Google's Rich Results Test, and it would not find
+> anything yet.** T-163's entry already measured this exact tool against
+> the same `<ClerkLoaded>` wrapper for `Organization` and got nothing back.
+> Pointing it at this PR's preview now would just re-confirm T-163, not
+> this task - worth doing once T-163 ships, not before.
+>
+> **Noticed, not fixed (rule 9):** `productSchema.ts` has a `stock: {
+> type: Boolean, default: true }` field, also present in
+> `src/lib/validators/product.ts`'s Zod schema as `stock: z.boolean().optional()`.
+> `grep -rn "stock" src/` (case-insensitive) finds it nowhere else - not read,
+> not written, not displayed, not filtered on. It predates this PR and is not
+> the T-145 sold-out flag T-145's own entry says does not exist yet
+> ("no product carries a quantity"). Looks like dead schema weight, not
+> touched here per rule 5 (confirm, don't guess) and rule 2 (one task per PR).
 **Why:** confirmed by grep across `src/`: zero occurrences of
 `application/ld+json`, `schema.org` or any JSON-LD. T-69 gave product and
 seller pages real Open Graph tags (which is what makes a shared WhatsApp link

@@ -49,9 +49,13 @@ describe('variables exposed to the client', () => {
     // If a new one shows up, deciding whether it belongs in the bundle is a
     // T-112b removed NEXT_PUBLIC_URL from this list: its only readers were
     // services/api.js and apiToken.js, deleted along with the self-fetch.
+    // T-60: NEXT_PUBLIC_SENTRY_DSN joined - a Sentry DSN only lets a caller
+    // send events, not read them, so shipping it to the browser is the
+    // documented, intended use (src/instrumentation-client.ts).
     expect([...publicEnvVars].sort()).toEqual([
       'NEXT_PUBLIC_GA_ID',
       'NEXT_PUBLIC_GTM_ID',
+      'NEXT_PUBLIC_SENTRY_DSN',
     ]);
   });
 });
@@ -93,8 +97,10 @@ describe('.env.example matches what the code actually reads', () => {
 
   // Set by the runtime itself, never by a human copying .env.example to
   // .env: NODE_ENV comes from the npm script / `next build` / `next start`,
-  // VITEST is set by the Vitest runner. Neither belongs in .env.example.
-  const SET_BY_RUNTIME = new Set(['NODE_ENV', 'VITEST']);
+  // VITEST is set by the Vitest runner, NEXT_RUNTIME is set by Next.js
+  // itself before src/instrumentation.ts's register() runs. None of these
+  // belong in .env.example.
+  const SET_BY_RUNTIME = new Set(['NODE_ENV', 'VITEST', 'NEXT_RUNTIME']);
 
   // Documented in .env.example, genuinely unread anywhere under src/ today,
   // and kept on purpose rather than silently dropped by this test - CLAUDE.md
@@ -106,6 +112,12 @@ describe('.env.example matches what the code actually reads', () => {
     // scripts/e2e.mjs and scripts/lighthouse.mjs still set it for their own
     // builds, outside src/.
     'NEXT_PUBLIC_URL',
+    // T-60: read in next.config.mjs, which this test can't see - it only
+    // walks src/ (see sourceFiles above). Same shape as NEXT_PUBLIC_URL
+    // above: genuinely read, just not under src/.
+    'SENTRY_ORG',
+    'SENTRY_PROJECT',
+    'SENTRY_AUTH_TOKEN',
   ]);
 
   it('every env var read under src/ is documented in .env.example', () => {

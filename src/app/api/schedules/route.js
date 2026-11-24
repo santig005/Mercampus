@@ -20,7 +20,9 @@ export async function GET(req) {
 
     return NextResponse.json({ schedules }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Internal server error.', error: error.message }, { status: 500 });
+    // T-141: same leak the POST below was already fixed for - the 500 echoed
+    // error.message (driver/Mongoose text) straight into the body.
+    return errorResponse(error, '[GET /api/schedules]', { bodyKey: 'message' });
   }
 };
 

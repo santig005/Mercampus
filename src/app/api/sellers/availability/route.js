@@ -2,7 +2,7 @@ import { connectDB } from '@/utils/connectDB';
 import { Schedule } from '@/utils/models/scheduleSchema';
 import { Seller } from '@/utils/models/sellerSchema';
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
+import { errorResponse } from '@/lib/api-response';
 import { bogotaClock, isOpenAt, isOverrideActive } from '@/lib/store-availability';
 
 // T-14: this used to be protected by IP (allowedIPs.js, deleted in T-34).
@@ -54,10 +54,10 @@ export async function GET(req) {
       { status: 200 }
     );
   } catch (error) {
-    logger.error('Error updating seller availability:', error);
-    return NextResponse.json(
-      { message: 'Internal server error.', error: error.message },
-      { status: 500 }
-    );
+    // T-141 (batch 2): used to answer `{ message, error: error.message }`,
+    // echoing the driver's/Mongoose's raw text. No frontend code calls this
+    // route (confirmed by grep) - only Vercel Cron, with the shared-secret
+    // header above - but the leak is the same regardless of who reads it.
+    return errorResponse(error, 'GET /api/sellers/availability', { bodyKey: 'message' });
   }
 }

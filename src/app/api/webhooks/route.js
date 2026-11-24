@@ -39,6 +39,12 @@ export async function POST(req) {
   let evt;
 
   // Verify the payload with the headers
+  //
+  // T-141 audit: these three catches don't go through errorResponse() - it
+  // returns NextResponse.json(), and Svix (Clerk's webhook sender) expects a
+  // plain status code, not a JSON body with an `error`/`message` key. Each
+  // already answers a fixed, generic string, so there is no error.message
+  // leak either.
   try {
     evt = wh.verify(body, {
       "svix-id": svix_id,

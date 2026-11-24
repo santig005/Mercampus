@@ -2,6 +2,7 @@ import { connectDB } from '@/utils/connectDB';
 import { daysES } from '@/utils/resources/days';
 import { NextResponse } from 'next/server';
 import { Schedule } from '@/utils/models/scheduleSchema';
+import { errorResponse } from '@/lib/api-response';
 
 
 export async function GET(req,{params}) {
@@ -26,6 +27,8 @@ export async function GET(req,{params}) {
 
     return NextResponse.json({schedules: transformedDays }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'Internal server error.', error: error.message }, { status: 500 });
+    // T-141: this used to echo error.message (a Mongoose CastError for a
+    // malformed id, same shape as T-97/F29) straight into the 500 body.
+    return errorResponse(error, '[GET /api/schedules/:id]', { bodyKey: 'message' });
   }
 };
