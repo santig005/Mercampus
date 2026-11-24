@@ -2,19 +2,20 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // T-149: tsconfig.json sets "jsx": "preserve" for Next's own compiler
-  // (SWC), which Vite's own transform (oxc, in this Vite version) otherwise
-  // inherits by auto-discovering tsconfig.json - and leaving JSX unconverted
-  // makes every .jsx file fail to parse the moment a test imports one.
-  // Overridden here, for Vite's pipeline only; tsconfig.json (and the Next
-  // build it configures) is untouched.
+  // T-134 and T-149 hit this independently: tsconfig.json sets
+  // "jsx": "preserve" for Next's own compiler (SWC), which Vite's own
+  // transform (oxc, in this Vite version) otherwise inherits by
+  // auto-discovering tsconfig.json - and leaving JSX unconverted makes every
+  // .jsx file fail to parse the moment a test imports one. Overridden here,
+  // for Vite's pipeline only; tsconfig.json (and the Next build it
+  // configures) is untouched.
   oxc: { jsx: { runtime: 'automatic' } },
   test: {
     // Los tests unitarios son funciones puras y validacion de schemas de
     // Mongoose en memoria: no hay DOM que emular ni base de datos que levantar.
     environment: 'node',
-    // T-149: *.test.jsx, for the one component test (ReportDialog) that
-    // needs jsdom - set per-file with a `// @vitest-environment jsdom`
+    // *.test.jsx: component/hook tests under tests/unit that need jsdom
+    // (T-134, T-149) - set per-file with a `// @vitest-environment jsdom`
     // docblock, so the `environment: 'node'` default above still holds for
     // every other test.
     include: [
@@ -34,6 +35,7 @@ export default defineConfig({
     // resuelvan sus imports '@/...' igual que en la app.
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@public': fileURLToPath(new URL('./public', import.meta.url)),
     },
   },
 });

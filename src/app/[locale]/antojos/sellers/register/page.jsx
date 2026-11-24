@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { localizedHref } from '@/i18n/routing';
 import InputFields from '@/components/auth/register/InputFields';
-import { FcHighPriority } from 'react-icons/fc';
-import { IoClose } from 'react-icons/io5';
+import FormErrorModal from '@/components/modals/FormErrorModal';
 import ImageGrid from '@/components/general/ImageGrid';
 import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import { useSeller } from '@/context/SellerContext';
 import UniGraphicSelector from '@/components/university/UniGraphicSelector';
+import { buildSellerRegisterPayload } from '@/lib/seller-register-payload';
 
 // T-81 (seller onboarding): moved from src/app/antojos/sellers/register/
 // (deleted). Still a Client Component - it is a form with state - so it
@@ -35,8 +35,19 @@ const RegisterSeller = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState('');
+  // T-134: mirrors product/add's `fieldErrors` (T-119) - the API's 400s name
+  // exactly what was wrong in `fields` (see invalidPayload in
+  // src/lib/api-response.ts), which this page used to drop on the floor
+  // along with the generic message.
+  const [fieldErrors, setFieldErrors] = useState([]);
   var { seller, setSeller, dbUser, setDbUser } = useSeller();
   const { checkedSeller } = useCheckSeller('userNotSeller', '');
+
+  const closeErrorModal = () => {
+    setErrorCode('');
+    setFieldErrors([]);
+  };
+
   if (!checkedSeller) return <Loading />;
 
   const handleChange = e => {
@@ -67,10 +78,13 @@ const RegisterSeller = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
+    closeErrorModal();
 
-    sellerData.logo = sellerData?.images[0];
-    sellerData.description = JSON.stringify(sellerData.description);
-    // logger.debug(sellerData);
+    // T-134: a payload built here, not `sellerData` mutated in place - a
+    // rejected submit (or a network error) must leave every field exactly as
+    // the seller typed it, and a retry must not stringify the description a
+    // second time. See buildSellerRegisterPayload for why.
+    const payload = buildSellerRegisterPayload(sellerData);
 
     try {
       const response = await fetch('/api/sellers', {
@@ -78,27 +92,36 @@ const RegisterSeller = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(sellerData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        setSeller(sellerData);
+        setSeller(payload);
         setDbUser({ ...dbUser, role: 'seller' });
         router.push(localizedHref('/antojos/sellers/approving', locale));
       } else {
         const errorData = await response.json();
         logger.error('Error:', errorData.message);
         setErrorCode(errorData.message);
+        setFieldErrors(Array.isArray(errorData.fields) ? errorData.fields : []);
       }
     } catch (error) {
       logger.error('Network Error:', error);
-      setErrorCode('Network Error. Please try again.');
+      setErrorCode(t('networkError'));
     }
     setLoading(false);
   };
 
   return (
     <div className='h-[836px] relative'>
+      {/* T-134: shared with /antojos/product/add (T-119, T-127) instead of a
+          third copy. */}
+      <FormErrorModal
+        attentionLabel={t('modalAttention')}
+        message={errorCode}
+        fields={fieldErrors}
+        onClose={closeErrorModal}
+      />
       <div className='h-1/4 sticky top-0 left-0'>
         <div
           id='register-bg'

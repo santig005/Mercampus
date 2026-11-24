@@ -7,8 +7,7 @@ import { localizedHref } from '@/i18n/routing';
 import { getCategoriesBySection } from '@/utils/resources/categories';
 import { useCategoryLabel } from '@/utils/hooks/useCategoryLabel';
 import InputFields from '@/components/auth/register/InputFields';
-import { FcHighPriority } from 'react-icons/fc';
-import { IoClose } from 'react-icons/io5';
+import FormErrorModal from '@/components/modals/FormErrorModal';
 import Loading from '@/components/general/Loading';
 import { useCheckSeller } from '@/context/SellerContext';
 import ImageGrid from '@/components/general/ImageGrid';
@@ -138,53 +137,14 @@ const AddProduct = () => {
   return (
     <>
       <div className='flex flex-col h-dvh relative'>
-        {/* Errors modal */}
-        <dialog
-          id='errors'
-          className={`modal ${errorCode ? 'modal-open' : ''}`}
-        >
-          <div className='modal-box p-3'>
-            {/* T-127: this used to be `bg-[#fde6e6]`, a light pink with no
-                dark-theme variant - heading/list text had no explicit color
-                so it fell back to base-content, nearly invisible on that
-                pink in the dark theme (see docs/audits/t-119/
-                error-state__dark.png and t-127 in ROADMAP.md). `alert
-                alert-error` is the same themed daisyUI token
-                EditProductForm.jsx already uses for its error banner - its
-                background and text both come from the current theme's
-                error/error-content CSS vars, so they track light/dark
-                instead of being hardcoded for one of them. */}
-            <div
-              role='alert'
-              className='alert alert-error flex justify-start items-start gap-3 w-full'
-            >
-              <div className=''>
-                <FcHighPriority className='text-4xl' />
-              </div>
-              <div className='w-full'>
-                <h3 className='font-bold text-lg flex justify-between'>
-                  {t('modalAttention')}
-                  <form method='dialog'>
-                    {/* if there is a button in form, it will close the modal */}
-                    <button className='font-normal' onClick={closeErrorModal}>
-                      <IoClose className='text-2xl' />
-                    </button>
-                  </form>
-                </h3>
-                <p className='py-2'>{errorCode}</p>
-                {fieldErrors.length > 0 && (
-                  <ul className='list-disc list-inside text-sm -mt-1 pb-1'>
-                    {fieldErrors.map(({ field, message }) => (
-                      <li key={field}>
-                        <span className='font-semibold'>{field}:</span> {message}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-        </dialog>
+        {/* Errors modal. T-127's dark-theme fix and T-119's per-field list
+            now live in the shared FormErrorModal (T-134). */}
+        <FormErrorModal
+          attentionLabel={t('modalAttention')}
+          message={errorCode}
+          fields={fieldErrors}
+          onClose={closeErrorModal}
+        />
 
         {/* content */}
         <div
