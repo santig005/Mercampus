@@ -8086,6 +8086,77 @@ keep working.
 **Outside the repo:** nothing.
 **Model:** `sonnet` · **Nightly:** yes
 
+### [ ] T-177 · Patch the production dependency CVEs that `npm audit fix` can take care of without a major bump
+**Why:** `npm audit --omit=dev` on 2026-11-24 reports 18 vulnerabilities in
+production dependencies - 4 critical, 11 high, 3 moderate - across `axios`,
+`follow-redirects`, `form-data`, `js-cookie`, `lodash`, `mongoose`, `next`
+(via its bundled `postcss`), `source-map-js`, `uuid` (via `imagekit`), `yaml`,
+`zod`, and `@clerk/*`. Most of these have a same-major, non-breaking fix
+available through plain `npm audit fix`. Two packages genuinely need a
+deliberate major-version jump instead and are deliberately **out of scope
+here** - see T-178.
+**Worth knowing before starting, so the two tasks don't get conflated:**
+- The `mongoose` critical (`GHSA-pcrw-h46h-c93h`, `sanitizeFilter` not applied
+  on `countDocuments`) does not have a live exploitation path in this repo
+  today - `sanitizeFilter` is never enabled anywhere under `src/`, and no
+  route passes `req.body`/`req.query` straight into a Mongoose query
+  (confirmed by grep, not assumed). Patch it anyway - this is the kind of gap
+  that stops mattering only as long as nobody adds `sanitizeFilter` later
+  believing it already protects `countDocuments`.
+- The `@clerk/*` critical (`GHSA-vqx2-fgx2-5wq9`, `createRouteMatcher`
+  middleware bypass) does not compromise a session or let anyone impersonate
+  a user - it can let a crafted request skip the *middleware's* route-gating
+  decision and reach a handler directly. Routes that also check
+  `getClerkUserId()`/`isClerkAdmin()` inside the handler itself (T-12, T-104,
+  T-133) are unaffected by design; this is exactly why rule "autorización
+  explícita" in CLAUDE.md exists. T-136 (`GET /api/users/[id]` and
+  `GET /api/sellers/[id]`, still open) is where this bypass would actually
+  bite.
+- `npm audit fix`'s suggestion for the `uuid`/`imagekit` moderate finding is
+  **not trustworthy as-is**: it proposes installing `imagekit@1.5.0`, which
+  is *older* than the `^6.0.0` this repo already pins - a downgrade, not a
+  fix. Leave that one alone here; it needs someone to actually check whether
+  a current `imagekit` release has dropped the vulnerable `uuid`, not a blind
+  `--force`.
+**Done when:** `npm audit fix` (no `--force`) is run, `npm run verify` passes,
+and a fresh `npm audit --omit=dev` shows the vulnerability count dropped by
+exactly the packages that had a same-major fix (expect `axios`,
+`follow-redirects`, `form-data`, `lodash`, `mongoose`, `source-map-js`,
+`yaml`, `zod` resolved; `@clerk/*` has "No fix available" per the advisory
+itself and stays). The PR states plainly which advisories remain open and
+why (the `next`/`postcss`/`sharp` major-version ones → T-178; `uuid`/
+`imagekit` → needs manual research, not blind `--force`; `@clerk/*` → no fix
+published yet upstream).
+**Model:** `sonnet` · **Nightly:** yes
+
+### [ ] T-178 · Next.js 14→16, and `sharp`: the dependency bumps `npm audit fix` won't do safely alone
+**Why:** three findings from the same 2026-11-24 audit (see T-177) only patch
+through a major-version jump, which `npm audit fix --force` would apply
+blindly without anyone reading what changed:
+- **`next` `^14.2.24` → `16.4.6`.** This is the one with confirmed, actual
+  exposure, not just a theoretical CVE: `next/image` is used in 3 files under
+  `src/`, and the installed `14.2.32` falls inside the vulnerable range of
+  both `GHSA-2xp9-vwfh-vxw4` (unauthenticated RCE via AVIF image
+  optimization - fixed in `15.5.24`/`16.3.3`) and `GHSA-p293-qw3h-jr36`
+  (unauthenticated RCE on Windows-hosted servers, no workaround - fixed in
+  the same versions). Production on Vercel runs Linux, so the Windows one is
+  not a production risk today, but `npm run build`/`npm run dev` on a
+  Windows machine is exactly the Windows-hosted case. Two majors is a real
+  migration (App Router and Image Optimizer defaults moved between 14 and
+  16), not a version-number edit - read the changelogs, don't just bump and
+  hope `npm run verify` catches everything.
+- **`sharp` `^0.33.5` → `0.35.5`** (`libvips`/`libheif` CVEs bundled in the
+  older build). Marked breaking by npm; also pulled in transitively by
+  Next's own image optimizer, so this one is coupled to the `next` bump
+  above rather than independent.
+**Done when:** `next` and `sharp` are bumped together (they're coupled, per
+above), `npm run verify` is green, and image upload + display is smoke-tested
+by hand in a real browser (rule 3 - this touches rendered images, a passing
+test suite is not evidence here). `npm run backup:images` runs first if the
+work gets anywhere near ImageKit's side of image handling (CLAUDE.md, T-121).
+**Model:** `opus` · **Nightly:** no - two major framework version bumps need
+a human watching the diff, not a scheduled run applying `--force` unattended.
+
 ---
 
 ## Phase 8 — The two stories this repo can tell
