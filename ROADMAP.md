@@ -6897,11 +6897,19 @@ from this sandbox.** Dependency: required T-154 (rate limiting), already
   rule 3 (a passing test is not the same as a human - or an agent - having
   looked at the render; see T-100), that leaves this PR's own screenshots
   unverified too, so it stays open rather than merged. Whoever picks this
-  back up: download `capturas-e2e` from
-  https://github.com/santig005/Mercampus/actions/runs/41865620887 (or the
-  latest run on this branch) from an environment that can reach Azure Blob
-  Storage, look at the four PNGs in both themes, then merge once `quality`
-  is still green.
+  back up: download `capturas-e2e` from the latest run on this branch
+  (https://github.com/santig005/Mercampus/actions?query=branch%3Aagent%2Ft-149-report-listing)
+  from an environment that can reach Azure Blob Storage, look at the four
+  PNGs in both themes, then merge once `quality` is still green.
+- **2026-11-24 update:** the human merged `agent/develop` into this branch
+  (picking up T-60, T-151, T-141) in 8c0fd75, which left `package-lock.json`
+  missing the `jsdom`/`@testing-library/react` entries this task's
+  dev-dependency bump added - `npm ci` failed on every transitive dependency
+  jsdom pulls in, taking `quality` and `e2e` down with it. Fixed in 7a8e08f
+  (`npm install`, 681 pure additions to the lock file, nothing else
+  touched); `quality`/`e2e`/`lighthouse` are green again on that commit.
+  Screenshots still unobtainable from this sandbox, same blocker as above
+  (tried again on the new run, same 403) - the PR stays open.
 - **Outside the repo:** none (the collection is created on first insert).
 
 ### [ ] T-150 · The brand's domain is dead and the site lives on a `vercel.app` subdomain — decide the domain
