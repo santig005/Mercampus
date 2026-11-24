@@ -2,21 +2,27 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // T-134: the project's tsconfig.json sets `"jsx": "preserve"` for Next's own
-  // compiler (it has its own JSX transform). Vite reads that same tsconfig
-  // for its oxc transform and otherwise leaves JSX untouched, so any .jsx
-  // file - including existing ones under src/ - fails to parse under
-  // Vitest. This forces Vite's own transform regardless of what Next needs
-  // from tsconfig.
-  oxc: { jsx: 'automatic' },
+  // T-134 and T-149 hit this independently: tsconfig.json sets
+  // "jsx": "preserve" for Next's own compiler (SWC), which Vite's own
+  // transform (oxc, in this Vite version) otherwise inherits by
+  // auto-discovering tsconfig.json - and leaving JSX unconverted makes every
+  // .jsx file fail to parse the moment a test imports one. Overridden here,
+  // for Vite's pipeline only; tsconfig.json (and the Next build it
+  // configures) is untouched.
+  oxc: { jsx: { runtime: 'automatic' } },
   test: {
     // Los tests unitarios son funciones puras y validacion de schemas de
     // Mongoose en memoria: no hay DOM que emular ni base de datos que levantar.
     environment: 'node',
-    // .jsx: component/hook tests under tests/unit that need the
-    // `@vitest-environment jsdom` pragma to render JSX (T-134) - everything
-    // else here stays plain .js and the 'node' environment above.
-    include: ['tests/unit/**/*.test.{js,jsx}', 'tests/integration/**/*.test.js'],
+    // *.test.jsx: component/hook tests under tests/unit that need jsdom
+    // (T-134, T-149) - set per-file with a `// @vitest-environment jsdom`
+    // docblock, so the `environment: 'node'` default above still holds for
+    // every other test.
+    include: [
+      'tests/unit/**/*.test.js',
+      'tests/unit/**/*.test.jsx',
+      'tests/integration/**/*.test.js',
+    ],
     // Los de integracion levantan un mongod en memoria; la primera vez ademas
     // se descarga el binario.
     testTimeout: 30_000,
