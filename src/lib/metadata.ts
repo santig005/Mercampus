@@ -71,7 +71,10 @@ export const titleMetadata = {
 // can return an object when JSON.parse succeeds - a meta description has to
 // be plain text, so a non-string result is discarded rather than rendered
 // broken.
-function plainTextDescription(raw: string | undefined): string | undefined {
+// Exported for src/lib/structured-data.ts: the Product markup's description
+// needs the same JSON-string unwrapping these Open Graph builders already do,
+// not a second copy of the rule.
+export function plainTextDescription(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   try {
     const parsed = JSON.parse(raw);

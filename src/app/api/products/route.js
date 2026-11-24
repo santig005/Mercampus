@@ -13,7 +13,7 @@ import {
   productQuerySchema,
 } from '@/lib/validators/product';
 import { SORT_CONFIGS } from '@/lib/sorting/product-sort';
-import { invalidPayload } from '@/lib/api-response';
+import { errorResponse, invalidPayload } from '@/lib/api-response';
 import { publicSellerFilter } from '@/lib/public-visibility';
 import { productAvailability } from '@/lib/store-availability';
 import { getAvailableSellerIds } from '@/server/products/availableSellers';
@@ -23,7 +23,6 @@ import { buildAccentInsensitiveRegex } from '@/utils/lib/search';
 // GET's populate({ model: 'Seller' }) needs it registered. Delete it and the
 // listing blows up with MissingSchemaError.
 import { Seller } from '@/utils/models/sellerSchema'; // eslint-disable-line no-unused-vars
-import { logger } from '@/lib/logger';
 
 export async function GET(req) {
   await connectDB();
@@ -271,10 +270,14 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    logger.error('Error creating product', error);
-    return NextResponse.json(
-      { message: 'Error creating product', error: error.message },
-      { status: 500 }
-    );
+    // T-141 (batch 2): used to answer `{ message: 'Error creating product',
+    // error: error.message }`, echoing the driver's/Mongoose's raw text. The
+    // add-product page reads `errorData.message` into the error dialog it
+    // already renders for the 400 case (see tests/e2e/signed-in/
+    // product-add-errors.spec.js); this only changes what that text says on
+    // a 500 (now the generic Spanish string errorResponse() always uses,
+    // replacing the old hardcoded English one) - same box, same classes, no
+    // color/theme/layout change, so no new screenshot is added for it.
+    return errorResponse(error, 'POST /api/products', { bodyKey: 'message' });
   }
 }

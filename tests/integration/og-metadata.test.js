@@ -34,6 +34,10 @@ describe('T-69 · data for product/seller Open Graph', () => {
       description: expect.any(String),
       price: expect.any(Number),
       image: expect.any(String),
+      // T-151: the Product JSON-LD builder's own inputs, added alongside
+      // the Open Graph fields this test already covered.
+      images: expect.arrayContaining([expect.any(String)]),
+      section: expect.any(String),
     });
   });
 
